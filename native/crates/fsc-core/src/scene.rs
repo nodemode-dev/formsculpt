@@ -19,6 +19,8 @@ pub struct Object {
     pub multires: Option<Multires>,
     pub layers: Layers,
     pub maps: Option<Maps>,
+    /// The folder the object is filed under in the scene list (one level, as ZBrush's SubTool folders); empty: none.
+    pub folder: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -36,7 +38,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new() }
     }
 
     pub fn rebuild(&mut self) {

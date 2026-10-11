@@ -10,6 +10,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "id": o.id,
         "name": o.name,
         "visible": o.visible,
+        "folder": o.folder,
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),
         "masked_vertices": o.mask.iter().filter(|&&m| m > 0.5).count(),

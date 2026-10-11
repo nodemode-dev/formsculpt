@@ -29,6 +29,7 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             "id": o.id,
             "name": o.name,
             "visible": o.visible,
+            "folder": o.folder,
             "positions": w.put(&format!("{dir}/positions.f32"), &vec3s(&o.mesh.positions))?,
             "indices": w.put(&format!("{dir}/indices.u32"), &u32s(&o.mesh.indices))?,
             "mask": w.put(&format!("{dir}/mask.f32"), &f32s(&o.mask))?,
@@ -188,6 +189,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         };
         let mut o = Object::new(id, e["name"].as_str().unwrap_or("Object").to_string(), mesh);
         o.visible = e["visible"].as_bool().unwrap_or(true);
+        o.folder = e["folder"].as_str().unwrap_or("").chars().take(80).collect();
         o.maps = maps;
         let mask = r.f32(&e["mask"])?;
         if mask.len() == o.mesh.vertex_count() {

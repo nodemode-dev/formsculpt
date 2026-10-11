@@ -128,17 +128,58 @@ pub(crate) fn visibility_schema() -> Value {
         "type": "object",
         "properties": {
             "action": {"type": "string", "enum": ["hide", "show", "isolate", "show_all"], "description": "hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything."},
-            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects; the active object when omitted."}
+            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects; the active object when omitted."},
+            "folder": {"type": "string", "description": "Instead of ids: every object in this folder."}
         },
         "required": ["action"],
         "additionalProperties": false
     })
 }
 
+pub(crate) fn folder_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects to file; the active object when omitted."},
+            "folder": {"type": "string", "maxLength": 80, "description": "The folder name; an empty string takes them out of any folder."}
+        },
+        "required": ["folder"],
+        "additionalProperties": false
+    })
+}
+
+/// Files objects under a folder (one level). One undo step.
+pub(crate) fn set_folder(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let folder: String = args.get("folder").and_then(Value::as_str).ok_or_else(|| bad("folder is required"))?.trim().chars().take(80).collect();
+    let chosen: Vec<ObjectId> = match args.get("ids") {
+        None | Some(Value::Null) => s.scene.active.into_iter().collect(),
+        _ => ids(s, args, false)?,
+    };
+    if chosen.is_empty() {
+        return Err(CommandError::new("no_object", "the scene is empty"));
+    }
+    s.history.push(Edit::Scene { label: "Folder".into(), objects: s.scene.objects.clone(), active: s.scene.active });
+    for o in s.scene.objects.iter_mut().filter(|o| chosen.contains(&o.id)) {
+        o.folder = folder.clone();
+        o.revision += 1;
+    }
+    let mut folders: Vec<String> = s.scene.objects.iter().map(|o| o.folder.clone()).filter(|f| !f.is_empty()).collect();
+    folders.sort();
+    folders.dedup();
+    Ok(json!({"filed": chosen, "folder": folder, "folders": folders}))
+}
+
 pub(crate) fn set_visibility(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is required"))?.to_string();
-    let chosen = match args.get("ids") {
-        None | Some(Value::Null) => s.scene.active.into_iter().collect(),
+    let chosen = match (args.get("ids"), args.get("folder").and_then(Value::as_str)) {
+        (_, Some(folder)) => {
+            let found: Vec<ObjectId> = s.scene.objects.iter().filter(|o| o.folder == folder).map(|o| o.id).collect();
+            if found.is_empty() {
+                return Err(CommandError::new("not_found", format!("no objects in a folder named {folder}")));
+            }
+            found
+        }
+        (None | Some(Value::Null), None) => s.scene.active.into_iter().collect(),
         _ => ids(s, args, false)?,
     };
     if chosen.is_empty() && action != "show_all" {

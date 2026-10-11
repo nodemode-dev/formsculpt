@@ -161,6 +161,17 @@ pub static COMMANDS: &[Command] = &[
         run: arrange_cmds::set_visibility,
     },
     Command {
+        id: "object.folder",
+        mcp: "set_folder",
+        group: Group::Object,
+        label: "Folder",
+        description: "File objects under a named folder in the scene list (one level), or take them out with an empty name, so a scene of many parts stays readable; set_visibility can then hide, show or isolate a whole folder. Saved in projects. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: arrange_cmds::folder_schema,
+        run: arrange_cmds::set_folder,
+    },
+    Command {
         id: "object.arrange",
         mcp: "arrange_objects",
         group: Group::Object,
