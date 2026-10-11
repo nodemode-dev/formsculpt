@@ -173,3 +173,9 @@ Polls `/api/mcp/window` about once a second, which also tells the service a wind
 - kind: rationale
 - logged: v0.4.0 · 2026-10-11
 The Topology section runs subdivide, remesh_voxel (with the resolution field), decimate at 50 percent and fill_holes; the Brush section gains Dyntopo and Detail size (a fraction of the radius). During a dyntopo stroke each topology change schedules a full mesh fetch; at most one fetch per object is in flight and one more is queued, so a fast stroke does not pile up requests.
+
+### src/app.ts · multiresolution controls, constant detail
+- refers-to: src/app.ts :: MULTIRES, buildShell (statLevel, constant), SceneView.apply, brushState, constantSize, key
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+The Multiresolution section reuses the topology button wiring (action plus JSON args) for Divide, Lower, Higher, Delete lower and Delete higher; the Active mesh list gains Level ("2 of 2", or "none"), set in place, and the Dyntopo checkbox is disabled while the object has levels (the engine would ignore it). Constant detail sends `dyntopo_size` as the detail fraction times 5 percent of the object's diagonal, so the slider means the same on any object size. Verified under 4x CPU throttling: two divides, a stroke, Shift+D, D and both deletes with layout shift 0 and no console errors.

@@ -16,6 +16,7 @@ interface Shell {
   objectList: HTMLUListElement;
   statVerts: HTMLElement;
   statTris: HTMLElement;
+  statLevel: HTMLElement;
   statRenderer: HTMLElement;
   statFrame: HTMLElement;
   message: HTMLElement;
@@ -27,6 +28,7 @@ interface Shell {
   radial: HTMLInputElement;
   dyntopo: HTMLInputElement;
   detail: HTMLInputElement;
+  constant: HTMLInputElement;
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
@@ -50,6 +52,14 @@ const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['remesh_voxel', 'Voxel remesh', {}],
   ['decimate', 'Decimate 50%', { ratio: 0.5 }],
   ['fill_holes', 'Fill holes', {}],
+];
+
+const MULTIRES: [string, string, Record<string, unknown>][] = [
+  ['multires_divide', 'Divide', {}],
+  ['multires_set_level', 'Lower', { step: 'down' }],
+  ['multires_set_level', 'Higher', { step: 'up' }],
+  ['multires_delete_lower', 'Delete lower', {}],
+  ['multires_delete_higher', 'Delete higher', {}],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -129,8 +139,9 @@ function buildShell(root: HTMLElement): Shell {
   const radial = input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
   const dyntopo = input('checkbox', { 'aria-label': 'Dynamic topology' });
   const detail = input('range', { min: '5', max: '100', value: '25', 'aria-label': 'Detail size' });
+  const constant = input('checkbox', { 'aria-label': 'Constant detail' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Constant detail', constant));
   panel.append(fields);
 
   panel.append(el('h2', 'gap', 'Edit'));
@@ -160,6 +171,18 @@ function buildShell(root: HTMLElement): Shell {
   topoFields.append(field('Remesh resolution', resolution));
   panel.append(topoFields);
 
+  panel.append(el('h2', 'gap', 'Multiresolution'));
+  const levelGrid = el('div', 'add-grid two');
+  for (const [name, label, args] of MULTIRES) {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = name;
+    b.dataset.args = JSON.stringify(args);
+    levelGrid.append(b);
+    topoButtons.push(b);
+  }
+  panel.append(levelGrid);
+
   const message = el('p', 'panel-note', '');
   panel.append(message);
 
@@ -167,7 +190,8 @@ function buildShell(root: HTMLElement): Shell {
   const stats = el('dl', 'kv');
   const statVerts = el('dd', '', '0');
   const statTris = el('dd', '', '0');
-  stats.append(el('dt', '', 'Vertices'), statVerts, el('dt', '', 'Triangles'), statTris);
+  const statLevel = el('dd', '', 'none');
+  stats.append(el('dt', '', 'Vertices'), statVerts, el('dt', '', 'Triangles'), statTris, el('dt', '', 'Level'), statLevel);
   panel.append(stats);
 
   panel.append(el('h2', 'gap', 'Engine'));
@@ -191,7 +215,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, topoButtons, resolution };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, constant, topoButtons, resolution };
 }
 
 class SceneView {
@@ -273,7 +297,15 @@ class SceneView {
       lazy: 0,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
+      dyntopoSize: s.dyntopo.checked && s.constant.checked ? this.constantSize(Number(s.detail.value) / 100) : null,
     };
+  }
+
+  private constantSize(frac: number): number | null {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (!o) return null;
+    const [a, b] = [o.bounds.min, o.bounds.max];
+    return Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) * frac * 0.05;
   }
 
   async refresh(): Promise<void> {
@@ -299,6 +331,9 @@ class SceneView {
     const active = next.objects.find((o) => o.id === next.active);
     setText(this.shell.statVerts, active ? active.vertices.toLocaleString('en-US') : '0');
     setText(this.shell.statTris, active ? active.triangles.toLocaleString('en-US') : '0');
+    const leveled = active !== undefined && active.levels > 1;
+    setText(this.shell.statLevel, leveled ? `${active.level} of ${active.levels - 1}` : 'none');
+    if (this.shell.dyntopo.disabled !== leveled) this.shell.dyntopo.disabled = leveled;
     this.scene = next;
   }
 
@@ -361,6 +396,8 @@ class SceneView {
     else if ((e.key === 'Delete' || e.key === 'Backspace') && this.scene.active !== null) void this.run('delete_object', { id: this.scene.active });
     else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) void this.run(e.shiftKey ? 'redo' : 'undo');
     else if ((e.ctrlKey || e.metaKey) && e.key === 'y') void this.run('redo');
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) void this.run('multires_divide');
+    else if (e.key === 'd' || e.key === 'D') void this.run('multires_set_level', { step: e.shiftKey ? 'down' : 'up' });
     else return;
     e.preventDefault();
   }

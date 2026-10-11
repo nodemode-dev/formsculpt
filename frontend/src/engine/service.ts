@@ -10,6 +10,8 @@ export interface ObjectSummary {
   vertices: number;
   triangles: number;
   revision: number;
+  level: number;
+  levels: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 
