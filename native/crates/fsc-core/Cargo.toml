@@ -7,4 +7,14 @@ authors.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
+[features]
+default = ["parallel"]
+parallel = ["dep:rayon"]
+
 [dependencies]
+glam = "0.34"
+rayon = { version = "1.12", optional = true }
+
+[[bin]]
+name = "fsc-bench"
+path = "src/bin/bench.rs"

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+source "$(dirname "$0")/lib.sh"
+command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
+cd "$FSC_ROOT/native"
+level="${1:-8}"
+cargo build --release -q -p fsc-core --bin fsc-bench
+mkdir -p "$FSC_ROOT/bench-results"
+out="$FSC_ROOT/bench-results/engine-$(date -u +%Y%m%dT%H%M%SZ).json"
+"$FSC_ROOT/native/target/release/fsc-bench" "$level" | tee "$out"
+fs_say "written $out"
