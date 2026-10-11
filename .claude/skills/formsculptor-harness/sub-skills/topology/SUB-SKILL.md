@@ -11,7 +11,7 @@ Own `fsc-topo`. Operations that change connectivity or vertex count. Hands back 
 
 ## Preconditions
 
-State: v0.1.0 scaffold, crate is a minimal shell; every operation named here is planned until the code exists.
+State at 0.4.0: built in `native/crates/fsc-topo`: `loop_subdivide` (Loop or flat, parents for mask transfer), `voxel_remesh` (narrow-band distance from BVH nearest-feature queries, signs from angle-weighted pseudo-normals, naive surface nets, rayon), `decimate` (quadric edge collapse with link and flip checks, border quadrics), `fill_holes` (boundary loops, centroid fans), `refine_sphere` (dynamic topology by longest-edge bisection with curved midpoints, called once per stroke sample, followed by tangential relaxation in `fsc-sculpt`), `edge_faces` and `boundary_edges`. Commands `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`; every topology change goes through `Object::replace_mesh` and an `Edit::Topology` undo step that swaps the whole mesh and mask. Not built: a multiresolution level stack, edge collapse during dyntopo, quad remesh, booleans.
 
 ## Procedure
 

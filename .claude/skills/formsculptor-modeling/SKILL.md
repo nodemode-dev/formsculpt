@@ -48,6 +48,13 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 - A refusal about permission: the person must allow outside agents in the formsculptor window. Tell them; do not retry in a loop.
 - The engine not running: the MCP server starts it on the first call; if that fails, ask the person to run `./formsculptor backend` in the formsculptor folder.
 
+## Workflow 4: manage the mesh's resolution
+
+1. Strokes stretch triangles. After heavy grab or inflate work, `remesh_voxel` (resolution 96 to 160 for most work) rebuilds an even, closed mesh; it clears the mask.
+2. `subdivide` (levels 1 or 2) adds resolution before fine detail; each level is four times the triangles, and the mask carries over.
+3. `dyntopo` on `sculpt_stroke` (a fraction of the radius, 0.15 to 0.3) adds triangles only where the brush passes, so a low-detail sphere can take fine detail locally.
+4. `decimate` with `ratio` reduces triangles for export or speed; `mesh_check` reports watertightness, and `fill_holes` closes open boundaries before printing.
+
 ## Not yet available
 
-There are no file import or export tools, no dynamic topology, remeshing or subdivision, and no image of the view yet. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no file import or export tools and no image of the view yet. Subdivision has no level stack to step back down to (use undo), and dynamic topology only adds detail (it never collapses edges). Say so plainly if the person asks for them, rather than approximating with strokes.

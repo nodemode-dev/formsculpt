@@ -9,6 +9,7 @@ Generated from the engine's command registry (formsculptor 0.3.0) by `./formscul
 - Objects: `add_primitive`, `select_object`, `delete_object`
 - Sculpting: `sculpt_stroke`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
+- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`
 - History: `undo`, `redo`
 
 ## get_engine_info
@@ -67,6 +68,7 @@ Note: removes or replaces (undoable); in the window: Delete.
 Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
 - `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask); default "draw"
+- `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt. Off when omitted. Not used by grab or mask.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
@@ -104,6 +106,48 @@ Soften the mask's edge by averaging each vertex with its neighbours once.
 Harden the mask's edge by pushing values away from one half.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## subdivide
+
+Subdivide an object's mesh, each level multiplying the triangles by four (Loop subdivision, which rounds the shape; smooth false splits flat). The mask carries over. Use it to add resolution before detailing.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `levels`: integer; default 1; range 1 to 4; Each level multiplies the triangles by four.
+- `smooth`: boolean; default true; Loop subdivision (smooths the shape); false splits flat.
+
+Note: in the window: Mod+D.
+
+## remesh_voxel
+
+Rebuild an object as an even, closed mesh by sampling its surface on a voxel grid (like DynaMesh or Nomad's voxel remesher). Fixes stretched triangles after heavy grab or inflate strokes and merges intersecting parts. resolution is voxels along the longest side. The mask is cleared.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `resolution`: integer; default 128; range 8 to 320; Voxels along the object's longest side; higher keeps more detail and makes more triangles.
+
+Note: in the window: Mod+R.
+
+## decimate
+
+Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. The mask is cleared.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `preserve_borders`: boolean; default true
+- `ratio`: number; default 0.5; range -inf to 1; Fraction of triangles to keep.
+- `triangles`: integer; range 4 to inf; Target triangle count; overrides ratio.
+
+## fill_holes
+
+Close every open boundary loop of an object with a fan of triangles. Reports how many holes were filled.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## mesh_check
+
+Report an object's vertex, triangle and edge counts, open boundary edges, non-manifold edges and whether it is watertight (needed for printing and booleans).
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: read-only.
 
 ## undo
 
