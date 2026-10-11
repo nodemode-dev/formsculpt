@@ -168,6 +168,7 @@ const LAYER_ACTIONS: [string, string][] = [
   ['layer_add', 'Add layer'],
   ['layer_apply', 'Apply'],
   ['layer_delete', 'Delete'],
+  ['surface_noise', 'Noise layer'],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -492,15 +493,16 @@ function buildShell(root: HTMLElement): Shell {
   kv.append(el('dt', '', 'App'), el('dd', '', VERSION), el('dt', '', 'Service'), engineVersion, el('dt', '', 'Renderer'), statRenderer, el('dt', '', 'Frame'), statFrame);
   panel.append(kv);
 
-  panel.append(el('h2', 'gap', 'Scene'));
-  const objectList = el('ul', 'objects');
-  objectList.setAttribute('aria-label', 'Objects');
-  panel.append(objectList);
-
   panel.append(el('h2', 'gap', 'History'));
   const historyList = el('ul', 'history');
   historyList.setAttribute('aria-label', 'Undo history');
   panel.append(historyList);
+
+  // The Scene list stays last: it grows and shrinks with the objects, and nothing below it may move.
+  panel.append(el('h2', 'gap', 'Scene'));
+  const objectList = el('ul', 'objects');
+  objectList.setAttribute('aria-label', 'Objects');
+  panel.append(objectList);
 
   const status = el('footer', 'status');
   const state = el('span', 'engine-state');
@@ -1010,7 +1012,7 @@ class SceneView {
   private layerAction(action: string): void {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     if (!o) return;
-    if (action === 'layer_add') void this.run('layer_add', { id: o.id });
+    if (action === 'layer_add' || action === 'surface_noise') void this.run(action, { id: o.id });
     else if (o.active_layer === null) this.note('Pick a layer under Record into first');
     else void this.run(action, { id: o.id, index: o.active_layer });
   }
