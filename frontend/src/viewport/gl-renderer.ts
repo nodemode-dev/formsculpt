@@ -1,5 +1,8 @@
 import type { MeshBuffers, VertexUpdate } from '../engine/service';
 import type { OrbitCamera } from './camera';
+import { mipChain, type EnvImage } from './environment';
+import { invert } from './math';
+import { NO_POST, PostFx, type PostSettings } from './post';
 
 const MESH_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -36,6 +39,31 @@ uniform float uPainted;
 uniform float uLit;
 uniform vec4 uCap;
 uniform vec3 uTint;
+uniform float uEnvOn;
+uniform sampler2D uEnv;
+uniform float uEnvRot;
+uniform float uEnvMaxLod;
+uniform float uExposure;
+uniform float uLightScale;
+uniform float uTone;
+uniform mat4 uView;
+const float PI_ = 3.14159265;
+vec3 envAt(vec3 d, float lod) {
+  d = normalize(d);
+  float az = atan(d.x, d.z) + uEnvRot;
+  float u = fract((az + PI_) / (2.0 * PI_));
+  float w = acos(clamp(d.y, -1.0, 1.0)) / PI_;
+  return textureLod(uEnv, vec2(u, w), max(lod, 0.0)).rgb;
+}
+vec3 tonemap(vec3 c) {
+  if (uTone > 1.5) return pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
+  if (uTone > 0.5) {
+    // ACES filmic (Narkowicz's fit).
+    c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
+    return pow(c, vec3(1.0 / 2.2));
+  }
+  return pow(c / (c + vec3(1.0)), vec3(1.0 / 2.2));
+}
 uniform float uImage;
 uniform sampler2D uMatcap;
 out vec4 outColor;
@@ -68,11 +96,28 @@ void main() {
     col = light(n, v, normalize(vec3(-0.45, 0.65, 0.6)), vec3(2.6, 2.45, 2.25), albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.6, 0.1, 0.5)), vec3(0.55, 0.62, 0.75), albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.0, 0.35, -1.0)), vec3(0.9), albedo, rough, metal);
-    vec3 sky = mix(vec3(0.16, 0.15, 0.14), vec3(0.42, 0.45, 0.5), n.y * 0.5 + 0.5);
+    col *= uLightScale;
     vec3 f0 = mix(vec3(0.04), albedo, metal);
-    col += sky * (albedo * (1.0 - metal) + f0 * (1.0 - rough * 0.7));
-    col = col / (col + vec3(1.0));
-    col = pow(col, vec3(1.0 / 2.2));
+    if (uEnvOn > 0.5) {
+      // Image-based light: diffuse from a blurred mip along the normal, reflections from a mip chosen by roughness,
+      // weighted by an analytic fit of the split-sum BRDF (Karis), all in world space.
+      mat3 toWorld = transpose(mat3(uView));
+      vec3 wn = toWorld * n;
+      vec3 wr = toWorld * reflect(-v, n);
+      vec3 diffuse = envAt(wn, uEnvMaxLod - 1.0) * albedo * (1.0 - metal);
+      const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+      const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+      vec4 r = rough * c0 + c1;
+      float ndv = max(dot(n, v), 1e-3);
+      float a004 = min(r.x * r.x, exp2(-9.28 * ndv)) * r.x + r.y;
+      vec2 ab = vec2(-1.04, 1.04) * a004 + r.zw;
+      vec3 specular = envAt(wr, rough * (uEnvMaxLod - 2.0)) * (f0 * ab.x + ab.y);
+      col += diffuse + specular;
+    } else {
+      vec3 sky = mix(vec3(0.16, 0.15, 0.14), vec3(0.42, 0.45, 0.5), n.y * 0.5 + 0.5);
+      col += sky * (albedo * (1.0 - metal) + f0 * (1.0 - rough * 0.7));
+    }
+    col = tonemap(col * uExposure);
   } else if (uImage > 0.5) {
     // An image matcap: the view-space normal looks up the sphere picture; paint tints it.
     vec2 uv = n.xy * 0.49 + 0.5;
@@ -176,6 +221,10 @@ export class GlRenderer {
   private grid: { vao: WebGLVertexArrayObject; count: number };
   /** A 1 by 1 texture bound when no image matcap is in use, so the sampler is never incomplete. */
   private blank: WebGLTexture;
+  /** The background program, its empty VAO, and a 1 by 1 black environment bound when none is in use. */
+  private bgProgram: WebGLProgram;
+  private bgVao: WebGLVertexArrayObject;
+  private blankEnv: WebGLTexture;
   private clear: [number, number, number] = [0.11, 0.106, 0.114];
   active: number | null = null;
 
@@ -186,6 +235,11 @@ export class GlRenderer {
     this.meshProgram = compile(gl, MESH_VS, MESH_FS);
     this.lineProgram = compile(gl, LINE_VS, LINE_FS);
     this.grid = this.buildGrid(20, 1);
+    this.bgProgram = compile(gl, BG_VS, BG_FS);
+    this.bgVao = gl.createVertexArray();
+    this.blankEnv = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.blankEnv);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
     gl.enable(gl.DEPTH_TEST);
     this.blank = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.blank);
@@ -452,10 +506,38 @@ export class GlRenderer {
 
   render(camera: OrbitCamera, width: number, height: number): void {
     const gl = this.gl;
+    const p = this.postSettings;
+    const post = this.post && (p.ssao || p.bloom || p.dof || p.vignette || p.grain) ? this.post : null;
+    if (post) post.begin(width, height);
+    else gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, width, height);
     gl.clearColor(this.clear[0], this.clear[1], this.clear[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const vp = camera.viewProjection();
+    const env = this.env && this.lighting.environment ? this.env : null;
+    if (env && this.lighting.background) {
+      // The environment behind the scene: a fullscreen triangle that looks up each pixel's view direction.
+      const inv = invert(vp);
+      if (inv) {
+        // Drawn at the far plane, which the cleared depth equals, so the depth test is off for it.
+        gl.disable(gl.DEPTH_TEST);
+        gl.depthMask(false);
+        gl.useProgram(this.bgProgram);
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.bgProgram, 'uInvViewProj'), false, inv);
+        gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uEnvRot'), this.lighting.rotation);
+        gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uExposure'), this.lighting.exposure);
+        gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uTone'), TONES.indexOf(this.lighting.tone));
+        gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uBlur'), this.lighting.blur * (env.levels - 1));
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, env.tex);
+        gl.uniform1i(gl.getUniformLocation(this.bgProgram, 'uEnv'), 1);
+        gl.bindVertexArray(this.bgVao);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.depthMask(true);
+        gl.enable(gl.DEPTH_TEST);
+      }
+    }
     gl.useProgram(this.lineProgram);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.lineProgram, 'uViewProj'), false, vp);
     gl.bindVertexArray(this.grid.vao);
@@ -471,6 +553,15 @@ export class GlRenderer {
     const tint = gl.getUniformLocation(this.meshProgram, 'uTint');
     const image = gl.getUniformLocation(this.meshProgram, 'uImage');
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uMatcap'), 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uEnvOn'), env ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uEnvRot'), this.lighting.rotation);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uEnvMaxLod'), env ? env.levels - 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uExposure'), this.lighting.exposure);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uLightScale'), env ? this.lighting.lights : 1);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uTone'), TONES.indexOf(this.lighting.tone));
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, env ? env.tex : this.blankEnv);
+    gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uEnv'), 1);
     gl.activeTexture(gl.TEXTURE0);
     for (const [id, m] of this.meshes) {
       const name = this.shadingOf(id);
@@ -499,5 +590,89 @@ export class GlRenderer {
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
     }
     gl.bindVertexArray(null);
+    if (post) {
+      const proj = camera.projection();
+      const inv = invert(proj);
+      if (inv) post.finish(p, proj, inv, camera.distance * 0.1, camera.distance);
+    }
+  }
+
+  private post: PostFx | null = null;
+  private postSettings: PostSettings = { ...NO_POST };
+
+  /** Turns post effects on or off; the offscreen pipeline is built on first use. */
+  setPost(settings: PostSettings): void {
+    this.postSettings = { ...settings };
+    if (!this.post && (settings.ssao || settings.bloom || settings.dof || settings.vignette || settings.grain)) this.post = new PostFx(this.gl);
+  }
+
+  private env: { tex: WebGLTexture; levels: number } | null = null;
+  lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', blur: 0.35 };
+
+  /** Uploads an environment as a float texture with its own mip chain (null removes it). */
+  setEnvironment(img: EnvImage | null): void {
+    const gl = this.gl;
+    if (this.env) gl.deleteTexture(this.env.tex);
+    this.env = null;
+    if (!img) return;
+    const chain = mipChain(img);
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    chain.forEach((level, i) => gl.texImage2D(gl.TEXTURE_2D, i, gl.RGB16F, level.width, level.height, 0, gl.RGB, gl.FLOAT, level.rgb));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, chain.length - 1);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.env = { tex, levels: chain.length };
   }
 }
+
+export const TONES = ['reinhard', 'aces', 'none'];
+
+export interface Lighting {
+  /** Light lit (PBR) shading with the environment image. */
+  environment: boolean;
+  /** Show the environment behind the model. */
+  background: boolean;
+  /** Turn of the environment about the vertical, in radians. */
+  rotation: number;
+  exposure: number;
+  /** The three fixed lights' share when an environment lights the scene. */
+  lights: number;
+  tone: string;
+  /** How blurred the background is, 0 sharp to 1 fully blurred. */
+  blur: number;
+}
+
+const BG_VS = `#version 300 es
+out vec2 vNdc;
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)) * 2.0 - 1.0;
+  vNdc = p;
+  gl_Position = vec4(p, 1.0, 1.0);
+}`;
+
+const BG_FS = `#version 300 es
+precision highp float;
+in vec2 vNdc;
+uniform mat4 uInvViewProj;
+uniform sampler2D uEnv;
+uniform float uEnvRot;
+uniform float uExposure;
+uniform float uTone;
+uniform float uBlur;
+out vec4 outColor;
+const float PI_ = 3.14159265;
+void main() {
+  vec4 a = uInvViewProj * vec4(vNdc, -1.0, 1.0);
+  vec4 b = uInvViewProj * vec4(vNdc, 1.0, 1.0);
+  vec3 d = normalize(b.xyz / b.w - a.xyz / a.w);
+  float az = atan(d.x, d.z) + uEnvRot;
+  vec3 c = textureLod(uEnv, vec2(fract((az + PI_) / (2.0 * PI_)), acos(clamp(d.y, -1.0, 1.0)) / PI_), uBlur).rgb * uExposure;
+  if (uTone > 1.5) c = clamp(c, 0.0, 1.0);
+  else if (uTone > 0.5) c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
+  else c = c / (c + vec3(1.0));
+  outColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
+}`;

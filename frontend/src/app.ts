@@ -19,6 +19,7 @@ import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
+import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
 
 interface Shell {
   engineDot: HTMLElement;
@@ -106,6 +107,20 @@ interface Shell {
   paintOpacity: HTMLInputElement;
   paintVisible: HTMLInputElement;
   paintLayerButtons: HTMLButtonElement[];
+  envSelect: HTMLSelectElement;
+  envRotate: HTMLInputElement;
+  exposure: HTMLInputElement;
+  fixedLights: HTMLInputElement;
+  tone: HTMLSelectElement;
+  envBackground: HTMLInputElement;
+  envBlur: HTMLInputElement;
+  envInput: HTMLInputElement;
+  envLoad: HTMLButtonElement;
+  postSsao: HTMLInputElement;
+  postBloom: HTMLInputElement;
+  postDof: HTMLInputElement;
+  postVignette: HTMLInputElement;
+  postGrain: HTMLInputElement;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -645,6 +660,31 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(viewGrid);
 
+  panel.append(el('h2', 'gap', 'Lighting'));
+  const envSelect = choices('Environment', [['off', 'Off (fixed lights)'], ...ENV_PRESETS]);
+  const envRotate = input('range', { min: '-180', max: '180', value: '0', 'aria-label': 'Environment rotation' });
+  const exposure = input('range', { min: '10', max: '400', value: '100', 'aria-label': 'Exposure' });
+  const fixedLights = input('range', { min: '0', max: '200', value: '35', 'aria-label': 'Fixed lights' });
+  const tone = choices('Tone mapping', [['reinhard', 'Reinhard'], ['aces', 'ACES filmic'], ['none', 'None']]);
+  const envBackground = input('checkbox', { 'aria-label': 'Show environment' });
+  const envBlur = input('range', { min: '0', max: '100', value: '35', 'aria-label': 'Background blur' });
+  const envInput = input('file', { accept: '.hdr,image/png,image/jpeg,image/webp', 'aria-label': 'Choose an environment image' });
+  envInput.hidden = true;
+  panel.append(envInput);
+  const postSsao = input('checkbox', { 'aria-label': 'Ambient occlusion' });
+  const postBloom = input('checkbox', { 'aria-label': 'Bloom' });
+  const postDof = input('checkbox', { 'aria-label': 'Depth of field' });
+  const postVignette = input('checkbox', { 'aria-label': 'Vignette' });
+  const postGrain = input('checkbox', { 'aria-label': 'Film grain' });
+  const lightFields = el('div', 'fields');
+  lightFields.append(field('Environment', envSelect), field('Rotate', envRotate), field('Exposure', exposure), field('Fixed lights', fixedLights), field('Tone mapping', tone), field('Show environment', envBackground), field('Background blur', envBlur), field('Ambient occlusion', postSsao), field('Bloom', postBloom), field('Depth of field', postDof), field('Vignette', postVignette), field('Film grain', postGrain));
+  panel.append(lightFields);
+  const lightGrid = el('div', 'add-grid two after-fields');
+  const envLoad = el('button', 'btn', 'Load HDRI');
+  envLoad.type = 'button';
+  lightGrid.append(envLoad);
+  panel.append(lightGrid);
+
   panel.append(el('h2', 'gap', 'Keys'));
   const keyAction = choices('Key action', []);
   const keyCombo = input('text', { readonly: '', placeholder: 'Click, then press keys', 'aria-label': 'Shortcut', spellcheck: 'false' });
@@ -705,7 +745,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain };
 }
 
 class SceneView {
@@ -814,6 +854,11 @@ class SceneView {
       }),
     );
     shell.shading.addEventListener('change', () => this.applyShading());
+    shell.envSelect.addEventListener('change', () => void this.chooseEnvironment());
+    for (const c of [shell.envRotate, shell.exposure, shell.fixedLights, shell.envBlur]) c.addEventListener('input', () => this.applyLighting());
+    for (const c of [shell.tone, shell.envBackground, shell.postSsao, shell.postBloom, shell.postDof, shell.postVignette, shell.postGrain]) c.addEventListener('change', () => this.applyLighting());
+    shell.envLoad.addEventListener('click', () => shell.envInput.click());
+    shell.envInput.addEventListener('change', () => void this.loadEnvironment());
     shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
     shell.paintLayer.addEventListener('change', () => {
       const id = this.scene.active;
@@ -1193,6 +1238,62 @@ class SceneView {
 
   private falloffDrag: number | null = null;
   private falloffWeights: number[] = Array.from({ length: FALLOFF_POINTS }, (_, i) => FALLOFFS.smooth(i / (FALLOFF_POINTS - 1)));
+
+  /** Environments loaded from files this session, by their select value. */
+  private environments = new Map<string, EnvImage>();
+
+  /** Lights with the chosen environment; an environment needs lit (PBR) shading, so choosing one switches to it. */
+  private async chooseEnvironment(): Promise<void> {
+    const name = this.shell.envSelect.value;
+    if (name === 'off') this.viewport.renderer.setEnvironment(null);
+    else {
+      const img = this.environments.get(name) ?? presetEnvironment(name);
+      this.viewport.renderer.setEnvironment(img);
+      if (this.shell.shading.value !== 'pbr' && !this.shell.shadeActive.checked) {
+        this.shell.shading.value = 'pbr';
+        this.applyShading();
+      }
+    }
+    this.applyLighting();
+  }
+
+  private applyLighting(): void {
+    const s = this.shell;
+    const r = this.viewport.renderer;
+    r.lighting = {
+      environment: s.envSelect.value !== 'off',
+      background: s.envBackground.checked,
+      rotation: (Number(s.envRotate.value) * Math.PI) / 180,
+      exposure: Number(s.exposure.value) / 100,
+      lights: Number(s.fixedLights.value) / 100,
+      tone: s.tone.value,
+      blur: Number(s.envBlur.value) / 100,
+    };
+    r.setPost({ ssao: s.postSsao.checked, bloom: s.postBloom.checked, dof: s.postDof.checked, vignette: s.postVignette.checked, grain: s.postGrain.checked });
+    this.viewport.invalidate();
+  }
+
+  private async loadEnvironment(): Promise<void> {
+    const file = this.shell.envInput.files?.[0];
+    this.shell.envInput.value = '';
+    if (!file) return;
+    try {
+      const img = file.name.toLowerCase().endsWith('.hdr') ? parseHdr(await file.arrayBuffer()) : await imageEnvironment(file);
+      const value = `file:${file.name}`;
+      this.environments.set(value, img);
+      const select = this.shell.envSelect;
+      if (![...select.options].some((o) => o.value === value)) {
+        const option = el('option', '', file.name.replace(/\.[^.]+$/, ''));
+        option.value = value;
+        select.append(option);
+      }
+      select.value = value;
+      await this.chooseEnvironment();
+      this.note(`Environment: ${file.name} (${img.width} by ${img.height})`);
+    } catch (err) {
+      this.note(`That file could not be read as an environment: ${String(err instanceof Error ? err.message : err)}`);
+    }
+  }
 
   private applyShading(): void {
     const id = this.scene.active;
