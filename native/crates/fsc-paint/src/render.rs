@@ -249,6 +249,13 @@ fn light(n: Vec3, v: Vec3, l: Vec3, radiance: Vec3, albedo: Vec3, rough: f32, me
     (kd * albedo / std::f32::consts::PI + spec) * radiance * ndl
 }
 
+/// Where points land in a get_view picture of `frame` (all drawn objects' bounds by default): x from 0 at the left to
+/// 1 at the right, y from 0 at the top to 1 at the bottom, for a picture of the given aspect (width over height).
+pub fn view_coordinates(frame: Aabb, yaw: f32, pitch: f32, aspect: f32, points: &[[f32; 3]]) -> Vec<[f32; 2]> {
+    let cam = Camera::new(frame, yaw, pitch, aspect);
+    points.iter().map(|&p| { let s = cam.project(Vec3::from(p), 1.0, 1.0); [s[0], s[1]] }).collect()
+}
+
 /// Draws the objects with a z-buffer on the CPU, shaded as the window shades them. No GPU or window is needed, so an
 /// agent can look at the model with the app closed.
 pub fn render(objects: &[RenderObject], view: &View) -> Result<Rendered, String> {

@@ -95,6 +95,19 @@ impl Multires {
     pub fn top(&self) -> usize {
         self.levels.len().saturating_sub(1)
     }
+
+    /// Moves the stored levels with the object. Levels below the current one hold absolute positions; levels above
+    /// hold detail in tangent frames, which a translation leaves unchanged.
+    pub fn translate(&mut self, by: glam::Vec3) {
+        for (i, level) in self.levels.iter_mut().enumerate() {
+            if i == self.current {
+                continue;
+            }
+            for p in level.mesh.positions.iter_mut() {
+                *p = (glam::Vec3::from(*p) + by).to_array();
+            }
+        }
+    }
 }
 
 struct Frames {

@@ -67,6 +67,7 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         dyntopo_size: size,
         paint,
         paint_channels,
+        noise_scale: f(args, "noise_scale", 0.0, 0.0, 1e4)?,
     })
 }
 
@@ -190,7 +191,8 @@ pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, Comman
 
 pub(crate) fn brush_props() -> Value {
     json!({
-        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness."},
+        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale."},
+        "noise_scale": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Noise brush: feature size in world units; a fifth of the radius when 0."},
         "color": {"type": ["string", "array"], "description": "Paint brush: #rrggbb or [r, g, b] from 0 to 1."},
         "roughness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this roughness (only the channels given are painted)."},
         "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},
@@ -285,7 +287,7 @@ pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeE
 }
 
 fn capital(s: &str) -> String {
-    let mut c = s.to_string();
+    let mut c = s.replace('_', " ");
     if let Some(f) = c.get_mut(0..1) {
         f.make_ascii_uppercase();
     }
@@ -296,7 +298,7 @@ pub(crate) fn id_opt_schema() -> Value {
     json!({"type": "object", "properties": {"id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."}}, "required": [], "additionalProperties": false})
 }
 
-fn mask_edit(s: &mut Session, args: &Value, label: &str, f: impl Fn(&fsc_core::Object, &[f32]) -> Vec<f32>) -> Result<Value, CommandError> {
+pub(crate) fn mask_edit(s: &mut Session, args: &Value, label: &str, f: impl Fn(&fsc_core::Object, &[f32]) -> Vec<f32>) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let object = s.scene.get_mut(id).expect("checked");
     let before = object.mask.clone();

@@ -1,0 +1,239 @@
+use fsc_core::{Aabb, ObjectId};
+use glam::Vec3;
+use serde_json::{json, Value};
+
+use crate::history::Edit;
+use crate::{CommandError, Session};
+
+fn bad(msg: impl Into<String>) -> CommandError {
+    CommandError::new("bad_arguments", msg)
+}
+
+fn ids(s: &Session, args: &Value, all_if_missing: bool) -> Result<Vec<ObjectId>, CommandError> {
+    match args.get("ids") {
+        Some(Value::Array(a)) => {
+            let mut out = Vec::new();
+            for v in a {
+                let id = v.as_u64().ok_or_else(|| bad("ids are object ids"))? as ObjectId;
+                if s.scene.get(id).is_none() {
+                    return Err(CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")));
+                }
+                if !out.contains(&id) {
+                    out.push(id);
+                }
+            }
+            Ok(out)
+        }
+        None | Some(Value::Null) if all_if_missing => Ok(s.scene.objects.iter().map(|o| o.id).collect()),
+        None | Some(Value::Null) => Err(bad("ids is required")),
+        Some(_) => Err(bad("ids must be an array")),
+    }
+}
+
+fn bounds(s: &Session, id: ObjectId) -> Aabb {
+    let mut b = Aabb::EMPTY;
+    for &p in &s.scene.get(id).expect("checked").mesh.positions {
+        b.grow(Vec3::from(p));
+    }
+    b
+}
+
+fn translate(s: &mut Session, id: ObjectId, by: Vec3) {
+    if by.length_squared() == 0.0 {
+        return;
+    }
+    let o = s.scene.get_mut(id).expect("checked");
+    for p in o.mesh.positions.iter_mut() {
+        *p = (Vec3::from(*p) + by).to_array();
+    }
+    if let Some(m) = o.multires.as_mut() {
+        m.translate(by);
+    }
+    o.bvh.refit(&o.mesh);
+    o.revision += 1;
+}
+
+pub(crate) fn arrange_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "ids": {"type": "array", "minItems": 2, "items": {"type": "integer", "minimum": 1}, "description": "The objects to arrange; every object when omitted."},
+            "axis": {"type": "string", "enum": ["x", "y", "z"], "default": "x"},
+            "mode": {"type": "string", "enum": ["min", "center", "max", "distribute"], "default": "center", "description": "min, center and max line the objects' bounds up on the axis (at the first object's); distribute spaces them evenly between the outermost two, with equal gaps between their bounds."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn arrange(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let ids = ids(s, args, true)?;
+    if ids.len() < 2 {
+        return Err(bad("arranging needs at least two objects"));
+    }
+    let axis = match args.get("axis").and_then(Value::as_str).unwrap_or("x") {
+        "x" => 0,
+        "y" => 1,
+        "z" => 2,
+        other => return Err(bad(format!("axis must be x, y or z, not {other}"))),
+    };
+    let mode = args.get("mode").and_then(Value::as_str).unwrap_or("center").to_string();
+    if !["min", "center", "max", "distribute"].contains(&mode.as_str()) {
+        return Err(bad(format!("unknown mode {mode}")));
+    }
+    let boxes: Vec<(ObjectId, Aabb)> = ids.iter().map(|&id| (id, bounds(s, id))).collect();
+    let unit = |by: f32| {
+        let mut v = Vec3::ZERO;
+        v[axis] = by;
+        v
+    };
+    let mut moves: Vec<(ObjectId, Vec3)> = Vec::new();
+    if mode == "distribute" {
+        let mut sorted = boxes.clone();
+        sorted.sort_by(|a, b| a.1.center()[axis].partial_cmp(&b.1.center()[axis]).unwrap_or(std::cmp::Ordering::Equal));
+        let start = sorted[0].1.min[axis];
+        let end = sorted[sorted.len() - 1].1.max[axis];
+        let sizes: f32 = sorted.iter().map(|(_, b)| b.max[axis] - b.min[axis]).sum();
+        let gap = (end - start - sizes) / (sorted.len() - 1) as f32;
+        let mut at = start;
+        for (id, b) in &sorted {
+            moves.push((*id, unit(at - b.min[axis])));
+            at += b.max[axis] - b.min[axis] + gap;
+        }
+    } else {
+        let key = |b: &Aabb| match mode.as_str() {
+            "min" => b.min[axis],
+            "max" => b.max[axis],
+            _ => b.center()[axis],
+        };
+        let goal = key(&boxes[0].1);
+        for (id, b) in &boxes {
+            moves.push((*id, unit(goal - key(b))));
+        }
+    }
+    s.history.push(Edit::Scene { label: if mode == "distribute" { "Distribute".into() } else { "Align".into() }, objects: s.scene.objects.clone(), active: s.scene.active });
+    let mut moved = 0;
+    for (id, by) in moves {
+        if by.length() > 1e-7 {
+            moved += 1;
+        }
+        translate(s, id, by);
+    }
+    let axis_name = ["x", "y", "z"][axis];
+    Ok(json!({"moved": moved, "axis": axis_name, "mode": mode}))
+}
+
+pub(crate) fn visibility_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "enum": ["hide", "show", "isolate", "show_all"], "description": "hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything."},
+            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects; the active object when omitted."}
+        },
+        "required": ["action"],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn set_visibility(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is required"))?.to_string();
+    let chosen = match args.get("ids") {
+        None | Some(Value::Null) => s.scene.active.into_iter().collect(),
+        _ => ids(s, args, false)?,
+    };
+    if chosen.is_empty() && action != "show_all" {
+        return Err(CommandError::new("no_object", "the scene is empty"));
+    }
+    for o in s.scene.objects.iter_mut() {
+        let pick = chosen.contains(&o.id);
+        let visible = match action.as_str() {
+            "hide" if pick => false,
+            "show" if pick => true,
+            "isolate" => pick,
+            "show_all" => true,
+            "hide" | "show" => o.visible,
+            other => return Err(bad(format!("unknown action {other}"))),
+        };
+        if o.visible != visible {
+            o.visible = visible;
+            o.revision += 1;
+        }
+    }
+    let shown: Vec<ObjectId> = s.scene.objects.iter().filter(|o| o.visible).map(|o| o.id).collect();
+    Ok(json!({"visible": shown, "hidden": s.scene.objects.len() - shown.len()}))
+}
+
+pub(crate) fn pick_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "origin": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+            "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}
+        },
+        "required": ["origin", "direction"],
+        "additionalProperties": false
+    })
+}
+
+fn vec3(args: &Value, key: &str) -> Result<Vec3, CommandError> {
+    let a = args.get(key).and_then(Value::as_array).filter(|a| a.len() == 3).ok_or_else(|| bad(format!("{key} is [x, y, z]")))?;
+    let v: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+    if v.iter().any(|x| !x.is_finite()) {
+        return Err(bad(format!("{key} values must be numbers")));
+    }
+    Ok(Vec3::new(v[0], v[1], v[2]))
+}
+
+pub(crate) fn pick(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let origin = vec3(args, "origin")?;
+    let dir = vec3(args, "direction")?.normalize_or(Vec3::NEG_Z);
+    let mut best: Option<(f32, ObjectId, Vec3, Vec3)> = None;
+    for o in s.scene.objects.iter().filter(|o| o.visible) {
+        if let Some(hit) = o.bvh.raycast(&o.mesh, origin, dir) {
+            if best.is_none_or_farther(hit.t) {
+                let t = &o.mesh.indices[hit.triangle as usize * 3..hit.triangle as usize * 3 + 3];
+                let (a, b, c) = (o.mesh.position(t[0]), o.mesh.position(t[1]), o.mesh.position(t[2]));
+                best = Some((hit.t, o.id, hit.point, (b - a).cross(c - a).normalize_or(-dir)));
+            }
+        }
+    }
+    Ok(match best {
+        Some((t, id, p, n)) => json!({"hit": true, "id": id, "point": p.to_array(), "normal": n.to_array(), "distance": t}),
+        None => json!({"hit": false}),
+    })
+}
+
+trait Farther {
+    fn is_none_or_farther(&self, t: f32) -> bool;
+}
+
+impl Farther for Option<(f32, ObjectId, Vec3, Vec3)> {
+    fn is_none_or_farther(&self, t: f32) -> bool {
+        self.map_or(true, |b| t < b.0)
+    }
+}
+
+pub(crate) fn history_schema() -> Value {
+    json!({"type": "object", "properties": {}, "required": [], "additionalProperties": false})
+}
+
+pub(crate) fn get_history(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
+    let (steps, done) = s.history.steps();
+    Ok(json!({"steps": steps, "done": done}))
+}
+
+pub(crate) fn goto_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {"done": {"type": "integer", "minimum": 0, "description": "How many steps of get_history's list should be done; earlier numbers undo, later ones redo."}},
+        "required": ["done"],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn history_go_to(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let done = args.get("done").and_then(Value::as_u64).ok_or_else(|| bad("done is required"))? as usize;
+    let moved = s.history.go_to(&mut s.scene, done).map_err(|e| CommandError::new("history", e))?;
+    let (steps, done) = s.history.steps();
+    Ok(json!({"moved": moved, "done": done, "steps": steps.len()}))
+}

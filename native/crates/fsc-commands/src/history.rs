@@ -162,4 +162,28 @@ impl History {
     pub fn depth(&self) -> (usize, usize) {
         (self.undo.len(), self.redo.len())
     }
+
+    /// Every step oldest first, and how many of them are done (the rest can be redone).
+    pub fn steps(&self) -> (Vec<String>, usize) {
+        let mut out: Vec<String> = self.undo.iter().map(Edit::label).collect();
+        out.extend(self.redo.iter().rev().map(Edit::label));
+        (out, self.undo.len())
+    }
+
+    /// Undoes or redoes until exactly `done` steps are done.
+    pub fn go_to(&mut self, scene: &mut Scene, done: usize) -> Result<usize, String> {
+        if done > self.undo.len() + self.redo.len() {
+            return Err(format!("there are only {} steps", self.undo.len() + self.redo.len()));
+        }
+        let mut moved = 0;
+        while self.undo.len() > done {
+            self.undo(scene)?;
+            moved += 1;
+        }
+        while self.undo.len() < done {
+            self.redo(scene)?;
+            moved += 1;
+        }
+        Ok(moved)
+    }
 }
