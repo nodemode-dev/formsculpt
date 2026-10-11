@@ -11,7 +11,7 @@ Own `fsc-core`. Every other crate reads and writes its types, so a change here h
 
 ## Preconditions
 
-State: v0.1.0 scaffold, crate is a minimal shell. Treat each item below as planned unless the code in `native/` shows it exists.
+State at 0.5.0: built: `Mesh` (positions, normals, indices), primitives, a binned-SAH `Bvh` with partial refit (`refit_triangles`, `Object::refit_vertices`), `Topology` (vertex faces and neighbours), `Scene` and `Object` (mask, revision, `multires`, `layers`), `multires.rs` (level stack, stencils, tangent-frame detail) and `layers.rs` (per-vertex offsets with a strength; `record_into_layer` for strokes). Undo lives in `fsc-commands/src/history.rs`, not here. Not built: face groups, vertex colour, dirty-range tracking for WASM. Treat other items below as planned unless the code shows them.
 
 ## Procedure
 

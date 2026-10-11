@@ -55,6 +55,12 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 3. `dyntopo` on `sculpt_stroke` (a fraction of the radius, 0.15 to 0.3) splits long edges and collapses short ones where the brush passes, so a low-detail sphere can take fine detail locally; `dyntopo_size` sets a constant edge length in world units instead.
 4. `decimate` with `ratio` reduces triangles for export or speed; `mesh_check` reports watertightness, and `fill_holes` closes open boundaries before printing.
 
+## Workflow 5: combine, bend and layer
+
+1. Build parts as separate objects (`add_primitive`, `duplicate_object` with an `offset`, `transform_object` to move, rotate and scale), then `boolean` with `a`, `b` and `op` (union, difference as a minus b, intersection). The result is one watertight object and replaces both unless `keep_inputs`; detail finer than a voxel softens, so use `resolution` 160 to 256 for crisp joins. `merge_objects` only groups meshes; `split_parts` separates loose pieces.
+2. `deform_object` bends, twists or tapers along an axis of the object's bounds; mask an area first to hold it still (masks also hold vertices during `transform_object`).
+3. For an adjustable pass of detail, `layer_add`, sculpt, then `layer_set_strength` (0 hides it, 1 as sculpted, 2 exaggerates, negative inverts). `layer_select` with null records into the base again; `layer_apply` bakes a layer. While layers exist, remesh, decimate, dyntopo and level changes refuse with `has_layers`.
+
 ## Not yet available
 
-There are no file import or export tools, no booleans and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no file import or export tools, no folders or on-canvas gizmo, and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
