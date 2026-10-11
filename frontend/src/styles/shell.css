@@ -19,7 +19,17 @@ button { font: inherit; color: inherit; }
 .kv dd { margin: 0; text-align: right; font-family: var(--font-mono); font-size: 12px; min-width: 9ch; }
 
 .stage { grid-area: stage; position: relative; z-index: var(--z-base); background: var(--canvas-bg); background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--grid-color) 35%, transparent) 1px, transparent 0); background-size: 24px 24px; display: grid; place-items: center; }
-.stage-note { color: var(--text-muted); font-size: 12px; }
+.viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.panel h2.gap { margin-top: var(--space-5); }
+.add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.btn { height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: border-color var(--transition-fast), background var(--transition-fast); }
+.btn:hover { border-color: var(--accent-color); }
+.objects { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-height: 28px; }
+.object { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; }
+.object:hover { background: var(--bg-tertiary); }
+.object[aria-current="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
+.object .count { font: 11px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.panel-note { margin: var(--space-2) 0 0; min-height: 18px; font-size: 12px; color: var(--warn-color); }
 
 .status { grid-area: status; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-4); padding-inline: var(--space-3); background: var(--bg-secondary); border-top: 1px solid var(--border-color); color: var(--text-secondary); font: 11px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); margin-right: var(--space-2); vertical-align: 0; }

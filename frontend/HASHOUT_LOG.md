@@ -14,7 +14,11 @@ frontend/
   src/main.ts             stylesheet imports, start()
   src/app.ts              builds the shell once, polls the service, patches text in place
   src/version.ts          VERSION, a version site
-  src/engine/service.ts   the only HTTP client so far (fetchVersion)
+  src/engine/service.ts   the only HTTP client: fetchVersion, dispatch, fetchMesh (FSCM binary)
+  src/viewport/math.ts    Vec3 helpers, lookAt, perspective, ortho, multiply
+  src/viewport/camera.ts  OrbitCamera: orbit, pan, zoom, frame, snap views, orthographic
+  src/viewport/gl-renderer.ts  WebGL2 renderer: procedural matcap shading, ground grid, per-object buffers
+  src/viewport/viewport.ts     canvas, DPR resize, render on demand, pointer and wheel navigation
   src/ui/dom.ts           el, setText, setAttr (write only on change)
   src/ui/icons.ts         inline currentColor SVG icons
   src/styles/tokens.css   colour, spacing, size tokens and the stacking scale
@@ -81,3 +85,41 @@ Every z-index is a `var(--z-*)`. The bands mirror formvis and NodeMode so an emb
 | --z-debug | 100000 | development only |
 
 Anything that must escape its container renders into `#overlay-root`, a direct child of `body`.
+
+## src/engine/service.ts
+
+### src/engine/service.ts · whole file
+- refers-to: src/engine/service.ts
+- kind: warning-context
+- logged: v0.2.0 · 2026-10-11
+In 0.2.0 this file was replaced whole instead of extended by edits (a SEDO slip, declared in the turn ledger). `fetchVersion` is unchanged; the 0.1.0 `Health` interface, never used, went with it:
+
+```ts
+export interface Health {
+  ok: boolean;
+}
+```
+
+## src/viewport/gl-renderer.ts
+
+### src/viewport/gl-renderer.ts · MESH_FS
+- refers-to: src/viewport/gl-renderer.ts :: MESH_FS
+- kind: rationale
+- logged: v0.2.0 · 2026-10-11
+A procedural clay matcap (key, fill, rim, a highlight placed by the matcap coordinate of the reflected view vector) so the viewport needs no texture asset. WebGL2 comes first because the Linux desktop webview (WebKitGTK) has no WebGPU; the WebGPU path is the next renderer behind the same `upload`, `remove`, `render` surface. Back faces flip their normal so open meshes (the plane) shade on both sides.
+
+## src/viewport/viewport.ts
+
+### src/viewport/viewport.ts · invalidate
+- refers-to: src/viewport/viewport.ts :: invalidate, draw
+- kind: rationale
+- logged: v0.2.0 · 2026-10-11
+Renders on demand: one requestAnimationFrame per change, none while idle. Left drag orbits, right or middle drag (or Shift) pans, Ctrl drag or the wheel zooms. Keys on the focused canvas (in app.ts): 1, 3, 7 for front, right and top, Ctrl for the opposite side, 5 toggles orthographic, F frames the active object, Delete removes it.
+
+## src/app.ts
+
+### src/app.ts · SceneView and panel order
+- refers-to: src/app.ts :: SceneView.apply, SceneView.patchList, buildShell
+- kind: rationale
+- logged: v0.2.0 · 2026-10-11
+The object list is patched by id: rows are added or removed only when objects are, and names, counts and `aria-current` are written through `setText` and `setAttr`. Meshes are fetched only when an object's revision differs from the uploaded one. The Scene list sits last in the panel: a throttled run with it above the stats measured a layout shift of 0.0012 as the list grew; at the bottom it pushes nothing and the shift is 0.
