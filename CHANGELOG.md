@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.8.1 · 2026-10-11
+
+### Added
+
+- `skeleton_mesh`: a watertight, even base mesh from spheres joined by tapered limbs, smoothly merged (biped watertight at every resolution from 48 to 256, 15 to 855 ms).
+- `curve_tube`: a tube swept along a smooth curve, tapered by per-point radius, capped or closed into a ring.
+- `lathe`: a solid spun from a [radius, y] profile (53 commands in all).
+- A Build section in the window: skeleton presets (biped, quadruped, hand, snake), lathe profiles (vase, bottle, goblet, column) and the tube radius; a Tube brush that draws a tube on the plane through the view's centre.
+
+### Fixed
+
+- Implicit meshes go through the non-manifold split, as booleans do: thin limbs within one voxel left 2 to 4 non-manifold edges.
+
 ## 0.8.0 · 2026-10-11
 
 ### Added
