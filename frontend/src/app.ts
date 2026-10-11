@@ -28,7 +28,7 @@ interface Shell {
   radial: HTMLInputElement;
   dyntopo: HTMLInputElement;
   detail: HTMLInputElement;
-  constant: HTMLInputElement;
+  detailMode: HTMLSelectElement;
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
@@ -60,6 +60,7 @@ const MULTIRES: [string, string, Record<string, unknown>][] = [
   ['multires_set_level', 'Higher', { step: 'up' }],
   ['multires_delete_lower', 'Delete lower', {}],
   ['multires_delete_higher', 'Delete higher', {}],
+  ['multires_reconstruct', 'Rebuild lower', {}],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -71,7 +72,7 @@ const ACTIONS: [string, string][] = [
   ['mask_clear', 'Clear mask'],
 ];
 
-function field(label: string, input: HTMLInputElement): HTMLLabelElement {
+function field(label: string, input: HTMLInputElement | HTMLSelectElement): HTMLLabelElement {
   const row = el('label', 'field');
   row.append(el('span', '', label), input);
   return row;
@@ -139,9 +140,15 @@ function buildShell(root: HTMLElement): Shell {
   const radial = input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
   const dyntopo = input('checkbox', { 'aria-label': 'Dynamic topology' });
   const detail = input('range', { min: '5', max: '100', value: '25', 'aria-label': 'Detail size' });
-  const constant = input('checkbox', { 'aria-label': 'Constant detail' });
+  const detailMode = el('select');
+  detailMode.setAttribute('aria-label', 'Detail mode');
+  for (const [value, label] of [['brush', 'Brush'], ['constant', 'Constant'], ['screen', 'Screen']]) {
+    const option = el('option', '', label);
+    option.value = value;
+    detailMode.append(option);
+  }
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Constant detail', constant));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode));
   panel.append(fields);
 
   panel.append(el('h2', 'gap', 'Edit'));
@@ -215,7 +222,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, constant, topoButtons, resolution };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution };
 }
 
 class SceneView {
@@ -297,7 +304,8 @@ class SceneView {
       lazy: 0,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
-      dyntopoSize: s.dyntopo.checked && s.constant.checked ? this.constantSize(Number(s.detail.value) / 100) : null,
+      dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
+      dyntopoScreenPx: s.dyntopo.checked && s.detailMode.value === 'screen' ? Number(s.detail.value) * 0.2 : null,
     };
   }
 

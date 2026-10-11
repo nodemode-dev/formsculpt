@@ -10,6 +10,7 @@ export interface BrushState {
   symmetry: { x: boolean; y: boolean; z: boolean; radial: number };
   dyntopo: number | null;
   dyntopoSize: number | null;
+  dyntopoScreenPx: number | null;
 }
 
 export interface StrokeResult {
@@ -91,10 +92,11 @@ export class StrokeClient {
     this.live = true;
     this.objectId = objectId;
     const radius = Math.max(1e-4, brush.radiusPx * worldPerPixel);
+    const size = brush.dyntopoScreenPx !== null ? Math.max(1e-5, brush.dyntopoScreenPx * worldPerPixel) : brush.dyntopoSize;
     this.send({
       type: 'begin',
       id: objectId,
-      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: brush.dyntopoSize },
+      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size },
     });
     this.firstSeq = ++this.seq;
     this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure });

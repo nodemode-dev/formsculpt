@@ -179,3 +179,9 @@ The Topology section runs subdivide, remesh_voxel (with the resolution field), d
 - kind: rationale
 - logged: v0.4.1 · 2026-10-11
 The Multiresolution section reuses the topology button wiring (action plus JSON args) for Divide, Lower, Higher, Delete lower and Delete higher; the Active mesh list gains Level ("2 of 2", or "none"), set in place, and the Dyntopo checkbox is disabled while the object has levels (the engine would ignore it). Constant detail sends `dyntopo_size` as the detail fraction times 5 percent of the object's diagonal, so the slider means the same on any object size. Verified under 4x CPU throttling: two divides, a stroke, Shift+D, D and both deletes with layout shift 0 and no console errors.
+
+### src/app.ts, src/engine/stroke-client.ts · detail mode
+- refers-to: src/app.ts :: buildShell (detailMode), brushState (dyntopoScreenPx); src/engine/stroke-client.ts :: StrokeClient.begin
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+Detail mode replaces the Constant detail checkbox: Brush sends the fraction of the radius, Constant a world size from the object's diagonal, Screen a pixel size (detail times 0.2 px) that the stroke client turns into world units with the same world-per-pixel it uses for the radius, fixed for the stroke. Rebuild lower joins the Multiresolution buttons. Verified under 4x throttling: a screen-detail stroke took a 1,280-triangle sphere to 9,316, and Rebuild lower then Shift+D on a subdivided sphere showed level 0 of 1 at 1,280 triangles, layout shift 0, no console errors.
