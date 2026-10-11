@@ -1,7 +1,11 @@
 pub fn png_rgba(size: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
+    png_rgba_rect(size, size, pixels)
+}
+
+pub fn png_rgba_rect(width: usize, height: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
     let mut out = Vec::new();
     {
-        let mut enc = png::Encoder::new(&mut out, size as u32, size as u32);
+        let mut enc = png::Encoder::new(&mut out, width as u32, height as u32);
         enc.set_color(png::ColorType::Rgba);
         enc.set_depth(png::BitDepth::Eight);
         let mut w = enc.write_header().map_err(|e| e.to_string())?;

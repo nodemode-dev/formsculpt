@@ -1,9 +1,11 @@
 mod bake;
 mod encode;
+mod render;
 mod uv;
 
 pub use bake::{bake, Baked};
-pub use encode::{exr_float, png_rgba};
+pub use encode::{exr_float, png_rgba, png_rgba_rect};
+pub use render::{render, RenderObject, Rendered, Shading, View};
 pub use uv::{expand, unwrap, Expanded, Unwrap};
 
 pub fn engine_version() -> &'static str {
