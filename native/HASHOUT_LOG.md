@@ -88,3 +88,53 @@ The 0.1.0 signature had no state; replaced by `fn(&mut Session, &Value)`.
 - kind: rationale
 - logged: v0.2.0 · 2026-10-11
 The headless path. The service holds one `Engine` whose `Session` sits behind a mutex; `dispatch` takes and returns JSON strings (`{"ok": true, "result": ...}` or `{"ok": false, "error": {"code", "message"}}`), so the Python side never mirrors a command's arguments. `mesh` hands back three `bytes` objects and the revision. Built as an abi3 wheel for Python 3.12 and newer by `maturin develop` from `setup/engine_build`.
+
+## crates/fsc-core/src/topology.rs
+
+### crates/fsc-core/src/topology.rs · Topology
+- refers-to: crates/fsc-core/src/topology.rs :: Topology::build, update_normals, ring_vertices
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+Compressed vertex-to-face and vertex-to-neighbour tables (offsets plus flat arrays), built once per topology change. Brushes use them to recompute normals only for the touched vertices and their one-ring, and Smooth and mask blur use the neighbour lists. `Object` now owns `topology` and a per-vertex `mask` (0 free, 1 fully masked); `Object::new` builds both.
+
+### crates/fsc-core/src/bvh.rs · refit
+- refers-to: crates/fsc-core/src/bvh.rs :: Bvh::refit
+- kind: todo
+- logged: v0.3.0 · 2026-10-11
+A full bottom-up refit (children always sit after their parent, so a reverse sweep is enough). It runs once per stroke sample, not per dab. Measured: an interactive sample costs about 3.6 ms on 327,680 triangles and 14.6 ms on 1,310,720, most of it this refit; next is refitting only the leaves the dab touched and their ancestors.
+
+## crates/fsc-sculpt/src
+
+### crates/fsc-sculpt/src/stroke.rs · Stroke
+- refers-to: crates/fsc-sculpt/src/stroke.rs :: Stroke::sample_ray, sample_point, grab_between, dab, finish
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+A stroke places dabs every radius times spacing along the path (with optional lazy smoothing), applies each to every symmetry copy (mirror planes through the origin composed with radial repeats around y), remembers each vertex's first position and mask value, and on finish turns that into one `VertexEdit` (indices, before, after, mask before and after) for the history. Brushes weight by falloff, pressure and strength, and by one minus the mask; Mask paints the mask itself. Grab captures the vertices under the first hit and moves them by the pointer's offset on the plane facing the camera. Per-dab displacement factors (0.06 times radius for Draw and Inflate, 0.08 for the Clay plane) were chosen by eye on a unit sphere and will be tuned against the reference apps' feel.
+
+### crates/fsc-sculpt/src/lib.rs · whole file
+- refers-to: crates/fsc-sculpt/src/lib.rs
+- kind: removed-code
+- logged: v0.3.0 · 2026-10-11
+The 0.1.0 shell was replaced with the module list (a three-line file, written whole):
+
+```rust
+pub fn engine_version() -> &'static str {
+    fsc_core::engine_version()
+}
+```
+
+`engine_version` is kept below the module list.
+
+## crates/fsc-commands/src/history.rs
+
+### crates/fsc-commands/src/history.rs · Edit
+- refers-to: crates/fsc-commands/src/history.rs :: Edit, History
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+Four kinds of undo step: vertex edits, adding an object, deleting one, clearing the scene. Add and Delete share one rule: if an object is parked in the step, put it back; otherwise take it out and park it, so the same code serves undo and redo. Objects move between the scene and the history rather than being cloned. 200 steps are kept.
+
+### crates/fsc-py/src/lib.rs · stroke_begin, stroke_sample, stroke_end
+- refers-to: crates/fsc-py/src/lib.rs :: Engine::stroke_*, update_bytes
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+The interactive path for the window: a stroke opened with brush settings parsed by the same `parse_brush` the `sculpt_stroke` command uses, fed camera rays, and closed into one history step. Each sample returns an FSCU update: `FSCU`, count, revision, object id (u32 each), then indices, positions, normals and mask values of the changed vertices. These three methods are a transport for the viewport, not registry commands; agents use `sculpt_stroke`, which runs the same Stroke code.

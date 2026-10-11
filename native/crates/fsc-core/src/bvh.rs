@@ -81,6 +81,24 @@ impl Bvh {
         bvh
     }
 
+    pub fn refit(&mut self, mesh: &Mesh) {
+        for ni in (0..self.nodes.len()).rev() {
+            let node = self.nodes[ni];
+            let mut b = Aabb::EMPTY;
+            if Bvh::is_leaf(&node) {
+                for &t in &self.tris[node.first as usize..(node.first + node.count) as usize] {
+                    for v in mesh.triangle(t as usize) {
+                        b.grow(mesh.position(v));
+                    }
+                }
+            } else {
+                let (l, r) = (self.nodes[node.first as usize].bounds, self.nodes[node.first as usize + 1].bounds);
+                b = l.merge(&r);
+            }
+            self.nodes[ni].bounds = b;
+        }
+    }
+
     pub fn is_leaf(node: &Node) -> bool {
         node.count > 0
     }

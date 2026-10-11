@@ -9,3 +9,4 @@ publish.workspace = true
 
 [dependencies]
 fsc-core.workspace = true
+glam = "0.34"

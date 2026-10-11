@@ -1,4 +1,9 @@
+mod history;
 mod scene_cmds;
+mod sculpt_cmds;
+
+pub use history::{Edit, History};
+pub use sculpt_cmds::parse_brush;
 
 use fsc_core::Scene;
 use serde::Serialize;
@@ -45,6 +50,8 @@ pub struct Command {
 #[derive(Debug, Default)]
 pub struct Session {
     pub scene: Scene,
+    pub history: History,
+    pub stroke: Option<(fsc_core::ObjectId, fsc_sculpt::Stroke)>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -137,6 +144,83 @@ pub static COMMANDS: &[Command] = &[
         hints: DESTROY,
         schema: scene_cmds::id_schema,
         run: scene_cmds::delete_object,
+    },
+    Command {
+        id: "sculpt.stroke",
+        mcp: "sculpt_stroke",
+        group: Group::Sculpt,
+        label: "Sculpt Stroke",
+        description: "Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::stroke_schema,
+        run: sculpt_cmds::sculpt_stroke,
+    },
+    Command {
+        id: "mask.invert",
+        mcp: "mask_invert",
+        group: Group::Mask,
+        label: "Invert Mask",
+        description: "Invert the mask of an object (the active one when id is omitted).",
+        keys: &["Mod+I"],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: sculpt_cmds::mask_invert,
+    },
+    Command {
+        id: "mask.clear",
+        mcp: "mask_clear",
+        group: Group::Mask,
+        label: "Clear Mask",
+        description: "Remove the mask from an object so every vertex can be sculpted.",
+        keys: &["Mod+Shift+A"],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: sculpt_cmds::mask_clear,
+    },
+    Command {
+        id: "mask.blur",
+        mcp: "mask_blur",
+        group: Group::Mask,
+        label: "Blur Mask",
+        description: "Soften the mask's edge by averaging each vertex with its neighbours once.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: sculpt_cmds::mask_blur,
+    },
+    Command {
+        id: "mask.sharpen",
+        mcp: "mask_sharpen",
+        group: Group::Mask,
+        label: "Sharpen Mask",
+        description: "Harden the mask's edge by pushing values away from one half.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: sculpt_cmds::mask_sharpen,
+    },
+    Command {
+        id: "history.undo",
+        mcp: "undo",
+        group: Group::History,
+        label: "Undo",
+        description: "Undo the last step (a stroke, a mask change, adding or deleting an object, a new scene).",
+        keys: &["Mod+Z"],
+        hints: WRITE,
+        schema: no_args,
+        run: sculpt_cmds::undo,
+    },
+    Command {
+        id: "history.redo",
+        mcp: "redo",
+        group: Group::History,
+        label: "Redo",
+        description: "Redo the last undone step.",
+        keys: &["Mod+Shift+Z"],
+        hints: WRITE,
+        schema: no_args,
+        run: sculpt_cmds::redo,
     },
 ];
 

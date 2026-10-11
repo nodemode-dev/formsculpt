@@ -1,5 +1,6 @@
 use crate::bvh::Bvh;
 use crate::mesh::Mesh;
+use crate::topology::Topology;
 
 pub type ObjectId = u32;
 
@@ -9,14 +10,29 @@ pub struct Object {
     pub name: String,
     pub mesh: Mesh,
     pub bvh: Bvh,
+    pub topology: Topology,
+    pub mask: Vec<f32>,
     pub visible: bool,
     pub revision: u64,
 }
 
 impl Object {
+    pub fn new(id: ObjectId, name: String, mesh: Mesh) -> Object {
+        let bvh = Bvh::build(&mesh);
+        let topology = Topology::build(&mesh);
+        let mask = vec![0.0; mesh.vertex_count()];
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1 }
+    }
+
     pub fn rebuild(&mut self) {
         self.bvh = Bvh::build(&self.mesh);
+        self.topology = Topology::build(&self.mesh);
+        self.mask.resize(self.mesh.vertex_count(), 0.0);
         self.revision += 1;
+    }
+
+    pub fn mask_bytes(&self) -> Vec<u8> {
+        self.mask.iter().flat_map(|m| m.to_le_bytes()).collect()
     }
 }
 
@@ -31,10 +47,20 @@ impl Scene {
     pub fn add(&mut self, name: impl Into<String>, mesh: Mesh) -> ObjectId {
         self.next_id += 1;
         let id = self.next_id;
-        let bvh = Bvh::build(&mesh);
-        self.objects.push(Object { id, name: name.into(), mesh, bvh, visible: true, revision: 1 });
+        self.objects.push(Object::new(id, name.into(), mesh));
         self.active = Some(id);
         id
+    }
+
+    pub fn insert(&mut self, at: usize, object: Object) {
+        self.next_id = self.next_id.max(object.id);
+        let id = object.id;
+        self.objects.insert(at.min(self.objects.len()), object);
+        self.active = Some(id);
+    }
+
+    pub fn index_of(&self, id: ObjectId) -> Option<usize> {
+        self.objects.iter().position(|o| o.id == id)
     }
 
     pub fn get(&self, id: ObjectId) -> Option<&Object> {

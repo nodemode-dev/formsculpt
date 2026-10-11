@@ -38,6 +38,8 @@ name = "fsc-commands"
 version = "0.2.0"
 dependencies = [
  "fsc-core",
+ "fsc-sculpt",
+ "glam",
  "serde",
  "serde_json",
 ]
@@ -70,6 +72,8 @@ version = "0.2.0"
 dependencies = [
  "fsc-commands",
  "fsc-core",
+ "fsc-sculpt",
+ "glam",
  "pyo3",
  "serde_json",
 ]
@@ -79,6 +83,7 @@ name = "fsc-sculpt"
 version = "0.2.0"
 dependencies = [
  "fsc-core",
+ "glam",
 ]
 
 [[package]]

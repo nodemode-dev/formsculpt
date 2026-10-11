@@ -1,6 +1,7 @@
 use fsc_core::{Object, Primitive};
 use serde_json::{json, Value};
 
+use crate::history::Edit;
 use crate::{CommandError, Session};
 
 pub(crate) fn summary(o: &Object) -> Value {
@@ -25,7 +26,12 @@ pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandErro
 
 pub(crate) fn new_scene(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
     let removed = s.scene.objects.len();
-    s.scene.clear();
+    if removed > 0 {
+        let active = s.scene.active;
+        let parked = std::mem::take(&mut s.scene.objects);
+        s.scene.active = None;
+        s.history.push(Edit::Clear { parked, active });
+    }
     Ok(json!({"removed": removed}))
 }
 
@@ -114,6 +120,8 @@ pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, Comm
     });
     let name = s.scene.unique_name(&base);
     let id = s.scene.add(name, mesh);
+    let index = s.scene.index_of(id).expect("just added");
+    s.history.push(Edit::Add { id, index, parked: None });
     Ok(json!({"object": summary(s.scene.get(id).expect("just added")), "active": id}))
 }
 
@@ -135,6 +143,9 @@ pub(crate) fn select_object(s: &mut Session, args: &Value) -> Result<Value, Comm
 
 pub(crate) fn delete_object(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = object_id(args)?;
-    let removed = s.scene.remove(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")))?;
-    Ok(json!({"removed": removed.id, "name": removed.name, "active": s.scene.active}))
+    let index = s.scene.index_of(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")))?;
+    let removed = s.scene.remove(id).expect("found above");
+    let reply = json!({"removed": removed.id, "name": removed.name, "active": s.scene.active});
+    s.history.push(Edit::Delete { id, index, parked: Some(removed) });
+    Ok(reply)
 }

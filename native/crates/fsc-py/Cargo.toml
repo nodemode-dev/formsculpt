@@ -14,5 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 fsc-core.workspace = true
 fsc-commands.workspace = true
+fsc-sculpt.workspace = true
+glam = "0.34"
 serde_json.workspace = true
 pyo3 = { version = "0.29", features = ["extension-module", "abi3-py312"] }
