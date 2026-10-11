@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.13.0 · 2026-10-11
+
+### Added
+
+- `sculpt_stroke`: `falloff_curve` (a drawn brush profile from centre to rim), `stroke: "spray"` with `spray` (seeded scatter, random turn and strength per dab), `pressure_gamma`, `pressure_strength` and `pressure_size`.
+- Window: a falloff curve editor with the Falloff presets, Pressure curve, Pressure strength and Pressure size, a Spray stroke, a Drag dot tool, and the Curve stroke tool (draw on the surface, drag handles, Apply curve with the last brush as often as needed, Clear curve).
+
+### Changed
+
+- Drag stamp now uses the last sculpting brush and all Brush settings, not always Draw.
+
 ## 0.12.0 · 2026-10-11
 
 ### Added
