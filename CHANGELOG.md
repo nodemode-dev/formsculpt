@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.4.0 · 2026-10-11
+
+### Added
+
+- Topology in `fsc-topo`: Loop subdivision, voxel remesh (narrow-band distance field, pseudo-normal signs, surface nets), quadric decimation, hole filling and edge utilities.
+- Dynamic topology for strokes (`dyntopo` on `sculpt_stroke` and in the Brush panel): edges under the brush split to the detail size, with curved midpoints and tangential relaxation.
+- Commands `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check` (18 in all), each topology change one undo step.
+- The Topology panel section, and live mesh refetch during dyntopo strokes.
+
 ## 0.3.0 · 2026-10-11
 
 ### Added
