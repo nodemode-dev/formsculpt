@@ -55,6 +55,7 @@ interface Shell {
   layerButtons: HTMLButtonElement[];
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
+  quadTarget: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
 }
 
@@ -77,6 +78,7 @@ const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['remesh_voxel', 'Voxel remesh', {}],
   ['decimate', 'Decimate 50%', { ratio: 0.5 }],
   ['fill_holes', 'Fill holes', {}],
+  ['quad_remesh', 'Quad remesh', {}],
 ];
 
 const MULTIRES: [string, string, Record<string, unknown>][] = [
@@ -107,6 +109,7 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['bend', 'Bend'],
   ['twist', 'Twist'],
   ['taper', 'Taper'],
+  ['project', 'Project from'],
 ];
 
 const LAYER_ACTIONS: [string, string][] = [
@@ -121,6 +124,9 @@ const ACTIONS: [string, string][] = [
   ['mask_invert', 'Invert mask'],
   ['mask_blur', 'Blur mask'],
   ['mask_sharpen', 'Sharpen mask'],
+  ['extract_mask', 'Extract mask'],
+  ['extrude_mask', 'Extrude mask'],
+  ['inset_mask', 'Inset mask'],
   ['mask_clear', 'Clear mask'],
 ];
 
@@ -291,7 +297,8 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(topoGrid);
   const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Voxel resolution' });
   const topoFields = el('div', 'fields');
-  topoFields.append(field('Voxel resolution', resolution));
+  const quadTarget = input('number', { min: '100', max: '400000', value: '4000', 'aria-label': 'Target quads' });
+  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -382,7 +389,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
 }
 
 class SceneView {
@@ -414,6 +421,7 @@ class SceneView {
       b.addEventListener('click', () => {
         const args = JSON.parse(b.dataset.args ?? '{}') as Record<string, unknown>;
         if (b.dataset.action === 'remesh_voxel') args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
+        if (b.dataset.action === 'quad_remesh') args.faces = Math.max(100, Math.min(400000, Number(shell.quadTarget.value) || 4000));
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
     );
@@ -593,6 +601,11 @@ class SceneView {
       const b = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
       if (b === null) this.note('Select the object to combine with first, then the one to keep');
       else void this.run('boolean', { a: id, b, op: action, resolution: res });
+    } else if (action === 'project') {
+      const others = this.scene.objects.map((o) => o.id).filter((x) => x !== id);
+      const source = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
+      if (source === null) this.note('Select the object to take detail from first, then the one to project onto');
+      else void this.run('project_detail', { id, source_id: source });
     } else if (action === 'taper') void this.run('deform_object', { id, kind: 'taper', axis, amount: Math.max(-2, Math.min(2, angle / 100)) });
     else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
   }
