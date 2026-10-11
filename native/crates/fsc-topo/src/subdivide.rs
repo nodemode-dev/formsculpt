@@ -66,5 +66,13 @@ pub fn loop_subdivide(mesh: &Mesh, smooth: bool) -> Subdivided {
         let (ab, bc, ca) = (mid[&key(a, b)], mid[&key(b, c)], mid[&key(c, a)]);
         indices.extend_from_slice(&[a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca]);
     }
-    Subdivided { mesh: Mesh::new(positions, indices), parents, stencil }
+    let mut out = Mesh::new(positions, indices);
+    // Each parent triangle became four consecutive children, so face groups and hidden flags carry over exactly.
+    if mesh.has_groups() {
+        out.groups = mesh.groups.iter().flat_map(|&g| [g; 4]).collect();
+    }
+    if mesh.has_hidden() {
+        out.hidden = mesh.hidden.iter().flat_map(|&h| [h; 4]).collect();
+    }
+    Subdivided { mesh: out, parents, stencil }
 }

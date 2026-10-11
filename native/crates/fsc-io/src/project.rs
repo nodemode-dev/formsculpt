@@ -40,6 +40,12 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             let flat: Vec<f32> = o.mesh.uvs.iter().flatten().copied().collect();
             entry["uvs"] = json!(w.put(&format!("{dir}/uvs.f32"), &f32s(&flat))?);
         }
+        if o.mesh.has_groups() {
+            entry["groups"] = json!(w.put(&format!("{dir}/groups.u32"), &o.mesh.groups_bytes())?);
+        }
+        if o.mesh.has_hidden() {
+            entry["hidden"] = json!(w.put(&format!("{dir}/hidden.u8"), &o.mesh.hidden_bytes())?);
+        }
         if let Some(m) = &o.maps {
             entry["maps"] = json!({
                 "size": m.size,
@@ -154,6 +160,20 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 return Err("a UV buffer does not match its mesh".into());
             }
             mesh.uvs = flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
+        }
+        if e["groups"].is_string() {
+            let groups = r.u32(&e["groups"])?;
+            if groups.len() != mesh.triangle_count() {
+                return Err("a face group buffer does not match its mesh".into());
+            }
+            mesh.groups = groups;
+        }
+        if e["hidden"].is_string() {
+            let hidden = r.raw(&e["hidden"])?;
+            if hidden.len() != mesh.triangle_count() {
+                return Err("a hidden-face buffer does not match its mesh".into());
+            }
+            mesh.hidden = hidden.into_iter().map(|b| b != 0).collect();
         }
         let maps = match e.get("maps").filter(|m| m.is_object()) {
             Some(m) => Some(fsc_core::Maps {

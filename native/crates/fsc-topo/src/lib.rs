@@ -20,7 +20,7 @@ pub use dyntopo::{collapse_sphere, compact, refine_sphere};
 pub use edges::{boundary_edges, edge_faces, Edge};
 pub use holes::fill_holes;
 pub use manifold::split_nonmanifold;
-pub use nearest::{closest_on_triangle, nearest_point};
+pub use nearest::{closest_on_triangle, nearest_feature, nearest_point};
 pub use quad::{quad_remesh, QuadRemesh};
 pub use reconstruct::{reconstruct_lower, Reconstructed};
 pub use region::{extract_shell, extrude_region, project_onto, region_faces};

@@ -158,6 +158,8 @@ impl Bvh {
         let mut best: Option<Hit> = None;
         let mut t_max = f32::INFINITY;
         let mut stack = vec![0usize];
+        // Hidden faces are not there for the ray: brushes, picking and the stroke start pass through them.
+        let skip_hidden = mesh.has_hidden();
         while let Some(ni) = stack.pop() {
             let node = &self.nodes[ni];
             if node.bounds.ray_entry(origin, inv, t_max).is_none() {
@@ -165,6 +167,9 @@ impl Bvh {
             }
             if Bvh::is_leaf(node) {
                 for &t in &self.tris[node.first as usize..(node.first + node.count) as usize] {
+                    if skip_hidden && mesh.hidden[t as usize] {
+                        continue;
+                    }
                     let [a, b, c] = mesh.triangle(t as usize);
                     if let Some((d, u, v)) = intersect(origin, dir, mesh.position(a), mesh.position(b), mesh.position(c)) {
                         if d < t_max {

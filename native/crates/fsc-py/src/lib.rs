@@ -75,6 +75,13 @@ impl Engine {
         }))
     }
 
+    /// Face groups (u32 per triangle) and hidden flags (u8 per triangle); each empty when the object has none.
+    fn faces<'py>(&self, py: Python<'py>, id: u32) -> PyResult<(Bound<'py, PyBytes>, Bound<'py, PyBytes>)> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;
+        Ok((PyBytes::new(py, &object.mesh.groups_bytes()), PyBytes::new(py, &object.mesh.hidden_bytes())))
+    }
+
     fn mesh<'py>(&self, py: Python<'py>, id: u32) -> PyResult<MeshBuffers<'py>> {
         let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;

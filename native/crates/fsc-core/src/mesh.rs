@@ -57,6 +57,11 @@ pub struct Mesh {
     pub paint: Vec<Paint>,
     pub uvs: Vec<[f32; 2]>,
     pub quads: bool,
+    /// Face group per triangle (empty: none). Valid only while its length matches the triangle count; anything that
+    /// changes the triangles in place without carrying it leaves it stale, and every reader then treats it as absent.
+    pub groups: Vec<u32>,
+    /// Hidden flag per triangle (empty: none), under the same rule as `groups`.
+    pub hidden: Vec<bool>,
 }
 
 pub type Paint = [f32; 5];
@@ -73,7 +78,7 @@ pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
 
 impl Mesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
-        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new(), quads: false };
+        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new(), quads: false, groups: Vec::new(), hidden: Vec::new() };
         mesh.recompute_normals();
         mesh
     }
@@ -104,6 +109,42 @@ impl Mesh {
 
     pub fn has_paint(&self) -> bool {
         !self.paint.is_empty()
+    }
+
+    pub fn has_groups(&self) -> bool {
+        !self.groups.is_empty() && self.groups.len() == self.triangle_count()
+    }
+
+    pub fn has_hidden(&self) -> bool {
+        self.hidden.len() == self.triangle_count() && self.hidden.iter().any(|&h| h)
+    }
+
+    pub fn face_hidden(&self, t: usize) -> bool {
+        self.hidden.len() == self.triangle_count() && self.hidden[t]
+    }
+
+    /// Per vertex: true when every triangle around it is hidden (such vertices are held still, like a full mask).
+    pub fn hidden_vertices(&self) -> Vec<bool> {
+        let mut seen = vec![false; self.vertex_count()];
+        let mut shown = vec![false; self.vertex_count()];
+        for t in 0..self.triangle_count() {
+            let h = self.face_hidden(t);
+            for v in self.triangle(t) {
+                seen[v as usize] = true;
+                if !h {
+                    shown[v as usize] = true;
+                }
+            }
+        }
+        seen.iter().zip(&shown).map(|(&s, &v)| s && !v).collect()
+    }
+
+    pub fn groups_bytes(&self) -> Vec<u8> {
+        if self.has_groups() { self.groups.iter().flat_map(|g| g.to_le_bytes()).collect() } else { Vec::new() }
+    }
+
+    pub fn hidden_bytes(&self) -> Vec<u8> {
+        if self.has_hidden() { self.hidden.iter().map(|&h| h as u8).collect() } else { Vec::new() }
     }
 
     pub fn ensure_paint(&mut self) {

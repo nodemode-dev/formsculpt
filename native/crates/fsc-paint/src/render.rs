@@ -16,10 +16,24 @@ pub struct RenderObject<'a> {
 pub enum Shading {
     Matcap { key: f32, spec: f32, sharp: f32, rim: f32, tint: [f32; 3] },
     Pbr,
+    /// The clay matcap with each face group in its own colour (as the window's Face groups display).
+    Groups,
+}
+
+/// The window's group colours (groupColor in gl-renderer.ts): hues spaced by the golden ratio, as pastel HSL.
+pub fn group_color(g: u32) -> Vec3 {
+    let h = (g as f32 * 0.618_034) % 1.0;
+    let (s, l) = (0.45f32, 0.66f32);
+    let a = s * l.min(1.0 - l);
+    let f = |n: f32| {
+        let k = (n + h * 12.0) % 12.0;
+        l - a * (k - 3.0).min(9.0 - k).clamp(-1.0, 1.0)
+    };
+    Vec3::new(f(0.0), f(8.0), f(4.0))
 }
 
 impl Shading {
-    pub const NAMES: [&'static str; 6] = ["clay", "wax", "pearl", "bronze", "gray", "pbr"];
+    pub const NAMES: [&'static str; 7] = ["clay", "wax", "pearl", "bronze", "gray", "pbr", "groups"];
 
     /// The window's presets, so an agent sees what the person sees.
     pub fn named(name: &str) -> Option<Self> {
@@ -31,6 +45,7 @@ impl Shading {
             "bronze" => m(0.45, 0.9, 14.0, 0.25, [0.85, 0.6, 0.38]),
             "gray" => m(0.8, 0.25, 4.0, 0.2, [0.78, 0.78, 0.82]),
             "pbr" => Some(Shading::Pbr),
+            "groups" => Some(Shading::Groups),
             _ => None,
         }
     }
@@ -117,7 +132,11 @@ const EMPTY: Sample = Sample { depth: f32::INFINITY, object: u32::MAX, triangle:
 fn raster_band(band: &mut [Sample], y0: usize, w: usize, projected: &[Vec<[f32; 3]>], objects: &[RenderObject]) {
     let y1 = y0 + band.len() / w;
     for (oi, (o, pts)) in objects.iter().zip(projected).enumerate() {
+        let hid = o.mesh.has_hidden();
         for (ti, t) in o.mesh.indices.chunks_exact(3).enumerate() {
+            if hid && o.mesh.hidden[ti] {
+                continue;
+            }
             let (a, b, c) = (pts[t[0] as usize], pts[t[1] as usize], pts[t[2] as usize]);
             let area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
             if area.abs() < 1e-12 {
@@ -159,7 +178,7 @@ fn raster_band(band: &mut [Sample], y0: usize, w: usize, projected: &[Vec<[f32; 
     }
 }
 
-fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading: Shading) -> Option<Vec3> {
+fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading_in: Shading) -> Option<Vec3> {
     if s.object == u32::MAX {
         return None;
     }
@@ -187,7 +206,13 @@ fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading: Shading) -
         n = -n;
     }
     let painted = !o.mesh.paint.is_empty();
-    let albedo = if painted {
+    let shading = match shading_in {
+        Shading::Groups => Shading::named("clay").expect("clay exists"),
+        other => other,
+    };
+    let albedo = if matches!(shading_in, Shading::Groups) && o.mesh.has_groups() {
+        group_color(o.mesh.groups[s.triangle as usize])
+    } else if painted {
         Vec3::new(paint[0], paint[1], paint[2])
     } else if o.active {
         Vec3::new(0.86, 0.74, 0.66)
@@ -209,7 +234,8 @@ fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading: Shading) -
             let c = base * (0.18 + k * key + fill) * cavity + (Vec3::splat(rim) + sp * Vec3::ONE.lerp(tint, 0.6));
             c.max(Vec3::ZERO).powf(1.0 / 1.1)
         }
-        Shading::Pbr => {
+        // Groups was turned into the clay matcap above; it is listed only to keep the match exhaustive.
+        Shading::Pbr | Shading::Groups => {
             let rough = paint_or(painted, paint[3], 0.5).clamp(0.05, 1.0);
             let metal = paint_or(painted, paint[4], 0.0).clamp(0.0, 1.0);
             let mut c = light(n, v, KEY.normalize(), Vec3::new(2.6, 2.45, 2.25), albedo, rough, metal);

@@ -45,6 +45,15 @@ impl VertexEdit {
 
 type Captured = Vec<(u32, f32, Vec3)>;
 
+/// How free a vertex is to change: 1 minus its mask, and 0 when every face around it is hidden (hidden areas are held
+/// like a full mask). `hidden` is whether the mesh hides anything, checked once per dab.
+fn free(o: &Object, v: u32, hidden: bool) -> f32 {
+    if hidden && o.topology.faces_of(v).iter().all(|&t| o.mesh.hidden[t as usize]) {
+        return 0.0;
+    }
+    1.0 - o.mask[v as usize]
+}
+
 struct Grab {
     anchor: Vec3,
     plane_normal: Vec3,
@@ -221,6 +230,8 @@ impl Stroke {
         }
         if splits > 0 {
             object.mesh.uvs.clear();
+            object.mesh.groups.clear();
+            object.mesh.hidden.clear();
             object.mesh.quads = false;
             object.retopologize();
             let mut region = Vec::new();
@@ -261,10 +272,11 @@ impl Stroke {
         // The core follows the pointer fully at any strength: a partial move would leave the pulled area behind the
         // brush, out of reach of the next dab, and the hook would stall. Strength widens the pulled area instead.
         let soft = 1.5 - s.strength.clamp(0.0, 1.0);
+        let hid = object.mesh.has_hidden();
         for &v in &found {
             self.remember(object, v);
             let p = object.mesh.position(v);
-            let w = s.falloff.weight(p.distance(from) / s.radius).powf(soft).min(1.0) * (1.0 - object.mask[v as usize]);
+            let w = s.falloff.weight(p.distance(from) / s.radius).powf(soft).min(1.0) * free(object, v, hid);
             object.mesh.positions[v as usize] = (p + delta * w).to_array();
         }
         self.finish_dab(object, &found);
@@ -281,6 +293,7 @@ impl Stroke {
             return;
         }
         let sign = if s.invert { -1.0 } else { 1.0 };
+        let hid = object.mesh.has_hidden();
         let mut area_n = Vec3::ZERO;
         let mut area_c = Vec3::ZERO;
         let mut wsum = 0.0;
@@ -304,7 +317,7 @@ impl Stroke {
         if s.kind == BrushKind::Paint {
             object.mesh.ensure_paint();
             for (k, &v) in found.iter().enumerate() {
-                let w = (weights[k] * amount).min(1.0) * (1.0 - object.mask[v as usize]);
+                let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
                 let cur = &mut object.mesh.paint[v as usize];
                 for (c, value) in cur.iter_mut().enumerate() {
                     let channel = if c < 3 { 0 } else { c - 2 };
@@ -315,6 +328,9 @@ impl Stroke {
             }
         } else if s.kind == BrushKind::Mask {
             for (k, &v) in found.iter().enumerate() {
+                if hid && free(object, v, hid) == 0.0 && object.mask[v as usize] < 1.0 {
+                    continue;
+                }
                 let m = &mut object.mask[v as usize];
                 *m = (*m + weights[k] * amount * sign).clamp(0.0, 1.0);
             }
@@ -341,7 +357,7 @@ impl Stroke {
                 })
                 .collect();
             for (k, &v) in found.iter().enumerate() {
-                let w = (weights[k] * amount).min(1.0) * (1.0 - object.mask[v as usize]);
+                let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
                 let p = object.mesh.position(v);
                 object.mesh.positions[v as usize] = p.lerp(targets[k], w * 0.6).to_array();
             }
@@ -349,7 +365,7 @@ impl Stroke {
             let (plane_c, plane_n) = *self.planes[copy].get_or_insert((area_c, area_n));
             let noise_scale = if s.noise_scale > 0.0 { s.noise_scale } else { r * 0.2 };
             for (k, &v) in found.iter().enumerate() {
-                let w = weights[k] * amount * (1.0 - object.mask[v as usize]);
+                let w = weights[k] * amount * free(object, v, hid);
                 if w <= 0.0 {
                     continue;
                 }
@@ -411,6 +427,7 @@ impl Stroke {
 
     fn begin_grab(&mut self, object: &mut Object, anchor: Vec3, plane_normal: Vec3) {
         let s = self.settings;
+        let hid = object.mesh.has_hidden();
         let mut copies = Vec::new();
         for m in self.transforms.clone() {
             let c = m * anchor;
@@ -420,7 +437,7 @@ impl Stroke {
                 .iter()
                 .map(|&v| {
                     let p = object.mesh.position(v);
-                    let w = s.falloff.weight(p.distance(c) / s.radius) * (1.0 - object.mask[v as usize]);
+                    let w = s.falloff.weight(p.distance(c) / s.radius) * free(object, v, hid);
                     (v, w, p)
                 })
                 .collect();

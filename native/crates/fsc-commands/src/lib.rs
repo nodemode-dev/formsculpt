@@ -2,12 +2,14 @@ mod arrange_cmds;
 mod bake_cmds;
 mod build_cmds;
 mod file_cmds;
+mod group_cmds;
 mod history;
 mod layer_cmds;
 mod mask_cmds;
 mod model_cmds;
 mod multires_cmds;
 mod object_cmds;
+mod place_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
 mod topo_cmds;
@@ -412,6 +414,61 @@ pub static COMMANDS: &[Command] = &[
         run: mask_cmds::mask_shape,
     },
     Command {
+        id: "group.from_mask",
+        mcp: "group_from_mask",
+        group: Group::Group,
+        label: "Group from Mask",
+        description: "Make the masked faces a new face group. Face groups divide a mesh into named regions (a head's eyes, lips and ears; a robot's panels) to mask, hide or isolate in one step. Groups survive strokes, masks and subdivision levels; remesh, booleans and dynamic topology drop them. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::from_mask_schema,
+        run: group_cmds::group_from_mask,
+    },
+    Command {
+        id: "group.auto",
+        mcp: "group_auto",
+        group: Group::Group,
+        label: "Auto Groups",
+        description: "Replace an object's face groups with automatic ones: by angle (a new group wherever neighbouring faces turn by more than the angle, so a cube gets six) or by parts (each loose piece its own group). One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::auto_schema,
+        run: group_cmds::group_auto,
+    },
+    Command {
+        id: "group.clear",
+        mcp: "group_clear",
+        group: Group::Group,
+        label: "Clear Groups",
+        description: "Remove an object's face groups. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::clear_schema,
+        run: group_cmds::group_clear,
+    },
+    Command {
+        id: "mask.group",
+        mcp: "mask_by_group",
+        group: Group::Mask,
+        label: "Mask by Group",
+        description: "Mask one face group, named by number or by a point on it (get_scene reports how many groups an object has). Combines with the current mask by op. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::mask_group_schema,
+        run: group_cmds::mask_by_group,
+    },
+    Command {
+        id: "group.hide",
+        mcp: "hide_faces",
+        group: Group::Group,
+        label: "Hide Faces",
+        description: "Hide, show or isolate faces chosen by face group or by the mask, invert what is hidden, or show all. Hidden faces are not drawn, cannot be hit by a stroke or a pick, and the vertices inside them do not move, so you can work on what is behind them. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::hide_schema,
+        run: group_cmds::hide_faces,
+    },
+    Command {
         id: "topo.subdivide",
         mcp: "subdivide",
         group: Group::Topo,
@@ -641,6 +698,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::id_opt_schema,
         run: object_cmds::split,
+    },
+    Command {
+        id: "object.array",
+        mcp: "array_object",
+        group: Group::Object,
+        label: "Array",
+        description: "Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them.",
+        keys: &[],
+        hints: WRITE,
+        schema: place_cmds::array_schema,
+        run: place_cmds::array_object,
+    },
+    Command {
+        id: "object.insert",
+        mcp: "insert_mesh",
+        group: Group::Object,
+        label: "Insert Mesh",
+        description: "Place a primitive, or a copy of another object, at a point on a surface, standing along the normal there and sunk in by a fraction of its height: eyes, horns, bolts, buttons. Use pick to get the point and normal under a view direction. The new object becomes active.",
+        keys: &[],
+        hints: WRITE,
+        schema: place_cmds::insert_schema,
+        run: place_cmds::insert_mesh,
     },
     Command {
         id: "object.boolean",
