@@ -58,6 +58,7 @@ pub struct Session {
     pub scene: Scene,
     pub history: History,
     pub stroke: Option<(fsc_core::ObjectId, fsc_sculpt::Stroke)>,
+    pub loads: u64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

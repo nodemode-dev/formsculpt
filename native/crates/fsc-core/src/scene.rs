@@ -85,6 +85,10 @@ impl Scene {
         self.active = Some(id);
     }
 
+    pub fn high_water(&self) -> ObjectId {
+        self.next_id
+    }
+
     pub fn reserve(&mut self, id: ObjectId) {
         self.next_id = self.next_id.max(id);
     }

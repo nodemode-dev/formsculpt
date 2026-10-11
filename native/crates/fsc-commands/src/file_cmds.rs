@@ -28,7 +28,12 @@ pub fn save_data(s: &Session) -> Result<Vec<u8>, CommandError> {
 }
 
 pub fn open_data(s: &mut Session, bytes: Vec<u8>) -> Result<Value, CommandError> {
-    let scene = fsc_io::open_project(bytes).map_err(|e| CommandError::new("bad_project", e))?;
+    let mut scene = fsc_io::open_project(bytes).map_err(|e| CommandError::new("bad_project", e))?;
+    s.loads += 1;
+    for o in scene.objects.iter_mut() {
+        o.revision = (s.loads << 20) | (o.revision & 0xF_FFFF);
+    }
+    scene.reserve(s.scene.high_water());
     s.stroke = None;
     s.scene = scene;
     s.history = History::default();
