@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.7.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.7.1) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -8,7 +8,7 @@ Generated from the engine's command registry (formsculptor 0.7.0) by `./formscul
 - Scene: `get_scene`, `new_scene`
 - Objects: `add_primitive`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
-- Painting: `paint_fill`, `paint_clear`
+- Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
@@ -100,6 +100,21 @@ Paint a whole object with a colour, roughness or metalness (only the channels gi
 Reset an object's paint to the default clay colour, roughness 0.5 and metalness 0.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## uv_unwrap
+
+Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is projected flat and the charts are packed into the unit square keeping their relative sizes. Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## bake_maps
+
+Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.
+
+- `id`: integer; range 1 to inf; The object to bake onto (it needs UVs from uv_unwrap); the active object when omitted.
+- `path`: string; A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into.
+- `size`: integer (256 | 512 | 1024 | 2048 | 4096); default 1024; Texture width and height in pixels.
+- `source_id`: integer; range 1 to inf; Bake detail from this object (a high-resolution sculpt) instead; by default the object's highest subdivision level, or the object itself.
 
 ## mask_invert
 

@@ -66,6 +66,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 1. Colour a whole object with `paint_fill` (`color` as #rrggbb or [r, g, b] from 0 to 1, and optionally `roughness` and `metalness`); mask first to keep areas as they are.
 2. Paint by hand with `sculpt_stroke` and `brush: "paint"` plus `color` (and `roughness` or `metalness` to paint those channels); the radius and points work as for sculpting. `paint_clear` returns to plain clay.
 3. Paint stays through subdivision levels, dyntopo, remesh, booleans and saving; export PLY, OBJ or GLB to keep the colours (GLB also gets the average roughness and metalness as its material).
+4. For a light game-ready model: sculpt detail on high subdivision levels, `multires_set_level` to 0, `uv_unwrap`, `bake_maps` (size 1024 or 2048; `path` also writes PNG and EXR files), then `export_mesh` to .glb, which carries UVs, tangents and the colour, roughness-metal and normal maps. To bake from a separate high-resolution object onto a simpler one, give `source_id`.
 
 ## Workflow 6: files and printing
 
