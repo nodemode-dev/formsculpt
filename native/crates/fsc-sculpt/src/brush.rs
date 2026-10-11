@@ -17,13 +17,14 @@ pub enum BrushKind {
     Trim,
     SnakeHook,
     Noise,
+    Smudge,
 }
 
 impl BrushKind {
-    pub const NAMES: [&'static str; 15] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise"];
+    pub const NAMES: [&'static str; 16] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise", "smudge"];
 
     pub fn moves_vertices(&self) -> bool {
-        !matches!(self, BrushKind::Mask | BrushKind::Paint)
+        !matches!(self, BrushKind::Mask | BrushKind::Paint | BrushKind::Smudge)
     }
 
     pub fn parse(name: &str) -> Option<BrushKind> {
@@ -43,6 +44,7 @@ impl BrushKind {
             "trim" => BrushKind::Trim,
             "snake_hook" => BrushKind::SnakeHook,
             "noise" => BrushKind::Noise,
+            "smudge" => BrushKind::Smudge,
             _ => return None,
         })
     }
@@ -96,6 +98,11 @@ pub struct BrushSettings {
     pub paint_channels: [bool; 3],
     /// Noise brush: feature size in world units (0 means a fifth of the radius).
     pub noise_scale: f32,
+    /// Alpha orientation: the world direction the alpha's top points toward (the view's up in the window), turned by
+    /// `alpha_angle` radians; with `roll` the alpha's top follows the stroke's direction instead.
+    pub alpha_up: [f32; 3],
+    pub alpha_angle: f32,
+    pub roll: bool,
 }
 
 impl Default for BrushSettings {
@@ -114,6 +121,9 @@ impl Default for BrushSettings {
             paint: [0.8, 0.2, 0.2, 0.5, 0.0],
             paint_channels: [true, false, false],
             noise_scale: 0.0,
+            alpha_up: [0.0, 1.0, 0.0],
+            alpha_angle: 0.0,
+            roll: false,
         }
     }
 }

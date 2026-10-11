@@ -2,6 +2,28 @@ pub fn png_rgba(size: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
     png_rgba_rect(size, size, pixels)
 }
 
+/// Decodes a PNG to 8-bit gray (the mean of RGB; alpha ignored), for brush alphas.
+pub fn png_gray(bytes: &[u8]) -> Result<(usize, usize, Vec<u8>), String> {
+    let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
+    dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+    let mut reader = dec.read_info().map_err(|e| format!("not a readable PNG: {e}"))?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).map_err(|e| format!("not a readable PNG: {e}"))?;
+    let (w, h) = (info.width as usize, info.height as usize);
+    if w * h > 4096 * 4096 {
+        return Err("the alpha image is larger than 4096 by 4096".into());
+    }
+    let channels = info.color_type.samples();
+    let gray = buf[..info.buffer_size()]
+        .chunks_exact(channels)
+        .map(|px| match channels {
+            1 | 2 => px[0],
+            _ => ((px[0] as u32 + px[1] as u32 + px[2] as u32) / 3) as u8,
+        })
+        .collect();
+    Ok((w, h, gray))
+}
+
 /// An animated PNG (APNG) of equal-sized RGBA frames, looping forever at `fps`; browsers play it like a GIF but in
 /// full colour with alpha.
 pub fn apng_rgba(width: usize, height: usize, frames: &[Vec<[u8; 4]>], fps: u16) -> Result<Vec<u8>, String> {

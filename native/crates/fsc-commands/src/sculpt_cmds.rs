@@ -68,7 +68,41 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         paint,
         paint_channels,
         noise_scale: f(args, "noise_scale", 0.0, 0.0, 1e4)?,
+        alpha_up: match args.get("alpha_up").and_then(Value::as_array) {
+            Some(a) if a.len() == 3 => {
+                let v: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+                if v.iter().any(|x| !x.is_finite()) || v.iter().all(|x| *x == 0.0) {
+                    return Err(bad("alpha_up must be a non-zero [x, y, z]"));
+                }
+                [v[0], v[1], v[2]]
+            }
+            Some(_) => return Err(bad("alpha_up is [x, y, z]")),
+            None => [0.0, 1.0, 0.0],
+        },
+        alpha_angle: f(args, "alpha_angle", 0.0, -360.0, 360.0)?.to_radians(),
+        roll: match args.get("stroke").and_then(Value::as_str).unwrap_or("dots") {
+            "dots" => false,
+            "roll" => true,
+            other => return Err(bad(format!("unknown stroke {other}; use dots or roll"))),
+        },
     })
+}
+
+/// The alpha a stroke names: a built-in pattern or one loaded with alpha_load. None for "none" or when omitted.
+pub fn stroke_alpha(s: &Session, args: &Value) -> Result<Option<std::sync::Arc<fsc_sculpt::Alpha>>, CommandError> {
+    match args.get("alpha").and_then(Value::as_str) {
+        None | Some("none") | Some("") => Ok(None),
+        Some(name) => {
+            if let Some(a) = s.alphas.get(name) {
+                return Ok(Some(a.clone()));
+            }
+            fsc_sculpt::Alpha::builtin(name).map(|a| Some(std::sync::Arc::new(a))).ok_or_else(|| {
+                let mut known: Vec<&str> = fsc_sculpt::Alpha::BUILTIN.to_vec();
+                known.extend(s.alphas.keys().map(String::as_str));
+                bad(format!("unknown alpha {name}; use none or one of {}", known.join(", ")))
+            })
+        }
+    }
 }
 
 pub(crate) fn parse_color(v: Option<&Value>) -> Result<Option<[f32; 3]>, CommandError> {
@@ -193,6 +227,10 @@ pub(crate) fn brush_props() -> Value {
     json!({
         "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale."},
         "noise_scale": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Noise brush: feature size in world units; a fifth of the radius when 0."},
+        "alpha": {"type": "string", "description": "A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp."},
+        "alpha_angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "Turns the alpha, in degrees."},
+        "alpha_up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up."},
+        "stroke": {"type": "string", "enum": ["dots", "roll"], "default": "dots", "description": "dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line)."},
         "color": {"type": ["string", "array"], "description": "Paint brush: #rrggbb or [r, g, b] from 0 to 1."},
         "roughness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this roughness (only the channels given are painted)."},
         "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},
@@ -230,6 +268,7 @@ pub(crate) fn target(s: &Session, args: &Value) -> Result<ObjectId, CommandError
 pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let settings = parse_brush(args)?;
+    let alpha = stroke_alpha(s, args)?;
     let points = args.get("points").and_then(Value::as_array).ok_or_else(|| bad("points is required"))?;
     let mut parsed = Vec::with_capacity(points.len());
     for p in points {
@@ -246,6 +285,7 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         return Err(CommandError::new("has_layers", "dynamic topology cannot run on an object with sculpt layers; sculpt without dyntopo, or layer_apply or layer_delete them first"));
     }
     let mut stroke = Stroke::new(settings);
+    stroke.set_alpha(alpha);
     if settings.kind == BrushKind::Grab {
         let (first, _) = parsed[0];
         let (last, pressure) = *parsed.last().expect("non-empty");
@@ -360,4 +400,34 @@ pub(crate) fn redo(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
     let done = s.history.redo(&mut s.scene).map_err(|e| CommandError::new("history", e))?;
     let (u, r) = s.history.depth();
     Ok(json!({"redone": done, "undo_depth": u, "redo_depth": r}))
+}
+
+pub(crate) fn alpha_load_schema() -> Value {
+    json!({"type": "object", "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 64, "description": "The name brushes use for it in their alpha setting; loading the same name again replaces it."},
+        "png_base64": {"type": "string", "description": "The alpha as a base64 PNG; white stamps fully, black not at all (colour is averaged to gray)."},
+        "path": {"type": "string", "description": "A PNG file on the engine's machine, instead of png_base64."},
+        "size": {"type": "integer", "minimum": 16, "maximum": 1024, "description": "The square resolution the alpha is resampled to (256 by default)."}
+    }, "required": ["name"], "additionalProperties": false})
+}
+
+/// Loads a gray PNG as a named brush alpha for sculpt_stroke and the window's strokes.
+pub(crate) fn alpha_load(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    use base64::Engine as _;
+    let name = args.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad("name is required"))?;
+    if name == "none" || fsc_sculpt::Alpha::BUILTIN.contains(&name) {
+        return Err(bad(format!("{name} is a built-in alpha; choose another name")));
+    }
+    let bytes = match (args.get("png_base64").and_then(Value::as_str), args.get("path").and_then(Value::as_str)) {
+        (Some(b), None) => base64::engine::general_purpose::STANDARD.decode(b.trim()).map_err(|e| bad(format!("png_base64 is not base64: {e}")))?,
+        (None, Some(p)) => std::fs::read(p).map_err(|e| CommandError::new("read_failed", format!("could not read {p}: {e}")))?,
+        _ => return Err(bad("give exactly one of png_base64 or path")),
+    };
+    let size = args.get("size").and_then(Value::as_u64).unwrap_or(256).clamp(16, 1024) as usize;
+    let (w, h, gray) = fsc_paint::png_gray(&bytes).map_err(bad)?;
+    let alpha = fsc_sculpt::Alpha::from_pixels(w, h, &gray, size).map_err(bad)?;
+    s.alphas.insert(name.to_string(), std::sync::Arc::new(alpha));
+    let mut loaded: Vec<&str> = s.alphas.keys().map(String::as_str).collect();
+    loaded.sort_unstable();
+    Ok(json!({"name": name, "source_width": w, "source_height": h, "size": size, "builtin": fsc_sculpt::Alpha::BUILTIN, "loaded": loaded}))
 }

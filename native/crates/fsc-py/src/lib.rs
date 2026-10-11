@@ -106,7 +106,10 @@ impl Engine {
             brush.dyntopo = None;
             brush.dyntopo_size = None;
         }
-        session.stroke = Some((id, Stroke::new(brush)));
+        let alpha = fsc_commands::stroke_alpha(&session, &parsed).map_err(|e| PyValueError::new_err(e.message))?;
+        let mut stroke = Stroke::new(brush);
+        stroke.set_alpha(alpha);
+        session.stroke = Some((id, stroke));
         Ok(())
     }
 

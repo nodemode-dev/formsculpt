@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use fsc_core::{Mesh, Object, Paint};
 use glam::{Mat3, Vec3};
 
+use crate::alpha::Alpha;
 use crate::brush::{BrushKind, BrushSettings};
 
 #[derive(Debug, Clone, Default)]
@@ -76,6 +77,11 @@ pub struct Stroke {
     planes: Vec<Option<(Vec3, Vec3)>>,
     /// Snake hook: the previous dab centre, before symmetry.
     snake_prev: Option<Vec3>,
+    /// The brush alpha, if any, and the previous dab centre per symmetry copy (roll turns the alpha along the stroke).
+    alpha: Option<std::sync::Arc<Alpha>>,
+    prev_dab: Vec<Option<Vec3>>,
+    /// Smudge: the colour carried from the previous dab.
+    smudge: Option<Vec3>,
     pub dabs: u32,
 }
 
@@ -97,6 +103,9 @@ impl Stroke {
         let planes = vec![None; transforms.len()];
         Stroke {
             settings,
+            prev_dab: vec![None; transforms.len()],
+            alpha: None,
+            smudge: None,
             planes,
             snake_prev: None,
             transforms,
@@ -111,6 +120,11 @@ impl Stroke {
             topology_changed: false,
             dabs: 0,
         }
+    }
+
+    /// Shapes every dab by a grayscale alpha (multiplied with the falloff).
+    pub fn set_alpha(&mut self, alpha: Option<std::sync::Arc<Alpha>>) {
+        self.alpha = alpha;
     }
 
     pub fn sample_ray(&mut self, object: &mut Object, origin: Vec3, dir: Vec3, pressure: f32) -> bool {
@@ -211,7 +225,7 @@ impl Stroke {
     }
 
     fn refine(&mut self, object: &mut Object, centers: &[Vec3], frac: f32) {
-        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab | BrushKind::Paint) {
+        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab | BrushKind::Paint | BrushKind::Smudge) {
             return;
         }
         if self.snapshot.is_none() {
@@ -297,7 +311,7 @@ impl Stroke {
         let mut area_n = Vec3::ZERO;
         let mut area_c = Vec3::ZERO;
         let mut wsum = 0.0;
-        let weights: Vec<f32> = found
+        let mut weights: Vec<f32> = found
             .iter()
             .map(|&v| {
                 let p = object.mesh.position(v);
@@ -311,10 +325,52 @@ impl Stroke {
         let area_n = area_n.normalize_or(Vec3::Y);
         let area_c = if wsum > 0.0 { area_c / wsum } else { center };
         let amount = s.strength * pressure;
+        // The alpha lies in the plane of the area under the brush. Its top points along `alpha_up` (mirrored with the
+        // copy), or with roll along the stroke's direction since the previous dab, then turns by `alpha_angle`.
+        let prev = self.prev_dab[copy].replace(center);
+        if let Some(alpha) = &self.alpha {
+            let m = self.transforms[copy];
+            let up_ref = match (s.roll, prev) {
+                (true, Some(p)) if p.distance(center) > 1e-7 => center - p,
+                _ => m * Vec3::from(s.alpha_up),
+            };
+            let y_axis = (up_ref - area_n * up_ref.dot(area_n)).try_normalize().unwrap_or_else(|| area_n.any_orthonormal_vector());
+            let x_axis = y_axis.cross(area_n);
+            for (k, &v) in found.iter().enumerate() {
+                let d = object.mesh.position(v) - center;
+                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle);
+                weights[k] *= alpha.sample(x, y);
+            }
+        }
         for &v in &found {
             self.remember(object, v);
         }
-        if s.kind == BrushKind::Paint {
+        if s.kind == BrushKind::Smudge {
+            // Smudge carries the colour picked up under the previous dab into this one, then picks up a mix of what
+            // is here, so colours drag along the stroke.
+            object.mesh.ensure_paint();
+            let mut here = Vec3::ZERO;
+            let mut total = 0.0;
+            for (k, &v) in found.iter().enumerate() {
+                let c = object.mesh.paint[v as usize];
+                here += Vec3::new(c[0], c[1], c[2]) * weights[k];
+                total += weights[k];
+            }
+            let here = if total > 0.0 { here / total } else { Vec3::splat(0.8) };
+            if let Some(carried) = self.smudge {
+                for (k, &v) in found.iter().enumerate() {
+                    let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
+                    let c = &mut object.mesh.paint[v as usize];
+                    let mixed = Vec3::new(c[0], c[1], c[2]).lerp(carried, w);
+                    c[0] = mixed.x;
+                    c[1] = mixed.y;
+                    c[2] = mixed.z;
+                }
+                self.smudge = Some(carried.lerp(here, 0.35));
+            } else {
+                self.smudge = Some(here);
+            }
+        } else if s.kind == BrushKind::Paint {
             object.mesh.ensure_paint();
             for (k, &v) in found.iter().enumerate() {
                 let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
@@ -405,7 +461,7 @@ impl Stroke {
                         }
                     }
                     BrushKind::Noise => p + vn * (fbm(p / noise_scale) * w * r * 0.05 * sign),
-                    BrushKind::Smooth | BrushKind::Relax | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint | BrushKind::SnakeHook => p,
+                    BrushKind::Smooth | BrushKind::Relax | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint | BrushKind::SnakeHook | BrushKind::Smudge => p,
                 };
                 object.mesh.positions[v as usize] = moved.to_array();
             }

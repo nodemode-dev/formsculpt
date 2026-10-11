@@ -1,7 +1,9 @@
+mod alpha;
 mod brush;
 mod stroke;
 mod symmetry;
 
+pub use alpha::{turn, Alpha};
 pub use brush::{BrushKind, BrushSettings, Falloff};
 pub use stroke::{fbm, value_noise, Stroke, StrokeEdit, VertexEdit};
 pub use symmetry::Symmetry;

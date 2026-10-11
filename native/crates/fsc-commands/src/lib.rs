@@ -17,7 +17,7 @@ mod view_cmds;
 
 pub use history::{Edit, History};
 pub use file_cmds::{export_data, import_data, open_data, save_data};
-pub use sculpt_cmds::{parse_brush, push_stroke};
+pub use sculpt_cmds::{parse_brush, push_stroke, stroke_alpha};
 
 use fsc_core::Scene;
 use serde::Serialize;
@@ -67,6 +67,8 @@ pub struct Session {
     pub history: History,
     pub stroke: Option<(fsc_core::ObjectId, fsc_sculpt::Stroke)>,
     pub loads: u64,
+    /// Brush alphas loaded by name with alpha_load (the built-in ones are generated on demand).
+    pub alphas: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Alpha>>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -286,11 +288,22 @@ pub static COMMANDS: &[Command] = &[
         mcp: "sculpt_stroke",
         group: Group::Sculpt,
         label: "Sculpt Stroke",
-        description: "Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.",
+        description: "Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush); also relax, planar, trim, snake_hook, noise, paint and smudge (drag the paint colour along the stroke). alpha shapes every dab with a gray stamp (a built-in or one from alpha_load), turned by alpha_angle; stroke dots keeps the stamp upright (alpha_up), roll turns it along the stroke, and a single point stamps it once. invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.",
         keys: &[],
         hints: WRITE,
         schema: sculpt_cmds::stroke_schema,
         run: sculpt_cmds::sculpt_stroke,
+    },
+    Command {
+        id: "sculpt.alpha_load",
+        mcp: "alpha_load",
+        group: Group::Sculpt,
+        label: "Load Alpha",
+        description: "Load a gray PNG as a named brush alpha: white stamps fully and black not at all. Give its name as alpha to sculpt_stroke (or pick it in the window's Brush section) to shape every dab with it, beside the built-in alphas square, noise, cracks, rings, star, stripes and dots. Alphas last for the engine session.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::alpha_load_schema,
+        run: sculpt_cmds::alpha_load,
     },
     Command {
         id: "paint.fill",
