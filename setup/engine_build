@@ -3,5 +3,16 @@ set -e
 source "$(dirname "$0")/lib.sh"
 command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
 cd "$FSC_ROOT/native"
-cargo build --workspace --release "$@"
+cargo build --workspace --release --exclude fsc-py "$@"
 fs_say "engine built in native/target/release"
+if [ -f "$FSC_ROOT/backend/venv/bin/activate" ]; then
+  fs_venv
+  command -v maturin >/dev/null 2>&1 || pip install maturin
+  ( cd "$FSC_ROOT/native/crates/fsc-py" && CARGO_TARGET_DIR="$FSC_ROOT/native/target" maturin develop --release )
+  python -c "import fsc_engine; print('[formsculptor] python engine module', fsc_engine.version())"
+else
+  fs_say "backend venv missing; the python engine module was not built (run ./formsculptor install)"
+fi
+if rustup target list --installed 2>/dev/null | grep -q wasm32-unknown-unknown; then
+  fs_say "wasm32 target present; the browser engine build arrives with fsc-wasm"
+fi

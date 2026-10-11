@@ -7,6 +7,7 @@ members = [
     "crates/fsc-paint",
     "crates/fsc-io",
     "crates/fsc-commands",
+    "crates/fsc-py",
 ]
 
 [workspace.package]
