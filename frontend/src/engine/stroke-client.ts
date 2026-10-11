@@ -11,6 +11,7 @@ export interface BrushState {
   dyntopo: number | null;
   dyntopoSize: number | null;
   dyntopoScreenPx: number | null;
+  paint: { color: string; roughness?: number; metalness?: number } | null;
 }
 
 export interface StrokeResult {
@@ -96,7 +97,7 @@ export class StrokeClient {
     this.send({
       type: 'begin',
       id: objectId,
-      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size },
+      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}) },
     });
     this.firstSeq = ++this.seq;
     this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure });

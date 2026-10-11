@@ -36,6 +36,7 @@ export interface MeshBuffers {
   normals: Float32Array;
   indices: Uint32Array;
   mask: Float32Array;
+  paint: Float32Array | null;
 }
 
 export interface VertexUpdate {
@@ -45,6 +46,7 @@ export interface VertexUpdate {
   positions: Float32Array;
   normals: Float32Array;
   mask: Float32Array;
+  paint: Float32Array | null;
 }
 
 export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
@@ -61,7 +63,9 @@ export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
   const normals = new Float32Array(buffer, offset, count * 3);
   offset += count * 12;
   const mask = new Float32Array(buffer, offset, count);
-  return { id, revision, indices, positions, normals, mask };
+  offset += count * 4;
+  const paint = buffer.byteLength >= offset + count * 20 ? new Float32Array(buffer, offset, count * 5) : null;
+  return { id, revision, indices, positions, normals, mask, paint };
 }
 
 export async function fetchVersion(signal?: AbortSignal): Promise<Version | null> {
@@ -140,7 +144,10 @@ export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
   offset += vertices * 12;
   const indices = new Uint32Array(buffer, offset, indexCount);
   offset += indexCount * 4;
-  const hasMask = (head.getUint32(16, true) & 1) === 1;
+  const flags = head.getUint32(16, true);
+  const hasMask = (flags & 1) === 1;
   const mask = hasMask ? new Float32Array(buffer, offset, vertices) : new Float32Array(vertices);
-  return { id, revision, positions, normals, indices, mask };
+  if (hasMask) offset += vertices * 4;
+  const paint = (flags & 2) === 2 ? new Float32Array(buffer, offset, vertices * 5) : null;
+  return { id, revision, positions, normals, indices, mask, paint };
 }

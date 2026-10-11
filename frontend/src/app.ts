@@ -37,6 +37,12 @@ interface Shell {
   dyntopo: HTMLInputElement;
   detail: HTMLInputElement;
   detailMode: HTMLSelectElement;
+  paintColor: HTMLInputElement;
+  paintRough: HTMLInputElement;
+  paintMetal: HTMLInputElement;
+  paintMaterial: HTMLInputElement;
+  shading: HTMLSelectElement;
+  paintButtons: HTMLButtonElement[];
   fileButtons: HTMLButtonElement[];
   fileInput: HTMLInputElement;
   exportFormat: HTMLSelectElement;
@@ -62,6 +68,7 @@ const BRUSHES: [string, string][] = [
   ['smooth', 'Smooth'],
   ['grab', 'Grab'],
   ['mask', 'Mask'],
+  ['paint', 'Paint'],
 ];
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
@@ -218,6 +225,36 @@ function buildShell(root: HTMLElement): Shell {
   fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode));
   panel.append(fields);
 
+  panel.append(el('h2', 'gap', 'Paint'));
+  const paintColor = input('color', { value: '#c8402f', 'aria-label': 'Paint colour' });
+  const paintRough = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Paint roughness' });
+  const paintMetal = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint metalness' });
+  const paintMaterial = input('checkbox', { 'aria-label': 'Paint roughness and metalness' });
+  const shading = el('select');
+  shading.setAttribute('aria-label', 'Shading');
+  for (const [value, label] of [['clay', 'Clay matcap'], ['wax', 'Red wax'], ['pearl', 'Pearl'], ['bronze', 'Bronze'], ['gray', 'Gray'], ['pbr', 'Lit (PBR)']]) {
+    const option = el('option', '', label);
+    option.value = value;
+    shading.append(option);
+  }
+  const paintFields = el('div', 'fields');
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading));
+  panel.append(paintFields);
+  const paintGrid = el('div', 'add-grid two');
+  const paintButtons = (
+    [
+      ['paint_fill', 'Fill object'],
+      ['paint_clear', 'Clear paint'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    paintGrid.append(b);
+    return b;
+  });
+  panel.append(paintGrid);
+
   panel.append(el('h2', 'gap', 'Edit'));
   const actionGrid = el('div', 'add-grid two');
   const actionButtons = ACTIONS.map(([name, label]) => {
@@ -333,7 +370,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
 }
 
 class SceneView {
@@ -368,6 +405,18 @@ class SceneView {
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
     );
+    shell.paintButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const id = this.scene.active;
+        if (id === null) return;
+        if (b.dataset.action === 'paint_clear') void this.run('paint_clear', { id });
+        else void this.run('paint_fill', { id, ...this.paintArgs(true) });
+      }),
+    );
+    shell.shading.addEventListener('change', () => {
+      this.viewport.renderer.setShading(shell.shading.value);
+      this.viewport.invalidate();
+    });
     shell.fileButtons.forEach((b) => b.addEventListener('click', () => void this.fileAction(b.dataset.action ?? '')));
     shell.fileInput.addEventListener('change', () => void this.uploadChosen());
     shell.objectButtons.forEach((b) => b.addEventListener('click', () => this.objectAction(b.dataset.action ?? '')));
@@ -432,7 +481,18 @@ class SceneView {
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
       dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
       dyntopoScreenPx: s.dyntopo.checked && s.detailMode.value === 'screen' ? Number(s.detail.value) * 0.2 : null,
+      paint: this.brush === 'paint' ? this.paintArgs(this.shell.paintMaterial.checked) : null,
     };
+  }
+
+  private paintArgs(material: boolean): { color: string; roughness?: number; metalness?: number } {
+    const s = this.shell;
+    const out: { color: string; roughness?: number; metalness?: number } = { color: s.paintColor.value };
+    if (material) {
+      out.roughness = Number(s.paintRough.value) / 100;
+      out.metalness = Number(s.paintMetal.value) / 100;
+    }
+    return out;
   }
 
   private constantSize(frac: number): number | null {
