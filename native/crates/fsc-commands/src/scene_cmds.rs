@@ -12,6 +12,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "visible": o.visible,
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),
+        "masked_vertices": o.mask.iter().filter(|&&m| m > 0.5).count(),
         "revision": o.revision,
         "level": o.levels().0,
         "levels": o.levels().1,

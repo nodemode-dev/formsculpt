@@ -174,7 +174,7 @@ impl Stroke {
                 if let Some(prev) = self.snake_prev {
                     for k in 0..self.transforms.len() {
                         let m = self.transforms[k];
-                        self.snake_dab(object, m * prev, m * (c - prev), pressure.clamp(0.0, 1.0));
+                        self.snake_dab(object, m * prev, m * (c - prev));
                     }
                     self.dabs += 1;
                 }
@@ -245,15 +245,17 @@ impl Stroke {
 
     /// Moves the vertices around `from` by `delta`, weighted by falloff and held by the mask: dab after dab, the
     /// pulled area follows the stroke and stretches into a hook (add dyntopo to keep detail along it).
-    fn snake_dab(&mut self, object: &mut Object, from: Vec3, delta: Vec3, pressure: f32) {
+    fn snake_dab(&mut self, object: &mut Object, from: Vec3, delta: Vec3) {
         let s = self.settings;
         let mut found = std::mem::take(&mut self.found);
         object.bvh.vertices_in_sphere(&object.mesh, from, s.radius, &mut found);
-        let amount = (0.4 + s.strength * 0.6) * pressure.max(0.1);
+        // The core follows the pointer fully at any strength: a partial move would leave the pulled area behind the
+        // brush, out of reach of the next dab, and the hook would stall. Strength widens the pulled area instead.
+        let soft = 1.5 - s.strength.clamp(0.0, 1.0);
         for &v in &found {
             self.remember(object, v);
             let p = object.mesh.position(v);
-            let w = (s.falloff.weight(p.distance(from) / s.radius) * amount).min(1.0) * (1.0 - object.mask[v as usize]);
+            let w = s.falloff.weight(p.distance(from) / s.radius).powf(soft).min(1.0) * (1.0 - object.mask[v as usize]);
             object.mesh.positions[v as usize] = (p + delta * w).to_array();
         }
         self.finish_dab(object, &found);
