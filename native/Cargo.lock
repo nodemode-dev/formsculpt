@@ -39,6 +39,7 @@ version = "0.3.0"
 dependencies = [
  "fsc-core",
  "fsc-sculpt",
+ "fsc-topo",
  "glam",
  "serde",
  "serde_json",
@@ -83,6 +84,7 @@ name = "fsc-sculpt"
 version = "0.3.0"
 dependencies = [
  "fsc-core",
+ "fsc-topo",
  "glam",
 ]
 
@@ -91,6 +93,8 @@ name = "fsc-topo"
 version = "0.3.0"
 dependencies = [
  "fsc-core",
+ "glam",
+ "rayon",
 ]
 
 [[package]]

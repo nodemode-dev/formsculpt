@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use fsc_commands::{Edit, Session};
+use fsc_commands::Session;
 use fsc_sculpt::{BrushKind, Stroke};
 use glam::Vec3;
 use pyo3::exceptions::{PyKeyError, PyValueError};
@@ -55,14 +55,18 @@ impl Engine {
         Ok(())
     }
 
-    fn stroke_sample<'py>(&self, py: Python<'py>, origin: [f32; 3], dir: [f32; 3], pressure: f32) -> PyResult<(bool, Bound<'py, PyBytes>)> {
+    fn stroke_sample<'py>(&self, py: Python<'py>, origin: [f32; 3], dir: [f32; 3], pressure: f32) -> PyResult<(bool, Bound<'py, PyBytes>, bool)> {
         let mut guard = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let session = &mut *guard;
         let (id, stroke) = session.stroke.as_mut().ok_or_else(|| PyValueError::new_err("no stroke in progress"))?;
         let object = session.scene.get_mut(*id).ok_or_else(|| PyKeyError::new_err("the stroke's object is gone"))?;
         let hit = stroke.sample_ray(object, Vec3::from_array(origin), Vec3::from_array(dir), pressure);
         let changed = stroke.drain_changed();
-        Ok((hit, PyBytes::new(py, &update_bytes(object, &changed))))
+        if stroke.take_topology_dirty() {
+            object.revision += 1;
+            return Ok((hit, PyBytes::new(py, &[]), true));
+        }
+        Ok((hit, PyBytes::new(py, &update_bytes(object, &changed)), false))
     }
 
     fn stroke_end(&self) -> PyResult<String> {
@@ -72,15 +76,13 @@ impl Engine {
         let kind = stroke.settings.kind;
         let dabs = stroke.dabs;
         let Some(object) = session.scene.get_mut(id) else { return Ok(json!({"ok": false, "error": {"code": "not_found", "message": "the stroke's object is gone"}}).to_string()) };
-        let edit = stroke.finish(object);
-        let changed = edit.indices.len();
+        let result = stroke.finish(object);
         let revision = object.revision;
-        if !edit.is_empty() {
-            let name = BrushKind::NAMES[kind as usize];
-            let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), &name[1..]);
-            session.history.push(Edit::Vertices { label, object: id, edit });
-        }
-        Ok(json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision}}).to_string())
+        let topology = matches!(result, fsc_sculpt::StrokeEdit::Topology { .. });
+        let name = BrushKind::NAMES[kind as usize];
+        let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), &name[1..]);
+        let changed = fsc_commands::push_stroke(session, id, label, result);
+        Ok(json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology}}).to_string())
     }
 }
 

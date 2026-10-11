@@ -1,5 +1,5 @@
 use fsc_core::ObjectId;
-use fsc_sculpt::{BrushKind, BrushSettings, Falloff, Stroke, Symmetry, VertexEdit};
+use fsc_sculpt::{BrushKind, BrushSettings, Falloff, Stroke, StrokeEdit, Symmetry, VertexEdit};
 use glam::Vec3;
 use serde_json::{json, Value};
 
@@ -41,6 +41,11 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         spacing: f(args, "spacing", 0.15, 0.02, 2.0)?,
         lazy: f(args, "lazy", 0.0, 0.0, 0.95)?,
         symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial },
+        dyntopo: match args.get("dyntopo") {
+            None | Some(Value::Null) | Some(Value::Bool(false)) => None,
+            Some(Value::Bool(true)) => Some(0.25),
+            Some(_) => Some(f(args, "dyntopo", 0.25, 0.05, 1.0)?),
+        },
     })
 }
 
@@ -53,7 +58,8 @@ pub(crate) fn brush_props() -> Value {
         "falloff": {"type": "string", "enum": Falloff::NAMES, "default": "smooth"},
         "spacing": {"type": "number", "minimum": 0.02, "maximum": 2, "default": 0.15, "description": "Distance between dabs as a fraction of the radius."},
         "lazy": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0},
-        "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false}
+        "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},
+        "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt. Off when omitted. Not used by grab or mask."}
     })
 }
 
@@ -99,14 +105,26 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         }
     }
     let dabs = stroke.dabs;
-    let edit = stroke.finish(object);
-    let moved = edit.indices.len();
+    let result = stroke.finish(object);
     let after = summary(object);
-    if !edit.is_empty() {
-        let label = format!("{} Stroke", capital(BrushKind::NAMES[settings.kind as usize]));
-        s.history.push(Edit::Vertices { label, object: id, edit });
-    }
+    let label = format!("{} Stroke", capital(BrushKind::NAMES[settings.kind as usize]));
+    let moved = push_stroke(s, id, label, result);
     Ok(json!({"object": after, "dabs": dabs, "vertices_changed": moved}))
+}
+
+pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeEdit) -> Value {
+    match result {
+        StrokeEdit::Vertices(edit) => {
+            let n = edit.indices.len();
+            s.history.push(Edit::Vertices { label, object: id, edit });
+            json!(n)
+        }
+        StrokeEdit::Topology { mesh, mask } => {
+            s.history.push(Edit::Topology { label, object: id, mesh, mask });
+            json!("topology changed")
+        }
+        StrokeEdit::Nothing => json!(0),
+    }
 }
 
 fn capital(s: &str) -> String {

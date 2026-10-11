@@ -74,6 +74,7 @@ pub struct BrushSettings {
     pub spacing: f32,
     pub lazy: f32,
     pub symmetry: Symmetry,
+    pub dyntopo: Option<f32>,
 }
 
 impl Default for BrushSettings {
@@ -87,6 +88,7 @@ impl Default for BrushSettings {
             spacing: 0.15,
             lazy: 0.0,
             symmetry: Symmetry::default(),
+            dyntopo: None,
         }
     }
 }

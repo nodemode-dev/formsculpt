@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fsc_core::Object;
+use fsc_core::{Mesh, Object};
 use glam::{Mat3, Vec3};
 
 use crate::brush::{BrushKind, BrushSettings};
@@ -51,7 +51,16 @@ pub struct Stroke {
     changed: Vec<u32>,
     grab: Option<Grab>,
     found: Vec<u32>,
+    snapshot: Option<(Mesh, Vec<f32>)>,
+    topology_dirty: bool,
+    topology_changed: bool,
     pub dabs: u32,
+}
+
+pub enum StrokeEdit {
+    Vertices(VertexEdit),
+    Topology { mesh: Mesh, mask: Vec<f32> },
+    Nothing,
 }
 
 impl std::fmt::Debug for Stroke {
@@ -63,7 +72,20 @@ impl std::fmt::Debug for Stroke {
 impl Stroke {
     pub fn new(settings: BrushSettings) -> Stroke {
         let transforms = settings.symmetry.transforms();
-        Stroke { settings, transforms, last: None, lazy_point: None, before: HashMap::new(), changed: Vec::new(), grab: None, found: Vec::new(), dabs: 0 }
+        Stroke {
+            settings,
+            transforms,
+            last: None,
+            lazy_point: None,
+            before: HashMap::new(),
+            changed: Vec::new(),
+            grab: None,
+            found: Vec::new(),
+            snapshot: None,
+            topology_dirty: false,
+            topology_changed: false,
+            dabs: 0,
+        }
     }
 
     pub fn sample_ray(&mut self, object: &mut Object, origin: Vec3, dir: Vec3, pressure: f32) -> bool {
@@ -119,6 +141,9 @@ impl Stroke {
         } else if self.last.is_none() {
             self.last = Some(point);
         }
+        if let (Some(frac), false) = (self.settings.dyntopo, centers.is_empty()) {
+            self.refine(object, &centers, frac);
+        }
         for c in centers {
             for k in 0..self.transforms.len() {
                 let m = self.transforms[k];
@@ -129,6 +154,49 @@ impl Stroke {
         if self.settings.kind != BrushKind::Mask && !self.changed.is_empty() {
             object.bvh.refit(&object.mesh);
         }
+    }
+
+    fn refine(&mut self, object: &mut Object, centers: &[Vec3], frac: f32) {
+        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab) {
+            return;
+        }
+        if self.snapshot.is_none() {
+            self.snapshot = Some((object.mesh.clone(), object.mask.clone()));
+        }
+        let first = centers[0];
+        let last = *centers.last().expect("non-empty");
+        let mid = (first + last) * 0.5;
+        let reach = self.settings.radius + first.distance(last) * 0.5;
+        let max_edge = (self.settings.radius * frac.clamp(0.05, 1.0)).max(1e-5);
+        let mut splits = 0;
+        for k in 0..self.transforms.len() {
+            let m = self.transforms[k];
+            splits += fsc_topo::refine_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge, 2);
+        }
+        if splits > 0 {
+            object.retopologize();
+            let mut region = Vec::new();
+            for k in 0..self.transforms.len() {
+                let mut found = Vec::new();
+                object.bvh.vertices_in_sphere(&object.mesh, self.transforms[k] * mid, reach, &mut found);
+                region.extend(found);
+            }
+            region.sort_unstable();
+            region.dedup();
+            for _ in 0..2 {
+                relax_tangential(object, &region, 0.5);
+            }
+            let mut ring = Vec::new();
+            object.topology.ring_vertices(&region, &mut ring);
+            object.topology.update_normals(&mut object.mesh, &ring);
+            object.bvh.refit(&object.mesh);
+            self.topology_dirty = true;
+            self.topology_changed = true;
+        }
+    }
+
+    pub fn take_topology_dirty(&mut self) -> bool {
+        std::mem::take(&mut self.topology_dirty)
     }
 
     fn remember(&mut self, object: &Object, v: u32) {
@@ -286,7 +354,22 @@ impl Stroke {
         out
     }
 
-    pub fn finish(self, object: &mut Object) -> VertexEdit {
+    pub fn finish(self, object: &mut Object) -> StrokeEdit {
+        if self.topology_changed {
+            if let Some((mesh, mask)) = self.snapshot {
+                object.revision += 1;
+                return StrokeEdit::Topology { mesh, mask };
+            }
+        }
+        let edit = self.vertex_edit(object);
+        if edit.is_empty() {
+            StrokeEdit::Nothing
+        } else {
+            StrokeEdit::Vertices(edit)
+        }
+    }
+
+    fn vertex_edit(self, object: &mut Object) -> VertexEdit {
         let mut indices: Vec<u32> = self.before.keys().copied().collect();
         indices.sort_unstable();
         let mut edit = VertexEdit::default();
@@ -306,5 +389,25 @@ impl Stroke {
             object.revision += 1;
         }
         edit
+    }
+}
+
+fn relax_tangential(object: &mut Object, verts: &[u32], amount: f32) {
+    let targets: Vec<Vec3> = verts
+        .iter()
+        .map(|&v| {
+            let nb = object.topology.neighbors_of(v);
+            let p = object.mesh.position(v);
+            if nb.len() < 3 || object.mask[v as usize] >= 1.0 {
+                return p;
+            }
+            let avg = nb.iter().map(|&w| object.mesh.position(w)).sum::<Vec3>() / nb.len() as f32;
+            let n = Vec3::from_array(object.mesh.normals[v as usize]);
+            let d = avg - p;
+            p + (d - n * d.dot(n)) * amount * (1.0 - object.mask[v as usize])
+        })
+        .collect();
+    for (k, &v) in verts.iter().enumerate() {
+        object.mesh.positions[v as usize] = targets[k].to_array();
     }
 }

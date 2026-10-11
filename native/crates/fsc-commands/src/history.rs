@@ -1,4 +1,4 @@
-use fsc_core::{Object, ObjectId, Scene};
+use fsc_core::{Mesh, Object, ObjectId, Scene};
 use fsc_sculpt::VertexEdit;
 
 const LIMIT: usize = 200;
@@ -6,6 +6,7 @@ const LIMIT: usize = 200;
 #[derive(Debug)]
 pub enum Edit {
     Vertices { label: String, object: ObjectId, edit: VertexEdit },
+    Topology { label: String, object: ObjectId, mesh: Mesh, mask: Vec<f32> },
     Add { id: ObjectId, index: usize, parked: Option<Object> },
     Delete { id: ObjectId, index: usize, parked: Option<Object> },
     Clear { parked: Vec<Object>, active: Option<ObjectId> },
@@ -14,7 +15,7 @@ pub enum Edit {
 impl Edit {
     pub fn label(&self) -> String {
         match self {
-            Edit::Vertices { label, .. } => label.clone(),
+            Edit::Vertices { label, .. } | Edit::Topology { label, .. } => label.clone(),
             Edit::Add { .. } => "Add Object".into(),
             Edit::Delete { .. } => "Delete Object".into(),
             Edit::Clear { .. } => "New Scene".into(),
@@ -26,6 +27,13 @@ impl Edit {
             Edit::Vertices { object, edit, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 edit.apply(o, forward);
+                scene.active = Some(*object);
+            }
+            Edit::Topology { object, mesh, mask, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                let (old_mesh, old_mask) = o.replace_mesh(std::mem::take(mesh), std::mem::take(mask));
+                *mesh = old_mesh;
+                *mask = old_mask;
                 scene.active = Some(*object);
             }
             Edit::Add { id, index, parked } | Edit::Delete { id, index, parked } => {

@@ -1,9 +1,10 @@
 mod history;
 mod scene_cmds;
 mod sculpt_cmds;
+mod topo_cmds;
 
 pub use history::{Edit, History};
-pub use sculpt_cmds::parse_brush;
+pub use sculpt_cmds::{parse_brush, push_stroke};
 
 use fsc_core::Scene;
 use serde::Serialize;
@@ -199,6 +200,61 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::id_opt_schema,
         run: sculpt_cmds::mask_sharpen,
+    },
+    Command {
+        id: "topo.subdivide",
+        mcp: "subdivide",
+        group: Group::Topo,
+        label: "Subdivide",
+        description: "Subdivide an object's mesh, each level multiplying the triangles by four (Loop subdivision, which rounds the shape; smooth false splits flat). The mask carries over. Use it to add resolution before detailing.",
+        keys: &["Mod+D"],
+        hints: WRITE,
+        schema: topo_cmds::subdivide_schema,
+        run: topo_cmds::subdivide,
+    },
+    Command {
+        id: "topo.remesh_voxel",
+        mcp: "remesh_voxel",
+        group: Group::Topo,
+        label: "Voxel Remesh",
+        description: "Rebuild an object as an even, closed mesh by sampling its surface on a voxel grid (like DynaMesh or Nomad's voxel remesher). Fixes stretched triangles after heavy grab or inflate strokes and merges intersecting parts. resolution is voxels along the longest side. The mask is cleared.",
+        keys: &["Mod+R"],
+        hints: WRITE,
+        schema: topo_cmds::remesh_schema,
+        run: topo_cmds::remesh_voxel,
+    },
+    Command {
+        id: "topo.decimate",
+        mcp: "decimate",
+        group: Group::Topo,
+        label: "Decimate",
+        description: "Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. The mask is cleared.",
+        keys: &[],
+        hints: WRITE,
+        schema: topo_cmds::decimate_schema,
+        run: topo_cmds::decimate,
+    },
+    Command {
+        id: "topo.fill_holes",
+        mcp: "fill_holes",
+        group: Group::Topo,
+        label: "Fill Holes",
+        description: "Close every open boundary loop of an object with a fan of triangles. Reports how many holes were filled.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: topo_cmds::fill_holes,
+    },
+    Command {
+        id: "topo.check",
+        mcp: "mesh_check",
+        group: Group::Topo,
+        label: "Check Mesh",
+        description: "Report an object's vertex, triangle and edge counts, open boundary edges, non-manifold edges and whether it is watertight (needed for printing and booleans).",
+        keys: &[],
+        hints: READ,
+        schema: sculpt_cmds::id_opt_schema,
+        run: topo_cmds::mesh_check,
     },
     Command {
         id: "history.undo",

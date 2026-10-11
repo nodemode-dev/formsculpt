@@ -138,3 +138,29 @@ Four kinds of undo step: vertex edits, adding an object, deleting one, clearing 
 - kind: rationale
 - logged: v0.3.0 · 2026-10-11
 The interactive path for the window: a stroke opened with brush settings parsed by the same `parse_brush` the `sculpt_stroke` command uses, fed camera rays, and closed into one history step. Each sample returns an FSCU update: `FSCU`, count, revision, object id (u32 each), then indices, positions, normals and mask values of the changed vertices. These three methods are a transport for the viewport, not registry commands; agents use `sculpt_stroke`, which runs the same Stroke code.
+
+## crates/fsc-topo/src
+
+### crates/fsc-topo/src/voxel.rs · voxel_remesh
+- refers-to: crates/fsc-topo/src/voxel.rs :: voxel_remesh, PseudoNormals
+- kind: rationale
+- logged: v0.4.0 · 2026-10-11
+Grid points within two cells of any triangle get a signed distance from a BVH nearest-feature query; the sign comes from the angle-weighted pseudo-normal of the closest feature (face, edge or vertex), the Baerentzen and Aanaes method, because the first version's interpolated vertex normals gave wrong signs at sharp edges and left a grabbed cube's remesh open. Naive surface nets then place one vertex per sign-changing cell and a quad per sign-changing grid edge; the result is flipped if its signed volume is negative. Distances run on rayon. Measured on this 2-core machine: sphere, cube, torus and cylinder at resolution 64 and 128 all came out watertight in 52 to 536 ms.
+
+### crates/fsc-topo/src/decimate.rs · decimate
+- refers-to: crates/fsc-topo/src/decimate.rs :: decimate, Quadric
+- kind: rationale
+- logged: v0.4.0 · 2026-10-11
+Garland and Heckbert quadrics (area weighted, heavy perpendicular planes on borders), a lazy heap with per-vertex version stamps, collapse to the cheapest of the midpoint and the two ends (no matrix inversion), refused when the link condition fails or a face would flip (normal turns by more than about 78 degrees). 81,920 to 20,480 triangles in 136 ms.
+
+### crates/fsc-topo/src/dyntopo.rs · refine_sphere
+- refers-to: crates/fsc-topo/src/dyntopo.rs :: refine_sphere
+- kind: rationale
+- logged: v0.4.0 · 2026-10-11
+Splits edges longer than the detail size whose midpoints lie in the brush sphere, longest first, at most once per face per pass, two passes. New vertices bulge off the edge by a curvature estimate from the end normals (the sagitta of a circle through both ends) so splits do not flatten a curved surface. The stroke then relaxes the region tangentially twice and rebuilds topology and BVH once per sample. Refinement only; no edge collapse yet.
+
+### crates/fsc-topo/src/subdivide.rs · loop_subdivide
+- refers-to: crates/fsc-topo/src/subdivide.rs :: loop_subdivide
+- kind: explainer
+- logged: v0.4.0 · 2026-10-11
+Loop subdivision (Warren's beta, boundary rules), or a flat split when `smooth` is false; `parents` maps each new vertex to the edge it came from so the mask is averaged into the children.

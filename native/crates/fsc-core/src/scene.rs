@@ -31,6 +31,22 @@ impl Object {
         self.revision += 1;
     }
 
+    pub fn retopologize(&mut self) {
+        self.mesh.normals.resize(self.mesh.vertex_count(), [0.0, 1.0, 0.0]);
+        self.mask.resize(self.mesh.vertex_count(), 0.0);
+        self.topology = Topology::build(&self.mesh);
+        let all: Vec<u32> = (0..self.mesh.vertex_count() as u32).collect();
+        self.topology.update_normals(&mut self.mesh, &all);
+        self.bvh = Bvh::build(&self.mesh);
+    }
+
+    pub fn replace_mesh(&mut self, mesh: Mesh, mask: Vec<f32>) -> (Mesh, Vec<f32>) {
+        let old_mesh = std::mem::replace(&mut self.mesh, mesh);
+        let old_mask = std::mem::replace(&mut self.mask, mask);
+        self.rebuild();
+        (old_mesh, old_mask)
+    }
+
     pub fn mask_bytes(&self) -> Vec<u8> {
         self.mask.iter().flat_map(|m| m.to_le_bytes()).collect()
     }
