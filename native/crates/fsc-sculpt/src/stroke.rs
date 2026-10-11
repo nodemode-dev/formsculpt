@@ -63,6 +63,10 @@ pub struct Stroke {
     snapshot: Option<(Mesh, Vec<f32>)>,
     topology_dirty: bool,
     topology_changed: bool,
+    /// Planar: the plane (centre, normal) taken at the first dab, one per symmetry copy.
+    planes: Vec<Option<(Vec3, Vec3)>>,
+    /// Snake hook: the previous dab centre, before symmetry.
+    snake_prev: Option<Vec3>,
     pub dabs: u32,
 }
 
@@ -81,8 +85,11 @@ impl std::fmt::Debug for Stroke {
 impl Stroke {
     pub fn new(settings: BrushSettings) -> Stroke {
         let transforms = settings.symmetry.transforms();
+        let planes = vec![None; transforms.len()];
         Stroke {
             settings,
+            planes,
+            snake_prev: None,
             transforms,
             last: None,
             lazy_point: None,
@@ -113,6 +120,15 @@ impl Stroke {
             let Some(hit) = object.bvh.raycast(&object.mesh, origin, dir) else { return false };
             self.begin_grab(object, hit.point, -dir);
             return true;
+        }
+        if self.settings.kind == BrushKind::SnakeHook {
+            // Once the hook has started, follow the pointer on the plane through the last dab facing the camera, so
+            // the pull continues off the surface as grab does.
+            if let Some(prev) = self.last {
+                let t = (prev - origin).dot(dir);
+                self.sample_point(object, origin + dir * t, pressure);
+                return true;
+            }
         }
         let Some(hit) = object.bvh.raycast(&object.mesh, origin, dir) else {
             self.last = None;
@@ -154,9 +170,20 @@ impl Stroke {
             self.refine(object, &centers, frac);
         }
         for c in centers {
+            if self.settings.kind == BrushKind::SnakeHook {
+                if let Some(prev) = self.snake_prev {
+                    for k in 0..self.transforms.len() {
+                        let m = self.transforms[k];
+                        self.snake_dab(object, m * prev, m * (c - prev), pressure.clamp(0.0, 1.0));
+                    }
+                    self.dabs += 1;
+                }
+                self.snake_prev = Some(c);
+                continue;
+            }
             for k in 0..self.transforms.len() {
                 let m = self.transforms[k];
-                self.dab(object, m * c, pressure.clamp(0.0, 1.0));
+                self.dab(object, k, m * c, pressure.clamp(0.0, 1.0));
             }
             self.dabs += 1;
         }
@@ -216,7 +243,24 @@ impl Stroke {
         self.before.entry(v).or_insert((object.mesh.positions[v as usize], object.mask[v as usize], paint));
     }
 
-    fn dab(&mut self, object: &mut Object, center: Vec3, pressure: f32) {
+    /// Moves the vertices around `from` by `delta`, weighted by falloff and held by the mask: dab after dab, the
+    /// pulled area follows the stroke and stretches into a hook (add dyntopo to keep detail along it).
+    fn snake_dab(&mut self, object: &mut Object, from: Vec3, delta: Vec3, pressure: f32) {
+        let s = self.settings;
+        let mut found = std::mem::take(&mut self.found);
+        object.bvh.vertices_in_sphere(&object.mesh, from, s.radius, &mut found);
+        let amount = (0.4 + s.strength * 0.6) * pressure.max(0.1);
+        for &v in &found {
+            self.remember(object, v);
+            let p = object.mesh.position(v);
+            let w = (s.falloff.weight(p.distance(from) / s.radius) * amount).min(1.0) * (1.0 - object.mask[v as usize]);
+            object.mesh.positions[v as usize] = (p + delta * w).to_array();
+        }
+        self.finish_dab(object, &found);
+        self.found = found;
+    }
+
+    fn dab(&mut self, object: &mut Object, copy: usize, center: Vec3, pressure: f32) {
         let s = self.settings;
         let r = s.radius;
         let mut found = std::mem::take(&mut self.found);
@@ -263,15 +307,26 @@ impl Stroke {
                 let m = &mut object.mask[v as usize];
                 *m = (*m + weights[k] * amount * sign).clamp(0.0, 1.0);
             }
-        } else if s.kind == BrushKind::Smooth {
+        } else if matches!(s.kind, BrushKind::Smooth | BrushKind::Relax) {
+            // Relax keeps only the part of the move that lies in the surface, so it evens the triangles without
+            // shrinking the form; smooth also moves along the normal and wears the form down.
+            let relax = s.kind == BrushKind::Relax;
             let targets: Vec<Vec3> = found
                 .iter()
                 .map(|&v| {
                     let nb = object.topology.neighbors_of(v);
+                    let p = object.mesh.position(v);
                     if nb.is_empty() {
-                        return object.mesh.position(v);
+                        return p;
                     }
-                    nb.iter().map(|&w| object.mesh.position(w)).sum::<Vec3>() / nb.len() as f32
+                    let avg = nb.iter().map(|&w| object.mesh.position(w)).sum::<Vec3>() / nb.len() as f32;
+                    if relax {
+                        let n = Vec3::from_array(object.mesh.normals[v as usize]);
+                        let d = avg - p;
+                        p + (d - n * d.dot(n))
+                    } else {
+                        avg
+                    }
                 })
                 .collect();
             for (k, &v) in found.iter().enumerate() {
@@ -280,6 +335,8 @@ impl Stroke {
                 object.mesh.positions[v as usize] = p.lerp(targets[k], w * 0.6).to_array();
             }
         } else {
+            let (plane_c, plane_n) = *self.planes[copy].get_or_insert((area_c, area_n));
+            let noise_scale = if s.noise_scale > 0.0 { s.noise_scale } else { r * 0.2 };
             for (k, &v) in found.iter().enumerate() {
                 let w = weights[k] * amount * (1.0 - object.mask[v as usize]);
                 if w <= 0.0 {
@@ -310,7 +367,18 @@ impl Stroke {
                         let tangent = to - area_n * to.dot(area_n);
                         p - area_n * (w * r * 0.04 * sign) + tangent * (w * 0.2).min(1.0)
                     }
-                    BrushKind::Smooth | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint => p,
+                    BrushKind::Planar => p - plane_n * ((p - plane_c).dot(plane_n) * (w * 0.5).min(1.0)),
+                    BrushKind::Trim => {
+                        // Only what stands above the dab's plane is cut down (inverted: only hollows are filled).
+                        let d = (p - area_c).dot(area_n);
+                        if d * sign > 0.0 {
+                            p - area_n * (d * (w * 0.5).min(1.0))
+                        } else {
+                            p
+                        }
+                    }
+                    BrushKind::Noise => p + vn * (fbm(p / noise_scale) * w * r * 0.05 * sign),
+                    BrushKind::Smooth | BrushKind::Relax | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint | BrushKind::SnakeHook => p,
                 };
                 object.mesh.positions[v as usize] = moved.to_array();
             }
@@ -424,6 +492,34 @@ impl Stroke {
         }
         edit
     }
+}
+
+fn hash3(x: i32, y: i32, z: i32) -> f32 {
+    let mut h = (x as u32).wrapping_mul(0x8da6_b343) ^ (y as u32).wrapping_mul(0xd816_3841) ^ (z as u32).wrapping_mul(0xcb1a_b31f);
+    h ^= h >> 13;
+    h = h.wrapping_mul(0x5bd1_e995);
+    h ^= h >> 15;
+    (h & 0x00ff_ffff) as f32 / 0x0080_0000 as f32 - 1.0
+}
+
+/// Value noise in [-1, 1]: lattice hashes blended with a smoothstep.
+pub fn value_noise(p: Vec3) -> f32 {
+    let f = p.floor();
+    let t = p - f;
+    let s = t * t * (Vec3::splat(3.0) - 2.0 * t);
+    let (x, y, z) = (f.x as i32, f.y as i32, f.z as i32);
+    let lerp = |a: f32, b: f32, t: f32| a + (b - a) * t;
+    let c = |dx, dy, dz| hash3(x + dx, y + dy, z + dz);
+    let x00 = lerp(c(0, 0, 0), c(1, 0, 0), s.x);
+    let x10 = lerp(c(0, 1, 0), c(1, 1, 0), s.x);
+    let x01 = lerp(c(0, 0, 1), c(1, 0, 1), s.x);
+    let x11 = lerp(c(0, 1, 1), c(1, 1, 1), s.x);
+    lerp(lerp(x00, x10, s.y), lerp(x01, x11, s.y), s.z)
+}
+
+/// Three octaves of value noise, roughly in [-1, 1].
+pub fn fbm(p: Vec3) -> f32 {
+    (value_noise(p) + value_noise(p * 2.03 + Vec3::splat(17.1)) * 0.5 + value_noise(p * 4.07 + Vec3::splat(-9.3)) * 0.25) / 1.75
 }
 
 fn relax_tangential(object: &mut Object, verts: &[u32], amount: f32) {

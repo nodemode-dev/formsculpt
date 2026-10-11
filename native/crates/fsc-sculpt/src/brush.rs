@@ -12,10 +12,15 @@ pub enum BrushKind {
     Grab,
     Mask,
     Paint,
+    Relax,
+    Planar,
+    Trim,
+    SnakeHook,
+    Noise,
 }
 
 impl BrushKind {
-    pub const NAMES: [&'static str; 10] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint"];
+    pub const NAMES: [&'static str; 15] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise"];
 
     pub fn moves_vertices(&self) -> bool {
         !matches!(self, BrushKind::Mask | BrushKind::Paint)
@@ -33,6 +38,11 @@ impl BrushKind {
             "grab" => BrushKind::Grab,
             "mask" => BrushKind::Mask,
             "paint" => BrushKind::Paint,
+            "relax" => BrushKind::Relax,
+            "planar" => BrushKind::Planar,
+            "trim" => BrushKind::Trim,
+            "snake_hook" => BrushKind::SnakeHook,
+            "noise" => BrushKind::Noise,
             _ => return None,
         })
     }
@@ -84,6 +94,8 @@ pub struct BrushSettings {
     pub dyntopo_size: Option<f32>,
     pub paint: [f32; 5],
     pub paint_channels: [bool; 3],
+    /// Noise brush: feature size in world units (0 means a fifth of the radius).
+    pub noise_scale: f32,
 }
 
 impl Default for BrushSettings {
@@ -101,6 +113,7 @@ impl Default for BrushSettings {
             dyntopo_size: None,
             paint: [0.8, 0.2, 0.2, 0.5, 0.0],
             paint_channels: [true, false, false],
+            noise_scale: 0.0,
         }
     }
 }

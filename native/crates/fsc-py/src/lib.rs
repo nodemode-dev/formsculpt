@@ -128,7 +128,7 @@ impl Engine {
         let revision = object.revision;
         let topology = matches!(result, fsc_sculpt::StrokeEdit::Topology { .. });
         let name = BrushKind::NAMES[kind as usize];
-        let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), &name[1..]);
+        let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), name[1..].replace('_', " "));
         let changed = fsc_commands::push_stroke(session, id, label, result);
         Ok(json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology}}).to_string())
     }
