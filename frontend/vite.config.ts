@@ -16,7 +16,7 @@ export default defineConfig({
     strictPort: true,
     headers: ISOLATION,
     proxy: {
-      '/api': { target: `http://127.0.0.1:${BACKEND_PORT}`, changeOrigin: true },
+      '/api': { target: `http://127.0.0.1:${BACKEND_PORT}`, changeOrigin: true, ws: true },
     },
   },
   preview: {
@@ -25,7 +25,7 @@ export default defineConfig({
     strictPort: true,
     headers: ISOLATION,
     proxy: {
-      '/api': { target: `http://127.0.0.1:${BACKEND_PORT}`, changeOrigin: true },
+      '/api': { target: `http://127.0.0.1:${BACKEND_PORT}`, changeOrigin: true, ws: true },
     },
   },
   build: {

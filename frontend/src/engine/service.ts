@@ -31,6 +31,33 @@ export interface MeshBuffers {
   positions: Float32Array;
   normals: Float32Array;
   indices: Uint32Array;
+  mask: Float32Array;
+}
+
+export interface VertexUpdate {
+  id: number;
+  revision: number;
+  indices: Uint32Array;
+  positions: Float32Array;
+  normals: Float32Array;
+  mask: Float32Array;
+}
+
+export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
+  const head = new DataView(buffer, 0, 16);
+  if (String.fromCharCode(head.getUint8(0), head.getUint8(1), head.getUint8(2), head.getUint8(3)) !== 'FSCU') return null;
+  const count = head.getUint32(4, true);
+  const revision = head.getUint32(8, true);
+  const id = head.getUint32(12, true);
+  let offset = 16;
+  const indices = new Uint32Array(buffer, offset, count);
+  offset += count * 4;
+  const positions = new Float32Array(buffer, offset, count * 3);
+  offset += count * 12;
+  const normals = new Float32Array(buffer, offset, count * 3);
+  offset += count * 12;
+  const mask = new Float32Array(buffer, offset, count);
+  return { id, revision, indices, positions, normals, mask };
 }
 
 export async function fetchVersion(signal?: AbortSignal): Promise<Version | null> {
@@ -76,5 +103,8 @@ export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
   const normals = new Float32Array(buffer, offset, vertices * 3);
   offset += vertices * 12;
   const indices = new Uint32Array(buffer, offset, indexCount);
-  return { id, revision, positions, normals, indices };
+  offset += indexCount * 4;
+  const hasMask = (head.getUint32(16, true) & 1) === 1;
+  const mask = hasMask ? new Float32Array(buffer, offset, vertices) : new Float32Array(vertices);
+  return { id, revision, positions, normals, indices, mask };
 }

@@ -1,4 +1,4 @@
-import { add, cross, lookAt, multiply, normalize, ortho, perspective, scale, sub, type Mat4, type Vec3 } from './math';
+import { add, cross, invert, lookAt, multiply, normalize, ortho, perspective, scale, sub, transformPoint, type Mat4, type Vec3 } from './math';
 
 export type ViewName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 
@@ -61,6 +61,22 @@ export class OrbitCamera {
     this.target = scale(add(min, max), 0.5);
     const radius = Math.max(1e-3, 0.5 * Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]));
     this.distance = (radius / Math.sin(this.fov / 2)) * 1.1;
+  }
+
+  ray(x: number, y: number, width: number, height: number): { origin: Vec3; dir: Vec3 } | null {
+    const inv = invert(this.viewProjection());
+    if (!inv) return null;
+    const nx = (2 * x) / width - 1;
+    const ny = 1 - (2 * y) / height;
+    const a = transformPoint(inv, [nx, ny, -1]);
+    const b = transformPoint(inv, [nx, ny, 1]);
+    const near: Vec3 = [a[0] / a[3], a[1] / a[3], a[2] / a[3]];
+    const far: Vec3 = [b[0] / b[3], b[1] / b[3], b[2] / b[3]];
+    return { origin: near, dir: normalize(sub(far, near)) };
+  }
+
+  worldPerPixel(height: number): number {
+    return (2 * this.distance * Math.tan(this.fov / 2)) / Math.max(height, 1);
   }
 
   snap(view: ViewName): void {

@@ -24,6 +24,13 @@ button { font: inherit; color: inherit; }
 .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .btn { height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: border-color var(--transition-fast), background var(--transition-fast); }
 .btn:hover { border-color: var(--accent-color); }
+.btn[aria-pressed="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
+.add-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fields { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.field { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: 12px; }
+.field input[type="range"] { width: 100%; accent-color: var(--accent-color); }
+.field input[type="checkbox"] { justify-self: end; accent-color: var(--accent-color); }
+.field input[type="number"] { width: 64px; justify-self: end; height: 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 var(--space-1); font: 12px var(--font-mono); }
 .objects { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-height: 28px; }
 .object { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; }
 .object:hover { background: var(--bg-tertiary); }

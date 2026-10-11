@@ -1,14 +1,17 @@
-import type { MeshBuffers } from '../engine/service';
+import type { MeshBuffers, VertexUpdate } from '../engine/service';
 import type { OrbitCamera } from './camera';
 
 const MESH_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
 layout(location=1) in vec3 aNrm;
+layout(location=2) in float aMask;
 uniform mat4 uViewProj;
 uniform mat4 uView;
 out vec3 vNrm;
 out vec3 vViewPos;
+out float vMask;
 void main() {
+  vMask = aMask;
   vNrm = mat3(uView) * aNrm;
   vViewPos = (uView * vec4(aPos, 1.0)).xyz;
   gl_Position = uViewProj * vec4(aPos, 1.0);
@@ -18,6 +21,7 @@ const MESH_FS = `#version 300 es
 precision highp float;
 in vec3 vNrm;
 in vec3 vViewPos;
+in float vMask;
 uniform vec3 uBase;
 uniform float uOrtho;
 out vec4 outColor;
@@ -33,6 +37,7 @@ void main() {
   float spec = pow(clamp(1.0 - distance(m, vec2(0.34, 0.68)) * 2.2, 0.0, 1.0), 6.0) * 0.45;
   float cavity = mix(0.55, 1.0, smoothstep(-0.2, 0.9, n.y * 0.5 + 0.5));
   vec3 col = uBase * (0.18 + key * 0.75 + fill) * cavity + vec3(rim + spec);
+  col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
   outColor = vec4(pow(col, vec3(1.0 / 1.1)), 1.0);
 }`;
 
@@ -54,6 +59,7 @@ interface GpuMesh {
   buffers: WebGLBuffer[];
   count: number;
   revision: number;
+  cpu: MeshBuffers;
 }
 
 function compile(gl: WebGL2RenderingContext, vs: string, fs: string): WebGLProgram {
@@ -136,10 +142,49 @@ export class GlRenderer {
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
     const idx = gl.createBuffer();
+    const msk = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, msk);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.mask, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idx);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
-    this.meshes.set(mesh.id, { vao, buffers: [pos, nrm, idx], count: mesh.indices.length, revision: mesh.revision });
+    const cpu: MeshBuffers = { ...mesh, positions: new Float32Array(mesh.positions), normals: new Float32Array(mesh.normals), mask: new Float32Array(mesh.mask) };
+    this.meshes.set(mesh.id, { vao, buffers: [pos, nrm, idx, msk], count: mesh.indices.length, revision: mesh.revision, cpu });
+  }
+
+  patch(update: VertexUpdate): boolean {
+    const m = this.meshes.get(update.id);
+    if (!m || update.indices.length === 0) return false;
+    const { cpu } = m;
+    let lo = Infinity;
+    let hi = -1;
+    for (let k = 0; k < update.indices.length; k++) {
+      const v = update.indices[k];
+      if (v >= cpu.mask.length) continue;
+      cpu.positions.set(update.positions.subarray(k * 3, k * 3 + 3), v * 3);
+      cpu.normals.set(update.normals.subarray(k * 3, k * 3 + 3), v * 3);
+      cpu.mask[v] = update.mask[k];
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    if (hi < 0) return false;
+    const gl = this.gl;
+    const [pos, nrm, , msk] = m.buffers;
+    gl.bindBuffer(gl.ARRAY_BUFFER, pos);
+    gl.bufferSubData(gl.ARRAY_BUFFER, lo * 12, cpu.positions, lo * 3, (hi - lo + 1) * 3);
+    gl.bindBuffer(gl.ARRAY_BUFFER, nrm);
+    gl.bufferSubData(gl.ARRAY_BUFFER, lo * 12, cpu.normals, lo * 3, (hi - lo + 1) * 3);
+    gl.bindBuffer(gl.ARRAY_BUFFER, msk);
+    gl.bufferSubData(gl.ARRAY_BUFFER, lo * 4, cpu.mask, lo, hi - lo + 1);
+    m.revision = update.revision;
+    return true;
+  }
+
+  setRevision(id: number, revision: number): void {
+    const m = this.meshes.get(id);
+    if (m) m.revision = revision;
   }
 
   has(id: number, revision: number): boolean {

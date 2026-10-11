@@ -4,6 +4,7 @@ import { el, setAttr, setText } from './ui/dom';
 import { dispatch, fetchMesh, fetchVersion, type ObjectSummary, type SceneSummary } from './engine/service';
 import { Viewport } from './viewport/viewport';
 import type { ViewName } from './viewport/camera';
+import { StrokeClient, type BrushState } from './engine/stroke-client';
 
 interface Shell {
   engineDot: HTMLElement;
@@ -17,6 +18,48 @@ interface Shell {
   statRenderer: HTMLElement;
   statFrame: HTMLElement;
   message: HTMLElement;
+  brushButtons: HTMLButtonElement[];
+  radius: HTMLInputElement;
+  strength: HTMLInputElement;
+  invert: HTMLInputElement;
+  symX: HTMLInputElement;
+  radial: HTMLInputElement;
+  actionButtons: HTMLButtonElement[];
+}
+
+const BRUSHES: [string, string][] = [
+  ['orbit', 'Orbit'],
+  ['draw', 'Draw'],
+  ['clay', 'Clay'],
+  ['inflate', 'Inflate'],
+  ['pinch', 'Pinch'],
+  ['crease', 'Crease'],
+  ['flatten', 'Flatten'],
+  ['smooth', 'Smooth'],
+  ['grab', 'Grab'],
+  ['mask', 'Mask'],
+];
+
+const ACTIONS: [string, string][] = [
+  ['undo', 'Undo'],
+  ['redo', 'Redo'],
+  ['mask_invert', 'Invert mask'],
+  ['mask_blur', 'Blur mask'],
+  ['mask_sharpen', 'Sharpen mask'],
+  ['mask_clear', 'Clear mask'],
+];
+
+function field(label: string, input: HTMLInputElement): HTMLLabelElement {
+  const row = el('label', 'field');
+  row.append(el('span', '', label), input);
+  return row;
+}
+
+function input(type: string, attrs: Record<string, string>): HTMLInputElement {
+  const node = el('input');
+  node.type = type;
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
 }
 
 const PRIMITIVES: [string, string][] = [
@@ -56,6 +99,37 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(grid);
 
+  panel.append(el('h2', 'gap', 'Brush'));
+  const brushGrid = el('div', 'add-grid');
+  const brushButtons = BRUSHES.map(([kind, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.brush = kind;
+    b.setAttribute('aria-pressed', kind === 'draw' ? 'true' : 'false');
+    brushGrid.append(b);
+    return b;
+  });
+  panel.append(brushGrid);
+  const radius = input('range', { min: '4', max: '300', value: '60', 'aria-label': 'Radius' });
+  const strength = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Strength' });
+  const invert = input('checkbox', { 'aria-label': 'Invert' });
+  const symX = input('checkbox', { 'aria-label': 'Mirror X' });
+  const radial = input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
+  const fields = el('div', 'fields');
+  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial));
+  panel.append(fields);
+
+  panel.append(el('h2', 'gap', 'Edit'));
+  const actionGrid = el('div', 'add-grid two');
+  const actionButtons = ACTIONS.map(([name, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = name;
+    actionGrid.append(b);
+    return b;
+  });
+  panel.append(actionGrid);
+
   const message = el('p', 'panel-note', '');
   panel.append(message);
 
@@ -87,7 +161,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statRenderer, statFrame, message };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons };
 }
 
 class SceneView {
@@ -101,6 +175,46 @@ class SceneView {
     });
     shell.addButtons.forEach((b) => b.addEventListener('click', () => void this.add(b.dataset.kind ?? 'sphere')));
     shell.canvas.addEventListener('keydown', (e) => this.key(e));
+    shell.brushButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        this.brush = b.dataset.brush ?? 'draw';
+        shell.brushButtons.forEach((x) => setAttr(x, 'aria-pressed', x === b ? 'true' : 'false'));
+      }),
+    );
+    shell.actionButtons.forEach((b) => b.addEventListener('click', () => void this.run(b.dataset.action ?? 'undo')));
+    this.strokes.onUpdate = (u) => this.viewport.patchMesh(u);
+    this.strokes.onEnd = (r) => {
+      if (r) this.viewport.renderer.setRevision(r.id, r.revision);
+      void this.refresh();
+    };
+    this.strokes.onError = (m) => this.note(m);
+    this.strokes.warm();
+    viewport.strokes = {
+      enabled: () => this.brush !== 'orbit' && this.scene.active !== null,
+      begin: (ray, pressure, wpp, inv) => {
+        if (this.scene.active === null) return;
+        this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
+      },
+      move: (ray, pressure) => this.strokes.move(ray.origin, ray.dir, pressure),
+      end: () => this.strokes.end(),
+      missed: () => this.strokes.missed(),
+    };
+  }
+
+  private brush = 'draw';
+  private strokes = new StrokeClient();
+
+  private brushState(): BrushState {
+    const s = this.shell;
+    return {
+      brush: this.brush,
+      radiusPx: Number(s.radius.value),
+      strength: Number(s.strength.value) / 100,
+      invert: s.invert.checked,
+      falloff: 'smooth',
+      lazy: 0,
+      symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
+    };
   }
 
   async refresh(): Promise<void> {
@@ -186,6 +300,8 @@ class SceneView {
     else if (e.key === '5') this.viewport.toggleOrtho();
     else if (e.key === 'f' || e.key === 'F') this.frameActive();
     else if ((e.key === 'Delete' || e.key === 'Backspace') && this.scene.active !== null) void this.run('delete_object', { id: this.scene.active });
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) void this.run(e.shiftKey ? 'redo' : 'undo');
+    else if ((e.ctrlKey || e.metaKey) && e.key === 'y') void this.run('redo');
     else return;
     e.preventDefault();
   }

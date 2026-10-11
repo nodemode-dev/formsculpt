@@ -123,3 +123,33 @@ Renders on demand: one requestAnimationFrame per change, none while idle. Left d
 - kind: rationale
 - logged: v0.2.0 · 2026-10-11
 The object list is patched by id: rows are added or removed only when objects are, and names, counts and `aria-current` are written through `setText` and `setAttr`. Meshes are fetched only when an object's revision differs from the uploaded one. The Scene list sits last in the panel: a throttled run with it above the stats measured a layout shift of 0.0012 as the list grew; at the bottom it pushes nothing and the shift is 0.
+
+## src/engine/stroke-client.ts
+
+### src/engine/stroke-client.ts · StrokeClient
+- refers-to: src/engine/stroke-client.ts :: StrokeClient.begin, move, end, missed
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+One WebSocket, opened early (`warm`) so the first stroke does not wait on a handshake. The brush radius is set in screen pixels and converted to world units at the stroke's start from the camera distance. If the server says the first sample missed the mesh, the viewport ends the stroke and turns the drag into an orbit, the way Nomad treats a drag that starts off the model. Vite proxies the socket (`ws: true`).
+
+## src/viewport/gl-renderer.ts
+
+### src/viewport/gl-renderer.ts · patch
+- refers-to: src/viewport/gl-renderer.ts :: GlRenderer.patch, setRevision
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+The renderer keeps a CPU copy of each mesh, writes changed vertices into it and uploads the span from the lowest to the highest changed index with `bufferSubData`; the mask is a third vertex attribute that darkens masked areas in the shader. At stroke end the mesh's revision is set from the server so the next scene refresh does not refetch the whole mesh.
+
+### src/viewport/gl-renderer.ts · import line
+- refers-to: src/viewport/gl-renderer.ts :: first line
+- kind: warning-context
+- logged: v0.3.0 · 2026-10-11
+In 0.3.0 the import line (adding `VertexUpdate`) was changed with `sed -i` instead of a hand edit, against SEDO. The result is the intended one-line change; it is declared here and in the turn ledger.
+
+## src/app.ts
+
+### src/app.ts · brush panel
+- refers-to: src/app.ts :: BRUSHES, ACTIONS, SceneView constructor, brushState
+- kind: explainer
+- logged: v0.3.0 · 2026-10-11
+Brushes: Orbit (no brush), Draw, Clay, Inflate, Pinch, Crease, Flatten, Smooth, Grab, Mask. Radius (pixels), strength, invert (or hold Ctrl), mirror X and radial count. Edit buttons dispatch undo, redo and the mask commands; Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y on the canvas. Alt or Shift held at pointer-down navigates instead of sculpting.
