@@ -78,3 +78,11 @@ The service still boots without the compiled module (a fresh clone before `./for
 ```
 
 Replaced by `engine.status()` now that the PyO3 module exists; closes the 0.1.0 todo.
+
+## app/routers/engine.py
+
+### app/routers/engine.py · stroke WebSocket
+- refers-to: app/routers/engine.py :: stroke
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+`/api/engine/stroke` carries `begin` (object id and brush), `sample` (ray origin, direction, pressure, seq) and `end` as JSON; each sample is answered with a JSON `{type: sample, seq, hit}` and, when vertices changed, a binary FSCU frame. Engine calls run in the thread pool under the engine lock. A dropped socket closes the open stroke so its edit still reaches the history. The mesh route's header now sets flag 1 and appends the mask (f32 per vertex).

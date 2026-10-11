@@ -8,6 +8,7 @@ except ImportError:
     fsc_engine = None
 
 MAGIC = b"FSCM"
+FLAG_MASK = 1
 _lock = threading.Lock()
 _engine = fsc_engine.Engine() if fsc_engine else None
 
@@ -43,6 +44,23 @@ def mesh_payload(object_id: int) -> bytes:
     if _engine is None:
         raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
     with _lock:
-        positions, normals, indices, revision = _engine.mesh(object_id)
-    header = MAGIC + struct.pack("<IIII", len(positions) // 12, len(indices) // 4, revision & 0xFFFFFFFF, 0)
-    return header + positions + normals + indices
+        positions, normals, indices, mask, revision = _engine.mesh(object_id)
+    header = MAGIC + struct.pack("<IIII", len(positions) // 12, len(indices) // 4, revision & 0xFFFFFFFF, FLAG_MASK)
+    return header + positions + normals + indices + mask
+
+
+def stroke_begin(object_id: int, settings: dict) -> None:
+    if _engine is None:
+        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+    with _lock:
+        _engine.stroke_begin(object_id, json.dumps(settings))
+
+
+def stroke_sample(origin: list[float], direction: list[float], pressure: float) -> tuple[bool, bytes]:
+    with _lock:
+        return _engine.stroke_sample(origin, direction, pressure)
+
+
+def stroke_end() -> dict:
+    with _lock:
+        return json.loads(_engine.stroke_end())
