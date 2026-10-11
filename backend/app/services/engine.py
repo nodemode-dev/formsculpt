@@ -1,6 +1,8 @@
+import io
 import json
 import struct
 import threading
+import zipfile
 
 try:
     import fsc_engine
@@ -130,6 +132,21 @@ def export_bytes(file_name: str, ids: list[int] | None) -> bytes:
     _require()
     with _lock:
         return _engine.export_bytes(file_name, ids)
+
+
+def maps_zip(object_id: int) -> bytes | None:
+    _require()
+    with _lock:
+        found = _engine.maps(object_id)
+    if found is None:
+        return None
+    name, files = found
+    stem = "".join(c if c.isalnum() else "_" for c in name)
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
+        for suffix, data in files:
+            archive.writestr(f"{stem}_{suffix}", bytes(data))
+    return out.getvalue()
 
 
 def object_count() -> int:

@@ -8,6 +8,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use serde_json::{json, Value};
 
+type MapFiles<'py> = (String, Vec<(String, Bound<'py, PyBytes>)>);
 type MeshBuffers<'py> = (Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64, Bound<'py, PyBytes>);
 
 #[pyclass]
@@ -58,6 +59,20 @@ impl Engine {
         }
         let bytes = fsc_commands::export_data(&session, file_name, &ids).map_err(|e| PyValueError::new_err(e.message))?;
         Ok(PyBytes::new(py, &bytes))
+    }
+
+    fn maps<'py>(&self, py: Python<'py>, id: u32) -> PyResult<Option<MapFiles<'py>>> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;
+        Ok(object.maps.as_ref().map(|m| {
+            let files = vec![
+                ("color.png".to_string(), PyBytes::new(py, &m.color_png)),
+                ("roughness_metal.png".to_string(), PyBytes::new(py, &m.mr_png)),
+                ("normal.png".to_string(), PyBytes::new(py, &m.normal_png)),
+                ("displacement.exr".to_string(), PyBytes::new(py, &m.displacement_exr)),
+            ];
+            (object.name.clone(), files)
+        }))
     }
 
     fn mesh<'py>(&self, py: Python<'py>, id: u32) -> PyResult<MeshBuffers<'py>> {

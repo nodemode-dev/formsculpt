@@ -73,6 +73,18 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf)
     return Response(content=data, media_type=media, headers={"Content-Disposition": f'attachment; filename="formsculptor.{format}"', "Cache-Control": "no-store"})
 
 
+@router.get("/maps/{object_id}")
+async def maps_file(object_id: int) -> Response:
+    _guard()
+    try:
+        data = await run_in_threadpool(engine.maps_zip, object_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"no object {object_id}")
+    if data is None:
+        raise HTTPException(status_code=404, detail="the object has no baked maps; run bake_maps first")
+    return Response(content=data, media_type="application/zip", headers={"Content-Disposition": 'attachment; filename="maps.zip"', "Cache-Control": "no-store"})
+
+
 @router.get("/project")
 async def project_file() -> Response:
     _guard()
