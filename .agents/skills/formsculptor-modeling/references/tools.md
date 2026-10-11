@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.11.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.12.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.11.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Sculpting: `sculpt_stroke`
+- Sculpting: `sculpt_stroke`, `alpha_load`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
@@ -174,9 +174,12 @@ Note: removes or replaces (undoable); in the window: Delete.
 
 ## sculpt_stroke
 
-Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
+Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush); also relax, planar, trim, snake_hook, noise, paint and smudge (drag the paint colour along the stroke). alpha shapes every dab with a gray stamp (a built-in or one from alpha_load), turned by alpha_angle; stroke dots keeps the stamp upright (alpha_up), roll turns it along the stroke, and a single point stamps it once. invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
-- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale.
+- `alpha`: string; A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp.
+- `alpha_angle`: number; default 0; range -360 to 360; Turns the alpha, in degrees.
+- `alpha_up`: array of number; The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up.
+- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise | smudge); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale.
 - `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
@@ -191,7 +194,17 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
 - `spacing`: number; default 0.15; range 0.02 to 2; Distance between dabs as a fraction of the radius.
 - `strength`: number; default 0.5; range 0 to 1
+- `stroke`: string (dots | roll); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line).
 - `symmetry`: object; fields radial, x, y, z
+
+## alpha_load
+
+Load a gray PNG as a named brush alpha: white stamps fully and black not at all. Give its name as alpha to sculpt_stroke (or pick it in the window's Brush section) to shape every dab with it, beside the built-in alphas square, noise, cracks, rings, star, stripes and dots. Alphas last for the engine session.
+
+- `name`: string; required; The name brushes use for it in their alpha setting; loading the same name again replaces it.
+- `path`: string; A PNG file on the engine's machine, instead of png_base64.
+- `png_base64`: string; The alpha as a base64 PNG; white stamps fully, black not at all (colour is averaged to gray).
+- `size`: integer; range 16 to 1024; The square resolution the alpha is resampled to (256 by default).
 
 ## paint_fill
 

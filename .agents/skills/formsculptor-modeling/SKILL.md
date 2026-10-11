@@ -36,6 +36,8 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
    - `snake_hook` pulls the area under the first point along the path: give points that leave the surface (horns, tentacles, spikes); add `dyntopo` to keep the pulled part detailed, then `relax`.
    - `noise` roughens along a stroke (`noise_scale` sets the feature size); `surface_noise` covers the whole object in a new layer whose strength you can change later.
    - `lazy` (0 to 0.95) steadies a line: the brush trails on a rope and stops short of the path's end by the rope length.
+   - `alpha` shapes every dab with a gray stamp: built-ins `square`, `noise`, `cracks`, `rings`, `star`, `stripes`, `dots`, or a PNG loaded with `alpha_load` (white stamps, black does not). One point stamps once (scales, rivets, emblems); a path repeats it. `alpha_angle` turns it in degrees, `alpha_up` sets which way is up (default world +y), and `stroke: "roll"` turns it along the path (stripes along a seam). Check the result with `get_view`; stamps read best at strength 0.3 to 0.6 on a subdivided surface.
+   - `smudge` drags existing paint colour along the path (blend a paint edge, streak a pattern); it does not move vertices.
 2. Use `symmetry: {"x": true}` for anything bilateral (faces, bodies); `radial: n` repeats a stroke n times around the y axis (petals, gears, crowns).
 3. Prefer several light strokes (strength 0.2 to 0.4) to one heavy one.
 
