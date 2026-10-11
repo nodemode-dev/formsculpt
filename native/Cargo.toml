@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/fsc-core",
+    "crates/fsc-sculpt",
+    "crates/fsc-topo",
+    "crates/fsc-paint",
+    "crates/fsc-io",
+    "crates/fsc-commands",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["nodemode-ai"]
+rust-version = "1.80"
+publish = false
+
+[workspace.dependencies]
+fsc-core = { path = "crates/fsc-core" }
+fsc-sculpt = { path = "crates/fsc-sculpt" }
+fsc-topo = { path = "crates/fsc-topo" }
+fsc-paint = { path = "crates/fsc-paint" }
+fsc-io = { path = "crates/fsc-io" }
+fsc-commands = { path = "crates/fsc-commands" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"
+
+[profile.dev]
+opt-level = 1
