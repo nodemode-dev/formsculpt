@@ -61,6 +61,12 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. `deform_object` bends, twists or tapers along an axis of the object's bounds; mask an area first to hold it still (masks also hold vertices during `transform_object`).
 3. For an adjustable pass of detail, `layer_add`, sculpt, then `layer_set_strength` (0 hides it, 1 as sculpted, 2 exaggerates, negative inverts). `layer_select` with null records into the base again; `layer_apply` bakes a layer. While layers exist, remesh, decimate, dyntopo and level changes refuse with `has_layers`.
 
+## Workflow 6: files and printing
+
+1. `save_project` and `open_project` take a path ending in .fsc and keep everything (levels, layers, masks); opening replaces the scene and clears undo, so save first when the current work matters. The window also autosaves every minute.
+2. `import_mesh` reads OBJ, STL, PLY, GLB (or glTF with embedded buffers) and 3MF from a path as new objects; `export_mesh` writes OBJ, STL, PLY, GLB or 3MF by the path's extension (GLB keeps layers as morph targets; STL and PLY join objects).
+3. Before printing, `print_check` (set `units_per_mm` to the scale you mean and `min_wall_mm` to the printer's limit) and fix what it lists: `repair_mesh` for open or non-manifold edges, thicken or `remesh_voxel` thin walls, then check again.
+
 ## Not yet available
 
-There are no file import or export tools, no folders or on-canvas gizmo, and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no folders or on-canvas gizmo and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.

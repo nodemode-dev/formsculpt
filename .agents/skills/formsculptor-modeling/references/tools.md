@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.5.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.6.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,8 +9,9 @@ Generated from the engine's command registry (formsculptor 0.5.0) by `./formscul
 - Objects: `add_primitive`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
-- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`
+- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
+- Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
 - History: `undo`, `redo`
 
 ## get_engine_info
@@ -284,6 +285,54 @@ Bake a layer into the mesh at its current strength and remove it. While an objec
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `index`: integer; required; range 0 to inf; Layer position, 0 first; get_scene lists each object's layers.
+
+## save_project
+
+Save the whole scene to a .fsc project file (objects, masks, subdivision levels and sculpt layers), overwriting the path. Opening it again restores the scene exactly.
+
+- `path`: string; required; A file path on this computer.
+
+Note: removes or replaces (undoable); in the window: Mod+S.
+
+## open_project
+
+Replace the scene with a .fsc project. Clears the undo history; save first if the current scene matters.
+
+- `path`: string; required; A file path on this computer.
+
+Note: removes or replaces (undoable); in the window: Mod+O.
+
+## import_mesh
+
+Add the meshes in an OBJ, STL, PLY, glTF/GLB or 3MF file as new objects (one per OBJ object, glTF node or 3MF object). glTF must be a GLB or carry its buffers inside. One undo step.
+
+- `name`: string; Name for the new object; the file name when omitted.
+- `path`: string; required; A file path on this computer.
+
+## export_mesh
+
+Write objects to OBJ, STL, PLY, GLB or 3MF, chosen by the path's extension, overwriting it. GLB keeps sculpt layers as morph targets at their strengths; STL and PLY join the objects into one mesh.
+
+- `ids`: array of integer; Objects to write; every visible object when omitted. STL and PLY join them into one mesh.
+- `path`: string; required; A file path on this computer.
+
+Note: removes or replaces (undoable); in the window: Mod+E.
+
+## print_check
+
+Check an object for 3D printing: watertight, non-manifold edges, inside-out, size, volume and area in millimetres, and wall thickness sampled by casting inward from up to 4000 vertices. Lists the problems and whether it is printable.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `min_wall_mm`: number; default 1.0; range 0 to inf; Thinnest wall the printer can make.
+- `units_per_mm`: number; default 0.1; range 0 to inf; Scene units in one millimetre (0.1 means the default 2-unit sphere prints 20 mm across).
+
+Note: read-only.
+
+## repair_mesh
+
+Make an object closed and manifold: split vertices where surfaces only touch, fill open holes, drop degenerate triangles and unused vertices. One undo step; the mask is cleared.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## undo
 
