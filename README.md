@@ -6,7 +6,7 @@
 
 **3D sculpting & modeling for the web & the desktop, in the NodeMode style**
 
-![version](https://img.shields.io/badge/version-0.1.0-f97316) ![rust](https://img.shields.io/badge/rust-1.80%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+![version](https://img.shields.io/badge/version-0.2.0-f97316) ![rust](https://img.shields.io/badge/rust-1.80%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 </div>
 
@@ -87,7 +87,7 @@ Branching & versions follow [.docs/BRANCHING.md](.docs/BRANCHING.md). Work on th
 
 ## Status
 
-0.1.0 is the scaffold: dispatcher, engine workspace w/ the registry, FastAPI service, shell UI & desktop shell. No sculpting yet; the viewport & mesh core land in 0.2.0, brushes & the MCP server in 0.3.0. The desktop bundle has not been built yet.
+0.2.0 has the mesh core (primitives, normals, a triangle BVH), the PyO3 engine module behind the service, six registry commands & a WebGL2 viewport w/ orbit, pan, zoom & snap views. No sculpting yet: brushes, masks, undo & the MCP server land in 0.3.0. The WASM engine build is not compiled yet (this build machine could not fetch the wasm32 target), WebGPU is not built, & the desktop bundle has not been built.
 
 ## Contributors
 
