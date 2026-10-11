@@ -191,3 +191,9 @@ Detail mode replaces the Constant detail checkbox: Brush sends the fraction of t
 - kind: rationale
 - logged: v0.5.0 · 2026-10-11
 Booleans act on the active object and the one active before it (or the only other object), so the order is: click the object to combine with, then the one to keep or cut from. Duplicate offsets the copy by 1.1 times the object's width. Bend, twist and taper take the Deform axis and the Angle field (the taper reads it as a percentage). The Layers section has a Record into menu whose options are patched in place, and a strength slider that sends on change, not on every input, and is not overwritten while it has focus. The Dyntopo checkbox is disabled while the object has levels or layers. Verified under 4x throttling: duplicate, union at resolution 96, bend, add layer, two strokes and the slider to 50 percent, layout shift 0, no console errors. There is no on-canvas transform gizmo yet; transform_object covers it for agents.
+
+### src/app.ts, src/engine/service.ts, src/ui/dom.ts · File section
+- refers-to: src/app.ts :: FILE_ACTIONS, SceneView.fileAction, download, uploadChosen, key (Mod+S, Mod+O, Mod+E); src/engine/service.ts :: uploadFile, fetchFile, postJson; src/ui/dom.ts :: saveBlob
+- kind: rationale
+- logged: v0.6.0 · 2026-10-11
+One hidden file input serves Open: a .fsc replaces the scene, any mesh format imports. Save and Export fetch the file and save it through a temporary object URL (in ui/, since engine/ never touches the DOM). Print check writes its verdict into the panel note. The buttons sit in two columns so "Print check" fits on one line. Verified under 4x throttling: STL import, print check, save, Ctrl+E export as 3MF, and opening a .fsc with levels and layers, layout shift 0, no console errors.
