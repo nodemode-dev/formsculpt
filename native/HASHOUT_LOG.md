@@ -188,3 +188,9 @@ Runs after each `refine_sphere` and collapses edges shorter than 0.4 of the deta
 - kind: rationale
 - logged: v0.4.1 · 2026-10-11
 Each triangle knows its leaf and each node its parent. A max-heap of node indices refits touched leaves, then their ancestors (children always sit after their parent, so popping the largest index first finishes both children before the parent), and stops climbing where a box did not change. Above a quarter of the leaves it falls back to the full sweep. Measured in-process: a draw stroke sample costs 0.21 ms on 327,680 triangles and 0.70 ms on 1,310,720, against 3.6 ms and 14.6 ms with the full refit in 0.4.0.
+
+### crates/fsc-topo/src/reconstruct.rs · reconstruct_lower
+- refers-to: crates/fsc-topo/src/reconstruct.rs :: reconstruct_lower, label_from, ring; crates/fsc-core/src/multires.rs :: Object::reconstruct; crates/fsc-commands/src/multires_cmds.rs :: reconstruct
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+Finds the vertices a Loop or midpoint subdivision kept (even) and the ones it added on edges (odd): from a seed assumed even, every neighbour is odd, and in an odd vertex's ordered ring the even vertex across from a known one sits three places on (or at the other end of an open fan of four). A seed that contradicts itself is undone and its neighbours are tried. The all-odd triangles are the old triangles' centres and give the lower triangles with their winding. Lower positions come from twelve Jacobi sweeps that invert Loop's even-vertex rule, then the stencil from subdividing the rebuilt level is renumbered to the existing vertex order, so the live mesh is untouched. Measured: after two subdivide levels, two rebuilds return the original sphere, cube, open plane and torus within 5e-5, and an icosphere is recognised as subdivided; 1,310,720 triangles rebuild in 1.46 s. Meshes from remesh, decimate or dyntopo refuse with not_subdivided.

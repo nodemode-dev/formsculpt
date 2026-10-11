@@ -108,6 +108,20 @@ fn prune(s: &mut Session, args: &Value, higher: bool) -> Result<Value, CommandEr
     Ok(json!({"object": after, "levels_removed": removed}))
 }
 
+pub(crate) fn reconstruct(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let object = s.scene.get_mut(id).expect("checked");
+    if object.levels().0 != 0 {
+        return Err(failed("step down to the lowest level before rebuilding one below it".into()));
+    }
+    let rebuilt = fsc_topo::reconstruct_lower(&object.mesh).map_err(|e| CommandError::new("not_subdivided", e))?;
+    let before = object.multires.clone();
+    object.reconstruct(rebuilt.lower, rebuilt.stencil).map_err(failed)?;
+    let after = summary(object);
+    s.history.push(Edit::Levels { label: "Reconstruct Lower".into(), object: id, multires: before });
+    Ok(json!({"object": after}))
+}
+
 pub(crate) fn delete_higher(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     prune(s, args, true)
 }

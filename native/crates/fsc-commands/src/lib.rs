@@ -302,6 +302,17 @@ pub static COMMANDS: &[Command] = &[
         run: multires_cmds::delete_lower,
     },
     Command {
+        id: "multires.reconstruct",
+        mcp: "multires_reconstruct",
+        group: Group::Topo,
+        label: "Reconstruct Lower",
+        description: "Rebuild one subdivision level below the lowest one, for a mesh with the regular one-to-four structure of a subdivided mesh (one made by subdivide, or left after multires_delete_lower). Repeat to rebuild more. Refuses with not_subdivided for other meshes (remeshed, decimated, sculpted with dyntopo or imported irregular meshes). Undoable.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: multires_cmds::reconstruct,
+    },
+    Command {
         id: "history.undo",
         mcp: "undo",
         group: Group::History,

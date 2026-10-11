@@ -206,6 +206,27 @@ impl Object {
         Ok(from)
     }
 
+    pub fn reconstruct(&mut self, lower: Mesh, stencil: Stencil) -> Result<(), String> {
+        if stencil.len() != self.mesh.vertex_count() {
+            return Err("the rebuilt level does not match the mesh".into());
+        }
+        let below = Level { vertices: lower.vertex_count(), triangles: lower.triangle_count(), mesh: lower, ..Level::default() };
+        match self.multires.as_mut() {
+            None => {
+                let live = Level { vertices: self.mesh.vertex_count(), triangles: self.mesh.triangle_count(), stencil, ..Level::default() };
+                self.multires = Some(Multires { levels: vec![below, live], current: 1 });
+            }
+            Some(m) if m.current == 0 => {
+                m.levels[0].stencil = stencil;
+                m.levels.insert(0, below);
+                m.current = 1;
+            }
+            Some(_) => return Err("step down to the lowest level before rebuilding one below it".into()),
+        }
+        self.revision += 1;
+        Ok(())
+    }
+
     pub fn delete_higher(&mut self) -> Result<usize, String> {
         let multires = self.multires.as_mut().ok_or("the object has no subdivision levels")?;
         let removed = multires.top() - multires.current;
