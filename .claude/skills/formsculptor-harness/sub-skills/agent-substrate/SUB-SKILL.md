@@ -11,7 +11,7 @@ Own how agents drive formsculptor. Hands back an MCP change that behaves the sam
 
 ## Preconditions
 
-State: built at 0.3.0. The tool list always comes from the engine's catalogue (`fsc_engine.catalogue()`, the same JSON `fsc-catalogue` prints; see `sub-skills/command-registry/SUB-SKILL.md`).
+State: built at 0.3.0. The tool list always comes from the engine's catalogue (`fsc_engine.catalogue()`, the same JSON `fsc-catalogue` prints; see `sub-skills/command-registry/SUB-SKILL.md`). At 0.9.0, a result carrying `png_base64` (get_view) is returned as an MCP image content block plus the other fields as text and structuredContent, so agents see the model.
 
 ## Procedure
 

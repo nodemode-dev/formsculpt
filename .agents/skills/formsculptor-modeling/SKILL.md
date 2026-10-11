@@ -26,7 +26,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 1. `add_primitive` sphere, detail 6.
 2. `sculpt_stroke` with `brush: "grab"`, two points (where to grab, where to move it to), a large radius (0.3 to 0.5) to pull out a large shape such as a snout, a limb or a jaw.
 3. `inflate` or `draw` with a large radius and strength 0.3 to 0.5 to add volume; `invert: true` carves instead.
-4. `get_scene` to check the bounds moved as intended.
+4. `get_scene` to check the bounds moved as intended, then look: `get_view` returns a picture of the scene (clay shading, masks darkened). Take `front` and `right` for proportions and `three_quarter` for form; `frame: "active"` to look closely at one object.
 
 ## Workflow 2: refine and detail
 
@@ -88,4 +88,4 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Not yet available
 
-There are no folders or on-canvas gizmo and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no folders or on-canvas gizmo, `get_view` has no turntable or orbit beyond its named views and `yaw` and `pitch`, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.

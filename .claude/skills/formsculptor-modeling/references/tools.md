@@ -1,11 +1,12 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.8.1) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.9.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`
+- Viewing: `get_view`
 - Objects: `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
@@ -28,6 +29,22 @@ Note: read-only.
 Every object in the scene with its id, name, visibility, vertex and triangle counts and bounds, and which object is active. Call it first to learn object ids.
 
 - no parameters
+
+Note: read-only.
+
+## get_view
+
+Render the scene to a PNG and return it, so you can see the model: drawn on the CPU with the window's shading (clay matcap by default, paint shown, masked areas darkened), framed to fit, with or without the window open. Check your work with it after each step that changes shape, from more than one view (front, right and top read proportions; three_quarter reads form).
+
+- `background`: string (dark | light | transparent); default "dark"
+- `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
+- `height`: integer; default 640; range 64 to 2048
+- `ids`: array of integer; Only these objects; every visible object when omitted.
+- `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
+- `shading`: string (clay | wax | pearl | bronze | gray | pbr); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
+- `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
+- `width`: integer; default 640; range 64 to 2048
+- `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
 
 Note: read-only.
 
