@@ -200,3 +200,27 @@ Finds the vertices a Loop or midpoint subdivision kept (even) and the ones it ad
 - kind: process
 - logged: v0.4.1 · 2026-10-11
 Declared slip: while multires.rs was new and not yet committed, four exact string swaps (dropping the per-level mask copies) were made by a Python one-off instead of the Edit tool. Every other change in 0.4.1 was a hand edit or a new file.
+
+### crates/fsc-topo/src/voxel.rs · voxel_boolean, fill_signs, Grid
+- refers-to: crates/fsc-topo/src/voxel.rs :: Grid, narrow_band, fill_signs, surface_nets, voxel_boolean, BooleanOp
+- kind: rationale
+- logged: v0.5.0 · 2026-10-11
+The remesh was split into its two stages (a narrow-band distance field and naive surface nets) so booleans reuse them on one grid around both objects. Outside the band a field only has a sign: a flood from the grid's border through every cell that is unknown or positive marks the outside, and what it cannot reach is inside, so gaps inside the band on the outer side are not mistaken for interior. Union is the minimum of the two fields, intersection the maximum, difference the maximum of a and minus b. Measured on two sculpted spheres overlapping by a radius at resolution 128: union plus intersection volume matches the two inputs within 0.1 percent, difference plus intersection matches a; about 0.4 s each.
+
+### crates/fsc-topo/src/manifold.rs · split_nonmanifold
+- refers-to: crates/fsc-topo/src/manifold.rs :: split_nonmanifold, pairs_around
+- kind: rationale
+- logged: v0.5.0 · 2026-10-11
+Surface nets put one vertex per cell, so where a difference leaves a wedge thinner than a voxel two sheets share cells and edges with four faces appear along the rim (30, 60 and 108 at resolution 64, 128 and 200). At each such edge the faces are sorted by angle around it and each is paired with the neighbour across the gap that lies inside the solid (the face normal points away from it); faces glued by manifold edges and by those pairs form fans, and each vertex gets one copy per fan. Every union, difference and intersection of two spheres and of a cube with a rotated cylinder at 64, 128 and 200 is now watertight with no non-manifold edges.
+
+### crates/fsc-topo/src/deform.rs, crates/fsc-commands/src/object_cmds.rs · deformers and objects
+- refers-to: crates/fsc-topo/src/deform.rs :: deform, Deformer, split_parts, merge; crates/fsc-commands/src/object_cmds.rs :: transform, deform, duplicate, rename, merge, split, boolean, set_positions
+- kind: rationale
+- logged: v0.5.0 · 2026-10-11
+Bend, twist, taper and transform run over the object's bounds centre and length along the chosen axis, and each vertex moves by one minus its mask, so the mask doubles as ZBrush's topological masking for the gizmo's work. They record as an ordinary vertex edit. Merge, split and booleans change the object list, so their undo swaps the whole list (Edit::Scene); the next object id never goes back, so ids are not reused after an undo. Duplicate copies the current mesh and mask only, not levels or layers.
+
+### crates/fsc-core/src/layers.rs · sculpt layers
+- refers-to: crates/fsc-core/src/layers.rs :: Layer, Layers, Object::add_layer, set_layer_strength, remove_layer, record_into_layer; crates/fsc-commands/src/layer_cmds.rs; crates/fsc-commands/src/sculpt_cmds.rs :: push_stroke
+- kind: rationale
+- logged: v0.5.0 · 2026-10-11
+A layer is a per-vertex offset and a strength; the mesh always shows base plus the sum of strength times offset, so strength changes move vertices by the difference. A stroke made while a layer is active adds its movement divided by the strength to that layer and is recorded as Edit::LayerStroke, whose undo reverses both. Strength, add, select, delete and apply snapshot the layers and positions. Layers pin the vertex count, so topology changes, dyntopo and level changes refuse with has_layers. Measured: a stroke at 50 percent sits within 6e-8 of halfway, at 0 percent within 1.2e-7 of the base; undoing the stroke and then setting strength 2 leaves the mesh unchanged.
