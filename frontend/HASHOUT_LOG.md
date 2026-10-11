@@ -215,3 +215,9 @@ The bake reports its size, source and time in the panel note and points at the t
 - kind: rationale
 - logged: v0.8.0 · 2026-10-11
 Project from follows the boolean convention: the object selected before the active one is the source. The mask operations sit with the other mask buttons under Edit. Duplicate now copies in place, as ZBrush does, because the remesh-divide-project workflow needs the copy on top of the source (the first browser run, with the old one-width offset, projected almost nothing). Verified under 4x throttling: duplicate, quad remesh to 1,500, two divides, Project from, a mask stroke, Extrude mask and Extract mask, layout shift 0, no console errors.
+
+### src/app.ts, src/ui/presets.ts · Build section and the Tube brush
+- refers-to: src/app.ts :: Build section (skeleton, lathe, tubeRadius, buildButtons), BRUSHES (tube), SceneView.build, tubeBegin, tubeMove, tubeEnd, onPlane, stage-overlay; src/ui/presets.ts :: SKELETONS, LATHES; src/styles/shell.css :: .stage-overlay, .add-grid.after-fields; src/viewport/math.ts :: distance3
+- kind: rationale
+- logged: v0.8.1 · 2026-10-11
+Presets live in their own module as data (sphere lists and profiles), so the same shapes are easy to hand to an agent. Build skeleton uses the Voxel resolution field, clamped to the command's 32 to 256. Tube is a pseudo-brush: it hooks the viewport's stroke handler, puts each drag ray onto the plane through the orbit target facing the camera, keeps a point every 8 pixels' worth of world distance, and calls curve_tube on release; a click without a drag says what to do instead. The preview is an SVG polyline in an absolutely positioned overlay inside the stage with pointer events off, so drawing it never moves layout. Verified under 4x throttling: all four skeletons and all four lathe profiles from the panel (each watertight), a tube drawn beside the biped, the click-only message, undo, and a Draw stroke on the skeleton; layout shift 0, no console errors.

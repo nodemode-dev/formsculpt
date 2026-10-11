@@ -20,6 +20,8 @@ button { font: inherit; color: inherit; }
 
 .stage { grid-area: stage; position: relative; z-index: var(--z-base); background: var(--canvas-bg); background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--grid-color) 35%, transparent) 1px, transparent 0); background-size: 24px 24px; display: grid; place-items: center; }
 .viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.stage-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }
+.stage-overlay polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .panel h2.gap { margin-top: var(--space-5); }
 .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .btn { height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: border-color var(--transition-fast), background var(--transition-fast); }
@@ -34,6 +36,7 @@ button { font: inherit; color: inherit; }
 .consent-actions .btn { min-width: 88px; }
 .btn[aria-pressed="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
 .add-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.add-grid.after-fields { margin-top: var(--space-3); }
 .fields { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
 .field { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: 12px; }
 .field input[type="range"] { width: 100%; accent-color: var(--accent-color); }

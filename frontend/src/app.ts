@@ -10,8 +10,10 @@ interface PrintReport {
   wall_mm: { min: number | null };
   problems: string[];
 }
-import { Viewport } from './viewport/viewport';
+import { Viewport, type Ray } from './viewport/viewport';
 import type { ViewName } from './viewport/camera';
+import { add, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
+import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 
@@ -57,6 +59,24 @@ interface Shell {
   resolution: HTMLInputElement;
   quadTarget: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
+  skeleton: HTMLSelectElement;
+  lathe: HTMLSelectElement;
+  tubeRadius: HTMLInputElement;
+  buildButtons: HTMLButtonElement[];
+  tubeLine: SVGPolylineElement;
+}
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+function choices(label: string, entries: [string, string][]): HTMLSelectElement {
+  const select = el('select');
+  select.setAttribute('aria-label', label);
+  for (const [value, text] of entries) {
+    const option = el('option', '', text);
+    option.value = value;
+    select.append(option);
+  }
+  return select;
 }
 
 const BRUSHES: [string, string][] = [
@@ -71,6 +91,7 @@ const BRUSHES: [string, string][] = [
   ['grab', 'Grab'],
   ['mask', 'Mask'],
   ['paint', 'Paint'],
+  ['tube', 'Tube'],
 ];
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
@@ -167,6 +188,12 @@ function buildShell(root: HTMLElement): Shell {
   canvas.setAttribute('aria-label', 'Viewport');
   canvas.tabIndex = 0;
   stage.append(canvas);
+  const overlay = document.createElementNS(SVG, 'svg');
+  overlay.setAttribute('class', 'stage-overlay');
+  overlay.setAttribute('aria-hidden', 'true');
+  const tubeLine = document.createElementNS(SVG, 'polyline');
+  overlay.append(tubeLine);
+  stage.append(overlay);
 
   const panel = el('aside', 'panel');
   panel.append(el('h2', '', 'File'));
@@ -202,6 +229,29 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(grid);
+
+  panel.append(el('h2', 'gap', 'Build'));
+  const skeleton = choices('Skeleton', Object.entries(SKELETONS).map(([k, v]) => [k, v.label]));
+  const lathe = choices('Lathe profile', Object.entries(LATHES).map(([k, v]) => [k, v.label]));
+  const tubeRadius = input('number', { min: '0.005', max: '1', step: '0.01', value: '0.05', 'aria-label': 'Tube radius' });
+  const buildFields = el('div', 'fields');
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius));
+  panel.append(buildFields);
+  const buildGrid = el('div', 'add-grid two');
+  const buildButtons = (
+    [
+      ['skeleton', 'Build skeleton'],
+      ['lathe', 'Lathe'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    buildGrid.append(b);
+    return b;
+  });
+  buildGrid.classList.add('after-fields');
+  panel.append(buildGrid);
 
   panel.append(el('h2', 'gap', 'Brush'));
   const brushGrid = el('div', 'add-grid');
@@ -389,7 +439,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine };
 }
 
 class SceneView {
@@ -455,24 +505,81 @@ class SceneView {
       if (!o || o.active_layer === null) return;
       void this.run('layer_set_strength', { id: o.id, index: o.active_layer, strength: Number(shell.layerStrength.value) / 100 });
     });
+    shell.buildButtons.forEach((b) => b.addEventListener('click', () => void this.build(b.dataset.action ?? '')));
+    const trace = (e: PointerEvent): void => {
+      if (!this.tube) return;
+      this.tube.screen.push(`${e.offsetX.toFixed(0)},${e.offsetY.toFixed(0)}`);
+      shell.tubeLine.setAttribute('points', this.tube.screen.join(' '));
+    };
+    shell.canvas.addEventListener('pointerdown', trace);
+    shell.canvas.addEventListener('pointermove', trace);
     this.strokes.warm();
     viewport.strokes = {
-      enabled: () => this.brush !== 'orbit' && this.scene.active !== null,
+      enabled: () => this.brush === 'tube' || (this.brush !== 'orbit' && this.scene.active !== null),
       begin: (ray, pressure, wpp, inv) => {
-        if (this.scene.active === null) return;
-        this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
+        if (this.brush === 'tube') this.tubeBegin(ray, wpp);
+        else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
       },
-      move: (ray, pressure) => this.strokes.move(ray.origin, ray.dir, pressure),
-      end: () => this.strokes.end(),
-      missed: () => this.strokes.missed(),
+      move: (ray, pressure) => (this.tube ? this.tubeMove(ray) : this.strokes.move(ray.origin, ray.dir, pressure)),
+      end: () => (this.tube ? void this.tubeEnd() : this.strokes.end()),
+      missed: () => (this.tube ? false : this.strokes.missed()),
     };
   }
 
   private brush = 'draw';
   private strokes = new StrokeClient();
+  private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
   stroking(): boolean {
-    return this.strokes.active();
+    return this.strokes.active() || this.tube !== null;
+  }
+
+  private onPlane(ray: Ray): Vec3 | null {
+    if (!this.tube) return null;
+    const d = dot(ray.dir, this.tube.normal);
+    if (Math.abs(d) < 1e-6) return null;
+    return add(ray.origin, scale(ray.dir, dot(sub(this.tube.anchor, ray.origin), this.tube.normal) / d));
+  }
+
+  private tubeBegin(ray: Ray, wpp: number): void {
+    const cam = this.viewport.camera;
+    const anchor = cam.target;
+    this.tube = { points: [], step: Math.max(wpp * 8, 1e-4), anchor, normal: normalize(sub(anchor, cam.eye())), screen: [] };
+    this.tubeMove(ray);
+  }
+
+  private tubeMove(ray: Ray): void {
+    const p = this.onPlane(ray);
+    const t = this.tube;
+    if (!p || !t) return;
+    const last = t.points[t.points.length - 1];
+    if (!last || distance3(last, p) >= t.step) t.points.push(p);
+  }
+
+  private async tubeEnd(): Promise<void> {
+    const t = this.tube;
+    this.tube = null;
+    this.shell.tubeLine.setAttribute('points', '');
+    if (!t || t.points.length < 2) {
+      this.note('Drag across the view to draw a tube');
+      return;
+    }
+    const radius = Math.max(0.005, Math.min(1, Number(this.shell.tubeRadius.value) || 0.05));
+    const points = t.points.length > 4096 ? t.points.filter((_, i) => i % Math.ceil(t.points.length / 4096) === 0) : t.points;
+    await this.run('curve_tube', { points, radius, smooth: 2 });
+  }
+
+  private async build(action: string): Promise<void> {
+    const first = this.scene.objects.length === 0;
+    if (action === 'skeleton') {
+      const preset = SKELETONS[this.shell.skeleton.value] ?? SKELETONS.biped;
+      const resolution = Math.max(32, Math.min(256, Number(this.shell.resolution.value) || 128));
+      await this.run('skeleton_mesh', { ...preset.build(), blend: 0.3, resolution, name: preset.label });
+    } else if (action === 'lathe') {
+      const preset = LATHES[this.shell.lathe.value] ?? LATHES.vase;
+      await this.run('lathe', { profile: preset.profile, segments: 48, name: preset.label });
+    }
+    if (first) this.frameActive();
   }
 
   private fetching = new Set<number>();
