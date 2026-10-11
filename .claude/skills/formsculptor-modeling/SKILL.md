@@ -31,6 +31,11 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 ## Workflow 2: refine and detail
 
 1. `clay` builds up layered planes, `flatten` cuts flat planes, `crease` draws a fold line, `pinch` tightens an edge, `smooth` relaxes noise. Smaller radius (0.03 to 0.1) for detail.
+   - `relax` evens stretched triangles without shrinking the form (prefer it to `smooth` after grab or snake hook).
+   - `planar` flattens to the plane under the stroke's first point (hard-surface faces); `trim` shaves down only what stands above (chiselled planes on rock or armour).
+   - `snake_hook` pulls the area under the first point along the path: give points that leave the surface (horns, tentacles, spikes); add `dyntopo` to keep the pulled part detailed, then `relax`.
+   - `noise` roughens along a stroke (`noise_scale` sets the feature size); `surface_noise` covers the whole object in a new layer whose strength you can change later.
+   - `lazy` (0 to 0.95) steadies a line: the brush trails on a rope and stops short of the path's end by the rope length.
 2. Use `symmetry: {"x": true}` for anything bilateral (faces, bodies); `radial: n` repeats a stroke n times around the y axis (petals, gears, crowns).
 3. Prefer several light strokes (strength 0.2 to 0.4) to one heavy one.
 
@@ -38,7 +43,14 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 1. `sculpt_stroke` with `brush: "mask"` paints the mask over what must not move.
 2. Sculpt; masked vertices resist every other brush.
-3. `mask_invert` to work on the other side, `mask_blur` to soften the boundary, `mask_clear` when done.
+3. `mask_invert` to work on the other side, `mask_blur` to soften the boundary, `mask_grow` (negative steps shrink) to adjust it, `mask_clear` when done. `get_scene` reports each object's `masked_vertices`.
+4. Faster ways to mask, each combinable with `op` (replace, add, subtract, intersect):
+   - `mask_shape`: look with `get_view`, then give a box, ellipse or lasso in that picture's coordinates (0 to 1, y down) with the same view, width and height.
+   - `mask_topology`: from a point outward by distance along the surface, so one finger or one ear is masked without its neighbour.
+   - `mask_cavity`: creases and hollows, or `mode: "peaks"` for ridges (a smooth form masks nothing).
+   - `mask_by_color`: the painted areas near a colour.
+5. `set_visibility` hides, shows or isolates objects so a crowded scene does not get in the way of `get_view` or picking; `arrange_objects` aligns or distributes them on an axis.
+6. `get_history` lists every step by name; `history_go_to` jumps back to any of them (and forward again).
 
 ## When something goes wrong
 

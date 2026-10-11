@@ -1,20 +1,20 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.9.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.10.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`
-- Viewing: `get_view`
-- Objects: `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
+- Viewing: `get_view`, `pick`
+- Objects: `set_visibility`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
+- History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
-- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `extract_mask`, `extrude_mask`, `inset_mask`
+- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
-- Layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
+- Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 - Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
-- History: `undo`, `redo`
 
 ## get_engine_info
 
@@ -47,6 +47,44 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
 
 Note: read-only.
+
+## pick
+
+Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal and the distance. The window uses it to pivot the camera on a double-clicked point.
+
+- `direction`: array of number; required
+- `origin`: array of number; required
+
+Note: read-only.
+
+## set_visibility
+
+Hide or show objects, isolate some (hiding the rest) or show all. Hidden objects are not drawn, picked, rendered by get_view or exported by default; they stay in the scene and in saved projects.
+
+- `action`: string (hide | show | isolate | show_all); required; hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything.
+- `ids`: array of integer; The objects; the active object when omitted.
+
+## arrange_objects
+
+Line objects up on an axis by their bounds' min, centre or max (at the first object's), or distribute them with equal gaps between the outermost two. Objects with subdivision levels move with all their levels. One undo step.
+
+- `axis`: string (x | y | z); default "x"
+- `ids`: array of integer; The objects to arrange; every object when omitted.
+- `mode`: string (min | center | max | distribute); default "center"; min, center and max line the objects' bounds up on the axis (at the first object's); distribute spaces them evenly between the outermost two, with equal gaps between their bounds.
+
+## get_history
+
+Every undo step, oldest first, by name, and how many of them are done; the rest are undone and can be redone.
+
+- no parameters
+
+Note: read-only.
+
+## history_go_to
+
+Undo or redo until exactly `done` steps of get_history's list are done: jump back to any earlier state, or forward again.
+
+- `done`: integer; required; range 0 to inf; How many steps of get_history's list should be done; earlier numbers undo, later ones redo.
 
 ## new_scene
 
@@ -116,15 +154,16 @@ Note: removes or replaces (undoable); in the window: Delete.
 
 Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
-- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness.
+- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale.
 - `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
-- `lazy`: number; default 0; range 0 to 0.95
+- `lazy`: number; default 0; range 0 to 0.95; Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length.
 - `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
+- `noise_scale`: number; default 0; range 0 to 10000; Noise brush: feature size in world units; a fifth of the radius when 0.
 - `points`: array of array; required; The stroke path as [x, y, z] or [x, y, z, pressure] points on or near the surface, in object space. Grab moves the vertices around the first point by the offset to the last.
 - `radius`: number; default 0.2; range -inf to 10000; World units; compare with the object's bounds from get_scene.
 - `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
@@ -189,6 +228,56 @@ Soften the mask's edge by averaging each vertex with its neighbours once.
 Harden the mask's edge by pushing values away from one half.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## mask_cavity
+
+Mask by curvature: creases and hollows (mode cavity) or ridges and peaks (mode peaks), with thresholds taken from the object's own range, so it suits both soft and detailed sculpts. Use it to paint grime into crevices, hold detail while smoothing, or sharpen ridges. One undo step.
+
+- `contrast`: number; default 0.5; range 0 to 1; 0 masks broad curvature softly, 1 only the sharpest creases or ridges.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `mode`: string (cavity | peaks); default "cavity"; cavity masks creases and hollows; peaks masks ridges and raised edges.
+- `op`: string (replace | add | subtract | intersect); default "replace"; How the new mask meets the current one: replace it, add (keep the larger), subtract, or intersect (keep the smaller).
+
+## mask_by_color
+
+Mask the vertices painted near a colour (within tolerance, soft-edged): sculpt or paint just the areas of one colour. Needs vertex paint. One undo step.
+
+- `color`: ['string', 'array']; required; The painted colour to mask: #rrggbb or [r, g, b] from 0 to 1.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `op`: string (replace | add | subtract | intersect); default "replace"; How the new mask meets the current one: replace it, add (keep the larger), subtract, or intersect (keep the smaller).
+- `tolerance`: number; default 0.15; range 0.001 to 1; How far a colour may differ (0 to 1 across the colour cube) and still be masked; the edge is soft over the last half.
+
+## mask_grow
+
+Grow the mask outward by rings of edges, or shrink it with negative steps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `steps`: integer; default 1; range -50 to 50; Rings of edges to grow the mask by; negative shrinks it.
+
+## mask_topology
+
+Mask outward from a point by distance measured along the surface, not through space: a finger is masked without the finger beside it, an eyelid without the eye. Fades out toward the reach unless falloff is false. One undo step.
+
+- `distance`: number; required; range -inf to 10000; How far to reach, measured along the surface's edges (not straight through space), in world units.
+- `falloff`: boolean; default true; Fade the mask out toward the reach; false masks the whole reach fully.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `op`: string (replace | add | subtract | intersect); default "replace"; How the new mask meets the current one: replace it, add (keep the larger), subtract, or intersect (keep the smaller).
+- `point`: array of number; required; Where to start, in object space; the nearest vertex is used.
+
+## mask_shape
+
+Mask everything inside a box, ellipse or lasso drawn on a view, through the whole object (back faces too). Points are in the coordinates of the get_view picture for the same view, width and height, so you can look with get_view and then mask what you see. Adds to the mask by default. One undo step.
+
+- `height`: integer; default 640; range 1 to 8192
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `op`: string (replace | add | subtract | intersect); default "add"; How the new mask meets the current one: replace it, add (keep the larger), subtract, or intersect (keep the smaller).
+- `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
+- `points`: array of array; required; Picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
+- `shape`: string (box | ellipse | lasso); default "box"; box and ellipse take two corner points; lasso takes the outline, three points or more.
+- `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
+- `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
+- `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
+- `yaw`: number; range -360 to 360; Degrees; overrides view, as in get_view.
 
 ## subdivide
 
@@ -373,6 +462,16 @@ Add a sculpt layer to an object and make it the one strokes record into. A layer
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `name`: string
+
+## surface_noise
+
+Cover the object with fractal noise along its normals (skin pores, stone, bark, hammered metal), held by the mask, in a new sculpt layer: change its strength with layer_set_strength to fade or invert it, layer_apply to bake it, layer_delete to remove it. One undo step.
+
+- `amount`: number; range -10000 to 10000; Height of the bumps along the normals in world units (negative sinks them); 0.4 percent of the object's size when omitted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `name`: string; default "Noise"
+- `scale`: number; range -inf to 10000; Feature size in world units; 2 percent of the object's size when omitted.
+- `seed`: integer; default 0; range 0 to 1000000; Another seed gives another pattern.
 
 ## layer_select
 

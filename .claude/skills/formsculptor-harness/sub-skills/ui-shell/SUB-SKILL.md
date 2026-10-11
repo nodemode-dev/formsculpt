@@ -11,7 +11,7 @@ Own the shell. Hands back UI work that follows the dev-rules laws and never touc
 
 ## Preconditions
 
-State: v0.1.0 scaffold; panels beyond the scaffold are planned.
+State at 0.10.0: `frontend/src/app.ts` builds the right panel in this order: File, Add, Build, Brush, Paint, Edit, Topology, Multiresolution, Object, Layers, View, note, Active mesh, Engine, History (fixed height, scrolls), Scene. The Scene list must stay last because it changes length; anything placed below it shifts (measured once at 0.0009). Window-side tools ride the viewport's stroke hook (`viewport.strokes`): tube, box and lasso masks draw in the stage's SVG overlay (`.stage-overlay`, pointer events off) and send one command on release; the topology mask picks and sends. Lists (Scene, History, layer options) reuse their nodes and patch text and attributes with `setText` and `setAttr`. Verify each change in Chromium under 4x CPU throttling (CDP `Emulation.setCPUThrottlingRate`) with a `PerformanceObserver` summing `layout-shift` entries; the total must be 0.
 
 ## Procedure
 
