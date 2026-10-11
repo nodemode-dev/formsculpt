@@ -197,3 +197,9 @@ Booleans act on the active object and the one active before it (or the only othe
 - kind: rationale
 - logged: v0.6.0 · 2026-10-11
 One hidden file input serves Open: a .fsc replaces the scene, any mesh format imports. Save and Export fetch the file and save it through a temporary object URL (in ui/, since engine/ never touches the DOM). Print check writes its verdict into the panel note. The buttons sit in two columns so "Print check" fits on one line. Verified under 4x throttling: STL import, print check, save, Ctrl+E export as 3MF, and opening a .fsc with levels and layers, layout shift 0, no console errors.
+
+### src/viewport/gl-renderer.ts, src/app.ts · paint and shading
+- refers-to: src/viewport/gl-renderer.ts :: MESH_FS, SHADINGS, paintBuffer, patch, setShading; src/app.ts :: Paint section, paintArgs, BRUSHES; src/engine/service.ts :: parseUpdate, fetchMesh
+- kind: rationale
+- logged: v0.7.0 · 2026-10-11
+Paint arrives as one five-float buffer bound to two attributes; a mesh first painted mid-stroke gets its buffer created in the patch path, filled with the default for the vertices the update does not cover. Matcap presets stay procedural (key, specular strength and sharpness, rim, tint) so there are no image assets to ship; Lit (PBR) uses roughness and metalness per vertex with GGX, Smith and Schlick terms, three lights and a hemisphere ambient, then Reinhard and gamma. Paint material too adds roughness and metalness to the brush; otherwise only colour is painted. Verified under 4x throttling: a red stroke, a metallic stroke in PBR, the bronze matcap and undo, layout shift 0, no console errors.
