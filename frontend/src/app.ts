@@ -74,6 +74,9 @@ interface Shell {
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
+  reference: HTMLImageElement;
+  referenceInput: HTMLInputElement;
+  referenceOpacity: HTMLInputElement;
   viewButtons: HTMLButtonElement[];
   historyList: HTMLUListElement;
 }
@@ -244,6 +247,12 @@ function buildShell(root: HTMLElement): Shell {
   canvas.setAttribute('aria-label', 'Viewport');
   canvas.tabIndex = 0;
   stage.append(canvas);
+  // A reference image over the model (see-through, so the model shows under it), sized to fit and never reflowing
+  // anything: it is absolutely placed, ignores the pointer and stays hidden until an image is chosen.
+  const reference = el('img', 'stage-reference');
+  reference.alt = '';
+  reference.hidden = true;
+  stage.append(reference);
   const overlay = document.createElementNS(SVG, 'svg');
   overlay.setAttribute('class', 'stage-overlay');
   overlay.setAttribute('aria-hidden', 'true');
@@ -481,8 +490,12 @@ function buildShell(root: HTMLElement): Shell {
   const fov = input('range', { min: '15', max: '100', value: '40', 'aria-label': 'Field of view' });
   const showGroups = input('checkbox', { 'aria-label': 'Show face groups' });
   const trackball = input('checkbox', { 'aria-label': 'Trackball rotation' });
+  const referenceOpacity = input('range', { min: '5', max: '100', value: '45', 'aria-label': 'Reference opacity' });
+  const referenceInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a reference image' });
+  referenceInput.hidden = true;
+  panel.append(referenceInput);
   const viewFields = el('div', 'fields');
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -490,6 +503,9 @@ function buildShell(root: HTMLElement): Shell {
       ['hide', 'Hide'],
       ['isolate', 'Isolate'],
       ['show_all', 'Show all'],
+      ['reference', 'Reference'],
+      ['clear_reference', 'Clear ref'],
+      ['turntable', 'Turntable'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -538,7 +554,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity };
 }
 
 class SceneView {
@@ -567,9 +583,38 @@ class SceneView {
         else void this.run(action);
       }),
     );
+    const applyOpacity = (): void => {
+      shell.reference.style.opacity = String(Number(shell.referenceOpacity.value) / 100);
+    };
+    applyOpacity();
+    shell.referenceOpacity.addEventListener('input', applyOpacity);
+    shell.referenceInput.addEventListener('change', () => {
+      const file = shell.referenceInput.files?.[0];
+      shell.referenceInput.value = '';
+      if (!file) return;
+      if (shell.reference.src.startsWith('blob:')) URL.revokeObjectURL(shell.reference.src);
+      shell.reference.src = URL.createObjectURL(file);
+      shell.reference.hidden = false;
+      this.note(`Reference: ${file.name}`);
+    });
     shell.viewButtons.forEach((b) =>
       b.addEventListener('click', () => {
         const action = b.dataset.action ?? 'show_all';
+        if (action === 'reference') {
+          shell.referenceInput.click();
+          return;
+        }
+        if (action === 'clear_reference') {
+          if (shell.reference.src.startsWith('blob:')) URL.revokeObjectURL(shell.reference.src);
+          shell.reference.hidden = true;
+          shell.reference.removeAttribute('src');
+          return;
+        }
+        if (action === 'turntable') {
+          this.note('Recording a turntable');
+          void this.download(`/api/engine/turntable?frames=48&size=384&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'turntable.png');
+          return;
+        }
         const id = this.scene.active;
         if (action !== 'show_all' && id === null) return;
         void this.run('set_visibility', action === 'show_all' ? { action } : { action, ids: [id] });

@@ -20,6 +20,8 @@ button { font: inherit; color: inherit; }
 
 .stage { grid-area: stage; position: relative; z-index: var(--z-base); background: var(--canvas-bg); background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--grid-color) 35%, transparent) 1px, transparent 0); background-size: 24px 24px; display: grid; place-items: center; }
 .viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.stage-reference { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: var(--z-raised); }
+.stage-reference[hidden] { display: none; }
 .stage-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }
 .stage-overlay polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .panel h2.gap { margin-top: var(--space-5); }
