@@ -12,6 +12,8 @@ export interface ObjectSummary {
   revision: number;
   level: number;
   levels: number;
+  layers: { name: string; strength: number }[];
+  active_layer: number | null;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

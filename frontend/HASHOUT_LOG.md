@@ -185,3 +185,9 @@ The Multiresolution section reuses the topology button wiring (action plus JSON 
 - kind: rationale
 - logged: v0.4.1 · 2026-10-11
 Detail mode replaces the Constant detail checkbox: Brush sends the fraction of the radius, Constant a world size from the object's diagonal, Screen a pixel size (detail times 0.2 px) that the stroke client turns into world units with the same world-per-pixel it uses for the radius, fixed for the stroke. Rebuild lower joins the Multiresolution buttons. Verified under 4x throttling: a screen-detail stroke took a 1,280-triangle sphere to 9,316, and Rebuild lower then Shift+D on a subdivided sphere showed level 0 of 1 at 1,280 triangles, layout shift 0, no console errors.
+
+### src/app.ts · Object and Layers sections
+- refers-to: src/app.ts :: OBJECT_ACTIONS, LAYER_ACTIONS, SceneView.objectAction, layerAction, patchLayers, previous
+- kind: rationale
+- logged: v0.5.0 · 2026-10-11
+Booleans act on the active object and the one active before it (or the only other object), so the order is: click the object to combine with, then the one to keep or cut from. Duplicate offsets the copy by 1.1 times the object's width. Bend, twist and taper take the Deform axis and the Angle field (the taper reads it as a percentage). The Layers section has a Record into menu whose options are patched in place, and a strength slider that sends on change, not on every input, and is not overwritten while it has focus. The Dyntopo checkbox is disabled while the object has levels or layers. Verified under 4x throttling: duplicate, union at resolution 96, bend, add layer, two strokes and the slider to 50 percent, layout shift 0, no console errors. There is no on-canvas transform gizmo yet; transform_object covers it for agents.

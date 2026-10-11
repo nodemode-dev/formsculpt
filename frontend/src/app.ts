@@ -29,6 +29,12 @@ interface Shell {
   dyntopo: HTMLInputElement;
   detail: HTMLInputElement;
   detailMode: HTMLSelectElement;
+  objectButtons: HTMLButtonElement[];
+  deformAxis: HTMLSelectElement;
+  deformAngle: HTMLInputElement;
+  layerSelect: HTMLSelectElement;
+  layerStrength: HTMLInputElement;
+  layerButtons: HTMLButtonElement[];
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
@@ -61,6 +67,24 @@ const MULTIRES: [string, string, Record<string, unknown>][] = [
   ['multires_delete_lower', 'Delete lower', {}],
   ['multires_delete_higher', 'Delete higher', {}],
   ['multires_reconstruct', 'Rebuild lower', {}],
+];
+
+const OBJECT_ACTIONS: [string, string][] = [
+  ['duplicate', 'Duplicate'],
+  ['split', 'Split parts'],
+  ['merge', 'Merge all'],
+  ['union', 'Union'],
+  ['difference', 'Subtract'],
+  ['intersection', 'Intersect'],
+  ['bend', 'Bend'],
+  ['twist', 'Twist'],
+  ['taper', 'Taper'],
+];
+
+const LAYER_ACTIONS: [string, string][] = [
+  ['layer_add', 'Add layer'],
+  ['layer_apply', 'Apply'],
+  ['layer_delete', 'Delete'],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -173,9 +197,9 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(topoGrid);
-  const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Remesh resolution' });
+  const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Voxel resolution' });
   const topoFields = el('div', 'fields');
-  topoFields.append(field('Remesh resolution', resolution));
+  topoFields.append(field('Voxel resolution', resolution));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -189,6 +213,50 @@ function buildShell(root: HTMLElement): Shell {
     topoButtons.push(b);
   }
   panel.append(levelGrid);
+
+  panel.append(el('h2', 'gap', 'Object'));
+  const objectGrid = el('div', 'add-grid three');
+  const objectButtons = OBJECT_ACTIONS.map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    objectGrid.append(b);
+    return b;
+  });
+  panel.append(objectGrid);
+  const deformAxis = el('select');
+  deformAxis.setAttribute('aria-label', 'Deform axis');
+  for (const a of ['x', 'y', 'z']) {
+    const option = el('option', '', a.toUpperCase());
+    option.value = a;
+    option.selected = a === 'y';
+    deformAxis.append(option);
+  }
+  const deformAngle = input('number', { min: '-720', max: '720', value: '45', 'aria-label': 'Deform angle' });
+  const objectFields = el('div', 'fields');
+  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle));
+  panel.append(objectFields);
+
+  panel.append(el('h2', 'gap', 'Layers'));
+  const layerSelect = el('select');
+  layerSelect.setAttribute('aria-label', 'Layer');
+  const baseOption = el('option', '', 'Base mesh');
+  baseOption.value = '';
+  layerSelect.append(baseOption);
+  const layerStrength = input('range', { min: '-100', max: '200', value: '100', 'aria-label': 'Layer strength' });
+  layerStrength.disabled = true;
+  const layerFields = el('div', 'fields');
+  layerFields.append(field('Record into', layerSelect), field('Strength', layerStrength));
+  panel.append(layerFields);
+  const layerGrid = el('div', 'add-grid three');
+  const layerButtons = LAYER_ACTIONS.map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    layerGrid.append(b);
+    return b;
+  });
+  panel.append(layerGrid);
 
   const message = el('p', 'panel-note', '');
   panel.append(message);
@@ -222,7 +290,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
 }
 
 class SceneView {
@@ -257,6 +325,19 @@ class SceneView {
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
     );
+    shell.objectButtons.forEach((b) => b.addEventListener('click', () => this.objectAction(b.dataset.action ?? '')));
+    shell.layerButtons.forEach((b) => b.addEventListener('click', () => this.layerAction(b.dataset.action ?? '')));
+    shell.layerSelect.addEventListener('change', () => {
+      const id = this.scene.active;
+      if (id === null) return;
+      const v = shell.layerSelect.value;
+      void this.run('layer_select', { id, index: v === '' ? null : Number(v) });
+    });
+    shell.layerStrength.addEventListener('change', () => {
+      const o = this.scene.objects.find((x) => x.id === this.scene.active);
+      if (!o || o.active_layer === null) return;
+      void this.run('layer_set_strength', { id: o.id, index: o.active_layer, strength: Number(shell.layerStrength.value) / 100 });
+    });
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush !== 'orbit' && this.scene.active !== null,
@@ -341,8 +422,73 @@ class SceneView {
     setText(this.shell.statTris, active ? active.triangles.toLocaleString('en-US') : '0');
     const leveled = active !== undefined && active.levels > 1;
     setText(this.shell.statLevel, leveled ? `${active.level} of ${active.levels - 1}` : 'none');
-    if (this.shell.dyntopo.disabled !== leveled) this.shell.dyntopo.disabled = leveled;
+    const fixed = leveled || (active !== undefined && active.layers.length > 0);
+    if (this.shell.dyntopo.disabled !== fixed) this.shell.dyntopo.disabled = fixed;
+    this.patchLayers(active);
+    if (next.active !== this.scene.active && this.scene.active !== null) this.previous = this.scene.active;
     this.scene = next;
+  }
+
+  private previous: number | null = null;
+
+  private patchLayers(active: ObjectSummary | undefined): void {
+    const select = this.shell.layerSelect;
+    const layers = active?.layers ?? [];
+    while (select.options.length > layers.length + 1) select.options[select.options.length - 1].remove();
+    layers.forEach((layer, i) => {
+      let option = select.options[i + 1];
+      if (!option) {
+        option = el('option', '', '');
+        select.append(option);
+      }
+      if (option.value !== String(i)) option.value = String(i);
+      setText(option, `${layer.name} (${Math.round(layer.strength * 100)}%)`);
+    });
+    const pick = active?.active_layer ?? null;
+    const value = pick === null ? '' : String(pick);
+    if (select.value !== value) select.value = value;
+    const strength = this.shell.layerStrength;
+    const disabled = pick === null;
+    if (strength.disabled !== disabled) strength.disabled = disabled;
+    if (pick !== null && document.activeElement !== strength) {
+      const v = String(Math.round(layers[pick].strength * 100));
+      if (strength.value !== v) strength.value = v;
+    }
+  }
+
+  private objectAction(action: string): void {
+    const id = this.scene.active;
+    if (id === null) return;
+    const axis = this.shell.deformAxis.value;
+    const angle = Number(this.shell.deformAngle.value) || 0;
+    const res = Math.max(16, Math.min(320, Number(this.shell.resolution.value) || 128));
+    if (action === 'duplicate') void this.run('duplicate_object', { id, offset: this.offsetFor(id) });
+    else if (action === 'split') void this.run('split_parts', { id });
+    else if (action === 'merge') {
+      const ids = [id, ...this.scene.objects.map((o) => o.id).filter((x) => x !== id)];
+      if (ids.length < 2) this.note('Merge needs at least two objects');
+      else void this.run('merge_objects', { ids });
+    } else if (action === 'union' || action === 'difference' || action === 'intersection') {
+      const others = this.scene.objects.map((o) => o.id).filter((x) => x !== id);
+      const b = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
+      if (b === null) this.note('Select the object to combine with first, then the one to keep');
+      else void this.run('boolean', { a: id, b, op: action, resolution: res });
+    } else if (action === 'taper') void this.run('deform_object', { id, kind: 'taper', axis, amount: Math.max(-2, Math.min(2, angle / 100)) });
+    else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
+  }
+
+  private layerAction(action: string): void {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (!o) return;
+    if (action === 'layer_add') void this.run('layer_add', { id: o.id });
+    else if (o.active_layer === null) this.note('Pick a layer under Record into first');
+    else void this.run(action, { id: o.id, index: o.active_layer });
+  }
+
+  private offsetFor(id: number): [number, number, number] {
+    const o = this.scene.objects.find((x) => x.id === id);
+    if (!o) return [1, 0, 0];
+    return [(o.bounds.max[0] - o.bounds.min[0]) * 1.1, 0, 0];
   }
 
   private patchList(next: SceneSummary): void {
