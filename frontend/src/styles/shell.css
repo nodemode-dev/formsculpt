@@ -50,6 +50,11 @@ button { font: inherit; color: inherit; }
 .objects { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-height: 28px; }
 .object { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; }
 .object:hover { background: var(--bg-tertiary); }
+.history { list-style: none; margin: 0; padding: 0; height: 168px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 12px; }
+.history .step { height: 24px; line-height: 24px; padding: 0 var(--space-2); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid transparent; }
+.history .step:hover { background: var(--bg-tertiary); }
+.history .step[data-undone="true"] { color: var(--text-muted); }
+.history .step[aria-current="true"] { border-left-color: var(--accent-color); background: var(--accent-color-dim); }
 .object[aria-current="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
 .object .count { font: 11px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .panel-note { margin: var(--space-2) 0 0; min-height: 18px; font-size: 12px; color: var(--warn-color); }

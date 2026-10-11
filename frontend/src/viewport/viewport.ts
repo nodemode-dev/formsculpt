@@ -109,6 +109,23 @@ export class Viewport {
     return this.camera.orthographic;
   }
 
+  /** A ray through a point given in client pixels (for picking on double-click). */
+  rayAtClient(x: number, y: number): Ray | null {
+    const r = this.canvas.getBoundingClientRect();
+    return this.camera.ray(x - r.left, y - r.top, r.width, r.height);
+  }
+
+  /** Orbit around `point` from here on, without moving the eye: the view does not jump. */
+  pivotAt(point: Vec3): void {
+    this.camera.pivotAt(point);
+    this.invalidate();
+  }
+
+  setFov(degrees: number): void {
+    this.camera.fov = (Math.max(10, Math.min(120, degrees)) * Math.PI) / 180;
+    this.invalidate();
+  }
+
   private rayAt(e: PointerEvent): Ray | null {
     const r = this.canvas.getBoundingClientRect();
     return this.camera.ray(e.clientX - r.left, e.clientY - r.top, r.width, r.height);

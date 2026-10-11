@@ -67,6 +67,10 @@ interface Shell {
   tubeRadius: HTMLInputElement;
   buildButtons: HTMLButtonElement[];
   tubeLine: SVGPolylineElement;
+  lazy: HTMLInputElement;
+  fov: HTMLInputElement;
+  viewButtons: HTMLButtonElement[];
+  historyList: HTMLUListElement;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -95,7 +99,18 @@ const BRUSHES: [string, string][] = [
   ['mask', 'Mask'],
   ['paint', 'Paint'],
   ['tube', 'Tube'],
+  ['relax', 'Relax'],
+  ['planar', 'Planar'],
+  ['trim', 'Trim'],
+  ['snake_hook', 'Snake hook'],
+  ['noise', 'Noise'],
+  ['mask_box', 'Box mask'],
+  ['mask_lasso', 'Lasso mask'],
+  ['mask_topo', 'Topo mask'],
 ];
+
+/** Window-side tools that draw or click instead of streaming a stroke to the engine. */
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -137,7 +152,17 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['twist', 'Twist'],
   ['taper', 'Taper'],
   ['project', 'Project from'],
+  ['align', 'Align'],
+  ['distribute', 'Distribute'],
 ];
+
+/** Edit buttons whose engine call differs from their name. */
+const ACTION_CALLS: Record<string, [string, Record<string, unknown>]> = {
+  mask_grow: ['mask_grow', { steps: 1 }],
+  mask_shrink: ['mask_grow', { steps: -1 }],
+  mask_cavity: ['mask_cavity', { mode: 'cavity' }],
+  mask_peaks: ['mask_cavity', { mode: 'peaks' }],
+};
 
 const LAYER_ACTIONS: [string, string][] = [
   ['layer_add', 'Add layer'],
@@ -151,6 +176,11 @@ const ACTIONS: [string, string][] = [
   ['mask_invert', 'Invert mask'],
   ['mask_blur', 'Blur mask'],
   ['mask_sharpen', 'Sharpen mask'],
+  ['mask_grow', 'Grow mask'],
+  ['mask_shrink', 'Shrink mask'],
+  ['mask_cavity', 'Mask cavity'],
+  ['mask_peaks', 'Mask peaks'],
+  ['mask_color', 'Mask colour'],
   ['extract_mask', 'Extract mask'],
   ['extrude_mask', 'Extrude mask'],
   ['inset_mask', 'Inset mask'],
@@ -292,8 +322,9 @@ function buildShell(root: HTMLElement): Shell {
     option.value = value;
     detailMode.append(option);
   }
+  const lazy = input('range', { min: '0', max: '95', value: '0', 'aria-label': 'Lazy mouse' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode));
   panel.append(fields);
 
   panel.append(el('h2', 'gap', 'Paint'));
@@ -421,6 +452,27 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(layerGrid);
 
+  panel.append(el('h2', 'gap', 'View'));
+  const fov = input('range', { min: '15', max: '100', value: '40', 'aria-label': 'Field of view' });
+  const viewFields = el('div', 'fields');
+  viewFields.append(field('Field of view', fov));
+  panel.append(viewFields);
+  const viewGrid = el('div', 'add-grid three after-fields');
+  const viewButtons = (
+    [
+      ['hide', 'Hide'],
+      ['isolate', 'Isolate'],
+      ['show_all', 'Show all'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    viewGrid.append(b);
+    return b;
+  });
+  panel.append(viewGrid);
+
   const message = el('p', 'panel-note', '');
   panel.append(message);
 
@@ -445,6 +497,11 @@ function buildShell(root: HTMLElement): Shell {
   objectList.setAttribute('aria-label', 'Objects');
   panel.append(objectList);
 
+  panel.append(el('h2', 'gap', 'History'));
+  const historyList = el('ul', 'history');
+  historyList.setAttribute('aria-label', 'Undo history');
+  panel.append(historyList);
+
   const status = el('footer', 'status');
   const state = el('span', 'engine-state');
   const engineDot = el('i', 'dot');
@@ -453,7 +510,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList };
 }
 
 class SceneView {
@@ -473,7 +530,29 @@ class SceneView {
         shell.brushButtons.forEach((x) => setAttr(x, 'aria-pressed', x === b ? 'true' : 'false'));
       }),
     );
-    shell.actionButtons.forEach((b) => b.addEventListener('click', () => void this.run(b.dataset.action ?? 'undo')));
+    shell.actionButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const action = b.dataset.action ?? 'undo';
+        const mapped = ACTION_CALLS[action];
+        if (mapped) void this.run(mapped[0], mapped[1]);
+        else if (action === 'mask_color') void this.run('mask_by_color', { color: shell.paintColor.value, tolerance: 0.2 });
+        else void this.run(action);
+      }),
+    );
+    shell.viewButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const action = b.dataset.action ?? 'show_all';
+        const id = this.scene.active;
+        if (action !== 'show_all' && id === null) return;
+        void this.run('set_visibility', action === 'show_all' ? { action } : { action, ids: [id] });
+      }),
+    );
+    shell.fov.addEventListener('input', () => this.viewport.setFov(Number(shell.fov.value)));
+    shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
+    shell.historyList.addEventListener('click', (e) => {
+      const row = (e.target as HTMLElement).closest('li');
+      if (row?.dataset.done !== undefined) void this.run('history_go_to', { done: Number(row.dataset.done) });
+    });
     this.strokes.onUpdate = (u) => this.viewport.patchMesh(u);
     this.strokes.onEnd = (r) => {
       if (r) this.viewport.renderer.setRevision(r.id, r.revision);
@@ -534,6 +613,15 @@ class SceneView {
     });
     shell.buildButtons.forEach((b) => b.addEventListener('click', () => void this.build(b.dataset.action ?? '')));
     const trace = (e: PointerEvent): void => {
+      if (this.shape) {
+        const p: [number, number] = [e.offsetX, e.offsetY];
+        if (this.shape.kind === 'mask_box') this.shape.pts = [this.shape.pts[0] ?? p, p];
+        else this.shape.pts.push(p);
+        const pts = this.shape.pts;
+        const outline = this.shape.kind === 'mask_box' && pts.length === 2 ? [pts[0], [pts[1][0], pts[0][1]], pts[1], [pts[0][0], pts[1][1]], pts[0]] : [...pts, pts[0]];
+        shell.tubeLine.setAttribute('points', outline.map((q) => `${q[0].toFixed(0)},${q[1].toFixed(0)}`).join(' '));
+        return;
+      }
       if (!this.tube) return;
       this.tube.screen.push(`${e.offsetX.toFixed(0)},${e.offsetY.toFixed(0)}`);
       shell.tubeLine.setAttribute('points', this.tube.screen.join(' '));
@@ -545,11 +633,20 @@ class SceneView {
       enabled: () => this.brush === 'tube' || (this.brush !== 'orbit' && this.scene.active !== null),
       begin: (ray, pressure, wpp, inv) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
+        else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv };
+        else if (this.brush === 'mask_topo') void this.topoMask(ray, wpp, inv);
         else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
       },
-      move: (ray, pressure) => (this.tube ? this.tubeMove(ray) : this.strokes.move(ray.origin, ray.dir, pressure)),
-      end: () => (this.tube ? void this.tubeEnd() : this.strokes.end()),
-      missed: () => (this.tube ? false : this.strokes.missed()),
+      move: (ray, pressure) => {
+        if (this.tube) this.tubeMove(ray);
+        else if (!this.shape && this.brush !== 'mask_topo') this.strokes.move(ray.origin, ray.dir, pressure);
+      },
+      end: () => {
+        if (this.tube) void this.tubeEnd();
+        else if (this.shape) void this.shapeEnd();
+        else if (this.brush !== 'mask_topo') this.strokes.end();
+      },
+      missed: () => (this.tube || this.shape || this.brush === 'mask_topo' ? false : this.strokes.missed()),
     };
   }
 
@@ -558,8 +655,48 @@ class SceneView {
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
+  private shape: { kind: string; pts: [number, number][]; subtract: boolean } | null = null;
+
   stroking(): boolean {
-    return this.strokes.active() || this.tube !== null;
+    return this.strokes.active() || this.tube !== null || this.shape !== null;
+  }
+
+  private async shapeEnd(): Promise<void> {
+    const shape = this.shape;
+    this.shape = null;
+    this.shell.tubeLine.setAttribute('points', '');
+    const id = this.scene.active;
+    const box = shape?.kind === 'mask_box';
+    if (!shape || id === null || shape.pts.length < (box ? 2 : 3)) {
+      this.note(box ? 'Drag a box over the area to mask' : 'Draw around the area to mask');
+      return;
+    }
+    const w = Math.max(1, this.shell.canvas.clientWidth);
+    const h = Math.max(1, this.shell.canvas.clientHeight);
+    const points = shape.pts.map(([x, y]) => [x / w, y / h]);
+    const viewProj = Array.from(this.viewport.camera.viewProjection());
+    await this.run('mask_shape', { id, shape: box ? 'box' : 'lasso', points, view_proj: viewProj, op: shape.subtract ? 'subtract' : 'add' });
+  }
+
+  private async topoMask(ray: Ray, wpp: number, subtract: boolean): Promise<void> {
+    const id = this.scene.active;
+    if (id === null) return;
+    const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+    if (!hit.ok || !hit.result.hit || hit.result.id !== id || !hit.result.point) {
+      this.note('Click on the active object to mask outward from that point');
+      return;
+    }
+    const distance = Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2);
+    await this.run('mask_topology', { id, point: hit.result.point, distance, op: subtract ? 'subtract' : 'add' });
+  }
+
+  private async pivot(e: MouseEvent): Promise<void> {
+    // With a sculpting brush a plain double-click would also lay down dabs; Alt clicks never sculpt.
+    if (this.brush !== 'orbit' && !e.altKey) return;
+    const ray = this.viewport.rayAtClient(e.clientX, e.clientY);
+    if (!ray) return;
+    const hit = await dispatch<{ hit: boolean; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+    if (hit.ok && hit.result.hit && hit.result.point) this.viewport.pivotAt(hit.result.point);
   }
 
   private onPlane(ray: Ray): Vec3 | null {
@@ -634,7 +771,7 @@ class SceneView {
       strength: Number(s.strength.value) / 100,
       invert: s.invert.checked,
       falloff: 'smooth',
-      lazy: 0,
+      lazy: Number(s.lazy.value) / 100,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
       dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
@@ -667,16 +804,38 @@ class SceneView {
       return;
     }
     await this.apply(reply.result);
+    const history = await dispatch<{ steps: string[]; done: number }>('get_history');
+    if (history.ok) this.patchHistory(history.result.steps, history.result.done);
+  }
+
+  /** One row per state: "Start", then each step; rows are reused so the list never rebuilds. */
+  private patchHistory(steps: string[], done: number): void {
+    const list = this.shell.historyList;
+    const rows = ['Start', ...steps];
+    while (list.children.length > rows.length) list.lastElementChild?.remove();
+    rows.forEach((label, i) => {
+      let row = list.children[i] as HTMLLIElement | undefined;
+      if (!row) {
+        row = el('li', 'step', '');
+        list.append(row);
+      }
+      if (row.dataset.done !== String(i)) row.dataset.done = String(i);
+      setText(row, label);
+      setAttr(row, 'aria-current', i === done ? 'true' : 'false');
+      setAttr(row, 'data-undone', i > done ? 'true' : 'false');
+    });
+    const current = list.children[done] as HTMLElement | undefined;
+    if (current && (current.offsetTop < list.scrollTop || current.offsetTop > list.scrollTop + list.clientHeight - current.offsetHeight)) list.scrollTop = current.offsetTop - list.clientHeight / 2;
   }
 
   private async apply(next: SceneSummary): Promise<void> {
     for (const o of next.objects) {
-      if (!this.viewport.renderer.has(o.id, o.revision)) {
+      if (o.visible && !this.viewport.renderer.has(o.id, o.revision)) {
         const mesh = await fetchMesh(o.id);
         if (mesh) this.viewport.setMesh(mesh);
       }
     }
-    const keep = new Set(next.objects.map((o) => o.id));
+    const keep = new Set(next.objects.filter((o) => o.visible).map((o) => o.id));
     for (const id of this.viewport.renderer.ids()) if (!keep.has(id)) this.viewport.removeMesh(id);
     this.viewport.setActive(next.active);
     this.patchList(next);
@@ -741,6 +900,9 @@ class SceneView {
       const source = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
       if (source === null) this.note('Select the object to take detail from first, then the one to project onto');
       else void this.run('project_detail', { id, source_id: source });
+    } else if (action === 'align' || action === 'distribute') {
+      if (this.scene.objects.length < 2) this.note('Align and Distribute need at least two objects');
+      else void this.run('arrange_objects', { axis, mode: action === 'align' ? 'center' : 'distribute' });
     } else if (action === 'taper') void this.run('deform_object', { id, kind: 'taper', axis, amount: Math.max(-2, Math.min(2, angle / 100)) });
     else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
   }

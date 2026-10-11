@@ -57,6 +57,18 @@ export class OrbitCamera {
     this.distance = Math.max(1e-3, Math.min(1e5, this.distance * factor));
   }
 
+  /** Moves the orbit target to `point` and re-derives yaw, pitch and distance so the eye stays where it is. */
+  pivotAt(point: Vec3): void {
+    const eye = this.eye();
+    const v = sub(eye, point);
+    const d = Math.hypot(v[0], v[1], v[2]);
+    if (d < 1e-6) return;
+    this.target = point;
+    this.distance = d;
+    this.pitch = Math.asin(Math.max(-1, Math.min(1, v[1] / d)));
+    this.yaw = Math.atan2(v[0], v[2]);
+  }
+
   frame(min: Vec3, max: Vec3): void {
     this.target = scale(add(min, max), 0.5);
     const radius = Math.max(1e-3, 0.5 * Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]));
