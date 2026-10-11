@@ -11,7 +11,7 @@ Own `fsc-io`. Reads and writes meshes and projects. Hands back a format change t
 
 ## Preconditions
 
-State at 0.6.0: built in `native/crates/fsc-io`: `formats.rs` (OBJ, STL ASCII and binary, PLY ASCII and binary little-endian, 3MF read and write), `gltf.rs` (GLB and embedded glTF read with the node tree; GLB write with layers as morph targets, validated by the Khronos validator), `project.rs` (.fsc zip: manifest plus buffers for meshes, masks, level stacks and layers; reopens byte-identical). `fsc-commands/src/file_cmds.rs` holds save_project, open_project, import_mesh, export_mesh, print_check, repair_mesh and the byte entry points the Python module and the service routes use; the service autosaves to ~/.formsculptor/autosave. Not built: FBX, big-endian PLY, glTF with outside buffer files, vertex colours and UVs in any format.
+State at 0.6.0: built in `native/crates/fsc-io`: `formats.rs` (OBJ, STL ASCII and binary, PLY ASCII and binary little-endian, 3MF read and write), `gltf.rs` (GLB and embedded glTF read with the node tree; GLB write with layers as morph targets, validated by the Khronos validator), `project.rs` (.fsc zip: manifest plus buffers for meshes, masks, level stacks and layers; reopens byte-identical). `fsc-commands/src/file_cmds.rs` holds save_project, open_project, import_mesh, export_mesh, print_check, repair_mesh and the byte entry points the Python module and the service routes use; the service autosaves to ~/.formsculptor/autosave. Since 0.14.0 `.fsc` also stores paint layers (`paint_layers` in the manifest: `paintbase.f32` at five floats and `paintlayerN.f32` at six per vertex) beside the composite `paint`. Not built: FBX, big-endian PLY, glTF with outside buffer files, vertex colours and UVs in any format.
 
 ## Procedure
 

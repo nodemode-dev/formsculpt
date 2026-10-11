@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.13.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.14.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -10,7 +10,7 @@ Generated from the engine's command registry (formsculptor 0.13.0) by `./formscu
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`, `alpha_load`
-- Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
+- Painting: `paint_fill`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -219,6 +219,56 @@ Paint a whole object with a colour, roughness or metalness (only the channels gi
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `metalness`: number; range 0 to 1
 - `roughness`: number; range 0 to 1
+
+## paint_layer_add
+
+Add a paint layer above the active one and paint into it from now on: the paint brush, paint_fill and smudge go to the active paint layer (invert erases it), paint_clear empties it. Each layer has a blend (normal, multiply, screen, overlay, add) and an opacity, and is composited over the base and the layers below, so a pattern, dirt or tint can be changed or removed later without touching the rest. The first layer turns the existing paint into the base. A change of topology (remesh, dyntopo, subdivide) flattens the stack.
+
+- `blend`: string (normal | multiply | screen | overlay | add); default "normal"
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `name`: string
+- `opacity`: number; default 1; range 0 to 1
+
+## paint_layer_set
+
+Change a paint layer: name, blend, opacity, visibility, or move it up or down the stack. get_scene lists each object's paint_layers (bottom first) and active_paint_layer (null is the base).
+
+- `blend`: string (normal | multiply | screen | overlay | add)
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `index`: integer; range 0 to inf; Layer number from the bottom (0); the active layer when omitted.
+- `move`: string (up | down); Move the layer one place up or down the stack.
+- `name`: string
+- `opacity`: number; range 0 to 1
+- `visible`: boolean
+
+## paint_layer_select
+
+Choose which paint layer brushes and fills paint into; index null paints the base under every layer. Not an undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `index`: ['integer', 'null']; range 0 to inf; Layer number from the bottom (0); for paint_layer_select, null paints the base.
+
+## paint_layer_delete
+
+Remove a paint layer and what was painted in it.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `index`: ['integer', 'null']; range 0 to inf; Layer number from the bottom (0); for paint_layer_select, null paints the base.
+
+Note: removes or replaces (undoable).
+
+## paint_layer_merge
+
+Bake a paint layer, with its blend and opacity, into the layer below it (or the base), keeping how it looks.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `index`: ['integer', 'null']; range 0 to inf; Layer number from the bottom (0); for paint_layer_select, null paints the base.
+
+## paint_layer_flatten
+
+Bake every visible paint layer into plain paint and remove the stack (hidden layers are dropped).
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## paint_clear
 
