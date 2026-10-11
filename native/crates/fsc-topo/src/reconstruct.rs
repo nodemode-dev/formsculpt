@@ -8,6 +8,7 @@ use crate::subdivide::loop_subdivide;
 pub struct Reconstructed {
     pub lower: Mesh,
     pub stencil: Stencil,
+    pub evens: Vec<u32>,
 }
 
 fn ring(mesh: &Mesh, topo: &Topology, v: u32) -> (Vec<u32>, bool) {
@@ -185,5 +186,5 @@ pub fn reconstruct_lower(mesh: &Mesh) -> Result<Reconstructed, String> {
         row.extend((a..b).map(|k| (out.stencil.sources[k], out.stencil.weights[k])));
         stencil.push(&row);
     }
-    Ok(Reconstructed { lower, stencil })
+    Ok(Reconstructed { lower, stencil, evens })
 }

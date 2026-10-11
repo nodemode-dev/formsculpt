@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fsc_core::{Mesh, Object};
+use fsc_core::{Mesh, Object, Paint};
 use glam::{Mat3, Vec3};
 
 use crate::brush::{BrushKind, BrushSettings};
@@ -12,6 +12,8 @@ pub struct VertexEdit {
     pub after: Vec<[f32; 3]>,
     pub mask_before: Vec<f32>,
     pub mask_after: Vec<f32>,
+    pub paint_before: Vec<Paint>,
+    pub paint_after: Vec<Paint>,
 }
 
 impl VertexEdit {
@@ -21,9 +23,16 @@ impl VertexEdit {
 
     pub fn apply(&self, object: &mut Object, forward: bool) -> Vec<u32> {
         let (pos, mask) = if forward { (&self.after, &self.mask_after) } else { (&self.before, &self.mask_before) };
+        let paint = if forward { &self.paint_after } else { &self.paint_before };
+        if !paint.is_empty() {
+            object.mesh.ensure_paint();
+        }
         for (k, &v) in self.indices.iter().enumerate() {
             object.mesh.positions[v as usize] = pos[k];
             object.mask[v as usize] = mask[k];
+            if let Some(p) = paint.get(k) {
+                object.mesh.paint[v as usize] = *p;
+            }
         }
         let mut ring = Vec::new();
         object.topology.ring_vertices(&self.indices, &mut ring);
@@ -47,7 +56,7 @@ pub struct Stroke {
     transforms: Vec<Mat3>,
     last: Option<Vec3>,
     lazy_point: Option<Vec3>,
-    before: HashMap<u32, ([f32; 3], f32)>,
+    before: HashMap<u32, ([f32; 3], f32, Paint)>,
     changed: Vec<u32>,
     grab: Option<Grab>,
     found: Vec<u32>,
@@ -151,13 +160,13 @@ impl Stroke {
             }
             self.dabs += 1;
         }
-        if self.settings.kind != BrushKind::Mask && !self.changed.is_empty() {
+        if self.settings.kind.moves_vertices() && !self.changed.is_empty() {
             object.refit_vertices(&self.changed);
         }
     }
 
     fn refine(&mut self, object: &mut Object, centers: &[Vec3], frac: f32) {
-        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab) {
+        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab | BrushKind::Paint) {
             return;
         }
         if self.snapshot.is_none() {
@@ -201,7 +210,8 @@ impl Stroke {
     }
 
     fn remember(&mut self, object: &Object, v: u32) {
-        self.before.entry(v).or_insert((object.mesh.positions[v as usize], object.mask[v as usize]));
+        let paint = object.mesh.paint.get(v as usize).copied().unwrap_or(fsc_core::DEFAULT_PAINT);
+        self.before.entry(v).or_insert((object.mesh.positions[v as usize], object.mask[v as usize], paint));
     }
 
     fn dab(&mut self, object: &mut Object, center: Vec3, pressure: f32) {
@@ -234,7 +244,19 @@ impl Stroke {
         for &v in &found {
             self.remember(object, v);
         }
-        if s.kind == BrushKind::Mask {
+        if s.kind == BrushKind::Paint {
+            object.mesh.ensure_paint();
+            for (k, &v) in found.iter().enumerate() {
+                let w = (weights[k] * amount).min(1.0) * (1.0 - object.mask[v as usize]);
+                let cur = &mut object.mesh.paint[v as usize];
+                for (c, value) in cur.iter_mut().enumerate() {
+                    let channel = if c < 3 { 0 } else { c - 2 };
+                    if s.paint_channels[channel] {
+                        *value += (s.paint[c] - *value) * w;
+                    }
+                }
+            }
+        } else if s.kind == BrushKind::Mask {
             for (k, &v) in found.iter().enumerate() {
                 let m = &mut object.mask[v as usize];
                 *m = (*m + weights[k] * amount * sign).clamp(0.0, 1.0);
@@ -286,7 +308,7 @@ impl Stroke {
                         let tangent = to - area_n * to.dot(area_n);
                         p - area_n * (w * r * 0.04 * sign) + tangent * (w * 0.2).min(1.0)
                     }
-                    BrushKind::Smooth | BrushKind::Grab | BrushKind::Mask => p,
+                    BrushKind::Smooth | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint => p,
                 };
                 object.mesh.positions[v as usize] = moved.to_array();
             }
@@ -296,7 +318,7 @@ impl Stroke {
     }
 
     fn finish_dab(&mut self, object: &mut Object, verts: &[u32]) {
-        if self.settings.kind != BrushKind::Mask {
+        if self.settings.kind.moves_vertices() {
             let mut ring = Vec::new();
             object.topology.ring_vertices(verts, &mut ring);
             object.topology.update_normals(&mut object.mesh, &ring);
@@ -377,10 +399,12 @@ impl Stroke {
         let mut indices: Vec<u32> = self.before.keys().copied().collect();
         indices.sort_unstable();
         let mut edit = VertexEdit::default();
+        let painted = object.mesh.has_paint();
         for &v in &indices {
-            let (pos, mask) = self.before[&v];
+            let (pos, mask, paint) = self.before[&v];
             let (now, now_mask) = (object.mesh.positions[v as usize], object.mask[v as usize]);
-            if pos == now && mask == now_mask {
+            let now_paint = object.mesh.paint.get(v as usize).copied().unwrap_or(paint);
+            if pos == now && mask == now_mask && paint == now_paint {
                 continue;
             }
             edit.indices.push(v);
@@ -388,6 +412,10 @@ impl Stroke {
             edit.after.push(now);
             edit.mask_before.push(mask);
             edit.mask_after.push(now_mask);
+            if painted {
+                edit.paint_before.push(paint);
+                edit.paint_after.push(now_paint);
+            }
         }
         if !edit.is_empty() {
             object.revision += 1;

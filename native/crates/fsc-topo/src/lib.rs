@@ -7,6 +7,7 @@ mod manifold;
 mod nearest;
 mod reconstruct;
 mod subdivide;
+mod transfer;
 mod voxel;
 
 pub use decimate::decimate;
@@ -18,6 +19,7 @@ pub use manifold::split_nonmanifold;
 pub use nearest::{closest_on_triangle, nearest_point};
 pub use reconstruct::{reconstruct_lower, Reconstructed};
 pub use subdivide::{loop_subdivide, Subdivided};
+pub use transfer::transfer_paint;
 pub use voxel::{voxel_boolean, voxel_remesh, BooleanOp};
 
 pub fn engine_version() -> &'static str {

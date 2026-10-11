@@ -13,11 +13,21 @@ fn num(tok: Option<&str>, what: &str) -> Result<f32, String> {
 pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
     let text = String::from_utf8_lossy(bytes);
     let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut colors: Vec<[f32; 3]> = Vec::new();
+    let mut colored = true;
     let mut parts: Vec<(String, Vec<u32>)> = vec![("Imported".into(), Vec::new())];
     for line in text.lines() {
         let mut it = line.split_whitespace();
         match it.next() {
-            Some("v") => positions.push([num(it.next(), "v")?, num(it.next(), "v")?, num(it.next(), "v")?]),
+            Some("v") => {
+                positions.push([num(it.next(), "v")?, num(it.next(), "v")?, num(it.next(), "v")?]);
+                let rgb: Vec<f32> = it.filter_map(|t| t.parse::<f32>().ok()).collect();
+                if rgb.len() >= 3 && colored {
+                    colors.push([rgb[0].clamp(0.0, 1.0), rgb[1].clamp(0.0, 1.0), rgb[2].clamp(0.0, 1.0)]);
+                } else {
+                    colored = false;
+                }
+            }
             Some("o") | Some("g") => {
                 let name = it.collect::<Vec<_>>().join(" ");
                 if parts.last().is_some_and(|p| p.1.is_empty()) {
@@ -44,7 +54,10 @@ pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
             _ => {}
         }
     }
-    let out: Vec<Named> = parts.into_iter().filter(|p| !p.1.is_empty()).map(|(n, f)| (n, compacted(&positions, &f))).collect();
+    if !colored {
+        colors.clear();
+    }
+    let out: Vec<Named> = parts.into_iter().filter(|p| !p.1.is_empty()).map(|(n, f)| (n, compacted(&positions, &colors, &f))).collect();
     if out.is_empty() {
         return Err("the OBJ file has no faces".into());
     }
@@ -56,8 +69,11 @@ pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
     let mut base = 1;
     for (name, mesh) in objects {
         s.push_str(&format!("o {name}\n"));
-        for p in &mesh.positions {
-            s.push_str(&format!("v {} {} {}\n", p[0], p[1], p[2]));
+        for (v, p) in mesh.positions.iter().enumerate() {
+            match mesh.paint.get(v) {
+                Some(c) => s.push_str(&format!("v {} {} {} {} {} {}\n", p[0], p[1], p[2], c[0], c[1], c[2])),
+                None => s.push_str(&format!("v {} {} {}\n", p[0], p[1], p[2])),
+            }
         }
         for t in mesh.indices.chunks_exact(3) {
             s.push_str(&format!("f {} {} {}\n", t[0] + base, t[1] + base, t[2] + base));
@@ -168,6 +184,8 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
         return Err("only ASCII and binary little-endian PLY are read".into());
     }
     let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut colors: Vec<[f32; 3]> = Vec::new();
+    let has_rgb = elements.iter().any(|e| e.name == "vertex" && e.props.iter().any(|p| p.0 == "red"));
     let mut faces: Vec<u32> = Vec::new();
     let text = if format == "ascii" { String::from_utf8_lossy(&bytes[body..]).into_owned() } else { String::new() };
     let mut words = text.split_whitespace();
@@ -175,6 +193,7 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
     for el in &elements {
         for _ in 0..el.count {
             let mut xyz = [0f32; 3];
+            let mut rgb = [0.8f32; 3];
             for (name, ty, list) in &el.props {
                 let mut take = |ty: &str| -> Result<f64, String> {
                     if format == "ascii" {
@@ -205,6 +224,19 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
                             "x" => xyz[0] = v,
                             "y" => xyz[1] = v,
                             "z" => xyz[2] = v,
+                            "red" | "green" | "blue" => {
+                                let scale = match ty.as_str() {
+                                    "uchar" | "uint8" | "char" | "int8" => 255.0,
+                                    "ushort" | "uint16" | "short" | "int16" => 65535.0,
+                                    _ => 1.0,
+                                };
+                                let k = match name.as_str() {
+                                    "red" => 0,
+                                    "green" => 1,
+                                    _ => 2,
+                                };
+                                rgb[k] = (v / scale).clamp(0.0, 1.0);
+                            }
                             _ => {}
                         }
                     }
@@ -212,6 +244,9 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
             }
             if el.name == "vertex" {
                 positions.push(xyz);
+                if has_rgb {
+                    colors.push(rgb);
+                }
             }
         }
     }
@@ -221,19 +256,27 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
     if faces.is_empty() {
         return Err("the PLY file has no faces".into());
     }
-    Ok(vec![("Imported".into(), Mesh::new(positions, faces))])
+    let mut mesh = Mesh::new(positions, faces);
+    if has_rgb {
+        mesh.paint = colors.into_iter().map(crate::bin::with_color).collect();
+    }
+    Ok(vec![("Imported".into(), mesh)])
 }
 
 pub fn write_ply(mesh: &Mesh) -> Vec<u8> {
+    let rgb = if mesh.has_paint() { "property uchar red\nproperty uchar green\nproperty uchar blue\n" } else { "" };
     let mut out = format!(
-        "ply\nformat binary_little_endian 1.0\ncomment formsculptor\nelement vertex {}\nproperty float x\nproperty float y\nproperty float z\nelement face {}\nproperty list uchar int vertex_indices\nend_header\n",
+        "ply\nformat binary_little_endian 1.0\ncomment formsculptor\nelement vertex {}\nproperty float x\nproperty float y\nproperty float z\n{rgb}element face {}\nproperty list uchar int vertex_indices\nend_header\n",
         mesh.vertex_count(),
         mesh.triangle_count()
     )
     .into_bytes();
-    for p in &mesh.positions {
+    for (v, p) in mesh.positions.iter().enumerate() {
         for c in p {
             out.extend_from_slice(&c.to_le_bytes());
+        }
+        if let Some(c) = mesh.paint.get(v) {
+            out.extend(c[..3].iter().map(|x| (x.clamp(0.0, 1.0) * 255.0).round() as u8));
         }
     }
     for t in mesh.indices.chunks_exact(3) {

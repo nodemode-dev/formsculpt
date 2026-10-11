@@ -9,7 +9,7 @@ pub mod topology;
 pub use bvh::{Bvh, Hit};
 pub use topology::Topology;
 pub use layers::{Layer, Layers};
-pub use mesh::{Aabb, Mesh};
+pub use mesh::{mix_paint, Aabb, Mesh, Paint, DEFAULT_PAINT};
 pub use multires::{Level, Multires, Stencil};
 pub use primitives::Primitive;
 pub use scene::{Object, ObjectId, Scene};

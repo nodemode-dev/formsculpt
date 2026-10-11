@@ -120,7 +120,7 @@ pub(crate) fn reconstruct(s: &mut Session, args: &Value) -> Result<Value, Comman
     }
     let rebuilt = fsc_topo::reconstruct_lower(&object.mesh).map_err(|e| CommandError::new("not_subdivided", e))?;
     let before = object.multires.clone();
-    object.reconstruct(rebuilt.lower, rebuilt.stencil).map_err(failed)?;
+    object.reconstruct(rebuilt.lower, rebuilt.stencil, rebuilt.evens).map_err(failed)?;
     let after = summary(object);
     s.history.push(Edit::Levels { label: "Reconstruct Lower".into(), object: id, multires: before });
     Ok(json!({"object": after}))

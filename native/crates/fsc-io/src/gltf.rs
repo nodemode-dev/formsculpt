@@ -67,8 +67,13 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         let pos = add_vec3(&mut bin, &base, true);
         let nor = add_vec3(&mut bin, &o.mesh.normals, false);
         let targets: Vec<usize> = o.targets.iter().map(|t| add_vec3(&mut bin, t.delta, true)).collect();
-        index_accessors.push((pos, nor, targets));
+        let color = o.mesh.has_paint().then(|| {
+            let rgb: Vec<[f32; 3]> = o.mesh.paint.iter().map(|p| [p[0], p[1], p[2]]).collect();
+            add_vec3(&mut bin, &rgb, false)
+        });
+        index_accessors.push((pos, nor, targets, color));
     }
+    let mut materials = Vec::new();
     for (k, o) in objects.iter().enumerate() {
         pad(&mut bin, 0);
         let offset = bin.len();
@@ -77,8 +82,19 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         }
         views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": o.mesh.indices.len() * 4, "target": 34963}));
         accessors.push(json!({"bufferView": views.len() - 1, "componentType": 5125, "count": o.mesh.indices.len(), "type": "SCALAR"}));
-        let (pos, nor, targets) = &index_accessors[k];
-        let mut prim = json!({"attributes": {"POSITION": pos, "NORMAL": nor}, "indices": accessors.len() - 1, "mode": 4});
+        let (pos, nor, targets, color) = &index_accessors[k];
+        let mut prim = json!({"attributes": {"POSITION": pos, "NORMAL": nor}, "indices": accessors.len() - 1, "mode": 4, "material": materials.len()});
+        let n = o.mesh.vertex_count().max(1) as f32;
+        let (rough, metal) = if o.mesh.has_paint() {
+            (o.mesh.paint.iter().map(|p| p[3]).sum::<f32>() / n, o.mesh.paint.iter().map(|p| p[4]).sum::<f32>() / n)
+        } else {
+            (fsc_core::DEFAULT_PAINT[3], fsc_core::DEFAULT_PAINT[4])
+        };
+        let tint = if color.is_some() { [1.0, 1.0, 1.0, 1.0] } else { [0.8, 0.8, 0.8, 1.0] };
+        materials.push(json!({"name": o.name, "pbrMetallicRoughness": {"baseColorFactor": tint, "metallicFactor": metal, "roughnessFactor": rough}}));
+        if let Some(c) = color {
+            prim["attributes"]["COLOR_0"] = json!(c);
+        }
         let mut mesh = json!({"name": o.name, "primitives": []});
         if !targets.is_empty() {
             prim["targets"] = json!(targets.iter().map(|t| json!({"POSITION": t})).collect::<Vec<_>>());
@@ -96,6 +112,7 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         "scenes": [{"nodes": (0..objects.len()).collect::<Vec<_>>()}],
         "nodes": nodes,
         "meshes": meshes,
+        "materials": materials,
         "buffers": [{"byteLength": bin.len()}],
         "bufferViews": views,
         "accessors": accessors,
@@ -209,6 +226,8 @@ pub fn read_gltf(bytes: &[u8]) -> Result<Vec<Named>, String> {
         let mesh = &doc["meshes"][mi as usize];
         let mut positions: Vec<[f32; 3]> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
+        let mut colors: Vec<[f32; 3]> = Vec::new();
+        let mut any_color = false;
         for prim in mesh["primitives"].as_array().cloned().unwrap_or_default() {
             if prim["mode"].as_u64().unwrap_or(4) != 4 {
                 continue;
@@ -218,6 +237,21 @@ pub fn read_gltf(bytes: &[u8]) -> Result<Vec<Named>, String> {
             let base = positions.len() as u32;
             for c in p.chunks_exact(3) {
                 positions.push(world.transform_point3(Vec3::new(c[0] as f32, c[1] as f32, c[2] as f32)).to_array());
+            }
+            match prim["attributes"]["COLOR_0"].as_u64() {
+                Some(ca) => {
+                    let acc = &doc["accessors"][ca as usize];
+                    let comps = if acc["type"] == "VEC4" { 4 } else { 3 };
+                    let scale = match (acc["normalized"].as_bool().unwrap_or(false), acc["componentType"].as_u64()) {
+                        (true, Some(5121)) => 255.0,
+                        (true, Some(5123)) => 65535.0,
+                        _ => 1.0,
+                    };
+                    let vals = accessor(&doc, &buffers, ca as usize)?;
+                    colors.extend(vals.chunks_exact(comps).map(|c| [(c[0] / scale) as f32, (c[1] / scale) as f32, (c[2] / scale) as f32]));
+                    any_color = true;
+                }
+                None => colors.extend(std::iter::repeat([0.8f32; 3]).take(p.len() / 3)),
             }
             let count = (p.len() / 3) as u32;
             match prim["indices"].as_u64() {
@@ -235,7 +269,11 @@ pub fn read_gltf(bytes: &[u8]) -> Result<Vec<Named>, String> {
         }
         if !indices.is_empty() {
             let name = node["name"].as_str().or(mesh["name"].as_str()).unwrap_or("Imported").to_string();
-            out.push((name, Mesh::new(positions, indices)));
+            let mut mesh = Mesh::new(positions, indices);
+            if any_color && colors.len() == mesh.vertex_count() {
+                mesh.paint = colors.into_iter().map(crate::bin::with_color).collect();
+            }
+            out.push((name, mesh));
         }
     }
     if out.is_empty() {

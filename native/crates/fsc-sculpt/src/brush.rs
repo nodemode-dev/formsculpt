@@ -11,10 +11,15 @@ pub enum BrushKind {
     Smooth,
     Grab,
     Mask,
+    Paint,
 }
 
 impl BrushKind {
-    pub const NAMES: [&'static str; 9] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask"];
+    pub const NAMES: [&'static str; 10] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint"];
+
+    pub fn moves_vertices(&self) -> bool {
+        !matches!(self, BrushKind::Mask | BrushKind::Paint)
+    }
 
     pub fn parse(name: &str) -> Option<BrushKind> {
         Some(match name {
@@ -27,6 +32,7 @@ impl BrushKind {
             "smooth" => BrushKind::Smooth,
             "grab" => BrushKind::Grab,
             "mask" => BrushKind::Mask,
+            "paint" => BrushKind::Paint,
             _ => return None,
         })
     }
@@ -76,6 +82,8 @@ pub struct BrushSettings {
     pub symmetry: Symmetry,
     pub dyntopo: Option<f32>,
     pub dyntopo_size: Option<f32>,
+    pub paint: [f32; 5],
+    pub paint_channels: [bool; 3],
 }
 
 impl Default for BrushSettings {
@@ -91,6 +99,8 @@ impl Default for BrushSettings {
             symmetry: Symmetry::default(),
             dyntopo: None,
             dyntopo_size: None,
+            paint: [0.8, 0.2, 0.2, 0.5, 0.0],
+            paint_channels: [true, false, false],
         }
     }
 }

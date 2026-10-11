@@ -13,11 +13,14 @@ fn bad(msg: impl Into<String>) -> CommandError {
     CommandError::new("bad_arguments", msg)
 }
 
-fn apply(s: &mut Session, id: u32, label: &str, mesh: Mesh, mask: Vec<f32>) -> Result<Value, CommandError> {
+fn apply(s: &mut Session, id: u32, label: &str, mut mesh: Mesh, mask: Vec<f32>) -> Result<Value, CommandError> {
     if mesh.triangle_count() == 0 {
         return Err(CommandError::new("empty_result", format!("{label} produced no triangles; nothing was changed")));
     }
     let object = s.scene.get_mut(id).expect("checked");
+    if object.mesh.has_paint() && !mesh.has_paint() {
+        fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], &mut mesh);
+    }
     let before_tris = object.mesh.triangle_count();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     let after = summary(object);

@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read, Write};
 
-use fsc_core::{Layer, Layers, Level, Mesh, Multires, Object, Scene, Stencil};
+use fsc_core::{Layer, Layers, Level, Mesh, Multires, Object, Paint, Scene, Stencil};
 use serde_json::{json, Value};
 
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
@@ -33,6 +33,9 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             "indices": w.put(&format!("{dir}/indices.u32"), &u32s(&o.mesh.indices))?,
             "mask": w.put(&format!("{dir}/mask.f32"), &f32s(&o.mask))?,
         });
+        if o.mesh.has_paint() {
+            entry["paint"] = json!(w.put(&format!("{dir}/paint.f32"), &o.mesh.paint_bytes())?);
+        }
         if let Some(m) = &o.multires {
             let mut levels = Vec::new();
             for (k, l) in m.levels.iter().enumerate() {
@@ -41,6 +44,12 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
                 if k != m.current {
                     le["positions"] = json!(w.put(&format!("{ld}/positions.f32"), &vec3s(&l.mesh.positions))?);
                     le["indices"] = json!(w.put(&format!("{ld}/indices.u32"), &u32s(&l.mesh.indices))?);
+                    if l.mesh.has_paint() {
+                        le["paint"] = json!(w.put(&format!("{ld}/paint.f32"), &l.mesh.paint_bytes())?);
+                    }
+                }
+                if !l.evens.is_empty() {
+                    le["evens"] = json!(w.put(&format!("{ld}/evens.u32"), &u32s(&l.evens))?);
                 }
                 if !l.stencil.is_empty() {
                     le["stencil"] = json!({
@@ -91,6 +100,16 @@ impl Reader {
     fn f32(&mut self, v: &Value) -> Result<Vec<f32>, String> {
         read_f32s(&self.raw(v)?)
     }
+    fn paint(&mut self, v: &Value, n: usize) -> Result<Vec<Paint>, String> {
+        if !v.is_string() {
+            return Ok(Vec::new());
+        }
+        let flat = self.f32(v)?;
+        if flat.len() != n * 5 {
+            return Err("a paint buffer does not match its mesh".into());
+        }
+        Ok(flat.chunks_exact(5).map(|c| [c[0], c[1], c[2], c[3], c[4]]).collect())
+    }
 }
 
 fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> {
@@ -113,7 +132,8 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
     let mut scene = Scene::default();
     for e in manifest["objects"].as_array().cloned().unwrap_or_default() {
         let id = e["id"].as_u64().ok_or("an object has no id")? as u32;
-        let mesh = checked(r.vec3(&e["positions"])?, r.u32(&e["indices"])?)?;
+        let mut mesh = checked(r.vec3(&e["positions"])?, r.u32(&e["indices"])?)?;
+        mesh.paint = r.paint(&e["paint"], mesh.vertex_count())?;
         let mut o = Object::new(id, e["name"].as_str().unwrap_or("Object").to_string(), mesh);
         o.visible = e["visible"].as_bool().unwrap_or(true);
         let mask = r.f32(&e["mask"])?;
@@ -127,6 +147,10 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 let mut level = Level { vertices: le["vertices"].as_u64().unwrap_or(0) as usize, triangles: le["triangles"].as_u64().unwrap_or(0) as usize, ..Level::default() };
                 if k != current {
                     level.mesh = checked(r.vec3(&le["positions"])?, r.u32(&le["indices"])?)?;
+                    level.mesh.paint = r.paint(&le["paint"], level.mesh.vertex_count())?;
+                }
+                if le["evens"].is_string() {
+                    level.evens = r.u32(&le["evens"])?;
                 }
                 if le["stencil"].is_object() {
                     level.stencil = Stencil { offsets: r.u32(&le["stencil"]["offsets"])?, sources: r.u32(&le["stencil"]["sources"])?, weights: r.f32(&le["stencil"]["weights"])? };

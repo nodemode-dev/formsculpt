@@ -36,6 +36,19 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         None | Some(Value::Null) => None,
         Some(_) => Some(f(args, "dyntopo_size", 0.01, 1e-5, 1e4)?),
     };
+    let color = parse_color(args.get("color"))?;
+    let rough = match args.get("roughness") {
+        None | Some(Value::Null) => None,
+        Some(_) => Some(f(args, "roughness", 0.5, 0.0, 1.0)?),
+    };
+    let metal = match args.get("metalness") {
+        None | Some(Value::Null) => None,
+        Some(_) => Some(f(args, "metalness", 0.0, 0.0, 1.0)?),
+    };
+    let base = fsc_core::DEFAULT_PAINT;
+    let c = color.unwrap_or([0.8, 0.2, 0.2]);
+    let paint = [c[0], c[1], c[2], rough.unwrap_or(base[3]), metal.unwrap_or(base[4])];
+    let paint_channels = if color.is_none() && rough.is_none() && metal.is_none() { [true, false, false] } else { [color.is_some(), rough.is_some(), metal.is_some()] };
     let dyntopo = match args.get("dyntopo") {
         None | Some(Value::Null) | Some(Value::Bool(false)) => None,
         Some(Value::Bool(true)) => Some(0.25),
@@ -52,12 +65,135 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial },
         dyntopo: dyntopo.or(size.map(|_| 0.25)),
         dyntopo_size: size,
+        paint,
+        paint_channels,
     })
+}
+
+pub(crate) fn parse_color(v: Option<&Value>) -> Result<Option<[f32; 3]>, CommandError> {
+    match v {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(s)) => {
+            let h = s.trim().trim_start_matches('#');
+            if h.len() != 6 || !h.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Err(bad("color must be #rrggbb or [r, g, b] from 0 to 1"));
+            }
+            let n = u32::from_str_radix(h, 16).expect("hex");
+            Ok(Some([((n >> 16) & 255) as f32 / 255.0, ((n >> 8) & 255) as f32 / 255.0, (n & 255) as f32 / 255.0]))
+        }
+        Some(Value::Array(a)) if a.len() == 3 => {
+            let mut out = [0.0f32; 3];
+            for (k, x) in a.iter().enumerate() {
+                out[k] = x.as_f64().filter(|x| (0.0..=1.0).contains(x)).ok_or_else(|| bad("color components must be 0 to 1"))? as f32;
+            }
+            Ok(Some(out))
+        }
+        _ => Err(bad("color must be #rrggbb or [r, g, b] from 0 to 1")),
+    }
+}
+
+pub(crate) fn paint_fill_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "color": {"type": ["string", "array"], "description": "#rrggbb or [r, g, b] from 0 to 1."},
+            "roughness": {"type": "number", "minimum": 0, "maximum": 1},
+            "metalness": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let color = parse_color(args.get("color"))?;
+    let rough = args.get("roughness").and_then(Value::as_f64).map(|x| x.clamp(0.0, 1.0) as f32);
+    let metal = args.get("metalness").and_then(Value::as_f64).map(|x| x.clamp(0.0, 1.0) as f32);
+    if color.is_none() && rough.is_none() && metal.is_none() {
+        return Err(bad("give color, roughness or metalness"));
+    }
+    let object = s.scene.get_mut(id).expect("checked");
+    let had = object.mesh.has_paint();
+    object.mesh.ensure_paint();
+    let mut edit = VertexEdit::default();
+    for v in 0..object.mesh.vertex_count() {
+        let w = 1.0 - object.mask[v];
+        if w <= 0.0 {
+            continue;
+        }
+        let before = object.mesh.paint[v];
+        let mut after = before;
+        if let Some(c) = color {
+            for k in 0..3 {
+                after[k] += (c[k] - after[k]) * w;
+            }
+        }
+        if let Some(r) = rough {
+            after[3] += (r - after[3]) * w;
+        }
+        if let Some(m) = metal {
+            after[4] += (m - after[4]) * w;
+        }
+        if after == before {
+            continue;
+        }
+        object.mesh.paint[v] = after;
+        let p = object.mesh.positions[v];
+        edit.indices.push(v as u32);
+        edit.before.push(p);
+        edit.after.push(p);
+        edit.mask_before.push(object.mask[v]);
+        edit.mask_after.push(object.mask[v]);
+        edit.paint_before.push(if had { before } else { fsc_core::DEFAULT_PAINT });
+        edit.paint_after.push(after);
+    }
+    object.revision += 1;
+    let n = edit.indices.len();
+    let after = summary(object);
+    if n > 0 {
+        s.history.push(Edit::Vertices { label: "Fill Paint".into(), object: id, edit });
+    }
+    Ok(json!({"object": after, "vertices_painted": n}))
+}
+
+pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let object = s.scene.get_mut(id).expect("checked");
+    if !object.mesh.has_paint() {
+        return Ok(json!({"id": id, "cleared": false}));
+    }
+    let mut edit = VertexEdit::default();
+    for v in 0..object.mesh.vertex_count() {
+        let before = object.mesh.paint[v];
+        if before == fsc_core::DEFAULT_PAINT {
+            continue;
+        }
+        let p = object.mesh.positions[v];
+        object.mesh.paint[v] = fsc_core::DEFAULT_PAINT;
+        edit.indices.push(v as u32);
+        edit.before.push(p);
+        edit.after.push(p);
+        edit.mask_before.push(object.mask[v]);
+        edit.mask_after.push(object.mask[v]);
+        edit.paint_before.push(before);
+        edit.paint_after.push(fsc_core::DEFAULT_PAINT);
+    }
+    object.revision += 1;
+    let after = summary(object);
+    if !edit.is_empty() {
+        s.history.push(Edit::Vertices { label: "Clear Paint".into(), object: id, edit });
+    }
+    Ok(json!({"object": after, "cleared": true}))
 }
 
 pub(crate) fn brush_props() -> Value {
     json!({
-        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw"},
+        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness."},
+        "color": {"type": ["string", "array"], "description": "Paint brush: #rrggbb or [r, g, b] from 0 to 1."},
+        "roughness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this roughness (only the channels given are painted)."},
+        "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},
         "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "default": 0.2, "description": "World units; compare with the object's bounds from get_scene."},
         "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
         "invert": {"type": "boolean", "default": false, "description": "Carve instead of build, deflate, unpinch, erase mask."},

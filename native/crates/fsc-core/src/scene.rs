@@ -37,6 +37,9 @@ impl Object {
 
     pub fn retopologize(&mut self) {
         self.mesh.normals.resize(self.mesh.vertex_count(), [0.0, 1.0, 0.0]);
+        if self.mesh.has_paint() {
+            self.mesh.ensure_paint();
+        }
         self.mask.resize(self.mesh.vertex_count(), 0.0);
         self.topology = Topology::build(&self.mesh);
         let all: Vec<u32> = (0..self.mesh.vertex_count() as u32).collect();

@@ -54,13 +54,40 @@ pub struct Mesh {
     pub positions: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
+    pub paint: Vec<Paint>,
+}
+
+pub type Paint = [f32; 5];
+
+pub const DEFAULT_PAINT: Paint = [0.8, 0.8, 0.8, 0.5, 0.0];
+
+pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
+    let mut out = a;
+    for k in 0..5 {
+        out[k] = a[k] + (b[k] - a[k]) * t;
+    }
+    out
 }
 
 impl Mesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
-        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices };
+        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new() };
         mesh.recompute_normals();
         mesh
+    }
+
+    pub fn has_paint(&self) -> bool {
+        !self.paint.is_empty()
+    }
+
+    pub fn ensure_paint(&mut self) {
+        if self.paint.len() != self.positions.len() {
+            self.paint.resize(self.positions.len(), DEFAULT_PAINT);
+        }
+    }
+
+    pub fn paint_bytes(&self) -> Vec<u8> {
+        self.paint.iter().flat_map(|p| p.iter().flat_map(|c| c.to_le_bytes())).collect()
     }
 
     pub fn vertex_count(&self) -> usize {
@@ -125,6 +152,9 @@ impl Mesh {
         }
         if self.normals.len() != self.positions.len() {
             return Err("normal count differs from vertex count".into());
+        }
+        if !self.paint.is_empty() && self.paint.len() != self.positions.len() {
+            return Err("paint count differs from vertex count".into());
         }
         Ok(())
     }

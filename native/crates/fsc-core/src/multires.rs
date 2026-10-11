@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::mesh::Mesh;
+use crate::mesh::{Mesh, Paint};
 use crate::scene::Object;
 
 #[derive(Debug, Clone, Default)]
@@ -51,12 +51,35 @@ impl Stencil {
     pub fn apply1(&self, src: &[f32]) -> Vec<f32> {
         (0..self.len()).map(|i| self.row(i).map(|(s, w)| src[s] * w).sum()).collect()
     }
+
+    pub fn apply_paint(&self, src: &[Paint]) -> Vec<Paint> {
+        (0..self.len())
+            .map(|i| {
+                let mut out = [0.0f32; 5];
+                for (s, w) in self.row(i) {
+                    for k in 0..5 {
+                        out[k] += src[s][k] * w;
+                    }
+                }
+                out
+            })
+            .collect()
+    }
+}
+
+fn pick<T: Copy>(src: &[T], n: usize, evens: &[u32]) -> Vec<T> {
+    if evens.is_empty() {
+        src[..n].to_vec()
+    } else {
+        evens.iter().map(|&h| src[h as usize]).collect()
+    }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct Level {
     pub mesh: Mesh,
     pub stencil: Stencil,
+    pub evens: Vec<u32>,
     pub detail: Vec<[f32; 3]>,
     pub vertices: usize,
     pub triangles: usize,
@@ -131,7 +154,7 @@ impl Object {
         self.multires.as_ref().map(|m| (m.current, m.levels.len())).unwrap_or((0, 1))
     }
 
-    pub fn divide(&mut self, upper: Mesh, stencil: Stencil) -> Result<(), String> {
+    pub fn divide(&mut self, mut upper: Mesh, stencil: Stencil) -> Result<(), String> {
         if stencil.len() != upper.vertex_count() {
             return Err("the subdivision stencil does not match the new level".into());
         }
@@ -143,6 +166,9 @@ impl Object {
             return Err(format!("step up to the highest level ({}) before dividing", multires.top()));
         }
         let mask_up = stencil.apply1(&self.mask);
+        if self.mesh.has_paint() {
+            upper.paint = stencil.apply_paint(&self.mesh.paint);
+        }
         let cur = multires.current;
         multires.levels[cur].mesh = std::mem::replace(&mut self.mesh, upper);
         self.mask = mask_up;
@@ -163,6 +189,7 @@ impl Object {
         let n = below.vertices;
         let upper = std::mem::replace(&mut self.mesh, std::mem::take(&mut below.mesh));
         self.mask.truncate(n);
+        self.mesh.paint = if upper.has_paint() { upper.paint[..n].to_vec() } else { Vec::new() };
         if multires.levels.len() == 1 {
             self.multires = None;
         }
@@ -178,12 +205,13 @@ impl Object {
         let from = multires.current;
         while multires.current > target {
             let cur = multires.current;
-            let lower = std::mem::take(&mut multires.levels[cur - 1].mesh);
+            let mut lower = std::mem::take(&mut multires.levels[cur - 1].mesh);
             let smooth = multires.levels[cur].stencil.apply3(&lower.positions);
             let f = frames(&smooth, &self.mesh.indices);
             multires.levels[cur].detail = to_local(&self.mesh.positions, &smooth, &f);
-            let low_mask = self.mask[..lower.vertex_count()].to_vec();
-            self.mask = low_mask;
+            let (n, evens) = (lower.vertex_count(), &multires.levels[cur].evens);
+            self.mask = pick(&self.mask, n, evens);
+            lower.paint = if self.mesh.has_paint() { pick(&self.mesh.paint, n, evens) } else { Vec::new() };
             multires.levels[cur].mesh = std::mem::replace(&mut self.mesh, lower);
             multires.current -= 1;
         }
@@ -197,6 +225,7 @@ impl Object {
             multires.levels[up].detail = Vec::new();
             let mask_up = multires.levels[up].stencil.apply1(&self.mask);
             self.mask = mask_up;
+            upper.paint = if self.mesh.has_paint() { multires.levels[up].stencil.apply_paint(&self.mesh.paint) } else { Vec::new() };
             multires.levels[up - 1].mesh = std::mem::replace(&mut self.mesh, upper);
             multires.current = up;
         }
@@ -206,18 +235,22 @@ impl Object {
         Ok(from)
     }
 
-    pub fn reconstruct(&mut self, lower: Mesh, stencil: Stencil) -> Result<(), String> {
-        if stencil.len() != self.mesh.vertex_count() {
+    pub fn reconstruct(&mut self, mut lower: Mesh, stencil: Stencil, evens: Vec<u32>) -> Result<(), String> {
+        if stencil.len() != self.mesh.vertex_count() || evens.len() != lower.vertex_count() {
             return Err("the rebuilt level does not match the mesh".into());
+        }
+        if self.mesh.has_paint() {
+            lower.paint = evens.iter().map(|&h| self.mesh.paint[h as usize]).collect();
         }
         let below = Level { vertices: lower.vertex_count(), triangles: lower.triangle_count(), mesh: lower, ..Level::default() };
         match self.multires.as_mut() {
             None => {
-                let live = Level { vertices: self.mesh.vertex_count(), triangles: self.mesh.triangle_count(), stencil, ..Level::default() };
+                let live = Level { vertices: self.mesh.vertex_count(), triangles: self.mesh.triangle_count(), stencil, evens, ..Level::default() };
                 self.multires = Some(Multires { levels: vec![below, live], current: 1 });
             }
             Some(m) if m.current == 0 => {
                 m.levels[0].stencil = stencil;
+                m.levels[0].evens = evens;
                 m.levels.insert(0, below);
                 m.current = 1;
             }
@@ -243,6 +276,7 @@ impl Object {
         let removed = multires.current;
         multires.levels.drain(0..removed);
         multires.levels[0].stencil = Stencil::default();
+        multires.levels[0].evens = Vec::new();
         multires.levels[0].detail = Vec::new();
         multires.current = 0;
         if multires.levels.len() == 1 {

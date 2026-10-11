@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fsc_core::Mesh;
+use fsc_core::{Mesh, Paint};
 
 pub fn f32s(data: &[f32]) -> Vec<u8> {
     data.iter().flat_map(|x| x.to_le_bytes()).collect()
@@ -57,16 +57,29 @@ pub fn welded(triangles: &[[f32; 3]]) -> Mesh {
     Mesh::new(positions, out)
 }
 
-pub fn compacted(positions: &[[f32; 3]], faces: &[u32]) -> Mesh {
+pub fn compacted(positions: &[[f32; 3]], colors: &[[f32; 3]], faces: &[u32]) -> Mesh {
     let mut remap: HashMap<u32, u32> = HashMap::new();
     let mut out_p = Vec::new();
+    let mut out_c = Vec::new();
     let mut out_i = Vec::with_capacity(faces.len());
     for &v in faces {
         let i = *remap.entry(v).or_insert_with(|| {
             out_p.push(positions[v as usize]);
+            if let Some(c) = colors.get(v as usize) {
+                out_c.push(with_color(*c));
+            }
             out_p.len() as u32 - 1
         });
         out_i.push(i);
     }
-    Mesh::new(out_p, out_i)
+    let mut mesh = Mesh::new(out_p, out_i);
+    if out_c.len() == mesh.vertex_count() {
+        mesh.paint = out_c;
+    }
+    mesh
+}
+
+pub fn with_color(c: [f32; 3]) -> Paint {
+    let d = fsc_core::DEFAULT_PAINT;
+    [c[0], c[1], c[2], d[3], d[4]]
 }

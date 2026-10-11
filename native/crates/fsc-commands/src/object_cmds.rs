@@ -210,7 +210,11 @@ pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError
     }
     let mesh = {
         let meshes: Vec<&Mesh> = ids.iter().map(|&id| &s.scene.get(id).expect("checked").mesh).collect();
-        fsc_topo::merge(&meshes)
+        let mut merged = fsc_topo::merge(&meshes);
+        if meshes.iter().any(|m| m.has_paint()) {
+            merged.paint = meshes.iter().flat_map(|m| if m.has_paint() { m.paint.clone() } else { vec![fsc_core::DEFAULT_PAINT; m.vertex_count()] }).collect();
+        }
+        merged
     };
     let mask: Vec<f32> = ids.iter().flat_map(|&id| s.scene.get(id).expect("checked").mask.clone()).collect();
     snapshot(s, "Merge");
@@ -227,7 +231,12 @@ pub(crate) fn split(s: &mut Session, args: &Value) -> Result<Value, CommandError
     let id = target(s, args)?;
     guard(s, id, "Split")?;
     let object = s.scene.get(id).expect("checked");
-    let parts = fsc_topo::split_parts(&object.mesh);
+    let mut parts = fsc_topo::split_parts(&object.mesh);
+    if object.mesh.has_paint() {
+        for part in parts.iter_mut() {
+            fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], part);
+        }
+    }
     if parts.len() < 2 {
         return Ok(json!({"id": id, "parts": 1}));
     }
@@ -280,7 +289,10 @@ pub(crate) fn boolean(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     }
     let keep = args.get("keep_inputs").and_then(Value::as_bool).unwrap_or(false);
     let (oa, ob): (&Object, &Object) = (s.scene.get(a).expect("checked"), s.scene.get(b).expect("checked"));
-    let mesh = fsc_topo::voxel_boolean(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
+    let mut mesh = fsc_topo::voxel_boolean(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
+    if oa.mesh.has_paint() || ob.mesh.has_paint() {
+        fsc_topo::transfer_paint(&[(&oa.mesh, &oa.bvh), (&ob.mesh, &ob.bvh)], &mut mesh);
+    }
     let label = match op {
         BooleanOp::Union => "Union",
         BooleanOp::Difference => "Difference",

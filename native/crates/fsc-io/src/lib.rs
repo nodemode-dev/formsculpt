@@ -55,12 +55,23 @@ pub fn export(format: Format, objects: &[GltfObject]) -> Result<Vec<u8>, String>
     let merged = || -> Mesh {
         let mut positions = Vec::new();
         let mut indices = Vec::new();
+        let mut paint = Vec::new();
+        let painted = plain.iter().any(|(_, m)| m.has_paint());
         for (_, m) in &plain {
             let base = positions.len() as u32;
             positions.extend_from_slice(&m.positions);
             indices.extend(m.indices.iter().map(|i| i + base));
+            if painted {
+                if m.has_paint() {
+                    paint.extend_from_slice(&m.paint);
+                } else {
+                    paint.extend(std::iter::repeat(fsc_core::DEFAULT_PAINT).take(m.vertex_count()));
+                }
+            }
         }
-        Mesh::new(positions, indices)
+        let mut mesh = Mesh::new(positions, indices);
+        mesh.paint = paint;
+        mesh
     };
     Ok(match format {
         Format::Obj => formats::write_obj(&plain),

@@ -8,7 +8,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use serde_json::{json, Value};
 
-type MeshBuffers<'py> = (Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64);
+type MeshBuffers<'py> = (Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64, Bound<'py, PyBytes>);
 
 #[pyclass]
 struct Engine {
@@ -69,6 +69,7 @@ impl Engine {
             PyBytes::new(py, &object.mesh.indices_bytes()),
             PyBytes::new(py, &object.mask_bytes()),
             object.revision,
+            PyBytes::new(py, &object.mesh.paint_bytes()),
         ))
     }
 
@@ -139,6 +140,13 @@ fn update_bytes(object: &fsc_core::Object, changed: &[u32]) -> Vec<u8> {
     }
     for &v in changed {
         out.extend_from_slice(&object.mask[v as usize].to_le_bytes());
+    }
+    if object.mesh.has_paint() {
+        for &v in changed {
+            for c in object.mesh.paint[v as usize] {
+                out.extend_from_slice(&c.to_le_bytes());
+            }
+        }
     }
     out
 }

@@ -240,6 +240,9 @@ pub(crate) fn repair(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         return Ok(json!({"id": id, "changed": false}));
     }
     let object = s.scene.get_mut(id).expect("checked");
+    if object.mesh.has_paint() {
+        fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], &mut mesh);
+    }
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     s.history.push(Edit::Topology { label: "Repair".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"id": id, "changed": true, "non_manifold_vertices_split": splits, "holes_filled": holes, "degenerate_removed": degenerate, "orphans_removed": orphans, "object": summary(s.scene.get(id).expect("checked"))}))

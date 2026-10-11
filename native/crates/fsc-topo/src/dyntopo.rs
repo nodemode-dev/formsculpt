@@ -93,6 +93,9 @@ pub fn collapse_sphere(mesh: &mut Mesh, mask: &mut [f32], center: Vec3, radius: 
         }
         mesh.positions[a as usize] = pm.to_array();
         mask[a as usize] = 0.5 * (mask[a as usize] + mask[b as usize]);
+        if mesh.has_paint() {
+            mesh.paint[a as usize] = fsc_core::mix_paint(mesh.paint[a as usize], mesh.paint[b as usize], 0.5);
+        }
         for &o in &opposite {
             if let Some(list) = faces_of.get_mut(&o) {
                 list.retain(|f| !shared.contains(f));
@@ -139,12 +142,18 @@ pub fn compact(mesh: &mut Mesh, mask: &mut Vec<f32>) -> usize {
             mesh.positions[k] = mesh.positions[v];
             mesh.normals[k] = mesh.normals[v];
             mask[k] = mask[v];
+            if !mesh.paint.is_empty() {
+                mesh.paint[k] = mesh.paint[v];
+            }
             k += 1;
         }
     }
     mesh.positions.truncate(k);
     mesh.normals.truncate(k);
     mask.truncate(k);
+    if !mesh.paint.is_empty() {
+        mesh.paint.truncate(k);
+    }
     for i in mesh.indices.iter_mut() {
         *i = remap[*i as usize];
     }
@@ -202,6 +211,10 @@ pub fn refine_sphere(mesh: &mut Mesh, mask: &mut Vec<f32>, center: Vec3, radius:
             let pm = (pa + pb) * 0.5 + n * bulge.clamp(-0.25 * e.length(), 0.25 * e.length());
             mesh.positions.push(pm.to_array());
             mesh.normals.push(n.to_array());
+            if mesh.has_paint() {
+                let p = fsc_core::mix_paint(mesh.paint[a as usize], mesh.paint[b as usize], 0.5);
+                mesh.paint.push(p);
+            }
             mask.push(0.5 * (mask[a as usize] + mask[b as usize]));
             for &f in faces {
                 let base = 3 * f as usize;
