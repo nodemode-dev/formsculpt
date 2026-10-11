@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "formsculptor": {
+      "type": "stdio",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/formsculptor",
+      "args": ["mcp"]
+    }
+  }
+}

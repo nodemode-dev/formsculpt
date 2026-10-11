@@ -32,14 +32,14 @@ Sub-skill paths resolve as `sub-skills/[skill-name]/SUB-SKILL.md` from this fold
 | Area | Location | Role |
 | --- | --- | --- |
 | Rust engine | `native/` (one Cargo workspace) | all geometry, sculpt, topology, paint, IO, commands |
-| fsc-core | `native/` crate | mesh SoA buffers, adjacency, normals, BVH, scene, masks, face groups, vertex colour, sculpt layers, region delta undo |
-| fsc-sculpt | `native/` crate | stroke sampling, falloff, pressure, lazy rope, brush kernels, mirror and radial symmetry, rayon |
-| fsc-topo | `native/` crate | dynamic topology, multires, voxel remesh, QEM decimation, quad remesh, booleans, hole fill |
-| fsc-paint | `native/` crate | vertex PBR paint, auto UV, bakes |
-| fsc-io | `native/` crate | OBJ, STL, PLY, glTF/GLB, 3MF, FBX import, the `.fsc` project zip |
-| fsc-commands | `native/` crate | the single command registry and `dispatch(id, json)` |
-| fsc-wasm | `native/` crate | wasm-bindgen binding, runs in a Web Worker |
-| fsc-py | `native/` crate | PyO3 module built with maturin, used by the backend |
+| fsc-core | `native/crates/fsc-core` | mesh SoA buffers, adjacency, normals, BVH, scene, masks, face groups, vertex colour, sculpt layers, region delta undo |
+| fsc-sculpt | `native/crates/fsc-sculpt` | stroke sampling, falloff, pressure, lazy rope, brush kernels, mirror and radial symmetry, rayon |
+| fsc-topo | `native/crates/fsc-topo` | dynamic topology, multires, voxel remesh, QEM decimation, quad remesh, booleans, hole fill |
+| fsc-paint | `native/crates/fsc-paint` | vertex PBR paint, auto UV, bakes |
+| fsc-io | `native/crates/fsc-io` | OBJ, STL, PLY, glTF/GLB, 3MF, FBX import, the `.fsc` project zip |
+| fsc-commands | `native/crates/fsc-commands` | the single command registry and `dispatch(id, json)` |
+| fsc-wasm | `native/crates/fsc-wasm` (planned; blocked until the wasm32 target can be installed) | wasm-bindgen binding, runs in a Web Worker |
+| fsc-py | `native/crates/fsc-py` | PyO3 module `fsc_engine` built with maturin; the backend's engine, which the window and MCP both drive |
 | Frontend | `frontend/` (vanilla TypeScript, Vite, port 5196) | `src/engine/` worker client, `src/viewport/` renderer, `src/ui/` shell, `src/styles/tokens.css` |
 | Backend | `backend/app/` (FastAPI, 127.0.0.1:8196) | routers system, io, projects, jobs, assets, mcp, nodemode; serves the built frontend |
 | Sidecar entry | `backend/formsculptor_engine.py` | PyInstaller entry for the frozen engine |
@@ -54,7 +54,8 @@ fsc-commands  ->  fsc-core, fsc-sculpt, fsc-topo, fsc-paint, fsc-io
 fsc-wasm, fsc-py  ->  fsc-commands
 Web Worker (frontend/src/engine)  ->  fsc-wasm
 viewport (frontend/src/viewport)  <-  WASM buffers by dirty range
-backend/app (mcp router)  ->  fsc-py  or  window bridge
+backend/app (mcp router, engine router, stroke socket)  ->  fsc-py (one shared engine session)
+window  ->  /api/engine (dispatch, mesh, stroke socket) and /api/mcp/window (change epoch, consent)
 src-tauri  ->  frozen backend sidecar  ->  built frontend
 catalogue.json (from fsc-commands)  ->  MCP server, palette, menus, shortcuts, agents sync
 ```

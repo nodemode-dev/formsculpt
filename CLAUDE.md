@@ -15,4 +15,10 @@
 
 - `formsculptor-harness` · the orchestrator for all formsculptor work: engine crates, brushes, topology, viewport, file formats, the command registry, the agent substrate, UI shell, engine service, desktop builds and verification. Route through its `SKILL.md` routing table to the specialist `SUB-SKILL.md`.
 
+- `formsculptor-modeling` · operating formsculptor through its MCP tools to sculpt, not changing its code.
+
 Always route work through `.claude/skills/formsculptor-harness/SKILL.md` first: it maps the subsystems, the dependency graph and the laws, and loads the right specialist.
+
+## Sculpting through formsculptor
+
+When the person wants a 3D model made or changed, use the `formsculptor` MCP server's tools with the `formsculptor-modeling` skill, not formsculptor's source code. `.mcp.json` starts it (`./formsculptor mcp`, which starts the engine if it is not running); with the window open, the first change asks the person once there. After adding or changing a command in `native/crates/fsc-commands`, rebuild the engine (`./formsculptor engine build`) and run `./formsculptor agents sync` so the skill's tool reference and its `.agents/skills` mirror follow.

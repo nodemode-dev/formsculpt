@@ -6,4 +6,4 @@ Read `CLAUDE.md` first, then route through `.claude/skills/formsculptor-harness/
 
 ## Sculpting through formsculptor (natural language)
 
-The MCP server and the `formsculptor-modeling` skill arrive in 0.3.0. Until then there are no agent tools beyond the engine's `get_engine_info` command in the registry.
+Use the `formsculptor` MCP server with the `formsculptor-modeling` skill (`.agents/skills/formsculptor-modeling`). Codex reads `.codex/config.toml` and Cursor `.cursor/mcp.json`; both run `./formsculptor mcp`, which starts the engine when it is not running. `./formsculptor agents install` registers formsculptor for Claude Code, Codex and Cursor outside this folder. The tools work with or without the formsculptor window open; with it open, the person is asked once before the first change.
