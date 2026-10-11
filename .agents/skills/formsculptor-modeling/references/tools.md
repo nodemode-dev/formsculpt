@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.12.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.13.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -184,17 +184,22 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
+- `falloff_curve`: array of number; A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
 - `lazy`: number; default 0; range 0 to 0.95; Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length.
 - `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
 - `noise_scale`: number; default 0; range 0 to 10000; Noise brush: feature size in world units; a fifth of the radius when 0.
 - `points`: array of array; required; The stroke path as [x, y, z] or [x, y, z, pressure] points on or near the surface, in object space. Grab moves the vertices around the first point by the offset to the last.
+- `pressure_gamma`: number; default 1; range 0.2 to 5; Pen pressure curve: pressure is raised to this power (above 1 needs a firmer press, below 1 a lighter one). Per-point pressure is the fourth number of a point.
+- `pressure_size`: boolean; default false; Pressure scales the radius (down to a tenth).
+- `pressure_strength`: boolean; default true; Pressure scales strength.
 - `radius`: number; default 0.2; range -inf to 10000; World units; compare with the object's bounds from get_scene.
 - `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
 - `spacing`: number; default 0.15; range 0.02 to 2; Distance between dabs as a fraction of the radius.
+- `spray`: number; default 0.6; range 0.05 to 2; Spray stroke: how far dabs scatter from the path, in radii.
 - `strength`: number; default 0.5; range 0 to 1
-- `stroke`: string (dots | roll); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line).
+- `stroke`: string (dots | roll | spray); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly.
 - `symmetry`: object; fields radial, x, y, z
 
 ## alpha_load
