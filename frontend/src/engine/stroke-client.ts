@@ -12,8 +12,14 @@ export interface BrushState {
   dyntopoSize: number | null;
   dyntopoScreenPx: number | null;
   paint: { color: string; roughness?: number; metalness?: number } | null;
-  /** Alpha stamp settings passed through as they are: alpha, alpha_angle (degrees), alpha_up and stroke. */
-  alpha: { alpha: string; alpha_angle: number; alpha_up: Vec3; stroke: string } | null;
+  /** Alpha stamp settings passed through as they are: alpha, alpha_angle (degrees) and alpha_up. */
+  alpha: { alpha: string; alpha_angle: number; alpha_up: Vec3 } | null;
+  /** dots, roll or spray. */
+  stroke: string;
+  /** A drawn falloff (weights from the centre to the rim) in place of the named one, or null. */
+  falloffCurve: number[] | null;
+  /** Pen pressure: its curve (a power) and whether it scales strength and size. */
+  pressure: { gamma: number; strength: boolean; size: boolean };
 }
 
 export interface StrokeResult {
@@ -99,7 +105,7 @@ export class StrokeClient {
     this.send({
       type: 'begin',
       id: objectId,
-      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}), ...(brush.alpha ?? {}) },
+      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}), ...(brush.alpha ?? {}), stroke: brush.stroke, ...(brush.falloffCurve ? { falloff_curve: brush.falloffCurve } : {}), pressure_gamma: brush.pressure.gamma, pressure_strength: brush.pressure.strength, pressure_size: brush.pressure.size },
     });
     this.firstSeq = ++this.seq;
     this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure });

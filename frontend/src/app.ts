@@ -91,6 +91,16 @@ interface Shell {
   keyAction: HTMLSelectElement;
   keyCombo: HTMLInputElement;
   keyButtons: HTMLButtonElement[];
+  falloff: HTMLSelectElement;
+  falloffCurve: SVGSVGElement;
+  falloffLine: SVGPolylineElement;
+  falloffDots: SVGPathElement;
+  pressureGamma: HTMLInputElement;
+  pressureStrength: HTMLInputElement;
+  pressureSize: HTMLInputElement;
+  curveButtons: HTMLButtonElement[];
+  curveLine: SVGPolylineElement;
+  curveHandles: SVGPathElement;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -126,6 +136,8 @@ const BRUSHES: [string, string][] = [
   ['noise', 'Noise'],
   ['smudge', 'Smudge'],
   ['stamp', 'Drag stamp'],
+  ['dragdot', 'Drag dot'],
+  ['curve', 'Curve stroke'],
   ['mask_box', 'Box mask'],
   ['mask_lasso', 'Lasso mask'],
   ['mask_topo', 'Topo mask'],
@@ -135,7 +147,16 @@ const BRUSHES: [string, string][] = [
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve']);
+
+/** Named falloffs as the engine computes them, to draw a preset in the curve editor. */
+const FALLOFFS: Record<string, (t: number) => number> = {
+  smooth: (t) => 1 - t * t * (3 - 2 * t),
+  sphere: (t) => Math.sqrt(Math.max(0, 1 - t * t)),
+  linear: (t) => 1 - t,
+  sharp: (t) => (1 - t) * (1 - t),
+};
+const FALLOFF_POINTS = 5;
 
 const ALPHAS: [string, string][] = [
   ['none', 'None'],
@@ -284,7 +305,10 @@ function buildShell(root: HTMLElement): Shell {
   overlay.setAttribute('class', 'stage-overlay');
   overlay.setAttribute('aria-hidden', 'true');
   const tubeLine = document.createElementNS(SVG, 'polyline');
-  overlay.append(tubeLine);
+  // A curve stroke waiting to be applied: its line and its handles, redrawn from 3D points as the view moves.
+  const curveLine = document.createElementNS(SVG, 'polyline');
+  const curveHandles = document.createElementNS(SVG, 'path');
+  overlay.append(tubeLine, curveLine, curveHandles);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -386,17 +410,45 @@ function buildShell(root: HTMLElement): Shell {
   const lazy = input('range', { min: '0', max: '95', value: '0', 'aria-label': 'Lazy mouse' });
   const alpha = choices('Alpha', ALPHAS);
   const alphaAngle = input('number', { min: '-360', max: '360', step: '5', value: '0', 'aria-label': 'Alpha angle' });
-  const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)']]);
+  const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)'], ['spray', 'Spray (scattered)']]);
   const alphaInput = input('file', { accept: 'image/png', 'aria-label': 'Choose an alpha image' });
   alphaInput.hidden = true;
   panel.append(alphaInput);
+  const falloff = choices('Falloff', [['smooth', 'Smooth'], ['sphere', 'Sphere'], ['linear', 'Linear'], ['sharp', 'Sharp'], ['custom', 'Drawn curve']]);
+  const pressureGamma = input('number', { min: '0.2', max: '5', step: '0.1', value: '1', 'aria-label': 'Pressure curve' });
+  const pressureStrength = input('checkbox', { 'aria-label': 'Pressure sets strength' });
+  pressureStrength.checked = true;
+  const pressureSize = input('checkbox', { 'aria-label': 'Pressure sets size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff));
   panel.append(fields);
-  const alphaGrid = el('div', 'add-grid two after-fields');
-  const alphaLoad = el('button', 'btn', 'Load alpha');
-  alphaLoad.type = 'button';
-  alphaGrid.append(alphaLoad);
+  // The falloff curve: five weights from the centre (left) to the rim (right), dragged up and down; always shown, so
+  // choosing a preset or drawing never changes the panel's height.
+  const falloffCurve = document.createElementNS(SVG, 'svg');
+  falloffCurve.setAttribute('class', 'falloff-editor');
+  falloffCurve.setAttribute('viewBox', '0 0 200 64');
+  falloffCurve.setAttribute('preserveAspectRatio', 'none');
+  falloffCurve.setAttribute('role', 'img');
+  falloffCurve.setAttribute('aria-label', 'Falloff curve, drag the points');
+  const falloffLine = document.createElementNS(SVG, 'polyline');
+  const falloffDots = document.createElementNS(SVG, 'path');
+  falloffCurve.append(falloffLine, falloffDots);
+  panel.append(falloffCurve);
+  const alphaGrid = el('div', 'add-grid after-fields');
+  const curveButtons = (
+    [
+      ['alpha', 'Load alpha'],
+      ['apply_curve', 'Apply curve'],
+      ['clear_curve', 'Clear curve'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    alphaGrid.append(b);
+    return b;
+  });
+  const alphaLoad = curveButtons[0];
   panel.append(alphaGrid);
 
   panel.append(el('h2', 'gap', 'Paint'));
@@ -620,7 +672,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles };
 }
 
 class SceneView {
@@ -637,6 +689,7 @@ class SceneView {
     shell.brushButtons.forEach((b) =>
       b.addEventListener('click', () => {
         this.brush = b.dataset.brush ?? 'draw';
+        if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         shell.brushButtons.forEach((x) => setAttr(x, 'aria-pressed', x === b ? 'true' : 'false'));
       }),
     );
@@ -728,7 +781,36 @@ class SceneView {
       }),
     );
     shell.shading.addEventListener('change', () => this.applyShading());
-    shell.alphaLoad.addEventListener('click', () => shell.alphaInput.click());
+    shell.curveButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        if (b.dataset.action === 'alpha') shell.alphaInput.click();
+        else if (b.dataset.action === 'apply_curve') void this.applyCurve();
+        else this.clearCurve();
+      }),
+    );
+    shell.falloff.addEventListener('change', () => {
+      const preset = FALLOFFS[shell.falloff.value];
+      if (preset) this.falloffWeights = this.falloffWeights.map((_, i) => preset(i / (FALLOFF_POINTS - 1)));
+      this.drawFalloff();
+    });
+    const dragFalloff = (e: PointerEvent): void => {
+      if (e.type === 'pointermove' && !shell.falloffCurve.hasPointerCapture(e.pointerId)) return;
+      const box = shell.falloffCurve.getBoundingClientRect();
+      const fx = (e.clientX - box.left) / Math.max(1, box.width);
+      const fy = (e.clientY - box.top) / Math.max(1, box.height);
+      if (e.type === 'pointerdown') {
+        shell.falloffCurve.setPointerCapture(e.pointerId);
+        this.falloffDrag = Math.max(0, Math.min(FALLOFF_POINTS - 1, Math.round(((fx * 200 - 4) / 192) * (FALLOFF_POINTS - 1))));
+      }
+      if (this.falloffDrag === null) return;
+      this.falloffWeights[this.falloffDrag] = Math.max(0, Math.min(1, (60 - fy * 64) / 56));
+      shell.falloff.value = 'custom';
+      this.drawFalloff();
+    };
+    shell.falloffCurve.addEventListener('pointerdown', dragFalloff);
+    shell.falloffCurve.addEventListener('pointermove', dragFalloff);
+    shell.falloffCurve.addEventListener('pointerup', () => (this.falloffDrag = null));
+    this.drawFalloff();
     shell.alphaInput.addEventListener('change', () => void this.loadAlpha());
     shell.matcapInput.addEventListener('change', () => void this.loadMatcap());
     shell.keyAction.addEventListener('change', () => this.showKeys());
@@ -774,9 +856,26 @@ class SceneView {
     const trace = (e: PointerEvent): void => {
       if (this.shape) {
         const p: [number, number] = [e.offsetX, e.offsetY];
-        if (this.shape.kind === 'mask_box' || this.shape.kind === 'stamp') this.shape.pts = [this.shape.pts[0] ?? p, p];
+        if (this.shape.kind === 'curve' && this.shape.pts.length === 0 && this.curve) {
+          // Pressing on a handle of the waiting curve moves that handle instead of drawing a new curve.
+          const near = this.curveScreen().findIndex((q) => q !== null && Math.hypot(q[0] - p[0], q[1] - p[1]) < 10);
+          if (near >= 0) this.shape.edit = near;
+        }
+        if (this.shape.kind === 'dragdot' || (this.shape.kind === 'curve' && this.shape.edit !== undefined)) this.shape.pts = [p];
+        else if (this.shape.kind === 'mask_box' || this.shape.kind === 'stamp') this.shape.pts = [this.shape.pts[0] ?? p, p];
         else this.shape.pts.push(p);
         const pts = this.shape.pts;
+        if (this.shape.kind === 'dragdot') {
+          // Drag dot: one dab of the brush's size that follows the pointer and lands where it is let go.
+          const r = Number(shell.radius.value);
+          shell.tubeLine.setAttribute('points', Array.from({ length: 33 }, (_, i) => `${(p[0] + r * Math.cos((i / 32) * Math.PI * 2)).toFixed(0)},${(p[1] + r * Math.sin((i / 32) * Math.PI * 2)).toFixed(0)}`).join(' '));
+          return;
+        }
+        if (this.shape.kind === 'curve') {
+          if (this.shape.edit !== undefined) this.drawCurve(this.shape.edit, p);
+          else shell.tubeLine.setAttribute('points', pts.map((q) => `${q[0].toFixed(0)},${q[1].toFixed(0)}`).join(' '));
+          return;
+        }
         if (this.shape.kind === 'stamp') {
           // The stamp's size and turn: a circle around the first point through the pointer, and its radius line.
           const [c, q] = [pts[0], pts[pts.length - 1]];
@@ -823,7 +922,11 @@ class SceneView {
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
-  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number } | null = null;
+  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number; edit?: number } | null = null;
+  /** The brush a curve stroke applies: the last sculpting or painting brush chosen before the Curve tool. */
+  private lastBrush = 'draw';
+  /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
+  private curve: { handles: Vec3[]; wpp: number } | null = null;
   private hotkeys = new Hotkeys();
   private catalogue: CatalogueCommand[] = [];
   private keyPending: string | null = null;
@@ -839,6 +942,15 @@ class SceneView {
     const id = this.scene.active;
     if (shape?.kind === 'stamp') {
       await this.stampEnd(shape.pts, shape.wpp, shape.subtract);
+      return;
+    }
+    if (shape?.kind === 'dragdot') {
+      const q = shape.pts[shape.pts.length - 1];
+      if (q) await this.stampEnd([q, q], shape.wpp, shape.subtract);
+      return;
+    }
+    if (shape?.kind === 'curve') {
+      await this.curveEnd(shape.pts, shape.wpp, shape.edit);
       return;
     }
     const box = shape?.kind === 'mask_box';
@@ -870,19 +982,172 @@ class SceneView {
     const px = dragPx >= 3 ? dragPx : Number(this.shell.radius.value);
     // Dragging straight up keeps the alpha upright; any other direction turns it to face the drag.
     const turn = dragPx >= 3 ? (Math.atan2(q[0] - c[0], c[1] - q[1]) * 180) / Math.PI : 0;
+    const args = this.brushArgs(Math.max(1e-4, px * wpp), invert);
+    await this.run('sculpt_stroke', { ...args, id, points: [hit.result.point], alpha: this.shell.alpha.value, alpha_angle: (Number(this.shell.alphaAngle.value) || 0) + turn, alpha_up: this.viewport.camera.screenUp() });
+  }
+
+  /** The engine's brush arguments for a stroke the window sends whole (stamps, drag dots, curves): the last
+   * sculpting brush with every Brush section setting, as the live stroke socket would send them. */
+  private brushArgs(radius: number, ctrl: boolean): Record<string, unknown> {
     const s = this.brushState();
-    await this.run('sculpt_stroke', {
-      id,
-      brush: 'draw',
-      points: [hit.result.point],
-      radius: Math.max(1e-4, px * wpp),
+    return {
+      ...(s.alpha ?? {}),
+      ...(this.lastBrush === 'paint' ? this.paintArgs(this.shell.paintMaterial.checked) : {}),
+      brush: this.lastBrush,
+      radius,
       strength: s.strength,
-      invert: s.invert !== invert,
-      alpha: this.shell.alpha.value,
-      alpha_angle: (Number(this.shell.alphaAngle.value) || 0) + turn,
-      alpha_up: this.viewport.camera.screenUp(),
+      invert: s.invert !== ctrl,
+      falloff: s.falloff,
+      stroke: s.stroke,
+      ...(s.falloffCurve ? { falloff_curve: s.falloffCurve } : {}),
+      symmetry: s.symmetry,
+      pressure_gamma: s.pressure.gamma,
+      pressure_strength: s.pressure.strength,
+      pressure_size: s.pressure.size,
+    };
+  }
+
+  /** Where each curve handle falls on the canvas now, or null behind the camera. */
+  private curveScreen(): ([number, number] | null)[] {
+    const c = this.curve;
+    if (!c) return [];
+    const m = this.viewport.camera.viewProjection();
+    const w = this.shell.canvas.clientWidth;
+    const h = this.shell.canvas.clientHeight;
+    return c.handles.map(([x, y, z]) => {
+      const cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+      if (cw <= 1e-6) return null;
+      const cx = (m[0] * x + m[4] * y + m[8] * z + m[12]) / cw;
+      const cy = (m[1] * x + m[5] * y + m[9] * z + m[13]) / cw;
+      return [(cx * 0.5 + 0.5) * w, (0.5 - cy * 0.5) * h];
     });
   }
+
+  /** Points along a Catmull-Rom spline through the handles, `per` per span (screen or world). */
+  private static spline<T extends number[]>(pts: T[], per: number): T[] {
+    if (pts.length < 2) return pts.slice();
+    const out: T[] = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      for (let k = 0; k < per; k++) {
+        const t = k / per;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        out.push(p1.map((_, d) => 0.5 * (2 * p1[d] + (p2[d] - p0[d]) * t + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * t2 + (3 * p1[d] - p0[d] - 3 * p2[d] + p3[d]) * t3)) as T);
+      }
+    }
+    out.push(pts[pts.length - 1].slice() as T);
+    return out;
+  }
+
+  /** Redraws the waiting curve over the view; while a handle is dragged it is drawn at the pointer. */
+  drawCurve(moving?: number, at?: [number, number]): void {
+    const screen = this.curveScreen();
+    if (moving !== undefined && at) screen[moving] = at;
+    const shown = screen.filter((q): q is [number, number] => q !== null);
+    if (shown.length < 2) {
+      this.shell.curveLine.setAttribute('points', '');
+      this.shell.curveHandles.setAttribute('d', '');
+      return;
+    }
+    const line = SceneView.spline(shown, 8);
+    this.shell.curveLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
+    this.shell.curveHandles.setAttribute('d', shown.map((q) => `M${(q[0] - 4).toFixed(1)},${q[1].toFixed(1)}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`).join(''));
+  }
+
+  /** Ends a Curve tool drag: a new curve becomes handles picked on the active object; a dragged handle is re-picked. */
+  private async curveEnd(pts: [number, number][], wpp: number, edit?: number): Promise<void> {
+    this.shell.tubeLine.setAttribute('points', '');
+    const id = this.scene.active;
+    if (id === null) return;
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const pick = async (q: [number, number]): Promise<Vec3 | null> => {
+      const ray = this.viewport.rayAtClient(rect.left + q[0], rect.top + q[1]);
+      if (!ray) return null;
+      const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+      return hit.ok && hit.result.hit && hit.result.id === id && hit.result.point ? hit.result.point : null;
+    };
+    if (edit !== undefined && this.curve) {
+      const q = pts[pts.length - 1];
+      const point = q ? await pick(q) : null;
+      if (point) this.curve.handles[edit] = point;
+      else this.note('A handle must stay on the active object');
+      this.drawCurve();
+      return;
+    }
+    // Handles about every 40 pixels along the drawn path (2 to 32 of them).
+    let length = 0;
+    for (let i = 1; i < pts.length; i++) length += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    if (pts.length < 2 || length < 8) {
+      this.note('Drag across the object to draw a curve');
+      return;
+    }
+    const count = Math.max(2, Math.min(32, Math.round(length / 40) + 1));
+    const samples: [number, number][] = [];
+    let walked = 0;
+    let j = 1;
+    for (let k = 0; k < count; k++) {
+      const want = (length * k) / (count - 1);
+      while (j < pts.length - 1 && walked + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]) < want) {
+        walked += Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]);
+        j++;
+      }
+      const seg = Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]) || 1;
+      const t = Math.min(1, Math.max(0, (want - walked) / seg));
+      samples.push([pts[j - 1][0] + (pts[j][0] - pts[j - 1][0]) * t, pts[j - 1][1] + (pts[j][1] - pts[j - 1][1]) * t]);
+    }
+    const handles = (await Promise.all(samples.map(pick))).filter((p): p is Vec3 => p !== null);
+    if (handles.length < 2) {
+      this.note('Draw the curve over the active object');
+      return;
+    }
+    this.curve = { handles, wpp };
+    this.drawCurve();
+    this.note(`Curve ready: ${handles.length} handles; drag one to bend it, then Apply curve`);
+  }
+
+  /** Runs the last brush along the waiting curve as one stroke (the curve stays, so it can be applied again). */
+  private async applyCurve(): Promise<void> {
+    const c = this.curve;
+    const id = this.scene.active;
+    if (!c || id === null) {
+      this.note('Draw a curve with the Curve stroke tool first');
+      return;
+    }
+    const radius = Math.max(1e-4, Number(this.shell.radius.value) * c.wpp);
+    let span = 0;
+    for (let i = 1; i < c.handles.length; i++) span = Math.max(span, distance3(c.handles[i - 1], c.handles[i]));
+    const per = Math.max(1, Math.min(64, Math.ceil(span / (radius * 0.1))));
+    let points = SceneView.spline(c.handles, per);
+    if (points.length > 4096) points = points.filter((_, i) => i % Math.ceil(points.length / 4096) === 0);
+    await this.run('sculpt_stroke', { ...this.brushArgs(radius, false), id, points });
+  }
+
+  private clearCurve(): void {
+    this.curve = null;
+    this.drawCurve();
+  }
+
+  /** Draws the falloff curve editor's line and points from the five weights. */
+  private drawFalloff(): void {
+    const w = this.falloffWeights;
+    const preset = FALLOFFS[this.shell.falloff.value];
+    const xy = (i: number, v: number): [number, number] => [4 + (i / (FALLOFF_POINTS - 1)) * 192, 60 - v * 56];
+    const line = Array.from({ length: 41 }, (_, k) => {
+      const x = (k / 40) * (FALLOFF_POINTS - 1);
+      const i = Math.min(FALLOFF_POINTS - 2, Math.floor(x));
+      const v = preset ? preset(k / 40) : w[i] + (w[i + 1] - w[i]) * (x - i);
+      return xy(x, v);
+    });
+    this.shell.falloffLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
+    this.shell.falloffDots.setAttribute('d', w.map((v, i) => xy(i, v)).map(([x, y]) => `M${x - 3},${y - 3}h6v6h-6z`).join(''));
+  }
+
+  private falloffDrag: number | null = null;
+  private falloffWeights: number[] = Array.from({ length: FALLOFF_POINTS }, (_, i) => FALLOFFS.smooth(i / (FALLOFF_POINTS - 1)));
 
   private applyShading(): void {
     const id = this.scene.active;
@@ -1122,14 +1387,17 @@ class SceneView {
       radiusPx: Number(s.radius.value),
       strength: Number(s.strength.value) / 100,
       invert: s.invert.checked,
-      falloff: 'smooth',
+      falloff: s.falloff.value === 'custom' ? 'smooth' : s.falloff.value,
+      falloffCurve: s.falloff.value === 'custom' ? this.falloffWeights.map((w) => Math.round(w * 1000) / 1000) : null,
+      stroke: s.strokeMode.value,
+      pressure: { gamma: Math.max(0.2, Math.min(5, Number(s.pressureGamma.value) || 1)), strength: s.pressureStrength.checked, size: s.pressureSize.checked },
       lazy: Number(s.lazy.value) / 100,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
       dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
       dyntopoScreenPx: s.dyntopo.checked && s.detailMode.value === 'screen' ? Number(s.detail.value) * 0.2 : null,
       paint: this.brush === 'paint' ? this.paintArgs(this.shell.paintMaterial.checked) : null,
-      alpha: s.alpha.value === 'none' ? null : { alpha: s.alpha.value, alpha_angle: Number(s.alphaAngle.value) || 0, alpha_up: this.viewport.camera.screenUp(), stroke: s.strokeMode.value },
+      alpha: s.alpha.value === 'none' ? null : { alpha: s.alpha.value, alpha_angle: Number(s.alphaAngle.value) || 0, alpha_up: this.viewport.camera.screenUp() },
     };
   }
 
@@ -1452,8 +1720,11 @@ export function start(root: HTMLElement): void {
   try {
     const viewport = new Viewport(shell.canvas);
     setText(shell.statRenderer, viewport.renderer.kind);
-    viewport.onFrame = (s) => setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
     const view = new SceneView(shell, viewport);
+    viewport.onFrame = (s) => {
+      setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
+      view.drawCurve();
+    };
     void view.refresh();
     const overlay = document.getElementById('overlay-root');
     if (overlay) {
