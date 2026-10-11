@@ -9,7 +9,7 @@ if command -v node >/dev/null 2>&1 && node -e 'const [m,n]=process.versions.node
 if command -v npm >/dev/null 2>&1; then ok "npm"; else bad "npm" "install npm"; fi
 if py="$(fs_python)"; then ok "python $("$py" -V 2>&1 | awk '{print $2}')"; else bad "python" "Python 3.12+ is required"; fi
 if command -v cargo >/dev/null 2>&1; then ok "rust $(rustc --version | awk '{print $2}')"; else bad "rust" "the engine needs https://rustup.rs"; fi
-if [ -f "$FSC_ROOT/backend/venv/bin/activate" ]; then ok "backend venv"; else warn "backend venv" "run ./formsculptor install"; fi
+if [ -f "$FSC_ROOT/backend/venv/bin/activate" ] || [ -f "$FSC_ROOT/backend/venv/Scripts/activate" ]; then ok "backend venv"; else warn "backend venv" "run ./formsculptor install"; fi
 if [ -d "$FSC_ROOT/frontend/node_modules" ]; then ok "frontend node_modules"; else warn "frontend deps" "run ./formsculptor install"; fi
 if [ "$(fs_os)" = linux ]; then
   if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then ok "webkit2gtk-4.1 for desktop builds"; else warn "webkit2gtk-4.1" "desktop builds need ./formsculptor install-desktop's apt list"; fi

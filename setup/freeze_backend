@@ -5,6 +5,7 @@ fs_venv
 python -c "import PyInstaller" 2>/dev/null || fs_die "PyInstaller missing, run ./formsculptor install-desktop"
 triple="$(fs_target_triple)" || fs_die "rustc not found; install Rust or set FSC_TARGET"
 [ -f "$FSC_ROOT/frontend/dist/index.html" ] || "$FSC_ROOT/setup/build_frontend"
+( cd "$FSC_ROOT/backend" && python -c "import fsc_engine, app; assert fsc_engine.version() == app.__version__" ) 2>/dev/null || "$FSC_ROOT/setup/engine_build"
 cd "$FSC_ROOT/backend"
 sep=":"
 [ "$(fs_os)" = windows ] && sep=";"
@@ -13,7 +14,7 @@ rm -rf build/pyinstaller dist-engine
 pyinstaller --noconfirm --clean --onefile --name formsculptor-engine \
   --distpath dist-engine --workpath build/pyinstaller --specpath build/pyinstaller \
   --add-data "$FSC_ROOT/frontend/dist${sep}frontend_dist" \
-  --collect-submodules app --collect-submodules uvicorn \
+  --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine \
   "$FSC_ROOT/backend/formsculptor_engine.py"
 mkdir -p "$FSC_ROOT/src-tauri/binaries"
 out="$FSC_ROOT/src-tauri/binaries/formsculptor-engine-${triple}${ext}"

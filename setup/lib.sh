@@ -22,9 +22,12 @@ fs_python() {
   return 1
 }
 fs_venv() {
-  [ -f "$FSC_ROOT/backend/venv/bin/activate" ] || fs_die "backend venv missing, run ./formsculptor install"
-  # shellcheck disable=SC1091
-  source "$FSC_ROOT/backend/venv/bin/activate"
+  local act="$FSC_ROOT/backend/venv/bin/activate"
+  # Windows venvs (Git Bash on the CI runner) keep their activate script under Scripts.
+  [ -f "$act" ] || act="$FSC_ROOT/backend/venv/Scripts/activate"
+  [ -f "$act" ] || fs_die "backend venv missing, run ./formsculptor install"
+  # shellcheck disable=SC1090
+  source "$act"
 }
 fs_target_triple() {
   if [ -n "${FSC_TARGET:-}" ]; then echo "$FSC_TARGET"; return 0; fi
