@@ -75,6 +75,7 @@ pub struct BrushSettings {
     pub lazy: f32,
     pub symmetry: Symmetry,
     pub dyntopo: Option<f32>,
+    pub dyntopo_size: Option<f32>,
 }
 
 impl Default for BrushSettings {
@@ -89,6 +90,7 @@ impl Default for BrushSettings {
             lazy: 0.0,
             symmetry: Symmetry::default(),
             dyntopo: None,
+            dyntopo_size: None,
         }
     }
 }

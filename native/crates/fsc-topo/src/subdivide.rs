@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use std::f32::consts::TAU;
 
-use fsc_core::Mesh;
-use glam::Vec3;
+use fsc_core::{Mesh, Stencil};
 
 use crate::edges::{edge_faces, key, Edge};
 
 pub struct Subdivided {
     pub mesh: Mesh,
     pub parents: Vec<(u32, u32)>,
+    pub stencil: Stencil,
 }
 
 pub fn loop_subdivide(mesh: &Mesh, smooth: bool) -> Subdivided {
@@ -24,51 +24,47 @@ pub fn loop_subdivide(mesh: &Mesh, smooth: bool) -> Subdivided {
             boundary_nb[b as usize].push(a);
         }
     }
-    let p = |i: u32| mesh.position(i);
-    let mut positions: Vec<[f32; 3]> = (0..n as u32)
-        .map(|v| {
-            if !smooth {
-                return mesh.positions[v as usize];
-            }
-            let pv = p(v);
-            let bn = &boundary_nb[v as usize];
-            if bn.len() == 2 {
-                return (pv * 0.75 + (p(bn[0]) + p(bn[1])) * 0.125).to_array();
-            }
-            if !bn.is_empty() {
-                return mesh.positions[v as usize];
-            }
-            let nb = &neighbors[v as usize];
-            let k = nb.len() as f32;
-            if k < 3.0 {
-                return mesh.positions[v as usize];
-            }
+    let mut stencil = Stencil::default();
+    let mut row: Vec<(u32, f32)> = Vec::with_capacity(16);
+    for v in 0..n as u32 {
+        row.clear();
+        let bn = &boundary_nb[v as usize];
+        let nb = &neighbors[v as usize];
+        let k = nb.len() as f32;
+        if smooth && bn.len() == 2 {
+            row.extend_from_slice(&[(v, 0.75), (bn[0], 0.125), (bn[1], 0.125)]);
+        } else if smooth && bn.is_empty() && k >= 3.0 {
             let beta = (0.625 - (0.375 + 0.25 * (TAU / k).cos()).powi(2)) / k;
-            let sum: Vec3 = nb.iter().map(|&w| p(w)).sum();
-            (pv * (1.0 - k * beta) + sum * beta).to_array()
-        })
-        .collect();
+            row.push((v, 1.0 - k * beta));
+            row.extend(nb.iter().map(|&w| (w, beta)));
+        } else {
+            row.push((v, 1.0));
+        }
+        stencil.push(&row);
+    }
     let mut parents: Vec<(u32, u32)> = (0..n as u32).map(|v| (v, v)).collect();
     let mut mid: HashMap<Edge, u32> = HashMap::with_capacity(faces_of_edge.len());
     for (&(a, b), fs) in &faces_of_edge {
-        let pos = if smooth && fs.len() == 2 {
+        row.clear();
+        if smooth && fs.len() == 2 {
             let opp = |t: u32| -> u32 {
                 let [x, y, z] = mesh.triangle(t as usize);
                 [x, y, z].into_iter().find(|&w| w != a && w != b).unwrap_or(a)
             };
-            (p(a) + p(b)) * 0.375 + (p(opp(fs[0])) + p(opp(fs[1]))) * 0.125
+            row.extend_from_slice(&[(a, 0.375), (b, 0.375), (opp(fs[0]), 0.125), (opp(fs[1]), 0.125)]);
         } else {
-            (p(a) + p(b)) * 0.5
-        };
-        mid.insert((a, b), positions.len() as u32);
-        positions.push(pos.to_array());
+            row.extend_from_slice(&[(a, 0.5), (b, 0.5)]);
+        }
+        mid.insert((a, b), parents.len() as u32);
+        stencil.push(&row);
         parents.push((a, b));
     }
+    let positions = stencil.apply3(&mesh.positions);
     let mut indices = Vec::with_capacity(mesh.indices.len() * 4);
     for t in 0..mesh.triangle_count() {
         let [a, b, c] = mesh.triangle(t);
         let (ab, bc, ca) = (mid[&key(a, b)], mid[&key(b, c)], mid[&key(c, a)]);
         indices.extend_from_slice(&[a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca]);
     }
-    Subdivided { mesh: Mesh::new(positions, indices), parents }
+    Subdivided { mesh: Mesh::new(positions, indices), parents, stencil }
 }

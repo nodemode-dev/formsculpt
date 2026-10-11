@@ -32,6 +32,15 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
     let sym = args.get("symmetry").cloned().unwrap_or(Value::Null);
     let flag = |k: &str| sym.get(k).and_then(Value::as_bool).unwrap_or(false);
     let radial = sym.get("radial").and_then(Value::as_u64).unwrap_or(1).clamp(1, 150) as u32;
+    let size = match args.get("dyntopo_size") {
+        None | Some(Value::Null) => None,
+        Some(_) => Some(f(args, "dyntopo_size", 0.01, 1e-5, 1e4)?),
+    };
+    let dyntopo = match args.get("dyntopo") {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => None,
+        Some(Value::Bool(true)) => Some(0.25),
+        Some(_) => Some(f(args, "dyntopo", 0.25, 0.05, 1.0)?),
+    };
     Ok(BrushSettings {
         kind,
         radius: f(args, "radius", 0.2, 1e-5, 1e4)?,
@@ -41,11 +50,8 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         spacing: f(args, "spacing", 0.15, 0.02, 2.0)?,
         lazy: f(args, "lazy", 0.0, 0.0, 0.95)?,
         symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial },
-        dyntopo: match args.get("dyntopo") {
-            None | Some(Value::Null) | Some(Value::Bool(false)) => None,
-            Some(Value::Bool(true)) => Some(0.25),
-            Some(_) => Some(f(args, "dyntopo", 0.25, 0.05, 1.0)?),
-        },
+        dyntopo: dyntopo.or(size.map(|_| 0.25)),
+        dyntopo_size: size,
     })
 }
 
@@ -59,7 +65,8 @@ pub(crate) fn brush_props() -> Value {
         "spacing": {"type": "number", "minimum": 0.02, "maximum": 2, "default": 0.15, "description": "Distance between dabs as a fraction of the radius."},
         "lazy": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0},
         "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},
-        "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt. Off when omitted. Not used by grab or mask."}
+        "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels."},
+        "dyntopo_size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction."}
     })
 }
 
@@ -94,6 +101,9 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         parsed.push((Vec3::new(x, y, z), n(3).unwrap_or(1.0).clamp(0.0, 1.0)));
     }
     let object = s.scene.get_mut(id).expect("checked");
+    if settings.dyntopo.is_some() && object.multires.is_some() {
+        return Err(CommandError::new("has_levels", "dynamic topology cannot run on an object with subdivision levels; sculpt without dyntopo, or multires_delete_lower and multires_delete_higher first"));
+    }
     let mut stroke = Stroke::new(settings);
     if settings.kind == BrushKind::Grab {
         let (first, _) = parsed[0];

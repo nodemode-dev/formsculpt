@@ -1,5 +1,6 @@
 use crate::bvh::Bvh;
 use crate::mesh::Mesh;
+use crate::multires::Multires;
 use crate::topology::Topology;
 
 pub type ObjectId = u32;
@@ -14,6 +15,7 @@ pub struct Object {
     pub mask: Vec<f32>,
     pub visible: bool,
     pub revision: u64,
+    pub multires: Option<Multires>,
 }
 
 impl Object {
@@ -21,7 +23,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1 }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None }
     }
 
     pub fn rebuild(&mut self) {
@@ -45,6 +47,12 @@ impl Object {
         let old_mask = std::mem::replace(&mut self.mask, mask);
         self.rebuild();
         (old_mesh, old_mask)
+    }
+
+    pub fn refit_vertices(&mut self, verts: &[u32]) {
+        let topology = &self.topology;
+        let tris = verts.iter().flat_map(|&v| topology.faces_of(v).iter().copied());
+        self.bvh.refit_triangles(&self.mesh, tris);
     }
 
     pub fn mask_bytes(&self) -> Vec<u8> {

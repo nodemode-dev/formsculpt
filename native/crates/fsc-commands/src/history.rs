@@ -1,4 +1,4 @@
-use fsc_core::{Mesh, Object, ObjectId, Scene};
+use fsc_core::{Mesh, Multires, Object, ObjectId, Scene, Stencil};
 use fsc_sculpt::VertexEdit;
 
 const LIMIT: usize = 200;
@@ -10,12 +10,17 @@ pub enum Edit {
     Add { id: ObjectId, index: usize, parked: Option<Object> },
     Delete { id: ObjectId, index: usize, parked: Option<Object> },
     Clear { parked: Vec<Object>, active: Option<ObjectId> },
+    Divide { object: ObjectId, count: usize, parked: Vec<(Mesh, Stencil)> },
+    Level { object: ObjectId, from: usize, to: usize },
+    Levels { label: String, object: ObjectId, multires: Option<Multires> },
 }
 
 impl Edit {
     pub fn label(&self) -> String {
         match self {
-            Edit::Vertices { label, .. } | Edit::Topology { label, .. } => label.clone(),
+            Edit::Vertices { label, .. } | Edit::Topology { label, .. } | Edit::Levels { label, .. } => label.clone(),
+            Edit::Divide { .. } => "Divide".into(),
+            Edit::Level { to, .. } => format!("Level {to}"),
             Edit::Add { .. } => "Add Object".into(),
             Edit::Delete { .. } => "Delete Object".into(),
             Edit::Clear { .. } => "New Scene".into(),
@@ -43,6 +48,30 @@ impl Edit {
                     *index = scene.index_of(*id).ok_or("the object is already gone")?;
                     *parked = scene.remove(*id);
                 }
+            }
+            Edit::Divide { object, count, parked } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                if forward {
+                    for (mesh, stencil) in parked.drain(..).rev() {
+                        o.divide(mesh, stencil)?;
+                    }
+                } else {
+                    for _ in 0..*count {
+                        parked.push(o.undivide()?);
+                    }
+                }
+                scene.active = Some(*object);
+            }
+            Edit::Level { object, from, to } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                o.set_level(if forward { *to } else { *from })?;
+                scene.active = Some(*object);
+            }
+            Edit::Levels { object, multires, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                std::mem::swap(&mut o.multires, multires);
+                o.revision += 1;
+                scene.active = Some(*object);
             }
             Edit::Clear { parked, active } => {
                 if forward {

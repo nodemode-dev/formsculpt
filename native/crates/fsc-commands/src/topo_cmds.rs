@@ -2,6 +2,7 @@ use fsc_core::Mesh;
 use serde_json::{json, Value};
 
 use crate::history::Edit;
+use crate::multires_cmds::guard;
 use crate::scene_cmds::summary;
 use crate::sculpt_cmds::target;
 use crate::{CommandError, Session};
@@ -39,6 +40,7 @@ pub(crate) fn subdivide_schema() -> Value {
 
 pub(crate) fn subdivide(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    guard(s, id, "Subdivide")?;
     let levels = args.get("levels").and_then(Value::as_u64).unwrap_or(1);
     if !(1..=4).contains(&levels) {
         return Err(bad("levels must be 1 to 4"));
@@ -73,6 +75,7 @@ pub(crate) fn remesh_schema() -> Value {
 
 pub(crate) fn remesh_voxel(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    guard(s, id, "Voxel remesh")?;
     let resolution = args.get("resolution").and_then(Value::as_u64).unwrap_or(128);
     if !(8..=320).contains(&resolution) {
         return Err(bad("resolution must be 8 to 320"));
@@ -99,6 +102,7 @@ pub(crate) fn decimate_schema() -> Value {
 
 pub(crate) fn decimate(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    guard(s, id, "Decimate")?;
     let object = s.scene.get(id).expect("checked");
     let current = object.mesh.triangle_count();
     let target_tris = match args.get("triangles").and_then(Value::as_u64) {
@@ -122,6 +126,7 @@ pub(crate) fn decimate(s: &mut Session, args: &Value) -> Result<Value, CommandEr
 
 pub(crate) fn fill_holes(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    guard(s, id, "Fill holes")?;
     let object = s.scene.get(id).expect("checked");
     let (mesh, filled) = fsc_topo::fill_holes(&object.mesh);
     if filled == 0 {

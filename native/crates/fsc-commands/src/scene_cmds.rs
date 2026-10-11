@@ -13,6 +13,8 @@ pub(crate) fn summary(o: &Object) -> Value {
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),
         "revision": o.revision,
+        "level": o.levels().0,
+        "levels": o.levels().1,
         "bounds": {"min": b.min.to_array(), "max": b.max.to_array()},
     })
 }

@@ -46,10 +46,14 @@ impl Engine {
 
     fn stroke_begin(&self, id: u32, settings: &str) -> PyResult<()> {
         let parsed: Value = serde_json::from_str(settings).map_err(|e| PyValueError::new_err(format!("settings are not JSON: {e}")))?;
-        let brush = fsc_commands::parse_brush(&parsed).map_err(|e| PyValueError::new_err(e.message))?;
+        let mut brush = fsc_commands::parse_brush(&parsed).map_err(|e| PyValueError::new_err(e.message))?;
         let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
-        if session.scene.get(id).is_none() {
+        let Some(object) = session.scene.get(id) else {
             return Err(PyKeyError::new_err(format!("no object {id}")));
+        };
+        if object.multires.is_some() {
+            brush.dyntopo = None;
+            brush.dyntopo_size = None;
         }
         session.stroke = Some((id, Stroke::new(brush)));
         Ok(())

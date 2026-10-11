@@ -28,7 +28,7 @@ impl VertexEdit {
         let mut ring = Vec::new();
         object.topology.ring_vertices(&self.indices, &mut ring);
         object.topology.update_normals(&mut object.mesh, &ring);
-        object.bvh.refit(&object.mesh);
+        object.refit_vertices(&self.indices);
         object.revision += 1;
         ring
     }
@@ -152,7 +152,7 @@ impl Stroke {
             self.dabs += 1;
         }
         if self.settings.kind != BrushKind::Mask && !self.changed.is_empty() {
-            object.bvh.refit(&object.mesh);
+            object.refit_vertices(&self.changed);
         }
     }
 
@@ -167,11 +167,12 @@ impl Stroke {
         let last = *centers.last().expect("non-empty");
         let mid = (first + last) * 0.5;
         let reach = self.settings.radius + first.distance(last) * 0.5;
-        let max_edge = (self.settings.radius * frac.clamp(0.05, 1.0)).max(1e-5);
+        let max_edge = self.settings.dyntopo_size.unwrap_or(self.settings.radius * frac.clamp(0.05, 1.0)).max(1e-5);
         let mut splits = 0;
         for k in 0..self.transforms.len() {
             let m = self.transforms[k];
             splits += fsc_topo::refine_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge, 2);
+            splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge * 0.4);
         }
         if splits > 0 {
             object.retopologize();
@@ -189,7 +190,7 @@ impl Stroke {
             let mut ring = Vec::new();
             object.topology.ring_vertices(&region, &mut ring);
             object.topology.update_normals(&mut object.mesh, &ring);
-            object.bvh.refit(&object.mesh);
+            object.refit_vertices(&region);
             self.topology_dirty = true;
             self.topology_changed = true;
         }
@@ -343,7 +344,7 @@ impl Stroke {
         touched.dedup();
         self.grab = Some(grab);
         self.finish_dab(object, &touched);
-        object.bvh.refit(&object.mesh);
+        object.refit_vertices(&touched);
         self.dabs += 1;
     }
 
@@ -357,6 +358,9 @@ impl Stroke {
     pub fn finish(self, object: &mut Object) -> StrokeEdit {
         if self.topology_changed {
             if let Some((mesh, mask)) = self.snapshot {
+                if fsc_topo::compact(&mut object.mesh, &mut object.mask) > 0 {
+                    object.retopologize();
+                }
                 object.revision += 1;
                 return StrokeEdit::Topology { mesh, mask };
             }

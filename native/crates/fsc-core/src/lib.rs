@@ -1,5 +1,6 @@
 pub mod bvh;
 pub mod mesh;
+pub mod multires;
 pub mod primitives;
 pub mod scene;
 pub mod topology;
@@ -7,6 +8,7 @@ pub mod topology;
 pub use bvh::{Bvh, Hit};
 pub use topology::Topology;
 pub use mesh::{Aabb, Mesh};
+pub use multires::{Level, Multires, Stencil};
 pub use primitives::Primitive;
 pub use scene::{Object, ObjectId, Scene};
 

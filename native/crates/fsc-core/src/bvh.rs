@@ -16,6 +16,8 @@ pub struct Node {
 pub struct Bvh {
     pub nodes: Vec<Node>,
     pub tris: Vec<u32>,
+    parent: Vec<u32>,
+    leaf_of: Vec<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -40,7 +42,7 @@ impl Bvh {
             centers.push(b.center());
             boxes.push(b);
         }
-        let mut bvh = Bvh { nodes: Vec::with_capacity(2 * n / LEAF_SIZE + 1), tris: (0..n as u32).collect() };
+        let mut bvh = Bvh { nodes: Vec::with_capacity(2 * n / LEAF_SIZE + 1), tris: (0..n as u32).collect(), parent: Vec::new(), leaf_of: Vec::new() };
         if n == 0 {
             return bvh;
         }
@@ -78,7 +80,52 @@ impl Bvh {
             stack.push(left);
             stack.push(left + 1);
         }
+        bvh.parent = vec![u32::MAX; bvh.nodes.len()];
+        bvh.leaf_of = vec![0; n];
+        for (ni, node) in bvh.nodes.iter().enumerate() {
+            if Bvh::is_leaf(node) {
+                for &t in &bvh.tris[node.first as usize..(node.first + node.count) as usize] {
+                    bvh.leaf_of[t as usize] = ni as u32;
+                }
+            } else {
+                bvh.parent[node.first as usize] = ni as u32;
+                bvh.parent[node.first as usize + 1] = ni as u32;
+            }
+        }
         bvh
+    }
+
+    pub fn refit_triangles(&mut self, mesh: &Mesh, tris: impl IntoIterator<Item = u32>) {
+        let mut heap: std::collections::BinaryHeap<u32> = tris.into_iter().filter_map(|t| self.leaf_of.get(t as usize).copied()).collect();
+        if heap.len() > self.tris.len() / 4 {
+            self.refit(mesh);
+            return;
+        }
+        let mut last = u32::MAX;
+        while let Some(ni) = heap.pop() {
+            if ni == last {
+                continue;
+            }
+            last = ni;
+            let node = self.nodes[ni as usize];
+            let mut b = Aabb::EMPTY;
+            if Bvh::is_leaf(&node) {
+                for &t in &self.tris[node.first as usize..(node.first + node.count) as usize] {
+                    for v in mesh.triangle(t as usize) {
+                        b.grow(mesh.position(v));
+                    }
+                }
+            } else {
+                b = self.nodes[node.first as usize].bounds.merge(&self.nodes[node.first as usize + 1].bounds);
+            }
+            if b == node.bounds {
+                continue;
+            }
+            self.nodes[ni as usize].bounds = b;
+            if let Some(&p) = self.parent.get(ni as usize).filter(|&&p| p != u32::MAX) {
+                heap.push(p);
+            }
+        }
     }
 
     pub fn refit(&mut self, mesh: &Mesh) {

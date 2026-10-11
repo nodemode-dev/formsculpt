@@ -164,3 +164,27 @@ Splits edges longer than the detail size whose midpoints lie in the brush sphere
 - kind: explainer
 - logged: v0.4.0 · 2026-10-11
 Loop subdivision (Warren's beta, boundary rules), or a flat split when `smooth` is false; `parents` maps each new vertex to the edge it came from so the mask is averaged into the children.
+
+### crates/fsc-core/src/multires.rs · Multires, Stencil, Object::set_level
+- refers-to: crates/fsc-core/src/multires.rs :: Stencil, Level, Multires, frames, Object::divide, Object::undivide, Object::set_level, Object::delete_higher, Object::delete_lower
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+A level stack lives on the object. The live level's mesh is `Object.mesh` (so strokes, the BVH and the window need no change); every other level keeps its mesh in its `Level`. Each level above the base keeps the Loop stencil from the level below (CSR rows of source and weight), because `loop_subdivide` numbers edge vertices in hash-map order and could not be re-run to the same indices. Stepping down stores the higher level as offsets from the subdivided lower level in a per-vertex frame (area-weighted normal, tangent toward a fixed neighbour), so a lower-level grab or bend turns the detail with the surface instead of shearing it. Stepping up rebuilds positions from those offsets. The mask follows the level: averaged up through the stencil, cut to the even vertices going down. Measured: a level round trip returns positions within 6e-8; a sphere with three levels to 1,310,720 triangles steps down to 0 in 83 ms and back up in 679 ms, most of it the BVH rebuild. Not built: reconstructing lower levels for a mesh that never had them.
+
+### crates/fsc-commands/src/multires_cmds.rs · divide, set_level, delete_higher, delete_lower, guard
+- refers-to: crates/fsc-commands/src/multires_cmds.rs :: divide, set_level, prune, guard; crates/fsc-commands/src/history.rs :: Edit::Divide, Edit::Level, Edit::Levels
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+Undo of a divide parks the removed level's mesh and stencil and redo puts them back, so later strokes replay on the same vertex numbers; a level change replays as a step; a delete swaps the whole stack, which is the only copy. While an object has levels, whole-mesh changes (subdivide, remesh, decimate, fill holes, dyntopo strokes) refuse with `has_levels`, as ZBrush does, because they would orphan every stored level; the live stroke socket drops dyntopo silently instead and the window disables the checkbox. Divide takes Mod+D from the one-step subdivide, D steps up and Shift+D down.
+
+### crates/fsc-topo/src/dyntopo.rs · collapse_sphere, compact
+- refers-to: crates/fsc-topo/src/dyntopo.rs :: collapse_sphere, fan_neighbors, compact
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+Runs after each `refine_sphere` and collapses edges shorter than 0.4 of the detail size, shortest first, to their midpoint. It refuses when an end is on a border or non-manifold (every fan neighbour must appear exactly twice), when the link condition fails, when either opposite vertex or the merged vertex would drop under valence 3, when a remaining face would turn more than about 72 degrees or vanish, or when the mask is over half. One collapse locks both one-rings for the rest of the pass. Collapsed vertices stay in the buffer unreferenced while the stroke runs (the stroke and the window keep their vertex numbers) and `compact` drops them when the stroke ends. Measured: a smooth stroke with constant detail 0.15 on an 81,920-triangle sphere left 78,676 triangles, watertight, no non-manifold edges, no orphans.
+
+### crates/fsc-core/src/bvh.rs · refit_triangles
+- refers-to: crates/fsc-core/src/bvh.rs :: Bvh::refit_triangles, parent, leaf_of; crates/fsc-core/src/scene.rs :: Object::refit_vertices
+- kind: rationale
+- logged: v0.4.1 · 2026-10-11
+Each triangle knows its leaf and each node its parent. A max-heap of node indices refits touched leaves, then their ancestors (children always sit after their parent, so popping the largest index first finishes both children before the parent), and stops climbing where a box did not change. Above a quarter of the leaves it falls back to the full sweep. Measured in-process: a draw stroke sample costs 0.21 ms on 327,680 triangles and 0.70 ms on 1,310,720, against 3.6 ms and 14.6 ms with the full refit in 0.4.0.
