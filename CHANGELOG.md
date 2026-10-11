@@ -6,8 +6,8 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Added
 
-- Multiresolution levels: `multires_divide`, `multires_set_level` (a level number, or one step up or down), `multires_delete_higher`, `multires_delete_lower` (22 commands in all). Edits on a lower level carry up with the higher detail kept in a tangent frame; each is one undo step. The Multiresolution panel section, the Level readout and the keys Mod+D, D and Shift+D.
-- Dynamic topology collapses edges shorter than 0.4 of the detail size, and `dyntopo_size` (Constant detail in the panel) sets a fixed edge length.
+- Multiresolution levels: `multires_divide`, `multires_set_level` (a level number, or one step up or down), `multires_delete_higher`, `multires_delete_lower`, and `multires_reconstruct`, which rebuilds a lower level for a mesh with subdivision structure (23 commands in all). Edits on a lower level carry up with the higher detail kept in a tangent frame; each is one undo step. The Multiresolution panel section, the Level readout and the keys Mod+D, D and Shift+D.
+- Dynamic topology collapses edges shorter than 0.4 of the detail size, and `dyntopo_size` sets a fixed edge length; the panel's Detail mode offers brush, constant and screen detail.
 - `get_scene` reports each object's `level` and `levels`.
 
 ### Changed

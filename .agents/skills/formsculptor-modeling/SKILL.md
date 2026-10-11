@@ -51,10 +51,10 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 ## Workflow 4: manage the mesh's resolution
 
 1. Strokes stretch triangles. After heavy grab or inflate work, `remesh_voxel` (resolution 96 to 160 for most work) rebuilds an even, closed mesh; it clears the mask.
-2. `multires_divide` adds subdivision levels and keeps the lower ones: block out big forms with `multires_set_level` at level 0 (or `step: "down"`), then step up and detail; changes on a low level carry up with the high detail kept. `get_scene` reports each object's `level` and `levels`. While an object has levels, dyntopo, remesh, decimate, subdivide and fill holes refuse with `has_levels`; `multires_delete_lower` plus `multires_delete_higher` leave a plain mesh again. `subdivide` is the one-step version with no levels to return to.
+2. `multires_divide` adds subdivision levels and keeps the lower ones: block out big forms with `multires_set_level` at level 0 (or `step: "down"`), then step up and detail; changes on a low level carry up with the high detail kept. `get_scene` reports each object's `level` and `levels`. While an object has levels, dyntopo, remesh, decimate, subdivide and fill holes refuse with `has_levels`; `multires_delete_lower` plus `multires_delete_higher` leave a plain mesh again. `subdivide` is the one-step version with no levels to return to; `multires_reconstruct` at level 0 rebuilds a level below a mesh that came from subdivision.
 3. `dyntopo` on `sculpt_stroke` (a fraction of the radius, 0.15 to 0.3) splits long edges and collapses short ones where the brush passes, so a low-detail sphere can take fine detail locally; `dyntopo_size` sets a constant edge length in world units instead.
 4. `decimate` with `ratio` reduces triangles for export or speed; `mesh_check` reports watertightness, and `fill_holes` closes open boundaries before printing.
 
 ## Not yet available
 
-There are no file import or export tools, no booleans and no image of the view yet, and lower levels cannot be rebuilt for a mesh that never had them. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no file import or export tools, no booleans and no image of the view yet, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.

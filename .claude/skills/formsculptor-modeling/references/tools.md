@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.4.1) by `./formscul
 - Objects: `add_primitive`, `select_object`, `delete_object`
 - Sculpting: `sculpt_stroke`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
-- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`
+- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`
 - History: `undo`, `redo`
 
 ## get_engine_info
@@ -183,6 +183,12 @@ Delete the subdivision levels below the current one, making it the base. Deletin
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 Note: removes or replaces (undoable).
+
+## multires_reconstruct
+
+Rebuild one subdivision level below the lowest one, for a mesh with the regular one-to-four structure of a subdivided mesh (one made by subdivide, or left after multires_delete_lower). Repeat to rebuild more. Refuses with not_subdivided for other meshes (remeshed, decimated, sculpted with dyntopo or imported irregular meshes). Undoable.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## undo
 

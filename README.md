@@ -87,7 +87,7 @@ Branching & versions follow [.docs/BRANCHING.md](.docs/BRANCHING.md). Work on th
 
 ## Status
 
-0.4.1 sculpts & manages topology: nine brushes (draw, clay, inflate, pinch, crease, flatten, smooth, grab, mask) w/ mirror & radial symmetry, dynamic topology that splits & collapses edges under the brush (relative or constant detail), multiresolution levels (divide, step up & down w/ detail kept, delete higher & lower), Loop subdivision, voxel remesh (watertight), quadric decimation, hole filling, masks, undo & redo, live strokes in the WebGL2 viewport, & an MCP server w/ 22 tools that drives the same engine w/ or w/o the window open (the window asks once before an agent's first change). Not yet: rebuilding lower levels for an imported mesh, booleans, file import & export, WebGPU, the WASM engine build (this build machine could not fetch the wasm32 target) & a built desktop bundle.
+0.4.1 sculpts & manages topology: nine brushes (draw, clay, inflate, pinch, crease, flatten, smooth, grab, mask) w/ mirror & radial symmetry, dynamic topology that splits & collapses edges under the brush (brush, constant or screen detail), multiresolution levels (divide, step up & down w/ detail kept, delete higher & lower, rebuild lower), Loop subdivision, voxel remesh (watertight), quadric decimation, hole filling, masks, undo & redo, live strokes in the WebGL2 viewport, & an MCP server w/ 23 tools that drives the same engine w/ or w/o the window open (the window asks once before an agent's first change). Not yet: booleans, file import & export, WebGPU, the WASM engine build (this build machine could not fetch the wasm32 target) & a built desktop bundle.
 
 ### Agents
 
