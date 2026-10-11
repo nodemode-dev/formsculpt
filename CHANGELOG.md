@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.15.0 · 2026-10-11
+
+### Added
+
+- Image-based lighting in the window: Studio, Sunset, Overcast and Night environments, or a loaded Radiance .hdr or image, lighting lit (PBR) shading with diffuse and roughness-blurred reflections; rotation, exposure, the fixed lights' share, tone mapping (Reinhard, ACES filmic, none), and the environment shown behind the model with a blur.
+- Post effects: screen-space ambient occlusion, bloom, depth of field focused at the orbit target, vignette and film grain, each off by default.
+- A Lighting section between View and Keys.
+
 ## 0.14.0 · 2026-10-11
 
 ### Added
