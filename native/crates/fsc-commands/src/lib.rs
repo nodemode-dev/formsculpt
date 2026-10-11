@@ -1,4 +1,5 @@
 mod bake_cmds;
+mod build_cmds;
 mod file_cmds;
 mod history;
 mod layer_cmds;
@@ -131,6 +132,39 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: scene_cmds::add_primitive_schema,
         run: scene_cmds::add_primitive,
+    },
+    Command {
+        id: "build.skeleton",
+        mcp: "skeleton_mesh",
+        group: Group::Object,
+        label: "Skeleton Mesh",
+        description: "Build a base mesh from a skeleton of spheres ([x, y, z, radius]) joined by tapered limbs (links are index pairs), merged smoothly into one watertight, even mesh and made active: the quick way to block out a figure, animal or hand before sculpting. Unlinked spheres stay round. Raise resolution for thin limbs.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::skeleton_schema,
+        run: build_cmds::skeleton,
+    },
+    Command {
+        id: "build.tube",
+        mcp: "curve_tube",
+        group: Group::Object,
+        label: "Curve Tube",
+        description: "Sweep a round tube along a smooth curve through the given points (radius per point or overall), capped or closed into a ring, and make it active: hair strands, horns, tails, cables, straps, piping.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::tube_schema,
+        run: build_cmds::tube,
+    },
+    Command {
+        id: "build.lathe",
+        mcp: "lathe",
+        group: Group::Object,
+        label: "Lathe",
+        description: "Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::lathe_schema,
+        run: build_cmds::lathe,
     },
     Command {
         id: "object.select",
