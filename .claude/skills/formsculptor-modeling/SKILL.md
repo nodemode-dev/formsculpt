@@ -51,6 +51,15 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
    - `mask_by_color`: the painted areas near a colour.
 5. `set_visibility` hides, shows or isolates objects so a crowded scene does not get in the way of `get_view` or picking; `arrange_objects` aligns or distributes them on an axis.
 6. `get_history` lists every step by name; `history_go_to` jumps back to any of them (and forward again).
+7. Face groups name regions: `group_auto` (by angle for hard-surface planes, by parts for loose pieces) or `group_from_mask`; then `mask_by_group` or `hide_faces` by group (a point on it or its number). Hidden faces cannot be hit or moved, so hide what is in the way and sculpt behind it; `hide_faces` with `show_all` brings them back. `get_view` with `shading: "groups"` shows the groups.
+8. `set_folder` files objects under a folder; `set_visibility` with `folder` hides, shows or isolates them together.
+
+## Workflow 10: repeat, insert and present
+
+1. `insert_mesh` places a primitive or a copy of another object (`source_id`) at a `point` with its `normal` (from `pick`), standing on the surface: eyes, horns, rivets.
+2. `array_object` repeats an object in a line (`offset`) or radially around an axis (`mode: "radial"`, `center`, `count`): teeth, petals, bolts; `merge` joins them into one object.
+3. `subdivide` with `sharp_border` keeps open borders in place (planes, cut shells).
+4. `record_turntable` writes a looping animated PNG of the model turning once, for showing the result.
 
 ## When something goes wrong
 

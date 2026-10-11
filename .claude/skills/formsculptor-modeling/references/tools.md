@@ -1,17 +1,18 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.10.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.11.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`
-- Viewing: `get_view`, `pick`
-- Objects: `set_visibility`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
+- Viewing: `get_view`, `record_turntable`, `pick`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
-- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `extract_mask`, `extrude_mask`, `inset_mask`
+- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
+- Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 - Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
@@ -41,12 +42,25 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `height`: integer; default 640; range 64 to 2048
 - `ids`: array of integer; Only these objects; every visible object when omitted.
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
-- `shading`: string (clay | wax | pearl | bronze | gray | pbr); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
+- `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
 - `width`: integer; default 640; range 64 to 2048
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
 
 Note: read-only.
+
+## record_turntable
+
+Render the scene turning once around the vertical axis and write it as a looping animated PNG (plays in browsers like a GIF, in full colour): a presentation of the model from every side. Rendered headless with get_view's shading; the window's View section downloads one.
+
+- `background`: string (dark | light | transparent); default "dark"
+- `fps`: integer; default 24; range 1 to 60
+- `frames`: integer; default 48; range 8 to 180; Frames for one full turn.
+- `ids`: array of integer; Only these objects; every visible object when omitted.
+- `path`: string; required; Where to write the animation, ending in .png (an animated PNG that browsers play in a loop).
+- `pitch`: number; default 15; range -89 to 89; Degrees above the horizon.
+- `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"
+- `size`: integer; default 384; range 64 to 1024; Width and height in pixels.
 
 ## pick
 
@@ -62,7 +76,15 @@ Note: read-only.
 Hide or show objects, isolate some (hiding the rest) or show all. Hidden objects are not drawn, picked, rendered by get_view or exported by default; they stay in the scene and in saved projects.
 
 - `action`: string (hide | show | isolate | show_all); required; hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything.
+- `folder`: string; Instead of ids: every object in this folder.
 - `ids`: array of integer; The objects; the active object when omitted.
+
+## set_folder
+
+File objects under a named folder in the scene list (one level), or take them out with an empty name, so a scene of many parts stays readable; set_visibility can then hide, show or isolate a whole folder. Saved in projects. One undo step.
+
+- `folder`: string; required; The folder name; an empty string takes them out of any folder.
+- `ids`: array of integer; The objects to file; the active object when omitted.
 
 ## arrange_objects
 
@@ -279,12 +301,52 @@ Mask everything inside a box, ellipse or lasso drawn on a view, through the whol
 - `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
 - `yaw`: number; range -360 to 360; Degrees; overrides view, as in get_view.
 
+## group_from_mask
+
+Make the masked faces a new face group. Face groups divide a mesh into named regions (a head's eyes, lips and ears; a robot's panels) to mask, hide or isolate in one step. Groups survive strokes, masks and subdivision levels; remesh, booleans and dynamic topology drop them. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## group_auto
+
+Replace an object's face groups with automatic ones: by angle (a new group wherever neighbouring faces turn by more than the angle, so a cube gets six) or by parts (each loose piece its own group). One undo step.
+
+- `angle`: number; default 30; range 1 to 179
+- `by`: string (angle | parts); default "angle"; angle starts a new group wherever neighbouring faces turn by more than `angle` degrees (the planes of a hard-surface model, the sides of a cube); parts gives each loose piece its own group.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## group_clear
+
+Remove an object's face groups. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## mask_by_group
+
+Mask one face group, named by number or by a point on it (get_scene reports how many groups an object has). Combines with the current mask by op. One undo step.
+
+- `group`: integer; range 0 to inf; The face group to mask.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `op`: string (replace | add | subtract | intersect); default "replace"
+- `point`: array of number; Or: mask the group of the face nearest this point.
+
+## hide_faces
+
+Hide, show or isolate faces chosen by face group or by the mask, invert what is hidden, or show all. Hidden faces are not drawn, cannot be hit by a stroke or a pick, and the vertices inside them do not move, so you can work on what is behind them. One undo step.
+
+- `action`: string (hide | show | isolate | invert | show_all); required; hide or show the chosen faces, isolate them (hide the rest), invert what is hidden, or show every face.
+- `by`: string (group | mask); default "group"; Choose faces by face group (group or point) or by the mask (faces whose corners are at least half masked).
+- `group`: integer; range 0 to inf
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `point`: array of number; Choose the group of the face nearest this point.
+
 ## subdivide
 
 Subdivide an object's mesh, each level multiplying the triangles by four (Loop subdivision, which rounds the shape; smooth false splits flat). The mask carries over. This replaces the mesh in one step; multires_divide keeps the lower levels to step back to.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `levels`: integer; default 1; range 1 to 4; Each level multiplies the triangles by four.
+- `sharp_border`: boolean; default false; Keep open borders where they are while the rest smooths (a plane keeps its corners, a cut shell its rim).
 - `smooth`: boolean; default true; Loop subdivision (smooths the shape); false splits flat.
 
 ## remesh_voxel
@@ -445,6 +507,30 @@ Join several objects into the first one's mesh (the parts stay separate shells; 
 Split an object into one object per connected part of its mesh.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## array_object
+
+Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them.
+
+- `angle`: number; default 360; range -360 to 360; Radial: the total turn in degrees; 360 spaces the copies evenly around the full circle.
+- `axis`: string (x | y | z); default "y"; Radial: the axis the copies turn around (through center).
+- `center`: array of number; Radial: the point the axis passes through; the world origin when omitted.
+- `count`: integer; default 4; range 2 to 200; Copies in all, the original included.
+- `id`: integer; range 1 to inf; The object to repeat; the active object when omitted.
+- `merge`: boolean; default false; Join the copies with the original into one object instead of adding separate objects.
+- `mode`: string (linear | radial); default "linear"
+- `offset`: array of number; Linear: the step from one copy to the next, in world units; one bounds width along x when omitted.
+
+## insert_mesh
+
+Place a primitive, or a copy of another object, at a point on a surface, standing along the normal there and sunk in by a fraction of its height: eyes, horns, bolts, buttons. Use pick to get the point and normal under a view direction. The new object becomes active.
+
+- `kind`: string (sphere | cube | cylinder | cone | torus); default "sphere"; A primitive to insert, unless source_id is given.
+- `normal`: array of number; The surface normal there; the new mesh stands along it. Up when omitted.
+- `point`: array of number; required; Where to place it, usually a point on a surface (pick gives one).
+- `sink`: number; default 0.25; range -1 to 1; How far it sinks into the surface, as a fraction of its height (0 sits on top, 0.5 half buried).
+- `size`: number; default 0.2; range -inf to 10000; The inserted mesh's largest dimension, in world units.
+- `source_id`: integer; range 1 to inf; Insert a copy of this object instead (a horn, a bolt, an eye).
 
 ## boolean
 
