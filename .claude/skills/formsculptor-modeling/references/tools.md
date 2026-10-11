@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.6.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.7.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -8,6 +8,7 @@ Generated from the engine's command registry (formsculptor 0.6.0) by `./formscul
 - Scene: `get_scene`, `new_scene`
 - Objects: `add_primitive`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
+- Painting: `paint_fill`, `paint_clear`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
@@ -69,18 +70,36 @@ Note: removes or replaces (undoable); in the window: Delete.
 
 Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
-- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask); default "draw"
+- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness.
+- `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
 - `lazy`: number; default 0; range 0 to 0.95
+- `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
 - `points`: array of array; required; The stroke path as [x, y, z] or [x, y, z, pressure] points on or near the surface, in object space. Grab moves the vertices around the first point by the offset to the last.
 - `radius`: number; default 0.2; range -inf to 10000; World units; compare with the object's bounds from get_scene.
+- `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
 - `spacing`: number; default 0.15; range 0.02 to 2; Distance between dabs as a fraction of the radius.
 - `strength`: number; default 0.5; range 0 to 1
 - `symmetry`: object; fields radial, x, y, z
+
+## paint_fill
+
+Paint a whole object with a colour, roughness or metalness (only the channels given); masked areas are protected in proportion to the mask. For painting by hand use sculpt_stroke with brush paint. Paint follows subdivision levels, dyntopo, remesh, booleans and export (PLY, OBJ, GLB).
+
+- `color`: ['string', 'array']; #rrggbb or [r, g, b] from 0 to 1.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `metalness`: number; range 0 to 1
+- `roughness`: number; range 0 to 1
+
+## paint_clear
+
+Reset an object's paint to the default clay colour, roughness 0.5 and metalness 0.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## mask_invert
 

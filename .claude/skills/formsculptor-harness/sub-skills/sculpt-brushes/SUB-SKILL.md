@@ -11,7 +11,7 @@ Own `fsc-sculpt`. Turns pointer input into vertex displacement through brush ker
 
 ## Preconditions
 
-State at 0.4.0: built in `native/crates/fsc-sculpt` (`stroke.rs`, `brush.rs`, `symmetry.rs`): nine brushes, spacing, pressure, four falloff presets, lazy smoothing, mirror and radial symmetry, masks, grab, and dynamic topology through `fsc-topo::refine_sphere`. A stroke finishes into `StrokeEdit::Vertices` or, when topology changed, `StrokeEdit::Topology` with the pre-stroke snapshot. Items below not yet built are marked by their absence from those files. Read `sub-skills/engine-core/SUB-SKILL.md` for the buffers a kernel writes.
+State at 0.4.0: built in `native/crates/fsc-sculpt` (`stroke.rs`, `brush.rs`, `symmetry.rs`): nine brushes, spacing, pressure, four falloff presets, lazy smoothing, mirror and radial symmetry, masks, grab, and dynamic topology through `fsc-topo::refine_sphere`. A stroke finishes into `StrokeEdit::Vertices` or, when topology changed, `StrokeEdit::Topology` with the pre-stroke snapshot. At 0.7.0 a tenth brush, `paint`, blends `BrushSettings.paint` (colour, roughness, metalness) into `Mesh.paint` for the channels in `paint_channels`, held by the mask; `BrushKind::moves_vertices` separates it and mask from the brushes that need normals and a BVH refit; `VertexEdit` carries paint before and after for undo. Dyntopo collapse joined refinement in 0.4.1. Items below not yet built are marked by their absence from those files. Read `sub-skills/engine-core/SUB-SKILL.md` for the buffers a kernel writes.
 
 ## Procedure
 
