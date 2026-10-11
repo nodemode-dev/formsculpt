@@ -127,6 +127,27 @@ export async function postJson<T>(path: string): Promise<Reply<T>> {
   }
 }
 
+/** POSTs JSON to a plain service route (not the dispatcher); a refusal's FastAPI `detail` becomes the message. */
+export async function postBody<T>(path: string, body: unknown): Promise<Reply<T>> {
+  try {
+    const response = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const text = await response.text();
+    if (!response.ok) {
+      let message = text || response.statusText;
+      try {
+        const detail = (JSON.parse(text) as { detail?: unknown }).detail;
+        if (typeof detail === 'string') message = detail;
+      } catch {
+        // not JSON; keep the text
+      }
+      return { ok: false, error: { code: `http_${response.status}`, message } };
+    }
+    return { ok: true, result: JSON.parse(text) as T };
+  } catch (err) {
+    return { ok: false, error: { code: 'unreachable', message: String(err) } };
+  }
+}
+
 export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
   const response = await fetch(`/api/engine/mesh/${id}`, { cache: 'no-store' });
   if (!response.ok) return null;

@@ -1,7 +1,9 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
 import { el, saveBlob, setAttr, setText } from './ui/dom';
-import { dispatch, fetchFile, fetchMesh, fetchVersion, postJson, uploadFile, type ObjectSummary, type SceneSummary } from './engine/service';
+import { dispatch, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, type ObjectSummary, type SceneSummary } from './engine/service';
+import { dataUrl, HostLink } from './host';
+import { inDesktop, saveNative } from './ui/desktop';
 
 interface PrintReport {
   printable: boolean;
@@ -49,6 +51,7 @@ interface Shell {
   fileButtons: HTMLButtonElement[];
   fileInput: HTMLInputElement;
   exportFormat: HTMLSelectElement;
+  nodemode: HTMLInputElement;
   objectButtons: HTMLButtonElement[];
   deformAxis: HTMLSelectElement;
   deformAngle: HTMLInputElement;
@@ -118,7 +121,10 @@ const FILE_ACTIONS: [string, string][] = [
   ['print', 'Print check'],
   ['repair', 'Repair'],
   ['recover', 'Recover'],
+  ['nodemode', 'Send to NodeMode'],
 ];
+
+const NODEMODE_KEY = 'formsculptor.nodemode';
 
 const OBJECT_ACTIONS: [string, string][] = [
   ['duplicate', 'Duplicate'],
@@ -202,6 +208,7 @@ function buildShell(root: HTMLElement): Shell {
     const b = el('button', 'btn', label);
     b.type = 'button';
     b.dataset.action = action;
+    if (action === 'nodemode') b.classList.add('wide');
     fileGrid.append(b);
     return b;
   });
@@ -216,8 +223,15 @@ function buildShell(root: HTMLElement): Shell {
     option.value = f;
     exportFormat.append(option);
   }
+  let remembered = '';
+  try {
+    remembered = localStorage.getItem(NODEMODE_KEY) ?? '';
+  } catch {
+    // storage blocked; the default address stands
+  }
+  const nodemode = input('url', { value: remembered || 'http://localhost:8000', 'aria-label': 'NodeMode address', spellcheck: 'false' });
   const fileFields = el('div', 'fields');
-  fileFields.append(field('Export format', exportFormat));
+  fileFields.append(field('Export format', exportFormat), field('NodeMode address', nodemode));
   panel.append(fileFields);
   panel.append(el('h2', 'gap', 'Add'));
   const grid = el('div', 'add-grid');
@@ -439,7 +453,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine };
 }
 
 class SceneView {
@@ -491,6 +505,19 @@ class SceneView {
       this.viewport.invalidate();
     });
     shell.fileButtons.forEach((b) => b.addEventListener('click', () => void this.fileAction(b.dataset.action ?? '')));
+    if (this.host.embedded) {
+      const send = shell.fileButtons.find((b) => b.dataset.action === 'nodemode');
+      if (send) setText(send, 'Send to canvas');
+      const row = shell.nodemode.closest('label');
+      if (row) row.hidden = true;
+    }
+    shell.nodemode.addEventListener('change', () => {
+      try {
+        localStorage.setItem(NODEMODE_KEY, shell.nodemode.value.trim());
+      } catch {
+        // storage blocked; the address lasts for this session
+      }
+    });
     shell.fileInput.addEventListener('change', () => void this.uploadChosen());
     shell.objectButtons.forEach((b) => b.addEventListener('click', () => this.objectAction(b.dataset.action ?? '')));
     shell.layerButtons.forEach((b) => b.addEventListener('click', () => this.layerAction(b.dataset.action ?? '')));
@@ -528,6 +555,7 @@ class SceneView {
 
   private brush = 'draw';
   private strokes = new StrokeClient();
+  private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
   stroking(): boolean {
@@ -731,6 +759,8 @@ class SceneView {
       this.note(reply.ok ? 'Recovered the last autosave' : reply.error.message);
       await this.refresh();
       if (reply.ok) this.frameActive();
+    } else if (action === 'nodemode') {
+      await this.sendToNodeMode();
     } else if (id === null) {
       this.note('Select an object first');
     } else if (action === 'repair') {
@@ -766,8 +796,43 @@ class SceneView {
       this.note(result);
       return;
     }
+    if (inDesktop) {
+      try {
+        const saved = await saveNative(result, name);
+        this.note(saved ? `Saved ${saved}` : '');
+      } catch (err) {
+        this.note(`Could not save: ${String(err)}`);
+      }
+      return;
+    }
     saveBlob(result, name);
     this.note(`Saved ${name}`);
+  }
+
+  private async sendToNodeMode(): Promise<void> {
+    if (this.scene.objects.length === 0) {
+      this.note('The scene is empty; there is nothing to send');
+      return;
+    }
+    const title = this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? 'formsculptor';
+    const shading = this.shell.shading.value;
+    this.note('Sending to NodeMode');
+    if (this.host.embedded) {
+      const [model, preview] = await Promise.all([fetchFile('/api/engine/export?format=glb'), fetchFile(`/api/engine/view?width=768&height=768&background=transparent&shading=${encodeURIComponent(shading)}`)]);
+      if (typeof model === 'string' || typeof preview === 'string') {
+        this.note(typeof model === 'string' ? model : String(preview));
+        return;
+      }
+      this.host.assign([
+        { name: `${title}.glb`, mime: 'model/gltf-binary', width: 0, height: 0, dataUrl: await dataUrl(model) },
+        { name: `${title}.png`, mime: 'image/png', width: 768, height: 768, dataUrl: await dataUrl(preview) },
+      ]);
+      this.note(`Sent ${title} to the canvas`);
+      return;
+    }
+    const reply = await postBody<{ placed: boolean; detail?: string }>('/api/nodemode/send', { target: this.shell.nodemode.value.trim(), title, shading });
+    if (!reply.ok) this.note(reply.error.message);
+    else this.note(reply.result.placed ? `Sent ${title} to NodeMode` : reply.result.detail ?? 'Uploaded to NodeMode');
   }
 
   private async uploadChosen(): Promise<void> {
