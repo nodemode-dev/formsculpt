@@ -35,7 +35,7 @@ checksum = "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
 
 [[package]]
 name = "fsc-commands"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-core",
  "fsc-sculpt",
@@ -47,7 +47,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "glam",
  "rayon",
@@ -55,21 +55,21 @@ dependencies = [
 
 [[package]]
 name = "fsc-io"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-core",
 ]
 
 [[package]]
 name = "fsc-paint"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-core",
 ]
 
 [[package]]
 name = "fsc-py"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-commands",
  "fsc-core",
@@ -81,7 +81,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-sculpt"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-core",
  "fsc-topo",
@@ -90,7 +90,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-topo"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fsc-core",
  "glam",

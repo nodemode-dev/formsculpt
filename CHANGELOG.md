@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.4.1 · 2026-10-11
+
+### Added
+
+- Multiresolution levels: `multires_divide`, `multires_set_level` (a level number, or one step up or down), `multires_delete_higher`, `multires_delete_lower` (22 commands in all). Edits on a lower level carry up with the higher detail kept in a tangent frame; each is one undo step. The Multiresolution panel section, the Level readout and the keys Mod+D, D and Shift+D.
+- Dynamic topology collapses edges shorter than 0.4 of the detail size, and `dyntopo_size` (Constant detail in the panel) sets a fixed edge length.
+- `get_scene` reports each object's `level` and `levels`.
+
+### Changed
+
+- Strokes refit only the BVH nodes they touched: a sample costs 0.21 ms on 327,680 triangles and 0.70 ms on 1,310,720 (3.6 and 14.6 ms in 0.4.0).
+- Mod+D now divides; `subdivide` keeps its one-step behaviour without a key.
+- While an object has levels, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes` and dyntopo strokes refuse with `has_levels`.
+
 ## 0.4.0 · 2026-10-11
 
 ### Added
