@@ -209,3 +209,9 @@ Paint arrives as one five-float buffer bound to two attributes; a mesh first pai
 - kind: rationale
 - logged: v0.7.1 · 2026-10-11
 The bake reports its size, source and time in the panel note and points at the two ways out (GLB export, which embeds the maps, and Download maps, a zip of the four files from /api/engine/maps). Verified under 4x throttling: the refusal before unwrapping, unwrap, a 512 bake, the maps zip and a GLB download that validates, layout shift 0, no console errors.
+
+### src/app.ts · modeling controls
+- refers-to: src/app.ts :: TOPOLOGY (quad_remesh, quadTarget), OBJECT_ACTIONS (project), ACTIONS (extract_mask, extrude_mask, inset_mask), SceneView.objectAction
+- kind: rationale
+- logged: v0.8.0 · 2026-10-11
+Project from follows the boolean convention: the object selected before the active one is the source. The mask operations sit with the other mask buttons under Edit. Duplicate now copies in place, as ZBrush does, because the remesh-divide-project workflow needs the copy on top of the source (the first browser run, with the old one-width offset, projected almost nothing). Verified under 4x throttling: duplicate, quad remesh to 1,500, two divides, Project from, a mask stroke, Extrude mask and Extract mask, layout shift 0, no console errors.

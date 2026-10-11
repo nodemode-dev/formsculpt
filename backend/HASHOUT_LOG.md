@@ -122,3 +122,9 @@ A counter that rises on every successful mutating dispatch (any command whose ca
 - kind: rationale
 - logged: v0.6.0 · 2026-10-11
 The window sends files as multipart uploads (a .fsc opens, anything else imports) and receives exports and projects as attachments; uploads stop at 1 GB. The format is validated by the route pattern before the engine runs. Autosave runs in the app lifespan every FSC_AUTOSAVE_SECONDS (60 by default) and writes only when the engine epoch moved since the last save and the scene has objects, to FSC_AUTOSAVE_DIR (default ~/.formsculptor/autosave), through a .part file and an atomic rename. The engine byte helpers were appended to the end of services/engine.py by a shell heredoc (one region, new code only), declared here.
+
+### process · scripted replacement in 0.8.0
+- refers-to: frontend/HASHOUT_LOG.md
+- kind: process
+- logged: v0.8.0 · 2026-10-11
+Declared slip: one sentence of the frontend log entry written earlier in this release (not yet committed) was corrected by a Python one-off string swap instead of the Edit tool, after the window's Duplicate stopped offsetting. Every other change in 0.8.0 was a hand edit or a new file.
