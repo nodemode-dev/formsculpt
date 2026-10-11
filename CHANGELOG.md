@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.14.0 · 2026-10-11
+
+### Added
+
+- Paint layers: `paint_layer_add`, `paint_layer_set` (name, blend, opacity, visibility, move up or down), `paint_layer_select` (a layer or the base), `paint_layer_delete`, `paint_layer_merge` (down, keeping the look) and `paint_layer_flatten` (81 commands in all). Blend modes: normal, multiply, screen, overlay, add.
+- The paint brush, `paint_fill`, `paint_clear` and smudge work on the active paint layer or the base; inverting the paint brush erases a layer. Undo covers both the layer and the composite.
+- Projects save the paint base and layers; `get_scene` lists `paint_layers` and `active_paint_layer`.
+- Window: Paint into, Blend, Opacity and Visible in the Paint section, with New paint layer, Delete paint layer, Merge down, Flatten paint, Move up and Move down.
+
 ## 0.13.0 · 2026-10-11
 
 ### Added
