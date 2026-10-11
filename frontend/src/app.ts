@@ -25,6 +25,10 @@ interface Shell {
   invert: HTMLInputElement;
   symX: HTMLInputElement;
   radial: HTMLInputElement;
+  dyntopo: HTMLInputElement;
+  detail: HTMLInputElement;
+  topoButtons: HTMLButtonElement[];
+  resolution: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
 }
 
@@ -39,6 +43,13 @@ const BRUSHES: [string, string][] = [
   ['smooth', 'Smooth'],
   ['grab', 'Grab'],
   ['mask', 'Mask'],
+];
+
+const TOPOLOGY: [string, string, Record<string, unknown>][] = [
+  ['subdivide', 'Subdivide', { levels: 1 }],
+  ['remesh_voxel', 'Voxel remesh', {}],
+  ['decimate', 'Decimate 50%', { ratio: 0.5 }],
+  ['fill_holes', 'Fill holes', {}],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -116,8 +127,10 @@ function buildShell(root: HTMLElement): Shell {
   const invert = input('checkbox', { 'aria-label': 'Invert' });
   const symX = input('checkbox', { 'aria-label': 'Mirror X' });
   const radial = input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
+  const dyntopo = input('checkbox', { 'aria-label': 'Dynamic topology' });
+  const detail = input('range', { min: '5', max: '100', value: '25', 'aria-label': 'Detail size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail));
   panel.append(fields);
 
   panel.append(el('h2', 'gap', 'Edit'));
@@ -130,6 +143,22 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(actionGrid);
+
+  panel.append(el('h2', 'gap', 'Topology'));
+  const topoGrid = el('div', 'add-grid two');
+  const topoButtons = TOPOLOGY.map(([name, label, args]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = name;
+    b.dataset.args = JSON.stringify(args);
+    topoGrid.append(b);
+    return b;
+  });
+  panel.append(topoGrid);
+  const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Remesh resolution' });
+  const topoFields = el('div', 'fields');
+  topoFields.append(field('Remesh resolution', resolution));
+  panel.append(topoFields);
 
   const message = el('p', 'panel-note', '');
   panel.append(message);
@@ -162,7 +191,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, topoButtons, resolution };
 }
 
 class SceneView {
@@ -189,6 +218,14 @@ class SceneView {
       void this.refresh();
     };
     this.strokes.onError = (m) => this.note(m);
+    this.strokes.onTopology = (id) => this.refetch(id);
+    shell.topoButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const args = JSON.parse(b.dataset.args ?? '{}') as Record<string, unknown>;
+        if (b.dataset.action === 'remesh_voxel') args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
+        void this.run(b.dataset.action ?? 'mesh_check', args);
+      }),
+    );
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush !== 'orbit' && this.scene.active !== null,
@@ -209,6 +246,22 @@ class SceneView {
     return this.strokes.active();
   }
 
+  private fetching = new Set<number>();
+  private again = new Set<number>();
+
+  private refetch(id: number): void {
+    if (this.fetching.has(id)) {
+      this.again.add(id);
+      return;
+    }
+    this.fetching.add(id);
+    void fetchMesh(id).then((mesh) => {
+      if (mesh) this.viewport.setMesh(mesh);
+      this.fetching.delete(id);
+      if (this.again.delete(id)) this.refetch(id);
+    });
+  }
+
   private brushState(): BrushState {
     const s = this.shell;
     return {
@@ -219,6 +272,7 @@ class SceneView {
       falloff: 'smooth',
       lazy: 0,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
+      dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
     };
   }
 

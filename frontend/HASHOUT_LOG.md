@@ -167,3 +167,9 @@ Polls `/api/mcp/window` about once a second, which also tells the service a wind
 - kind: warning-context
 - logged: v0.3.0 · 2026-10-11
 `.consent` sets `display: grid`, which beats the browser's own `[hidden] { display: none }`; without `.consent[hidden] { display: none; }` the dialog never hides. Found by the consent check: the dialog stayed on screen after Allow.
+
+### src/app.ts · topology controls and refetch
+- refers-to: src/app.ts :: TOPOLOGY, SceneView.refetch, brushState (dyntopo)
+- kind: rationale
+- logged: v0.4.0 · 2026-10-11
+The Topology section runs subdivide, remesh_voxel (with the resolution field), decimate at 50 percent and fill_holes; the Brush section gains Dyntopo and Detail size (a fraction of the radius). During a dyntopo stroke each topology change schedules a full mesh fetch; at most one fetch per object is in flight and one more is queued, so a fast stroke does not pile up requests.

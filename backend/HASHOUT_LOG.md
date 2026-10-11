@@ -110,3 +110,9 @@ Consent only matters when someone is looking: a window that polled `/api/mcp/win
 - kind: rationale
 - logged: v0.3.0 · 2026-10-11
 A counter that rises on every successful mutating dispatch (any command whose catalogue annotations are not read-only) and on every stroke that changed vertices. The window polls it to refresh after an agent's change.
+
+### app/routers/engine.py · topology during strokes
+- refers-to: app/routers/engine.py :: stroke (sample branch)
+- kind: explainer
+- logged: v0.4.0 · 2026-10-11
+`stroke_sample` now returns a third value: true when dynamic topology changed the mesh. The socket then sends no FSCU frame for that sample and marks the JSON reply `topology: true`; the window refetches the whole mesh.

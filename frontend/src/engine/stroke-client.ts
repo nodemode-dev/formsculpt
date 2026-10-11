@@ -8,6 +8,7 @@ export interface BrushState {
   falloff: string;
   lazy: number;
   symmetry: { x: boolean; y: boolean; z: boolean; radial: number };
+  dyntopo: number | null;
 }
 
 export interface StrokeResult {
@@ -29,6 +30,8 @@ export class StrokeClient {
   onUpdate: ((update: VertexUpdate) => void) | null = null;
   onEnd: ((result: StrokeResult | null) => void) | null = null;
   onError: ((message: string) => void) | null = null;
+  onTopology: ((objectId: number) => void) | null = null;
+  private objectId = 0;
 
   private open(): Promise<WebSocket> {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) return Promise.resolve(this.socket);
@@ -64,12 +67,13 @@ export class StrokeClient {
       if (update) this.onUpdate?.(update);
       return;
     }
-    let msg: { type: string; seq?: number; hit?: boolean; result?: { ok: boolean; result: StrokeResult | null }; message?: string };
+    let msg: { type: string; seq?: number; hit?: boolean; topology?: boolean; result?: { ok: boolean; result: StrokeResult | null }; message?: string };
     try {
       msg = JSON.parse(String(data));
     } catch {
       return;
     }
+    if (msg.type === 'sample' && msg.topology) this.onTopology?.(this.objectId);
     if (msg.type === 'sample' && msg.seq === this.firstSeq && msg.hit === false) this.miss = true;
     else if (msg.type === 'end') this.onEnd?.(msg.result?.ok ? msg.result.result : null);
     else if (msg.type === 'error') this.onError?.(msg.message ?? 'stroke error');
@@ -84,11 +88,12 @@ export class StrokeClient {
   begin(objectId: number, brush: BrushState, worldPerPixel: number, invert: boolean, origin: Vec3, dir: Vec3, pressure: number): void {
     this.miss = false;
     this.live = true;
+    this.objectId = objectId;
     const radius = Math.max(1e-4, brush.radiusPx * worldPerPixel);
     this.send({
       type: 'begin',
       id: objectId,
-      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry },
+      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo },
     });
     this.firstSeq = ++this.seq;
     this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure });
