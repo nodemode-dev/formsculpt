@@ -18,6 +18,7 @@ import { add, distance3, dot, normalize, scale, sub, type Vec3 } from './viewpor
 import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
+import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
 
 interface Shell {
   engineDot: HTMLElement;
@@ -80,6 +81,16 @@ interface Shell {
   referenceOpacity: HTMLInputElement;
   viewButtons: HTMLButtonElement[];
   historyList: HTMLUListElement;
+  alpha: HTMLSelectElement;
+  alphaAngle: HTMLInputElement;
+  strokeMode: HTMLSelectElement;
+  alphaInput: HTMLInputElement;
+  alphaLoad: HTMLButtonElement;
+  matcapInput: HTMLInputElement;
+  shadeActive: HTMLInputElement;
+  keyAction: HTMLSelectElement;
+  keyCombo: HTMLInputElement;
+  keyButtons: HTMLButtonElement[];
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -113,6 +124,8 @@ const BRUSHES: [string, string][] = [
   ['trim', 'Trim'],
   ['snake_hook', 'Snake hook'],
   ['noise', 'Noise'],
+  ['smudge', 'Smudge'],
+  ['stamp', 'Drag stamp'],
   ['mask_box', 'Box mask'],
   ['mask_lasso', 'Lasso mask'],
   ['mask_topo', 'Topo mask'],
@@ -122,7 +135,18 @@ const BRUSHES: [string, string][] = [
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp']);
+
+const ALPHAS: [string, string][] = [
+  ['none', 'None'],
+  ['square', 'Square'],
+  ['noise', 'Noise'],
+  ['cracks', 'Cracks'],
+  ['rings', 'Rings'],
+  ['star', 'Star'],
+  ['stripes', 'Stripes'],
+  ['dots', 'Dots'],
+];
 const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
@@ -360,9 +384,20 @@ function buildShell(root: HTMLElement): Shell {
     detailMode.append(option);
   }
   const lazy = input('range', { min: '0', max: '95', value: '0', 'aria-label': 'Lazy mouse' });
+  const alpha = choices('Alpha', ALPHAS);
+  const alphaAngle = input('number', { min: '-360', max: '360', step: '5', value: '0', 'aria-label': 'Alpha angle' });
+  const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)']]);
+  const alphaInput = input('file', { accept: 'image/png', 'aria-label': 'Choose an alpha image' });
+  alphaInput.hidden = true;
+  panel.append(alphaInput);
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode));
   panel.append(fields);
+  const alphaGrid = el('div', 'add-grid two after-fields');
+  const alphaLoad = el('button', 'btn', 'Load alpha');
+  alphaLoad.type = 'button';
+  alphaGrid.append(alphaLoad);
+  panel.append(alphaGrid);
 
   panel.append(el('h2', 'gap', 'Paint'));
   const paintColor = input('color', { value: '#c8402f', 'aria-label': 'Paint colour' });
@@ -499,7 +534,11 @@ function buildShell(root: HTMLElement): Shell {
   referenceInput.hidden = true;
   panel.append(referenceInput);
   const viewFields = el('div', 'fields');
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity));
+  const shadeActive = input('checkbox', { 'aria-label': 'Shade the active object only' });
+  const matcapInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a matcap image' });
+  matcapInput.hidden = true;
+  panel.append(matcapInput);
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Shade active only', shadeActive));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -510,6 +549,7 @@ function buildShell(root: HTMLElement): Shell {
       ['reference', 'Reference'],
       ['clear_reference', 'Clear ref'],
       ['turntable', 'Turntable'],
+      ['matcap', 'Load matcap'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -519,6 +559,28 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(viewGrid);
+
+  panel.append(el('h2', 'gap', 'Keys'));
+  const keyAction = choices('Key action', []);
+  const keyCombo = input('text', { readonly: '', placeholder: 'Click, then press keys', 'aria-label': 'Shortcut', spellcheck: 'false' });
+  const keyFields = el('div', 'fields');
+  keyFields.append(field('Action', keyAction), field('Shortcut', keyCombo));
+  panel.append(keyFields);
+  const keyGrid = el('div', 'add-grid three after-fields');
+  const keyButtons = (
+    [
+      ['set', 'Set key'],
+      ['clear', 'Clear key'],
+      ['reset', 'Reset keys'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    keyGrid.append(b);
+    return b;
+  });
+  panel.append(keyGrid);
 
   const message = el('p', 'panel-note', '');
   panel.append(message);
@@ -558,7 +620,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons };
 }
 
 class SceneView {
@@ -614,6 +676,10 @@ class SceneView {
           shell.reference.removeAttribute('src');
           return;
         }
+        if (action === 'matcap') {
+          shell.matcapInput.click();
+          return;
+        }
         if (action === 'turntable') {
           this.note('Recording a turntable');
           void this.download(`/api/engine/turntable?frames=48&size=384&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'turntable.png');
@@ -661,10 +727,21 @@ class SceneView {
         else void this.run('paint_fill', { id, ...this.paintArgs(true) });
       }),
     );
-    shell.shading.addEventListener('change', () => {
-      this.viewport.renderer.setShading(shell.shading.value);
-      this.viewport.invalidate();
+    shell.shading.addEventListener('change', () => this.applyShading());
+    shell.alphaLoad.addEventListener('click', () => shell.alphaInput.click());
+    shell.alphaInput.addEventListener('change', () => void this.loadAlpha());
+    shell.matcapInput.addEventListener('change', () => void this.loadMatcap());
+    shell.keyAction.addEventListener('change', () => this.showKeys());
+    shell.keyCombo.addEventListener('keydown', (e) => {
+      const combo = comboOf(e);
+      e.preventDefault();
+      e.stopPropagation();
+      if (!combo) return;
+      this.keyPending = combo;
+      shell.keyCombo.value = combo;
     });
+    shell.keyButtons.forEach((b) => b.addEventListener('click', () => this.keyButton(b.dataset.action ?? '')));
+    void this.loadCatalogue();
     shell.fileButtons.forEach((b) => b.addEventListener('click', () => void this.fileAction(b.dataset.action ?? '')));
     if (this.host.embedded) {
       const send = shell.fileButtons.find((b) => b.dataset.action === 'nodemode');
@@ -697,9 +774,18 @@ class SceneView {
     const trace = (e: PointerEvent): void => {
       if (this.shape) {
         const p: [number, number] = [e.offsetX, e.offsetY];
-        if (this.shape.kind === 'mask_box') this.shape.pts = [this.shape.pts[0] ?? p, p];
+        if (this.shape.kind === 'mask_box' || this.shape.kind === 'stamp') this.shape.pts = [this.shape.pts[0] ?? p, p];
         else this.shape.pts.push(p);
         const pts = this.shape.pts;
+        if (this.shape.kind === 'stamp') {
+          // The stamp's size and turn: a circle around the first point through the pointer, and its radius line.
+          const [c, q] = [pts[0], pts[pts.length - 1]];
+          const r = Math.hypot(q[0] - c[0], q[1] - c[1]);
+          const a0 = Math.atan2(q[1] - c[1], q[0] - c[0]);
+          const ring = Array.from({ length: 33 }, (_, i) => `${(c[0] + r * Math.cos(a0 + (i / 32) * Math.PI * 2)).toFixed(0)},${(c[1] + r * Math.sin(a0 + (i / 32) * Math.PI * 2)).toFixed(0)}`);
+          shell.tubeLine.setAttribute('points', [`${c[0].toFixed(0)},${c[1].toFixed(0)}`, ...ring].join(' '));
+          return;
+        }
         const outline = this.shape.kind === 'mask_box' && pts.length === 2 ? [pts[0], [pts[1][0], pts[0][1]], pts[1], [pts[0][0], pts[1][1]], pts[0]] : [...pts, pts[0]];
         shell.tubeLine.setAttribute('points', outline.map((q) => `${q[0].toFixed(0)},${q[1].toFixed(0)}`).join(' '));
         return;
@@ -715,7 +801,7 @@ class SceneView {
       enabled: () => this.brush === 'tube' || (this.brush !== 'orbit' && this.scene.active !== null),
       begin: (ray, pressure, wpp, inv) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
-        else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv };
+        else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
         else if (CLICK_TOOLS.has(this.brush)) void this.clickTool(ray, wpp, inv);
         else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
       },
@@ -737,7 +823,10 @@ class SceneView {
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
-  private shape: { kind: string; pts: [number, number][]; subtract: boolean } | null = null;
+  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number } | null = null;
+  private hotkeys = new Hotkeys();
+  private catalogue: CatalogueCommand[] = [];
+  private keyPending: string | null = null;
 
   stroking(): boolean {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
@@ -748,6 +837,10 @@ class SceneView {
     this.shape = null;
     this.shell.tubeLine.setAttribute('points', '');
     const id = this.scene.active;
+    if (shape?.kind === 'stamp') {
+      await this.stampEnd(shape.pts, shape.wpp, shape.subtract);
+      return;
+    }
     const box = shape?.kind === 'mask_box';
     if (!shape || id === null || shape.pts.length < (box ? 2 : 3)) {
       this.note(box ? 'Drag a box over the area to mask' : 'Draw around the area to mask');
@@ -758,6 +851,156 @@ class SceneView {
     const points = shape.pts.map(([x, y]) => [x / w, y / h]);
     const viewProj = Array.from(this.viewport.camera.viewProjection());
     await this.run('mask_shape', { id, shape: box ? 'box' : 'lasso', points, view_proj: viewProj, op: shape.subtract ? 'subtract' : 'add' });
+  }
+
+  /** Drag stamp: one dab of the alpha where the drag began, as wide as the drag and turned to face it. */
+  private async stampEnd(pts: [number, number][], wpp: number, invert: boolean): Promise<void> {
+    const id = this.scene.active;
+    if (id === null || pts.length === 0) return;
+    const [c, q] = [pts[0], pts[pts.length - 1]];
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const ray = this.viewport.rayAtClient(rect.left + c[0], rect.top + c[1]);
+    if (!ray) return;
+    const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+    if (!hit.ok || !hit.result.hit || hit.result.id !== id || !hit.result.point) {
+      this.note('Start the stamp on the active object');
+      return;
+    }
+    const dragPx = Math.hypot(q[0] - c[0], q[1] - c[1]);
+    const px = dragPx >= 3 ? dragPx : Number(this.shell.radius.value);
+    // Dragging straight up keeps the alpha upright; any other direction turns it to face the drag.
+    const turn = dragPx >= 3 ? (Math.atan2(q[0] - c[0], c[1] - q[1]) * 180) / Math.PI : 0;
+    const s = this.brushState();
+    await this.run('sculpt_stroke', {
+      id,
+      brush: 'draw',
+      points: [hit.result.point],
+      radius: Math.max(1e-4, px * wpp),
+      strength: s.strength,
+      invert: s.invert !== invert,
+      alpha: this.shell.alpha.value,
+      alpha_angle: (Number(this.shell.alphaAngle.value) || 0) + turn,
+      alpha_up: this.viewport.camera.screenUp(),
+    });
+  }
+
+  private applyShading(): void {
+    const id = this.scene.active;
+    const value = this.shell.shading.value;
+    if (this.shell.shadeActive.checked && id !== null) this.viewport.renderer.setShading(value, id);
+    else this.viewport.renderer.setShading(value);
+    this.viewport.invalidate();
+  }
+
+  private async loadAlpha(): Promise<void> {
+    const file = this.shell.alphaInput.files?.[0];
+    this.shell.alphaInput.value = '';
+    if (!file) return;
+    const name = file.name.replace(/\.[^.]+$/, '').slice(0, 64) || 'alpha';
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const reply = await dispatch<{ name: string }>('alpha_load', { name, png_base64: btoa(bin) });
+    if (!reply.ok) {
+      this.note(reply.error.message);
+      return;
+    }
+    const select = this.shell.alpha;
+    if (![...select.options].some((o) => o.value === reply.result.name)) {
+      const option = el('option', '', reply.result.name);
+      option.value = reply.result.name;
+      select.append(option);
+    }
+    select.value = reply.result.name;
+    this.note(`Alpha loaded: ${reply.result.name}`);
+  }
+
+  private async loadMatcap(): Promise<void> {
+    const file = this.shell.matcapInput.files?.[0];
+    this.shell.matcapInput.value = '';
+    if (!file) return;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const name = `img:${file.name}`;
+      this.viewport.renderer.addMatcap(name, bitmap);
+      bitmap.close();
+      const select = this.shell.shading;
+      if (![...select.options].some((o) => o.value === name)) {
+        const option = el('option', '', file.name.replace(/\.[^.]+$/, ''));
+        option.value = name;
+        select.append(option);
+      }
+      select.value = name;
+      this.applyShading();
+      this.note(`Matcap: ${file.name}`);
+    } catch {
+      this.note('That image could not be read as a matcap');
+    }
+  }
+
+  private async loadCatalogue(): Promise<void> {
+    try {
+      const res = await fetch('/api/engine/catalogue');
+      if (res.ok) this.catalogue = ((await res.json()) as { commands: CatalogueCommand[] }).commands;
+    } catch {
+      // the service is down; the window's own keys still work
+    }
+    this.hotkeys.addCatalogue(this.catalogue);
+    const actions = [...WINDOW_ACTIONS, ...BRUSHES.map(([k, label]) => ({ id: `brush:${k}`, label: `Tool: ${label}` })), ...commandActions(this.catalogue)];
+    for (const a of actions) {
+      const option = el('option', '', a.label);
+      option.value = a.id;
+      this.shell.keyAction.append(option);
+    }
+    this.showKeys();
+  }
+
+  private showKeys(): void {
+    this.keyPending = null;
+    this.shell.keyCombo.value = this.hotkeys.combosFor(this.shell.keyAction.value).join(' or ');
+  }
+
+  private keyButton(action: string): void {
+    const target = this.shell.keyAction.value;
+    if (action === 'reset') {
+      this.hotkeys.reset();
+      this.note('Keys reset to the defaults');
+    } else if (action === 'clear' && target) {
+      this.hotkeys.clear(target);
+    } else if (action === 'set' && target) {
+      if (!this.keyPending) {
+        this.note('Click the Shortcut box and press the keys first');
+        return;
+      }
+      const before = this.hotkeys.action(this.keyPending);
+      this.hotkeys.bind(this.keyPending, target);
+      this.note(before && before !== target ? `${this.keyPending} moved from ${before}` : `${this.keyPending} set`);
+    }
+    this.showKeys();
+  }
+
+  /** Runs the action a shortcut is bound to; false when it is bound to nothing. */
+  private runAction(action: string): boolean {
+    const [kind, name, step] = action.split(':');
+    if (kind === 'view') {
+      if (name === 'ortho') this.viewport.toggleOrtho();
+      else if (name === 'frame') this.frameActive();
+      else this.viewport.snap(name as ViewName);
+    } else if (kind === 'file') void this.fileAction(name);
+    else if (kind === 'brush') {
+      const b = this.shell.brushButtons.find((x) => x.dataset.brush === name);
+      if (!b) return false;
+      b.click();
+    } else if (kind === 'cmd') {
+      const command = this.catalogue.find((c) => c.name === name);
+      const args: Record<string, unknown> = {};
+      const takesId = command ? 'id' in (command.inputSchema?.properties ?? {}) : name === 'delete_object';
+      if (takesId && this.scene.active !== null) args.id = this.scene.active;
+      if (takesId && command?.inputSchema?.required?.includes('id') && args.id === undefined) return true;
+      if (step) args.step = step;
+      void this.run(name, args);
+    } else return false;
+    return true;
   }
 
   /** Tools that act once on the clicked point: topology mask, group mask, hide group, insert. */
@@ -886,6 +1129,7 @@ class SceneView {
       dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
       dyntopoScreenPx: s.dyntopo.checked && s.detailMode.value === 'screen' ? Number(s.detail.value) * 0.2 : null,
       paint: this.brush === 'paint' ? this.paintArgs(this.shell.paintMaterial.checked) : null,
+      alpha: s.alpha.value === 'none' ? null : { alpha: s.alpha.value, alpha_angle: Number(s.alphaAngle.value) || 0, alpha_up: this.viewport.camera.screenUp(), stroke: s.strokeMode.value },
     };
   }
 
@@ -1182,20 +1426,9 @@ class SceneView {
   }
 
   private key(e: KeyboardEvent): void {
-    const views: Record<string, [ViewName, ViewName]> = { '1': ['front', 'back'], '3': ['right', 'left'], '7': ['top', 'bottom'] };
-    const pair = views[e.key];
-    if (pair) this.viewport.snap(pair[e.ctrlKey ? 1 : 0]);
-    else if (e.key === '5') this.viewport.toggleOrtho();
-    else if (e.key === 'f' || e.key === 'F') this.frameActive();
-    else if ((e.key === 'Delete' || e.key === 'Backspace') && this.scene.active !== null) void this.run('delete_object', { id: this.scene.active });
-    else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) void this.run(e.shiftKey ? 'redo' : 'undo');
-    else if ((e.ctrlKey || e.metaKey) && e.key === 'y') void this.run('redo');
-    else if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) void this.fileAction('save');
-    else if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) void this.fileAction('open');
-    else if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) void this.fileAction('export');
-    else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) void this.run('multires_divide');
-    else if (e.key === 'd' || e.key === 'D') void this.run('multires_set_level', { step: e.shiftKey ? 'down' : 'up' });
-    else return;
+    const combo = comboOf(e);
+    const action = combo ? this.hotkeys.action(combo) : null;
+    if (!action || !this.runAction(action)) return;
     e.preventDefault();
   }
 }

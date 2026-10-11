@@ -36,6 +36,8 @@ uniform float uPainted;
 uniform float uLit;
 uniform vec4 uCap;
 uniform vec3 uTint;
+uniform float uImage;
+uniform sampler2D uMatcap;
 out vec4 outColor;
 const float PI = 3.14159265;
 vec3 light(vec3 n, vec3 v, vec3 l, vec3 radiance, vec3 albedo, float rough, float metal) {
@@ -71,6 +73,11 @@ void main() {
     col += sky * (albedo * (1.0 - metal) + f0 * (1.0 - rough * 0.7));
     col = col / (col + vec3(1.0));
     col = pow(col, vec3(1.0 / 2.2));
+  } else if (uImage > 0.5) {
+    // An image matcap: the view-space normal looks up the sphere picture; paint tints it.
+    vec2 uv = n.xy * 0.49 + 0.5;
+    vec3 cap = texture(uMatcap, vec2(uv.x, 1.0 - uv.y)).rgb;
+    col = uPainted > 0.5 ? cap * albedo * 1.25 : cap;
   } else {
     vec3 r = reflect(-v, n);
     vec2 m = r.xy / (2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0))) + 0.5;
@@ -167,6 +174,8 @@ export class GlRenderer {
   private lineProgram: WebGLProgram;
   private meshes = new Map<number, GpuMesh>();
   private grid: { vao: WebGLVertexArrayObject; count: number };
+  /** A 1 by 1 texture bound when no image matcap is in use, so the sampler is never incomplete. */
+  private blank: WebGLTexture;
   private clear: [number, number, number] = [0.11, 0.106, 0.114];
   active: number | null = null;
 
@@ -178,6 +187,9 @@ export class GlRenderer {
     this.lineProgram = compile(gl, LINE_VS, LINE_FS);
     this.grid = this.buildGrid(20, 1);
     gl.enable(gl.DEPTH_TEST);
+    this.blank = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.blank);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 128, 255]));
   }
 
   setClearColor(css: string): void {
@@ -339,10 +351,36 @@ export class GlRenderer {
     return buf;
   }
 
-  private shading = SHADINGS.clay;
+  private shading = 'clay';
+  /** Objects shaded differently from the rest of the view, by id. */
+  private perObject = new Map<number, string>();
+  /** Image matcaps by name (`img:<file>`), sampled with the view-space normal. */
+  private matcaps = new Map<string, WebGLTexture>();
 
-  setShading(name: string): void {
-    this.shading = SHADINGS[name] ?? SHADINGS.clay;
+  /** Shades the whole view (clearing per-object choices), or only the object `id` when given. */
+  setShading(name: string, id?: number): void {
+    if (id === undefined) {
+      this.shading = name;
+      this.perObject.clear();
+    } else this.perObject.set(id, name);
+  }
+
+  shadingOf(id: number): string {
+    return this.perObject.get(id) ?? this.shading;
+  }
+
+  addMatcap(name: string, image: TexImageSource): void {
+    const gl = this.gl;
+    const old = this.matcaps.get(name);
+    if (old) gl.deleteTexture(old);
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.matcaps.set(name, tex);
   }
 
   patch(update: VertexUpdate): boolean {
@@ -428,11 +466,21 @@ export class GlRenderer {
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uOrtho'), camera.orthographic ? 1 : 0);
     const base = gl.getUniformLocation(this.meshProgram, 'uBase');
     const painted = gl.getUniformLocation(this.meshProgram, 'uPainted');
-    const s = this.shading;
-    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uLit'), s.lit ? 1 : 0);
-    gl.uniform4f(gl.getUniformLocation(this.meshProgram, 'uCap'), ...s.cap);
-    gl.uniform3f(gl.getUniformLocation(this.meshProgram, 'uTint'), ...s.tint);
+    const lit = gl.getUniformLocation(this.meshProgram, 'uLit');
+    const cap = gl.getUniformLocation(this.meshProgram, 'uCap');
+    const tint = gl.getUniformLocation(this.meshProgram, 'uTint');
+    const image = gl.getUniformLocation(this.meshProgram, 'uImage');
+    gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uMatcap'), 0);
+    gl.activeTexture(gl.TEXTURE0);
     for (const [id, m] of this.meshes) {
+      const name = this.shadingOf(id);
+      const tex = this.matcaps.get(name);
+      const s = SHADINGS[name] ?? SHADINGS.clay;
+      gl.uniform1f(lit, tex ? 0 : s.lit ? 1 : 0);
+      gl.uniform4f(cap, ...s.cap);
+      gl.uniform3f(tint, ...s.tint);
+      gl.uniform1f(image, tex ? 1 : 0);
+      gl.bindTexture(gl.TEXTURE_2D, tex ?? this.blank);
       if (id === this.active) gl.uniform3f(base, 0.86, 0.74, 0.66);
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
       if (this.showGroups && m.expanded) {

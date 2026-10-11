@@ -41,6 +41,11 @@ export class OrbitCamera {
     return { up: cross(right, forward), right };
   }
 
+  /** The screen's up direction in world space, so brush alphas stamp upright on screen. */
+  screenUp(): Vec3 {
+    return this.axes().up;
+  }
+
   view(): Mat4 {
     return lookAt(this.eye(), this.target, this.trackball ? this.up : [0, 1, 0]);
   }
