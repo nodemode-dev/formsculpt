@@ -59,6 +59,57 @@ pub fn deform(mesh: &Mesh, mask: &[f32], deformer: Deformer) -> Vec<[f32; 3]> {
         .collect()
 }
 
+/// The bounds a lattice spans: the mesh's bounds grown by 2 percent of their largest side, so no vertex sits on the
+/// lattice's skin.
+pub fn lattice_box(mesh: &Mesh) -> (Vec3, Vec3) {
+    let b = mesh.bounds();
+    let pad = Vec3::splat(b.extent().max_element().max(1e-6) * 0.02);
+    (b.min - pad, b.max + pad)
+}
+
+/// Bernstein basis weight of control point `i` of `n` at `t` in 0..1.
+fn bernstein(n: usize, i: usize, t: f32) -> f32 {
+    let deg = (n - 1) as i32;
+    let mut c = 1.0f32;
+    for k in 0..i {
+        c = c * (deg - k as i32) as f32 / (k + 1) as f32;
+    }
+    c * t.powi(i as i32) * (1.0 - t).powi(deg - i as i32)
+}
+
+/// Free-form deformation by a lattice of `div` control points per axis over `lattice_box`: each vertex moves by the
+/// Bernstein-weighted sum of the control points' offsets (index i + j * nx + k * nx * ny), so an unmoved lattice
+/// changes nothing and the surface bends smoothly. Masked vertices are held in proportion to the mask.
+pub fn lattice_deform(mesh: &Mesh, mask: &[f32], div: [usize; 3], offsets: &[Vec3]) -> Vec<[f32; 3]> {
+    let (lo, hi) = lattice_box(mesh);
+    let size = (hi - lo).max(Vec3::splat(1e-6));
+    let [nx, ny, nz] = div;
+    mesh.positions
+        .iter()
+        .enumerate()
+        .map(|(v, p)| {
+            let p = Vec3::from_array(*p);
+            let t = ((p - lo) / size).clamp(Vec3::ZERO, Vec3::ONE);
+            let bx: Vec<f32> = (0..nx).map(|i| bernstein(nx, i, t.x)).collect();
+            let by: Vec<f32> = (0..ny).map(|j| bernstein(ny, j, t.y)).collect();
+            let bz: Vec<f32> = (0..nz).map(|k| bernstein(nz, k, t.z)).collect();
+            let mut d = Vec3::ZERO;
+            for (k, wz) in bz.iter().enumerate() {
+                for (j, wy) in by.iter().enumerate() {
+                    for (i, wx) in bx.iter().enumerate() {
+                        let o = offsets[i + j * nx + k * nx * ny];
+                        if o != Vec3::ZERO {
+                            d += o * (wx * wy * wz);
+                        }
+                    }
+                }
+            }
+            let w = 1.0 - mask.get(v).copied().unwrap_or(0.0).clamp(0.0, 1.0);
+            (p + d * w).to_array()
+        })
+        .collect()
+}
+
 pub fn split_parts(mesh: &Mesh) -> Vec<Mesh> {
     let n = mesh.vertex_count();
     let mut parent: Vec<u32> = (0..n as u32).collect();

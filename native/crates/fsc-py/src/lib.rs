@@ -113,10 +113,12 @@ impl Engine {
         Ok(())
     }
 
-    fn stroke_sample<'py>(&self, py: Python<'py>, origin: [f32; 3], dir: [f32; 3], pressure: f32) -> PyResult<(bool, Bound<'py, PyBytes>, bool)> {
+    #[pyo3(signature = (origin, dir, pressure, tilt=0.0))]
+    fn stroke_sample<'py>(&self, py: Python<'py>, origin: [f32; 3], dir: [f32; 3], pressure: f32, tilt: f32) -> PyResult<(bool, Bound<'py, PyBytes>, bool)> {
         let mut guard = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let session = &mut *guard;
         let (id, stroke) = session.stroke.as_mut().ok_or_else(|| PyValueError::new_err("no stroke in progress"))?;
+        stroke.set_tilt(tilt);
         let object = session.scene.get_mut(*id).ok_or_else(|| PyKeyError::new_err("the stroke's object is gone"))?;
         let hit = stroke.sample_ray(object, Vec3::from_array(origin), Vec3::from_array(dir), pressure);
         let changed = stroke.drain_changed();

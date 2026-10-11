@@ -97,6 +97,7 @@ pub struct Stroke {
     jitter: (f32, f32),
     /// The area normal under the last unmirrored dab, the plane spray scatters in.
     last_normal: Vec3,
+    tilt: f32,
     /// With paint layers: the paint target's values before the stroke, and which target that was.
     layer_before: HashMap<u32, LayerPaint>,
     paint_target: Option<Option<usize>>,
@@ -127,6 +128,7 @@ impl Stroke {
             rng: 0x9e37_79b9_7f4a_7c15,
             jitter: (0.0, 1.0),
             last_normal: Vec3::Y,
+            tilt: 0.0,
             layer_before: HashMap::new(),
             paint_target: None,
             planes,
@@ -154,6 +156,12 @@ impl Stroke {
     }
 
     /// Shapes every dab by a grayscale alpha (multiplied with the falloff).
+    /// Pen tilt: the direction the pen leans, in radians from the screen's up, turns the alpha of the dabs that
+    /// follow (0 for a mouse or an upright pen).
+    pub fn set_tilt(&mut self, radians: f32) {
+        self.tilt = if radians.is_finite() { radians } else { 0.0 };
+    }
+
     pub fn set_alpha(&mut self, alpha: Option<std::sync::Arc<Alpha>>) {
         self.alpha = alpha;
     }
@@ -391,7 +399,7 @@ impl Stroke {
             let x_axis = y_axis.cross(area_n);
             for (k, &v) in found.iter().enumerate() {
                 let d = object.mesh.position(v) - center;
-                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle + self.jitter.0);
+                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle + self.jitter.0 + self.tilt);
                 weights[k] *= alpha.sample(x, y);
             }
         }

@@ -780,6 +780,17 @@ pub static COMMANDS: &[Command] = &[
         run: object_cmds::deform,
     },
     Command {
+        id: "object.lattice",
+        mcp: "lattice_deform",
+        group: Group::Object,
+        label: "Lattice",
+        description: "Reshape an object with a lattice: a box of control points around its bounds (2 to 6 per axis, 3 by default); move some of them and the surface follows smoothly (free-form deformation), held by the mask. Good for broad proportion changes: widen a jaw, push a skull back, bulge a belly, squash a whole prop. One undo step; the reply gives the lattice's box.",
+        keys: &[],
+        hints: WRITE,
+        schema: object_cmds::lattice_schema,
+        run: object_cmds::lattice,
+    },
+    Command {
         id: "object.merge",
         mcp: "merge_objects",
         group: Group::Object,

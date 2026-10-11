@@ -90,9 +90,9 @@ def stroke_begin(object_id: int, settings: dict) -> None:
         _engine.stroke_begin(object_id, json.dumps(settings))
 
 
-def stroke_sample(origin: list[float], direction: list[float], pressure: float) -> tuple[bool, bytes, bool]:
+def stroke_sample(origin: list[float], direction: list[float], pressure: float, tilt: float = 0.0) -> tuple[bool, bytes, bool]:
     with _lock:
-        return _engine.stroke_sample(origin, direction, pressure)
+        return _engine.stroke_sample(origin, direction, pressure, tilt)
 
 
 def stroke_end() -> dict:

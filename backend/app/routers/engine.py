@@ -156,7 +156,7 @@ async def stroke(socket: WebSocket) -> None:
                     await run_in_threadpool(engine.stroke_begin, int(message["id"]), dict(message.get("brush") or {}))
                     active = True
                 elif kind == "sample" and active:
-                    hit, update, topology = await run_in_threadpool(engine.stroke_sample, _vec(message["origin"]), _vec(message["dir"]), float(message.get("pressure", 1.0)))
+                    hit, update, topology = await run_in_threadpool(engine.stroke_sample, _vec(message["origin"]), _vec(message["dir"]), float(message.get("pressure", 1.0)), float(message.get("tilt", 0.0)))
                     await socket.send_json({"type": "sample", "seq": message.get("seq"), "hit": hit, "topology": topology})
                     if len(update) > 16:
                         await socket.send_bytes(update)

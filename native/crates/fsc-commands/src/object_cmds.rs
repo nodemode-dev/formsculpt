@@ -94,6 +94,61 @@ pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandE
     Ok(set_positions(s, id, "Transform", positions))
 }
 
+pub(crate) fn lattice_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "divisions": {"type": "array", "items": {"type": "integer", "minimum": 2, "maximum": 6}, "minItems": 3, "maxItems": 3, "default": [3, 3, 3], "description": "Control points along x, y and z. Point [i, j, k] starts at min + (i / (nx - 1), j / (ny - 1), k / (nz - 1)) * size of the object's bounds grown by 2 percent of their largest side."},
+            "moves": {"type": "array", "minItems": 1, "maxItems": 216, "items": {"type": "object", "properties": {
+                "point": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 3, "maxItems": 3, "description": "[i, j, k] of the control point."},
+                "offset": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "How far it moves, in world units."}
+            }, "required": ["point", "offset"], "additionalProperties": false}}
+        },
+        "required": ["moves"],
+        "additionalProperties": false
+    })
+}
+
+/// Lattice deformation: moves control points of a lattice around the object and lets the surface follow smoothly.
+pub(crate) fn lattice(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let div: [usize; 3] = match args.get("divisions") {
+        None | Some(Value::Null) => [3, 3, 3],
+        Some(Value::Array(a)) if a.len() == 3 => {
+            let mut d = [0usize; 3];
+            for (k, v) in a.iter().enumerate() {
+                let n = v.as_u64().ok_or_else(|| bad("divisions are three whole numbers"))? as usize;
+                if !(2..=6).contains(&n) {
+                    return Err(bad("each division must be from 2 to 6"));
+                }
+                d[k] = n;
+            }
+            d
+        }
+        Some(_) => return Err(bad("divisions is [nx, ny, nz]")),
+    };
+    let mut offsets = vec![Vec3::ZERO; div[0] * div[1] * div[2]];
+    let moves = args.get("moves").and_then(Value::as_array).filter(|m| !m.is_empty()).ok_or_else(|| bad("give moves: [{point: [i, j, k], offset: [dx, dy, dz]}]"))?;
+    for m in moves {
+        let p: Vec<usize> = m.get("point").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(|x| x as usize).collect()).unwrap_or_default();
+        if p.len() != 3 || p.iter().zip(div).any(|(i, n)| *i >= n) {
+            return Err(bad(format!("each point is [i, j, k] below the divisions {div:?}")));
+        }
+        let o: Vec<f32> = m.get("offset").and_then(Value::as_array).map(|a| a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect()).unwrap_or_default();
+        if o.len() != 3 || o.iter().any(|x| !x.is_finite()) {
+            return Err(bad("each offset is [dx, dy, dz]"));
+        }
+        offsets[p[0] + p[1] * div[0] + p[2] * div[0] * div[1]] += Vec3::new(o[0], o[1], o[2]);
+    }
+    let object = s.scene.get(id).expect("checked");
+    let (lo, hi) = fsc_topo::lattice_box(&object.mesh);
+    let positions = fsc_topo::lattice_deform(&object.mesh, &object.mask, div, &offsets);
+    let mut reply = set_positions(s, id, "Lattice", positions);
+    reply["lattice"] = json!({"min": lo.to_array(), "max": hi.to_array(), "divisions": div});
+    Ok(reply)
+}
+
 pub(crate) fn deform_schema() -> Value {
     json!({
         "type": "object",
