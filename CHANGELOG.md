@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.9.0 · 2026-10-11
+
+### Added
+
+- `get_view`: renders the scene to a PNG on the CPU with the window's shading (matcaps, PBR, paint, masks), from named views or any yaw and pitch, and returns it to agents as an MCP image (54 commands in all). `/api/engine/view` serves the same picture.
+- Send to NodeMode: standalone, the engine uploads the scene as GLB with a rendered preview and announces it to NodeMode (formvis's protocol, with a NodeMode address in the File section); embedded in the NodeMode portal, the window hands both to the host page (`host.ts`).
+- Desktop: a native save dialog for Save, Export and the maps zip; the AppImage, deb and rpm build on Linux here.
+
+### Fixed
+
+- The frozen engine now carries the compiled engine module (it is rebuilt when missing or out of date), and its self-check fails unless a real command runs.
+- The engine exits when the desktop shell that started it is gone, so a crashed or force-quit app no longer leaves it running.
+- The desktop build had never run: the Tauri crate (2.12) and npm API (2.11) were mismatched, which the bundler refuses; the shell is pinned to formvis's tested set (tauri 2.11.6).
+- Desktop CI on Windows: the scripts now find a Windows venv; the Linux leg installs libxdo.
+
 ## 0.8.1 · 2026-10-11
 
 ### Added
