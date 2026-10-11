@@ -101,6 +101,11 @@ interface Shell {
   curveButtons: HTMLButtonElement[];
   curveLine: SVGPolylineElement;
   curveHandles: SVGPathElement;
+  paintLayer: HTMLSelectElement;
+  paintBlend: HTMLSelectElement;
+  paintOpacity: HTMLInputElement;
+  paintVisible: HTMLInputElement;
+  paintLayerButtons: HTMLButtonElement[];
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -491,6 +496,34 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(paintGrid);
+  const paintLayer = choices('Paint layer', [['', 'Base']]);
+  const paintBlend = choices('Paint layer blend', [['normal', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['add', 'Add']]);
+  const paintOpacity = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Paint layer opacity' });
+  const paintVisible = input('checkbox', { 'aria-label': 'Paint layer visible' });
+  paintVisible.checked = true;
+  for (const c of [paintBlend, paintOpacity, paintVisible]) c.disabled = true;
+  const paintLayerFields = el('div', 'fields after-fields');
+  paintLayerFields.append(field('Paint into', paintLayer), field('Blend', paintBlend), field('Opacity', paintOpacity), field('Visible', paintVisible));
+  panel.append(paintLayerFields);
+  const paintLayerGrid = el('div', 'add-grid two after-fields');
+  const paintLayerButtons = (
+    [
+      ['paint_layer_add', 'New paint layer'],
+      ['paint_layer_delete', 'Delete paint layer'],
+      ['paint_layer_merge', 'Merge down'],
+      ['paint_layer_flatten', 'Flatten paint'],
+      ['up', 'Move up'],
+      ['down', 'Move down'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    if (action !== 'paint_layer_add') b.disabled = true;
+    paintLayerGrid.append(b);
+    return b;
+  });
+  panel.append(paintLayerGrid);
 
   panel.append(el('h2', 'gap', 'Edit'));
   const actionGrid = el('div', 'add-grid two');
@@ -672,7 +705,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons };
 }
 
 class SceneView {
@@ -781,6 +814,18 @@ class SceneView {
       }),
     );
     shell.shading.addEventListener('change', () => this.applyShading());
+    shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
+    shell.paintLayer.addEventListener('change', () => {
+      const id = this.scene.active;
+      if (id !== null) void this.run('paint_layer_select', { id, index: shell.paintLayer.value === '' ? null : Number(shell.paintLayer.value) });
+    });
+    const layerSetting = (args: Record<string, unknown>): void => {
+      const o = this.scene.objects.find((x) => x.id === this.scene.active);
+      if (o && o.active_paint_layer !== null && o.active_paint_layer !== undefined) void this.run('paint_layer_set', { id: o.id, index: o.active_paint_layer, ...args });
+    };
+    shell.paintBlend.addEventListener('change', () => layerSetting({ blend: shell.paintBlend.value }));
+    shell.paintOpacity.addEventListener('change', () => layerSetting({ opacity: Number(shell.paintOpacity.value) / 100 }));
+    shell.paintVisible.addEventListener('change', () => layerSetting({ visible: shell.paintVisible.checked }));
     shell.curveButtons.forEach((b) =>
       b.addEventListener('click', () => {
         if (b.dataset.action === 'alpha') shell.alphaInput.click();
@@ -1468,6 +1513,7 @@ class SceneView {
     const fixed = leveled || (active !== undefined && active.layers.length > 0);
     if (this.shell.dyntopo.disabled !== fixed) this.shell.dyntopo.disabled = fixed;
     this.patchLayers(active);
+    this.patchPaintLayers(active);
     if (next.active !== this.scene.active && this.scene.active !== null) this.previous = this.scene.active;
     this.scene = next;
   }
@@ -1497,6 +1543,50 @@ class SceneView {
       const v = String(Math.round(layers[pick].strength * 100));
       if (strength.value !== v) strength.value = v;
     }
+  }
+
+  /** The Paint section's layer controls follow the active object's paint stack; options are reused in place. */
+  private patchPaintLayers(active: ObjectSummary | undefined): void {
+    const s = this.shell;
+    const layers = active?.paint_layers ?? [];
+    const select = s.paintLayer;
+    while (select.options.length > layers.length + 1) select.options[select.options.length - 1].remove();
+    // Shown top first, as a layer stack reads; values stay the engine's bottom-first indices.
+    layers.forEach((layer, k) => {
+      const i = layers.length - 1 - k;
+      let option = select.options[k + 1];
+      if (!option) {
+        option = el('option', '', '');
+        select.append(option);
+      }
+      if (option.value !== String(i)) option.value = String(i);
+      const l = layers[i];
+      setText(option, `${l.name} · ${l.blend} ${Math.round(l.opacity * 100)}%${l.visible ? '' : ' (hidden)'}`);
+    });
+    const pick = active?.active_paint_layer ?? null;
+    const value = pick === null ? '' : String(pick);
+    if (select.value !== value) select.value = value;
+    const none = pick === null || !layers[pick];
+    for (const c of [s.paintBlend, s.paintOpacity, s.paintVisible]) if (c.disabled !== none) c.disabled = none;
+    s.paintLayerButtons.forEach((b) => {
+      const off = b.dataset.action !== 'paint_layer_add' && layers.length === 0;
+      if (b.disabled !== off) b.disabled = off;
+    });
+    if (!none) {
+      const l = layers[pick];
+      if (s.paintBlend.value !== l.blend) s.paintBlend.value = l.blend;
+      const o = String(Math.round(l.opacity * 100));
+      if (document.activeElement !== s.paintOpacity && s.paintOpacity.value !== o) s.paintOpacity.value = o;
+      if (s.paintVisible.checked !== l.visible) s.paintVisible.checked = l.visible;
+    }
+  }
+
+  private paintLayerAction(action: string): void {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (!o) return;
+    if (action === 'up' || action === 'down') void this.run('paint_layer_set', { id: o.id, move: action });
+    else if (action === 'paint_layer_add') void this.run('paint_layer_add', { id: o.id });
+    else void this.run(action, { id: o.id });
   }
 
   private objectAction(action: string): void {

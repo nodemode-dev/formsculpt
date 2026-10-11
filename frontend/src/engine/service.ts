@@ -15,6 +15,9 @@ export interface ObjectSummary {
   levels: number;
   layers: { name: string; strength: number }[];
   active_layer: number | null;
+  /** Paint layers, bottom first, and the one painted into (null: the base). */
+  paint_layers?: { name: string; blend: string; opacity: number; visible: boolean }[];
+  active_paint_layer?: number | null;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 
