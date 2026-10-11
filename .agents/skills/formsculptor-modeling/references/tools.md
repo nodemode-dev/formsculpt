@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.4.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.4.1) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.4.0) by `./formscul
 - Objects: `add_primitive`, `select_object`, `delete_object`
 - Sculpting: `sculpt_stroke`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
-- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`
+- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`
 - History: `undo`, `redo`
 
 ## get_engine_info
@@ -68,7 +68,8 @@ Note: removes or replaces (undoable); in the window: Delete.
 Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush). invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
 - `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask); default "draw"
-- `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt. Off when omitted. Not used by grab or mask.
+- `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
+- `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
@@ -109,13 +110,11 @@ Harden the mask's edge by pushing values away from one half.
 
 ## subdivide
 
-Subdivide an object's mesh, each level multiplying the triangles by four (Loop subdivision, which rounds the shape; smooth false splits flat). The mask carries over. Use it to add resolution before detailing.
+Subdivide an object's mesh, each level multiplying the triangles by four (Loop subdivision, which rounds the shape; smooth false splits flat). The mask carries over. This replaces the mesh in one step; multires_divide keeps the lower levels to step back to.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `levels`: integer; default 1; range 1 to 4; Each level multiplies the triangles by four.
 - `smooth`: boolean; default true; Loop subdivision (smooths the shape); false splits flat.
-
-Note: in the window: Mod+D.
 
 ## remesh_voxel
 
@@ -149,9 +148,45 @@ Report an object's vertex, triangle and edge counts, open boundary edges, non-ma
 
 Note: read-only.
 
+## multires_divide
+
+Add subdivision levels on top of an object (Loop subdivision, each level four times the triangles) and keep the lower levels, so you can block out on a low level and detail on a high one. The object must be at its highest level. Objects with levels refuse dyntopo, remesh, decimate, subdivide and fill holes until the levels are deleted.
+
+- `count`: integer; default 1; range 1 to 4; Levels to add; each multiplies the triangles by four.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `smooth`: boolean; default true; Loop subdivision (smooths the shape); false splits flat.
+
+Note: in the window: Mod+D.
+
+## multires_set_level
+
+Move an object to another subdivision level by number or one step up or down. Changes made on a lower level carry up to the higher levels with their detail kept; the mask carries both ways.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `level`: integer; range 0 to inf; The level to sculpt on, 0 being the lowest; get_scene reports level and levels.
+- `step`: string (up | down); One level higher or lower instead of a level number.
+
+Note: in the window: D, Shift+D.
+
+## multires_delete_higher
+
+Delete the subdivision levels above the current one. Undoable.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: removes or replaces (undoable).
+
+## multires_delete_lower
+
+Delete the subdivision levels below the current one, making it the base. Deleting both lower and higher levels leaves a plain mesh that dyntopo and remeshing accept. Undoable.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: removes or replaces (undoable).
+
 ## undo
 
-Undo the last step (a stroke, a mask change, adding or deleting an object, a new scene).
+Undo the last step (a stroke, a mask change, adding or deleting an object, a new scene, a topology change, a level change).
 
 - no parameters
 
