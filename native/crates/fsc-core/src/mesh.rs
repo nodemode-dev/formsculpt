@@ -56,6 +56,7 @@ pub struct Mesh {
     pub indices: Vec<u32>,
     pub paint: Vec<Paint>,
     pub uvs: Vec<[f32; 2]>,
+    pub quads: bool,
 }
 
 pub type Paint = [f32; 5];
@@ -72,9 +73,33 @@ pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
 
 impl Mesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
-        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new() };
+        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new(), quads: false };
         mesh.recompute_normals();
         mesh
+    }
+
+    pub fn quad_faces(&self) -> Option<Vec<[u32; 4]>> {
+        if !self.quads || self.indices.len() % 6 != 0 {
+            return None;
+        }
+        self.indices
+            .chunks_exact(6)
+            .map(|q| {
+                let (t1, t2) = ([q[0], q[1], q[2]], [q[3], q[4], q[5]]);
+                let [a, b, c] = t1;
+                let d = t2.into_iter().find(|v| !t1.contains(v))?;
+                let has = |x: u32, y: u32| t2.contains(&x) && t2.contains(&y);
+                if has(a, b) {
+                    Some([a, d, b, c])
+                } else if has(b, c) {
+                    Some([a, b, d, c])
+                } else if has(c, a) {
+                    Some([a, b, c, d])
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     pub fn has_paint(&self) -> bool {

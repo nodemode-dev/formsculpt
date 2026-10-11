@@ -1,0 +1,154 @@
+use std::time::Instant;
+
+use serde_json::{json, Value};
+
+use crate::history::Edit;
+use crate::multires_cmds::guard;
+use crate::object_cmds::set_positions;
+use crate::scene_cmds::summary;
+use crate::sculpt_cmds::target;
+use crate::topo_cmds::apply;
+use crate::{CommandError, Session};
+
+fn bad(msg: impl Into<String>) -> CommandError {
+    CommandError::new("bad_arguments", msg)
+}
+
+fn number(args: &Value, key: &str, default: f64, lo: f64, hi: f64) -> Result<f64, CommandError> {
+    let v = args.get(key).and_then(Value::as_f64).unwrap_or(default);
+    if !(lo..=hi).contains(&v) {
+        return Err(bad(format!("{key} must be {lo} to {hi}")));
+    }
+    Ok(v)
+}
+
+fn no_mask() -> CommandError {
+    CommandError::new("empty_mask", "nothing is masked; mask the area first (faces whose three corners are at least half masked count)")
+}
+
+pub(crate) fn quad_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "faces": {"type": "integer", "minimum": 100, "maximum": 400000, "default": 4000, "description": "Target number of quads."},
+            "relax": {"type": "integer", "minimum": 0, "maximum": 30, "default": 6, "description": "Smoothing passes that even out the quads while staying on the original surface."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn quad_remesh(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    guard(s, id, "Quad remesh")?;
+    let faces = number(args, "faces", 4000.0, 100.0, 400000.0)? as usize;
+    let relax = number(args, "relax", 6.0, 0.0, 30.0)? as u32;
+    let started = Instant::now();
+    let object = s.scene.get(id).expect("checked");
+    let out = fsc_topo::quad_remesh(&object.mesh, &object.bvh, faces, relax).map_err(|e| CommandError::new("remesh_failed", e))?;
+    let quads = out.mesh.triangle_count() / 2;
+    let mask = vec![0.0; out.mesh.vertex_count()];
+    let mut reply = apply(s, id, "Quad Remesh", out.mesh, mask)?;
+    reply["quads"] = json!(quads);
+    reply["ms"] = json!(started.elapsed().as_millis());
+    Ok(reply)
+}
+
+pub(crate) fn project_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "The object to move; the active object when omitted."},
+            "source_id": {"type": "integer", "minimum": 1, "description": "The object whose surface detail is taken."},
+            "distance": {"type": "number", "exclusiveMinimum": 0, "description": "Furthest a vertex may move, in world units; 5 percent of the object's size when omitted."},
+            "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 1}
+        },
+        "required": ["source_id"],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn project_detail(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let source_id = args.get("source_id").and_then(Value::as_u64).ok_or_else(|| bad("source_id is required"))? as u32;
+    if source_id == id {
+        return Err(bad("source_id must be another object"));
+    }
+    let src = s.scene.get(source_id).ok_or_else(|| CommandError::new("not_found", format!("no object {source_id}")))?;
+    let object = s.scene.get(id).expect("checked");
+    let distance = args.get("distance").and_then(Value::as_f64).map(|d| d as f32).unwrap_or_else(|| object.mesh.bounds().extent().length() * 0.05);
+    let strength = number(args, "strength", 1.0, 0.0, 1.0)? as f32;
+    let (positions, moved) = fsc_topo::project_onto(&object.mesh, &object.mask, &src.mesh, &src.bvh, distance, strength);
+    let mut reply = set_positions(s, id, "Project Detail", positions);
+    reply["vertices_projected"] = json!(moved);
+    Ok(reply)
+}
+
+pub(crate) fn extract_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "thickness": {"type": "number", "minimum": -10000, "maximum": 10000, "description": "Shell thickness along the surface normal, in world units; 2 percent of the object's size when omitted. Negative grows inward."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn extract(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let object = s.scene.get(id).expect("checked");
+    let thickness = args.get("thickness").and_then(Value::as_f64).map(|t| t as f32).unwrap_or_else(|| object.mesh.bounds().extent().length() * 0.02);
+    let mesh = fsc_topo::extract_shell(&object.mesh, &object.mask, thickness).ok_or_else(no_mask)?;
+    let name = s.scene.unique_name(&format!("{} extract", object.name));
+    let new_id = s.scene.add(name, mesh);
+    let index = s.scene.index_of(new_id).expect("added");
+    s.history.push(Edit::Add { id: new_id, index, parked: None });
+    Ok(summary(s.scene.get(new_id).expect("added")))
+}
+
+pub(crate) fn extrude_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "distance": {"type": "number", "minimum": -10000, "maximum": 10000, "description": "How far the masked faces move along their normals, in world units; 3 percent of the object's size when omitted. Negative pushes in."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn extrude(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    guard(s, id, "Extrude")?;
+    let object = s.scene.get(id).expect("checked");
+    let distance = args.get("distance").and_then(Value::as_f64).map(|d| d as f32).unwrap_or_else(|| object.mesh.bounds().extent().length() * 0.03);
+    let (mesh, mask) = fsc_topo::extrude_region(&object.mesh, &object.mask, distance, 0.0).ok_or_else(no_mask)?;
+    apply(s, id, "Extrude", mesh, mask)
+}
+
+pub(crate) fn inset_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "amount": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.3, "description": "How far the masked area's border pulls inward, as a fraction of the border faces."},
+            "depth": {"type": "number", "minimum": -10000, "maximum": 10000, "default": 0, "description": "Also move the inset faces along their normals by this much."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn inset(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    guard(s, id, "Inset")?;
+    let amount = number(args, "amount", 0.3, 0.0, 1.0)? as f32;
+    let depth = number(args, "depth", 0.0, -10000.0, 10000.0)? as f32;
+    let object = s.scene.get(id).expect("checked");
+    let (mesh, mask) = fsc_topo::extrude_region(&object.mesh, &object.mask, depth, amount).ok_or_else(no_mask)?;
+    apply(s, id, "Inset", mesh, mask)
+}

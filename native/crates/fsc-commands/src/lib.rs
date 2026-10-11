@@ -2,6 +2,7 @@ mod bake_cmds;
 mod file_cmds;
 mod history;
 mod layer_cmds;
+mod model_cmds;
 mod multires_cmds;
 mod object_cmds;
 mod scene_cmds;
@@ -306,6 +307,61 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: sculpt_cmds::id_opt_schema,
         run: topo_cmds::mesh_check,
+    },
+    Command {
+        id: "topo.quad_remesh",
+        mcp: "quad_remesh",
+        group: Group::Topo,
+        label: "Quad Remesh",
+        description: "Rebuild an object as an even, quad-dominant mesh near a target face count: quads from a voxel grid, relaxed along the original surface. OBJ export writes them as quads. The grid makes edge flow follow the axes rather than the form (no guide curves). One undo step; the mask is cleared, paint is carried over.",
+        keys: &[],
+        hints: WRITE,
+        schema: model_cmds::quad_schema,
+        run: model_cmds::quad_remesh,
+    },
+    Command {
+        id: "topo.project",
+        mcp: "project_detail",
+        group: Group::Topo,
+        label: "Project Detail",
+        description: "Move an object's vertices along their normals onto another object's surface (within distance), carrying its detail over: for example from an old sculpt onto a quad-remeshed or subdivided copy. Masked vertices are held. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: model_cmds::project_schema,
+        run: model_cmds::project_detail,
+    },
+    Command {
+        id: "mask.extract",
+        mcp: "extract_mask",
+        group: Group::Mask,
+        label: "Extract",
+        description: "Make a new closed object from the masked part of an object, thickened along its normals: a shell for clothing, armour or straps. The original is unchanged.",
+        keys: &[],
+        hints: WRITE,
+        schema: model_cmds::extract_schema,
+        run: model_cmds::extract,
+    },
+    Command {
+        id: "mask.extrude",
+        mcp: "extrude_mask",
+        group: Group::Mask,
+        label: "Extrude",
+        description: "Push the masked faces out along their normals (or in, with a negative distance), joining them to the rest with new side faces. The mesh stays closed. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: model_cmds::extrude_schema,
+        run: model_cmds::extrude,
+    },
+    Command {
+        id: "mask.inset",
+        mcp: "inset_mask",
+        group: Group::Mask,
+        label: "Inset",
+        description: "Pull the border of the masked faces inward to make a rim of new faces, optionally pushing the inset area by depth (a panel, socket or button). One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: model_cmds::inset_schema,
+        run: model_cmds::inset,
     },
     Command {
         id: "multires.divide",

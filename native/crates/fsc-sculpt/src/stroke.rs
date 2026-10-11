@@ -185,6 +185,7 @@ impl Stroke {
         }
         if splits > 0 {
             object.mesh.uvs.clear();
+            object.mesh.quads = false;
             object.retopologize();
             let mut region = Vec::new();
             for k in 0..self.transforms.len() {

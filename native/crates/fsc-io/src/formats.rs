@@ -75,8 +75,17 @@ pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
                 None => s.push_str(&format!("v {} {} {}\n", p[0], p[1], p[2])),
             }
         }
-        for t in mesh.indices.chunks_exact(3) {
-            s.push_str(&format!("f {} {} {}\n", t[0] + base, t[1] + base, t[2] + base));
+        match mesh.quad_faces() {
+            Some(quads) => {
+                for q in quads {
+                    s.push_str(&format!("f {} {} {} {}\n", q[0] + base, q[1] + base, q[2] + base, q[3] + base));
+                }
+            }
+            None => {
+                for t in mesh.indices.chunks_exact(3) {
+                    s.push_str(&format!("f {} {} {}\n", t[0] + base, t[1] + base, t[2] + base));
+                }
+            }
         }
         base += mesh.vertex_count() as u32;
     }

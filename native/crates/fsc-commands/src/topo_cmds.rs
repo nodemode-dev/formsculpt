@@ -13,7 +13,7 @@ fn bad(msg: impl Into<String>) -> CommandError {
     CommandError::new("bad_arguments", msg)
 }
 
-fn apply(s: &mut Session, id: u32, label: &str, mut mesh: Mesh, mask: Vec<f32>) -> Result<Value, CommandError> {
+pub(crate) fn apply(s: &mut Session, id: u32, label: &str, mut mesh: Mesh, mask: Vec<f32>) -> Result<Value, CommandError> {
     if mesh.triangle_count() == 0 {
         return Err(CommandError::new("empty_result", format!("{label} produced no triangles; nothing was changed")));
     }
