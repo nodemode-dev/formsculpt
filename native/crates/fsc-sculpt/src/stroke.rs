@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fsc_core::{Mesh, Object, Paint};
+use fsc_core::{LayerPaint, Mesh, Object, Paint};
 use glam::{Mat3, Vec3};
 
 use crate::alpha::Alpha;
@@ -15,6 +15,8 @@ pub struct VertexEdit {
     pub mask_after: Vec<f32>,
     pub paint_before: Vec<Paint>,
     pub paint_after: Vec<Paint>,
+    /// With paint layers: the target painted (a layer index, or None for the base) and its values per index.
+    pub layer: Option<(Option<usize>, Vec<LayerPaint>, Vec<LayerPaint>)>,
 }
 
 impl VertexEdit {
@@ -33,6 +35,14 @@ impl VertexEdit {
             object.mask[v as usize] = mask[k];
             if let Some(p) = paint.get(k) {
                 object.mesh.paint[v as usize] = *p;
+            }
+        }
+        if let Some((target, before, after)) = &self.layer {
+            if object.layered() {
+                let values = if forward { after } else { before };
+                for (k, &v) in self.indices.iter().enumerate() {
+                    object.set_paint_target(*target, v, values[k]);
+                }
             }
         }
         let mut ring = Vec::new();
@@ -87,6 +97,9 @@ pub struct Stroke {
     jitter: (f32, f32),
     /// The area normal under the last unmirrored dab, the plane spray scatters in.
     last_normal: Vec3,
+    /// With paint layers: the paint target's values before the stroke, and which target that was.
+    layer_before: HashMap<u32, LayerPaint>,
+    paint_target: Option<Option<usize>>,
     pub dabs: u32,
 }
 
@@ -114,6 +127,8 @@ impl Stroke {
             rng: 0x9e37_79b9_7f4a_7c15,
             jitter: (0.0, 1.0),
             last_normal: Vec3::Y,
+            layer_before: HashMap::new(),
+            paint_target: None,
             planes,
             snake_prev: None,
             transforms,
@@ -306,6 +321,10 @@ impl Stroke {
     fn remember(&mut self, object: &Object, v: u32) {
         let paint = object.mesh.paint.get(v as usize).copied().unwrap_or(fsc_core::DEFAULT_PAINT);
         self.before.entry(v).or_insert((object.mesh.positions[v as usize], object.mask[v as usize], paint));
+        if let Some(value) = object.paint_target(v) {
+            self.layer_before.entry(v).or_insert(value);
+            self.paint_target.get_or_insert(object.paint_layers.active);
+        }
     }
 
     /// Moves the vertices around `from` by `delta`, weighted by falloff and held by the mask: dab after dab, the
@@ -392,30 +411,25 @@ impl Stroke {
             }
             let here = if total > 0.0 { here / total } else { Vec3::splat(0.8) };
             if let Some(carried) = self.smudge {
+                let target = [carried.x, carried.y, carried.z, 0.5, 0.0];
                 for (k, &v) in found.iter().enumerate() {
                     let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
-                    let c = &mut object.mesh.paint[v as usize];
-                    let mixed = Vec3::new(c[0], c[1], c[2]).lerp(carried, w);
-                    c[0] = mixed.x;
-                    c[1] = mixed.y;
-                    c[2] = mixed.z;
+                    object.paint_vertex(v, target, [true, false, false], w, false);
                 }
+                object.composite_paint(Some(&found));
                 self.smudge = Some(carried.lerp(here, 0.35));
             } else {
                 self.smudge = Some(here);
             }
         } else if s.kind == BrushKind::Paint {
+            // Paints the active paint layer (invert erases it) or the base, then recomposites what it touched; with
+            // no layers it paints the mesh directly.
             object.mesh.ensure_paint();
             for (k, &v) in found.iter().enumerate() {
                 let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
-                let cur = &mut object.mesh.paint[v as usize];
-                for (c, value) in cur.iter_mut().enumerate() {
-                    let channel = if c < 3 { 0 } else { c - 2 };
-                    if s.paint_channels[channel] {
-                        *value += (s.paint[c] - *value) * w;
-                    }
-                }
+                object.paint_vertex(v, s.paint, s.paint_channels, w, s.invert);
             }
+            object.composite_paint(Some(&found));
         } else if s.kind == BrushKind::Mask {
             for (k, &v) in found.iter().enumerate() {
                 if hid && free(object, v, hid) == 0.0 && object.mask[v as usize] < 1.0 {
@@ -588,12 +602,20 @@ impl Stroke {
         indices.sort_unstable();
         let mut edit = VertexEdit::default();
         let painted = object.mesh.has_paint();
+        let target = self.paint_target.filter(|_| object.paint_layers.valid(object.mesh.vertex_count()));
+        let mut layer = target.map(|t| (t, Vec::new(), Vec::new()));
         for &v in &indices {
             let (pos, mask, paint) = self.before[&v];
             let (now, now_mask) = (object.mesh.positions[v as usize], object.mask[v as usize]);
             let now_paint = object.mesh.paint.get(v as usize).copied().unwrap_or(paint);
-            if pos == now && mask == now_mask && paint == now_paint {
+            let layer_now = layer.as_ref().and_then(|_| object.paint_target(v));
+            let layer_was = self.layer_before.get(&v).copied();
+            if pos == now && mask == now_mask && paint == now_paint && layer_now == layer_was {
                 continue;
+            }
+            if let (Some((_, before, after)), Some(was), Some(now)) = (layer.as_mut(), layer_was, layer_now) {
+                before.push(was);
+                after.push(now);
             }
             edit.indices.push(v);
             edit.before.push(pos);
@@ -604,6 +626,9 @@ impl Stroke {
                 edit.paint_before.push(paint);
                 edit.paint_after.push(now_paint);
             }
+        }
+        if layer.as_ref().is_some_and(|(_, before, _)| before.len() == edit.indices.len()) {
+            edit.layer = layer;
         }
         if !edit.is_empty() {
             object.revision += 1;

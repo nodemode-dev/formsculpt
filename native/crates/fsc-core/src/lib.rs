@@ -2,6 +2,7 @@ pub mod bvh;
 pub mod layers;
 pub mod mesh;
 pub mod multires;
+pub mod paint_layers;
 pub mod primitives;
 pub mod scene;
 pub mod topology;
@@ -11,6 +12,7 @@ pub use topology::Topology;
 pub use layers::{Layer, Layers};
 pub use mesh::{mix_paint, Aabb, Mesh, Paint, DEFAULT_PAINT};
 pub use multires::{Level, Multires, Stencil};
+pub use paint_layers::{Blend, LayerPaint, PaintLayer, PaintLayers};
 pub use primitives::Primitive;
 pub use scene::{Maps, Object, ObjectId, Scene};
 

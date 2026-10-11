@@ -1,4 +1,4 @@
-use fsc_core::{Layers, Mesh, Multires, Object, ObjectId, Scene, Stencil};
+use fsc_core::{Layers, Mesh, Multires, Object, ObjectId, Paint, PaintLayers, Scene, Stencil};
 use fsc_sculpt::VertexEdit;
 
 const LIMIT: usize = 200;
@@ -17,6 +17,8 @@ pub enum Edit {
     Rename { object: ObjectId, name: String },
     LayerState { label: String, object: ObjectId, layers: Layers, positions: Vec<[f32; 3]> },
     LayerStroke { label: String, object: ObjectId, layer: usize, edit: VertexEdit },
+    /// A paint layer step (add, delete, settings, merge, flatten): the whole stack and the composite swap back.
+    PaintLayers { label: String, object: ObjectId, layers: PaintLayers, paint: Vec<Paint> },
 }
 
 impl Edit {
@@ -27,7 +29,8 @@ impl Edit {
             | Edit::Levels { label, .. }
             | Edit::Scene { label, .. }
             | Edit::LayerState { label, .. }
-            | Edit::LayerStroke { label, .. } => label.clone(),
+            | Edit::LayerStroke { label, .. }
+            | Edit::PaintLayers { label, .. } => label.clone(),
             Edit::Rename { .. } => "Rename".into(),
             Edit::Divide { .. } => "Divide".into(),
             Edit::Level { to, .. } => format!("Level {to}"),
@@ -42,6 +45,16 @@ impl Edit {
             Edit::Vertices { object, edit, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 edit.apply(o, forward);
+                scene.active = Some(*object);
+            }
+            Edit::PaintLayers { object, layers, paint, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                if !paint.is_empty() && paint.len() != o.mesh.vertex_count() {
+                    return Err("the object's vertex count changed since this paint layer step".into());
+                }
+                std::mem::swap(&mut o.paint_layers, layers);
+                std::mem::swap(&mut o.mesh.paint, paint);
+                o.revision += 1;
                 scene.active = Some(*object);
             }
             Edit::Topology { object, mesh, mask, .. } => {

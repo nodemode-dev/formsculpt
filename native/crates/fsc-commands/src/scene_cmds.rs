@@ -21,6 +21,8 @@ pub(crate) fn summary(o: &Object) -> Value {
         "levels": o.levels().1,
         "layers": o.layers.list.iter().map(|l| json!({"name": l.name, "strength": l.strength})).collect::<Vec<_>>(),
         "active_layer": o.layers.active,
+        "paint_layers": o.paint_layers.list.iter().filter(|_| o.paint_layers.valid(o.mesh.vertex_count())).map(|l| json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible})).collect::<Vec<_>>(),
+        "active_paint_layer": o.paint_layers.active.filter(|_| o.paint_layers.valid(o.mesh.vertex_count())),
         "bounds": {"min": b.min.to_array(), "max": b.max.to_array()},
     })
 }

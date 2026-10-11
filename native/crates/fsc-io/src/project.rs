@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read, Write};
 
-use fsc_core::{Layer, Layers, Level, Mesh, Multires, Object, Paint, Scene, Stencil};
+use fsc_core::{Blend, Layer, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, Stencil};
 use serde_json::{json, Value};
 
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
@@ -92,6 +92,17 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
                 list.push(json!({"name": l.name, "strength": l.strength, "delta": w.put(&format!("{dir}/layer{k}.f32"), &vec3s(&l.delta))?}));
             }
             entry["layers"] = json!({"active": o.layers.active, "list": list});
+        }
+        if o.paint_layers.valid(o.mesh.vertex_count()) {
+            // Paint layers: the base as five floats per vertex, each layer as six (colour, roughness, metalness,
+            // coverage); `paint` above already holds the composite, so older readers still see the right colours.
+            let base: Vec<f32> = o.paint_layers.base.iter().flatten().copied().collect();
+            let mut list = Vec::new();
+            for (k, l) in o.paint_layers.list.iter().enumerate() {
+                let data: Vec<f32> = l.data.iter().flatten().copied().collect();
+                list.push(json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible, "data": w.put(&format!("{dir}/paintlayer{k}.f32"), &f32s(&data))?}));
+            }
+            entry["paint_layers"] = json!({"active": o.paint_layers.active, "base": w.put(&format!("{dir}/paintbase.f32"), &f32s(&base))?, "list": list});
         }
         objects.push(entry);
     }
@@ -231,6 +242,32 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
             }
             let active = l["active"].as_u64().map(|a| a as usize).filter(|&a| a < list.len());
             o.layers = Layers { list, active };
+        }
+        if let Some(pl) = e.get("paint_layers").filter(|l| l.is_object()) {
+            let vc = o.mesh.vertex_count();
+            let base = r.f32(&pl["base"])?;
+            if base.len() != vc * 5 {
+                return Err("the paint base does not match its object".into());
+            }
+            let mut list = Vec::new();
+            for le in pl["list"].as_array().cloned().unwrap_or_default() {
+                let data = r.f32(&le["data"])?;
+                if data.len() != vc * 6 {
+                    return Err("a paint layer does not match its object".into());
+                }
+                list.push(PaintLayer {
+                    name: le["name"].as_str().unwrap_or("Paint").chars().take(64).collect(),
+                    blend: le["blend"].as_str().and_then(Blend::parse).unwrap_or(Blend::Normal),
+                    opacity: le["opacity"].as_f64().unwrap_or(1.0).clamp(0.0, 1.0) as f32,
+                    visible: le["visible"].as_bool().unwrap_or(true),
+                    data: data.chunks_exact(6).map(|c| [c[0], c[1], c[2], c[3], c[4], c[5]]).collect(),
+                });
+            }
+            if !list.is_empty() {
+                let active = pl["active"].as_u64().map(|a| a as usize).filter(|&a| a < list.len());
+                o.paint_layers = PaintLayers { list, active, base: base.chunks_exact(5).map(|c| [c[0], c[1], c[2], c[3], c[4]]).collect() };
+                o.composite_paint(None);
+            }
         }
         let at = scene.objects.len();
         scene.insert(at, o);

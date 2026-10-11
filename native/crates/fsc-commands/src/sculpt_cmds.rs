@@ -164,28 +164,29 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
     let had = object.mesh.has_paint();
     object.mesh.ensure_paint();
     let mut edit = VertexEdit::default();
+    let mut layer = object.layered().then(|| (object.paint_layers.active, Vec::new(), Vec::new()));
+    let c = color.unwrap_or([0.0; 3]);
+    let fill = [c[0], c[1], c[2], rough.unwrap_or(0.0), metal.unwrap_or(0.0)];
+    let channels = [color.is_some(), rough.is_some(), metal.is_some()];
     for v in 0..object.mesh.vertex_count() {
         let w = 1.0 - object.mask[v];
         if w <= 0.0 {
             continue;
         }
         let before = object.mesh.paint[v];
-        let mut after = before;
-        if let Some(c) = color {
-            for k in 0..3 {
-                after[k] += (c[k] - after[k]) * w;
-            }
-        }
-        if let Some(r) = rough {
-            after[3] += (r - after[3]) * w;
-        }
-        if let Some(m) = metal {
-            after[4] += (m - after[4]) * w;
-        }
-        if after == before {
+        let was = object.paint_target(v as u32);
+        // Fills the active paint layer or the base when the object has paint layers, the paint itself otherwise.
+        object.paint_vertex(v as u32, fill, channels, w, false);
+        object.composite_paint(Some(&[v as u32]));
+        let after = object.mesh.paint[v];
+        let now = object.paint_target(v as u32);
+        if after == before && was == now {
             continue;
         }
-        object.mesh.paint[v] = after;
+        if let (Some((_, b, a)), Some(was), Some(now)) = (layer.as_mut(), was, now) {
+            b.push(was);
+            a.push(now);
+        }
         let p = object.mesh.positions[v];
         edit.indices.push(v as u32);
         edit.before.push(p);
@@ -194,6 +195,9 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
         edit.mask_after.push(object.mask[v]);
         edit.paint_before.push(if had { before } else { fsc_core::DEFAULT_PAINT });
         edit.paint_after.push(after);
+    }
+    if layer.as_ref().is_some_and(|(_, b, _)| b.len() == edit.indices.len()) {
+        edit.layer = layer;
     }
     object.revision += 1;
     let n = edit.indices.len();
@@ -211,20 +215,37 @@ pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, Comman
         return Ok(json!({"id": id, "cleared": false}));
     }
     let mut edit = VertexEdit::default();
+    let mut layer = object.layered().then(|| (object.paint_layers.active, Vec::new(), Vec::new()));
     for v in 0..object.mesh.vertex_count() {
         let before = object.mesh.paint[v];
-        if before == fsc_core::DEFAULT_PAINT {
+        let was = object.paint_target(v as u32);
+        // With paint layers: clears the active layer (or resets the base) and recomposites.
+        match (&layer, object.paint_layers.active) {
+            (Some(_), Some(_)) => object.paint_vertex(v as u32, fsc_core::DEFAULT_PAINT, [true; 3], 1.0, true),
+            (Some(_), None) => object.set_paint_target(None, v as u32, [0.8, 0.8, 0.8, 0.5, 0.0, 1.0]),
+            _ => object.mesh.paint[v] = fsc_core::DEFAULT_PAINT,
+        }
+        object.composite_paint(Some(&[v as u32]));
+        let now = object.paint_target(v as u32);
+        let after = object.mesh.paint[v];
+        if before == after && was == now {
             continue;
         }
+        if let (Some((_, b, a)), Some(was), Some(now)) = (layer.as_mut(), was, now) {
+            b.push(was);
+            a.push(now);
+        }
         let p = object.mesh.positions[v];
-        object.mesh.paint[v] = fsc_core::DEFAULT_PAINT;
         edit.indices.push(v as u32);
         edit.before.push(p);
         edit.after.push(p);
         edit.mask_before.push(object.mask[v]);
         edit.mask_after.push(object.mask[v]);
         edit.paint_before.push(before);
-        edit.paint_after.push(fsc_core::DEFAULT_PAINT);
+        edit.paint_after.push(after);
+    }
+    if layer.as_ref().is_some_and(|(_, b, _)| b.len() == edit.indices.len()) {
+        edit.layer = layer;
     }
     object.revision += 1;
     let after = summary(object);

@@ -9,6 +9,7 @@ mod mask_cmds;
 mod model_cmds;
 mod multires_cmds;
 mod object_cmds;
+mod paint_layer_cmds;
 mod place_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
@@ -315,6 +316,72 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::paint_fill_schema,
         run: sculpt_cmds::paint_fill,
+    },
+    Command {
+        id: "paint.layer_add",
+        mcp: "paint_layer_add",
+        group: Group::Paint,
+        label: "Add Paint Layer",
+        description: "Add a paint layer above the active one and paint into it from now on: the paint brush, paint_fill and smudge go to the active paint layer (invert erases it), paint_clear empties it. Each layer has a blend (normal, multiply, screen, overlay, add) and an opacity, and is composited over the base and the layers below, so a pattern, dirt or tint can be changed or removed later without touching the rest. The first layer turns the existing paint into the base. A change of topology (remesh, dyntopo, subdivide) flattens the stack.",
+        keys: &[],
+        hints: WRITE,
+        schema: paint_layer_cmds::add_schema,
+        run: paint_layer_cmds::add,
+    },
+    Command {
+        id: "paint.layer_set",
+        mcp: "paint_layer_set",
+        group: Group::Paint,
+        label: "Paint Layer Settings",
+        description: "Change a paint layer: name, blend, opacity, visibility, or move it up or down the stack. get_scene lists each object's paint_layers (bottom first) and active_paint_layer (null is the base).",
+        keys: &[],
+        hints: WRITE,
+        schema: paint_layer_cmds::set_schema,
+        run: paint_layer_cmds::set,
+    },
+    Command {
+        id: "paint.layer_select",
+        mcp: "paint_layer_select",
+        group: Group::Paint,
+        label: "Select Paint Layer",
+        description: "Choose which paint layer brushes and fills paint into; index null paints the base under every layer. Not an undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: paint_layer_cmds::index_schema,
+        run: paint_layer_cmds::select,
+    },
+    Command {
+        id: "paint.layer_delete",
+        mcp: "paint_layer_delete",
+        group: Group::Paint,
+        label: "Delete Paint Layer",
+        description: "Remove a paint layer and what was painted in it.",
+        keys: &[],
+        hints: DESTROY,
+        schema: paint_layer_cmds::index_schema,
+        run: paint_layer_cmds::delete,
+    },
+    Command {
+        id: "paint.layer_merge",
+        mcp: "paint_layer_merge",
+        group: Group::Paint,
+        label: "Merge Paint Layer Down",
+        description: "Bake a paint layer, with its blend and opacity, into the layer below it (or the base), keeping how it looks.",
+        keys: &[],
+        hints: WRITE,
+        schema: paint_layer_cmds::index_schema,
+        run: paint_layer_cmds::merge,
+    },
+    Command {
+        id: "paint.layer_flatten",
+        mcp: "paint_layer_flatten",
+        group: Group::Paint,
+        label: "Flatten Paint Layers",
+        description: "Bake every visible paint layer into plain paint and remove the stack (hidden layers are dropped).",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: paint_layer_cmds::flatten,
     },
     Command {
         id: "paint.clear",
