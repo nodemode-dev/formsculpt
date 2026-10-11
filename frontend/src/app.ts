@@ -5,6 +5,7 @@ import { dispatch, fetchMesh, fetchVersion, type ObjectSummary, type SceneSummar
 import { Viewport } from './viewport/viewport';
 import type { ViewName } from './viewport/camera';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
+import { AgentLink } from './ui/agent-link';
 
 interface Shell {
   engineDot: HTMLElement;
@@ -204,6 +205,10 @@ class SceneView {
   private brush = 'draw';
   private strokes = new StrokeClient();
 
+  stroking(): boolean {
+    return this.strokes.active();
+  }
+
   private brushState(): BrushState {
     const s = this.shell;
     return {
@@ -327,7 +332,15 @@ export function start(root: HTMLElement): void {
     const viewport = new Viewport(shell.canvas);
     setText(shell.statRenderer, viewport.renderer.kind);
     viewport.onFrame = (s) => setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
-    void new SceneView(shell, viewport).refresh();
+    const view = new SceneView(shell, viewport);
+    void view.refresh();
+    const overlay = document.getElementById('overlay-root');
+    if (overlay) {
+      const link = new AgentLink(overlay);
+      link.onChange = () => void view.refresh();
+      link.shouldWait = () => view.stroking();
+      link.start();
+    }
   } catch (err) {
     setText(shell.statRenderer, 'unavailable');
     setText(shell.message, `The viewport could not start: ${String(err)}`);

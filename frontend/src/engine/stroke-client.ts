@@ -108,4 +108,8 @@ export class StrokeClient {
   missed(): boolean {
     return this.miss;
   }
+
+  active(): boolean {
+    return this.live;
+  }
 }

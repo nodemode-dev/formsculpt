@@ -33,11 +33,37 @@ def status() -> dict:
     return {"native": True, "version": fsc_engine.version(), "commands": [c["name"] for c in catalogue()["commands"]]}
 
 
+_epoch = 0
+_read_only: set[str] | None = None
+
+
+def epoch() -> int:
+    return _epoch
+
+
+def _bump() -> None:
+    global _epoch
+    _epoch += 1
+
+
+def read_only(name: str) -> bool:
+    global _read_only
+    if _read_only is None:
+        _read_only = set()
+        for c in catalogue()["commands"]:
+            if c["annotations"].get("readOnlyHint"):
+                _read_only.update({c["name"], c["id"]})
+    return name in _read_only
+
+
 def dispatch(name: str, args: dict | None) -> dict:
     if _engine is None:
         raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
     with _lock:
-        return json.loads(_engine.dispatch(name, json.dumps(args or {})))
+        reply = json.loads(_engine.dispatch(name, json.dumps(args or {})))
+    if reply.get("ok") and not read_only(name):
+        _bump()
+    return reply
 
 
 def mesh_payload(object_id: int) -> bytes:
@@ -63,4 +89,7 @@ def stroke_sample(origin: list[float], direction: list[float], pressure: float) 
 
 def stroke_end() -> dict:
     with _lock:
-        return json.loads(_engine.stroke_end())
+        reply = json.loads(_engine.stroke_end())
+    if reply.get("ok") and reply.get("result"):
+        _bump()
+    return reply

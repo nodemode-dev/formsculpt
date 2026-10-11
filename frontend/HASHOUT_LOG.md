@@ -153,3 +153,17 @@ In 0.3.0 the import line (adding `VertexUpdate`) was changed with `sed -i` inste
 - kind: explainer
 - logged: v0.3.0 · 2026-10-11
 Brushes: Orbit (no brush), Draw, Clay, Inflate, Pinch, Crease, Flatten, Smooth, Grab, Mask. Radius (pixels), strength, invert (or hold Ctrl), mirror X and radial count. Edit buttons dispatch undo, redo and the mask commands; Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y on the canvas. Alt or Shift held at pointer-down navigates instead of sculpting.
+
+## src/ui/agent-link.ts
+
+### src/ui/agent-link.ts · AgentLink
+- refers-to: src/ui/agent-link.ts :: AgentLink.tick, show, answer
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+Polls `/api/mcp/window` about once a second, which also tells the service a window is live. When the engine's epoch moved and no stroke of the window's own is in flight, the scene is refreshed (only meshes whose revision changed are fetched). A pending consent request shows a dialog in `#overlay-root` at `--z-modal`, built once at start and toggled with `hidden`; an answered request is remembered by its time so a poll already in flight cannot reopen it.
+
+### src/styles/shell.css · .consent[hidden]
+- refers-to: src/styles/shell.css :: .consent
+- kind: warning-context
+- logged: v0.3.0 · 2026-10-11
+`.consent` sets `display: grid`, which beats the browser's own `[hidden] { display: none }`; without `.consent[hidden] { display: none; }` the dialog never hides. Found by the consent check: the dialog stayed on screen after Allow.

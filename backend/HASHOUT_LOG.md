@@ -86,3 +86,27 @@ Replaced by `engine.status()` now that the PyO3 module exists; closes the 0.1.0 
 - kind: rationale
 - logged: v0.3.0 · 2026-10-11
 `/api/engine/stroke` carries `begin` (object id and brush), `sample` (ray origin, direction, pressure, seq) and `end` as JSON; each sample is answered with a JSON `{type: sample, seq, hit}` and, when vertices changed, a binary FSCU frame. Engine calls run in the thread pool under the engine lock. A dropped socket closes the open stroke so its edit still reaches the history. The mesh route's header now sets flag 1 and appends the mask (f32 per vertex).
+
+## app/routers/mcp.py
+
+### app/routers/mcp.py · mcp and call_tool
+- refers-to: app/routers/mcp.py :: mcp, tools, call_tool, INSTRUCTIONS, STRATEGY
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+The MCP server in formvis's protocol shape (stateless Streamable HTTP, 2026-07-28 and 2025-11-25, Origin limited to this computer, cache hints on discover and lists) but with formvis's split removed: there is no tool catalogue in Python. `tools()` maps the engine's catalogue (name, label as title, description, schema, annotations) and `call_tool` runs `engine.dispatch`, so a command added in Rust appears over MCP after an engine rebuild with no Python change. Tools execute in the service's engine session, the one the window shows, so they work with no window open.
+
+## app/services/agents.py
+
+### app/services/agents.py · permit
+- refers-to: app/services/agents.py :: permit, seen, window_live, answer
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+Consent only matters when someone is looking: a window that polled `/api/mcp/window` in the last 4 s. Then the first mutating call parks a pending request the window shows as a dialog, waits up to 90 s, and proceeds on Allow. Decline refuses for 600 s. No window: the call runs, because the person started the agent themselves. State lives for the service's lifetime; `POST /api/mcp/reset` clears it.
+
+## app/services/engine.py
+
+### app/services/engine.py · epoch
+- refers-to: app/services/engine.py :: epoch, _bump, read_only
+- kind: rationale
+- logged: v0.3.0 · 2026-10-11
+A counter that rises on every successful mutating dispatch (any command whose catalogue annotations are not read-only) and on every stroke that changed vertices. The window polls it to refresh after an agent's change.

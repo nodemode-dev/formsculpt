@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core import config
 from app.core.isolation import CrossOriginIsolation
-from app.routers import engine, system
+from app.routers import engine, mcp, system
 
 
 @asynccontextmanager
@@ -19,6 +19,7 @@ app.add_middleware(CORSMiddleware, allow_origins=config.cors_origins(), allow_me
 app.add_middleware(CrossOriginIsolation)
 app.include_router(system.router, prefix="/api")
 app.include_router(engine.router, prefix="/api/engine")
+app.include_router(mcp.router)
 
 dist = config.dist_dir()
 if dist is not None:
