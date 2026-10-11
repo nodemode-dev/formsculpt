@@ -128,3 +128,15 @@ The window sends files as multipart uploads (a .fsc opens, anything else imports
 - kind: process
 - logged: v0.8.0 · 2026-10-11
 Declared slip: one sentence of the frontend log entry written earlier in this release (not yet committed) was corrected by a Python one-off string swap instead of the Edit tool, after the window's Duplicate stopped offsetting. Every other change in 0.8.0 was a hand edit or a new file.
+
+### app/routers/nodemode.py, app/services/outbound.py, app/routers/engine.py, app/routers/mcp.py · Send to NodeMode, view route, image results
+- refers-to: app/routers/nodemode.py :: status, send, Send; app/services/outbound.py :: base, request, multipart, unreachable; app/services/engine.py :: view_png; app/routers/engine.py :: view_image; app/routers/mcp.py :: call_tool; app/main.py
+- kind: rationale
+- logged: v0.9.0 · 2026-10-11
+Send to NodeMode follows formvis's /api/nodemode protocol so NodeMode needs one more receiver, not a new mechanism: the engine (not the page, which cannot post to another app's address) exports the scene as GLB, renders a 768 pixel transparent preview with get_view, uploads both through NodeMode's /api/upload, then posts one announcement to /api/formsculptor/receive with the files' addresses, the model's byte size and which image previews which model. A NodeMode without the receiver (404 or 405) still has the uploads, and the reply says so. outbound.py is formvis's helper with the multipart part taking any content type. The MCP router returns any result carrying png_base64 as an image content block plus the remaining fields as text and structuredContent. Verified against a stand-in NodeMode on the loopback address: with a receiver (announcement as above, the GLB passes the Khronos validator, the PNG is 768 square RGBA), without one (uploads, explanatory reply), nothing listening (502 naming the address and where to change it), a non-http address (422) and an empty scene (refused in the window before sending).
+
+### setup/freeze_backend, formsculptor_engine.py, setup/lib.sh · the frozen engine carries the module
+- refers-to: setup/freeze_backend; backend/formsculptor_engine.py :: selfcheck; setup/lib.sh :: fs_venv; setup/engine_build; setup/doctor
+- kind: rationale
+- logged: v0.9.0 · 2026-10-11
+The freeze rebuilds fsc_engine when it is missing or its version differs from the service's, and collects the whole package (the compiled extension included). The self-check now dispatches a real command through a fresh engine session and exits non-zero unless the engine answered and the frontend is bundled, so a sidecar without its engine can no longer pass. Measured here: 23 MB one-file sidecar, 53 commands, frontend inside. fs_venv, engine_build and doctor accept a Windows venv (Scripts/activate), which the desktop CI's Windows leg needs.
