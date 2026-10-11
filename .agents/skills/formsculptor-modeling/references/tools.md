@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.15.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.16.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`
 - Viewing: `get_view`, `record_turntable`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`, `alpha_load`
 - Painting: `paint_fill`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
@@ -563,6 +563,14 @@ Bend, twist or taper an object along an axis of its bounds. Masked vertices are 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `kind`: string (bend | twist | taper); required
 - `toward`: string (x | y | z); default "x"; Bend only: the direction the axis curves toward.
+
+## lattice_deform
+
+Reshape an object with a lattice: a box of control points around its bounds (2 to 6 per axis, 3 by default); move some of them and the surface follows smoothly (free-form deformation), held by the mask. Good for broad proportion changes: widen a jaw, push a skull back, bulge a belly, squash a whole prop. One undo step; the reply gives the lattice's box.
+
+- `divisions`: array of integer; default [3, 3, 3]; Control points along x, y and z. Point [i, j, k] starts at min + (i / (nx - 1), j / (ny - 1), k / (nz - 1)) * size of the object's bounds grown by 2 percent of their largest side.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `moves`: array of object; required
 
 ## merge_objects
 
