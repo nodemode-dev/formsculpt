@@ -194,3 +194,9 @@ Each triangle knows its leaf and each node its parent. A max-heap of node indice
 - kind: rationale
 - logged: v0.4.1 · 2026-10-11
 Finds the vertices a Loop or midpoint subdivision kept (even) and the ones it added on edges (odd): from a seed assumed even, every neighbour is odd, and in an odd vertex's ordered ring the even vertex across from a known one sits three places on (or at the other end of an open fan of four). A seed that contradicts itself is undone and its neighbours are tried. The all-odd triangles are the old triangles' centres and give the lower triangles with their winding. Lower positions come from twelve Jacobi sweeps that invert Loop's even-vertex rule, then the stencil from subdividing the rebuilt level is renumbered to the existing vertex order, so the live mesh is untouched. Measured: after two subdivide levels, two rebuilds return the original sphere, cube, open plane and torus within 5e-5, and an icosphere is recognised as subdivided; 1,310,720 triangles rebuild in 1.46 s. Meshes from remesh, decimate or dyntopo refuse with not_subdivided.
+
+### process · scripted replacement in 0.4.1
+- refers-to: crates/fsc-core/src/multires.rs
+- kind: process
+- logged: v0.4.1 · 2026-10-11
+Declared slip: while multires.rs was new and not yet committed, four exact string swaps (dropping the per-level mask copies) were made by a Python one-off instead of the Edit tool. Every other change in 0.4.1 was a hand edit or a new file.
