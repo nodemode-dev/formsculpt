@@ -1,3 +1,4 @@
+mod file_cmds;
 mod history;
 mod layer_cmds;
 mod multires_cmds;
@@ -7,6 +8,7 @@ mod sculpt_cmds;
 mod topo_cmds;
 
 pub use history::{Edit, History};
+pub use file_cmds::{export_data, import_data, open_data, save_data};
 pub use sculpt_cmds::{parse_brush, push_stroke};
 
 use fsc_core::Scene;
@@ -445,6 +447,72 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: layer_cmds::index_only_schema,
         run: layer_cmds::apply,
+    },
+    Command {
+        id: "file.save",
+        mcp: "save_project",
+        group: Group::File,
+        label: "Save Project",
+        description: "Save the whole scene to a .fsc project file (objects, masks, subdivision levels and sculpt layers), overwriting the path. Opening it again restores the scene exactly.",
+        keys: &["Mod+S"],
+        hints: DESTROY,
+        schema: file_cmds::save_schema,
+        run: file_cmds::save,
+    },
+    Command {
+        id: "file.open",
+        mcp: "open_project",
+        group: Group::File,
+        label: "Open Project",
+        description: "Replace the scene with a .fsc project. Clears the undo history; save first if the current scene matters.",
+        keys: &["Mod+O"],
+        hints: DESTROY,
+        schema: file_cmds::save_schema,
+        run: file_cmds::open,
+    },
+    Command {
+        id: "file.import",
+        mcp: "import_mesh",
+        group: Group::File,
+        label: "Import Mesh",
+        description: "Add the meshes in an OBJ, STL, PLY, glTF/GLB or 3MF file as new objects (one per OBJ object, glTF node or 3MF object). glTF must be a GLB or carry its buffers inside. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: file_cmds::import_schema,
+        run: file_cmds::import,
+    },
+    Command {
+        id: "file.export",
+        mcp: "export_mesh",
+        group: Group::File,
+        label: "Export Mesh",
+        description: "Write objects to OBJ, STL, PLY, GLB or 3MF, chosen by the path's extension, overwriting it. GLB keeps sculpt layers as morph targets at their strengths; STL and PLY join the objects into one mesh.",
+        keys: &["Mod+E"],
+        hints: DESTROY,
+        schema: file_cmds::export_schema,
+        run: file_cmds::export,
+    },
+    Command {
+        id: "file.print_check",
+        mcp: "print_check",
+        group: Group::File,
+        label: "Print Check",
+        description: "Check an object for 3D printing: watertight, non-manifold edges, inside-out, size, volume and area in millimetres, and wall thickness sampled by casting inward from up to 4000 vertices. Lists the problems and whether it is printable.",
+        keys: &[],
+        hints: READ,
+        schema: file_cmds::print_schema,
+        run: file_cmds::print_check,
+    },
+    Command {
+        id: "file.repair",
+        mcp: "repair_mesh",
+        group: Group::Topo,
+        label: "Repair Mesh",
+        description: "Make an object closed and manifold: split vertices where surfaces only touch, fill open holes, drop degenerate triangles and unused vertices. One undo step; the mask is cleared.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: file_cmds::repair,
     },
     Command {
         id: "history.undo",

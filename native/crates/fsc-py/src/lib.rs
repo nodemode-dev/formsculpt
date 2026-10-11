@@ -32,6 +32,34 @@ impl Engine {
         Ok(reply.to_string())
     }
 
+    fn save_bytes<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let bytes = fsc_commands::save_data(&session).map_err(|e| PyValueError::new_err(e.message))?;
+        Ok(PyBytes::new(py, &bytes))
+    }
+
+    fn open_bytes(&self, data: &[u8]) -> PyResult<String> {
+        let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        Ok(reply(fsc_commands::open_data(&mut session, data.to_vec())))
+    }
+
+    #[pyo3(signature = (file_name, data, name=None))]
+    fn import_bytes(&self, file_name: &str, data: &[u8], name: Option<&str>) -> PyResult<String> {
+        let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        Ok(reply(fsc_commands::import_data(&mut session, file_name, data, name)))
+    }
+
+    #[pyo3(signature = (file_name, ids=None))]
+    fn export_bytes<'py>(&self, py: Python<'py>, file_name: &str, ids: Option<Vec<u32>>) -> PyResult<Bound<'py, PyBytes>> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let ids = ids.unwrap_or_else(|| session.scene.objects.iter().filter(|o| o.visible).map(|o| o.id).collect());
+        if let Some(missing) = ids.iter().find(|&&id| session.scene.get(id).is_none()) {
+            return Err(PyKeyError::new_err(format!("no object {missing}")));
+        }
+        let bytes = fsc_commands::export_data(&session, file_name, &ids).map_err(|e| PyValueError::new_err(e.message))?;
+        Ok(PyBytes::new(py, &bytes))
+    }
+
     fn mesh<'py>(&self, py: Python<'py>, id: u32) -> PyResult<MeshBuffers<'py>> {
         let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;
@@ -113,6 +141,14 @@ fn update_bytes(object: &fsc_core::Object, changed: &[u32]) -> Vec<u8> {
         out.extend_from_slice(&object.mask[v as usize].to_le_bytes());
     }
     out
+}
+
+fn reply(result: Result<Value, fsc_commands::CommandError>) -> String {
+    match result {
+        Ok(result) => json!({"ok": true, "result": result}),
+        Err(err) => json!({"ok": false, "error": err}),
+    }
+    .to_string()
 }
 
 #[pyfunction]

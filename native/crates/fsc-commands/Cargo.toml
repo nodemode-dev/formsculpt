@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 fsc-core.workspace = true
+fsc-io.workspace = true
 fsc-sculpt.workspace = true
 fsc-topo.workspace = true
 glam = "0.34"
