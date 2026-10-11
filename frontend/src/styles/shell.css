@@ -25,6 +25,13 @@ button { font: inherit; color: inherit; }
 .stage-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }
 .stage-overlay polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .stage-overlay path { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 2; }
+.stage-overlay path.gizmo-axis, .stage-overlay path.lattice-lines { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.stage-overlay path.gizmo-x { stroke: var(--axis-x); }
+.stage-overlay path.gizmo-y { stroke: var(--axis-y); }
+.stage-overlay path.gizmo-z { stroke: var(--axis-z); }
+.stage-overlay path.gizmo-uniform { fill: var(--accent-color-dim); }
+.stage-overlay path.lattice-lines { stroke-width: 1; opacity: 0.8; }
+.stage-overlay path.lattice-points { fill: var(--accent-color); stroke: var(--bg-primary); stroke-width: 1; }
 .falloff-editor { display: block; width: 100%; height: 64px; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); cursor: ns-resize; touch-action: none; }
 .falloff-editor polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .falloff-editor path { fill: var(--accent-color); stroke: none; }

@@ -19,6 +19,7 @@ import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
+import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
 
 interface Shell {
@@ -121,6 +122,10 @@ interface Shell {
   postDof: HTMLInputElement;
   postVignette: HTMLInputElement;
   postGrain: HTMLInputElement;
+  gizmoAxes: SVGPathElement[];
+  gizmoUniform: SVGPathElement;
+  latticeLines: SVGPathElement;
+  latticePoints: SVGPathElement;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -158,6 +163,8 @@ const BRUSHES: [string, string][] = [
   ['stamp', 'Drag stamp'],
   ['dragdot', 'Drag dot'],
   ['curve', 'Curve stroke'],
+  ['gizmo', 'Transform'],
+  ['lattice', 'Lattice'],
   ['mask_box', 'Box mask'],
   ['mask_lasso', 'Lasso mask'],
   ['mask_topo', 'Topo mask'],
@@ -167,7 +174,10 @@ const BRUSHES: [string, string][] = [
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice']);
+
+/** Control points per axis of the window's lattice tool. */
+const LATTICE_DIV = 3;
 
 /** Named falloffs as the engine computes them, to draw a preset in the curve editor. */
 const FALLOFFS: Record<string, (t: number) => number> = {
@@ -328,7 +338,17 @@ function buildShell(root: HTMLElement): Shell {
   // A curve stroke waiting to be applied: its line and its handles, redrawn from 3D points as the view moves.
   const curveLine = document.createElementNS(SVG, 'polyline');
   const curveHandles = document.createElementNS(SVG, 'path');
-  overlay.append(tubeLine, curveLine, curveHandles);
+  // The transform gizmo (an axis path each, and a centre square) and the lattice cage (edges and points).
+  const svgPath = (cls: string): SVGPathElement => {
+    const p = document.createElementNS(SVG, 'path');
+    p.setAttribute('class', cls);
+    return p;
+  };
+  const gizmoAxes = ['x', 'y', 'z'].map((a) => svgPath(`gizmo-axis gizmo-${a}`));
+  const gizmoUniform = svgPath('gizmo-uniform');
+  const latticeLines = svgPath('lattice-lines');
+  const latticePoints = svgPath('lattice-points');
+  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -745,7 +765,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints };
 }
 
 class SceneView {
@@ -764,6 +784,7 @@ class SceneView {
         this.brush = b.dataset.brush ?? 'draw';
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         shell.brushButtons.forEach((x) => setAttr(x, 'aria-pressed', x === b ? 'true' : 'false'));
+        this.drawTools();
       }),
     );
     shell.actionButtons.forEach((b) =>
@@ -946,6 +967,10 @@ class SceneView {
     const trace = (e: PointerEvent): void => {
       if (this.shape) {
         const p: [number, number] = [e.offsetX, e.offsetY];
+        if (this.shape.kind === 'gizmo' || this.shape.kind === 'lattice') {
+          this.handleTool(this.shape, p);
+          return;
+        }
         if (this.shape.kind === 'curve' && this.shape.pts.length === 0 && this.curve) {
           // Pressing on a handle of the waiting curve moves that handle instead of drawing a new curve.
           const near = this.curveScreen().findIndex((q) => q !== null && Math.hypot(q[0] - p[0], q[1] - p[1]) < 10);
@@ -988,22 +1013,23 @@ class SceneView {
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush === 'tube' || (this.brush !== 'orbit' && this.scene.active !== null),
-      begin: (ray, pressure, wpp, inv) => {
+      begin: (ray, pressure, wpp, inv, tilt) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
         else if (CLICK_TOOLS.has(this.brush)) void this.clickTool(ray, wpp, inv);
-        else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
+        else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure, tilt);
       },
-      move: (ray, pressure) => {
+      move: (ray, pressure, tilt) => {
         if (this.tube) this.tubeMove(ray);
-        else if (!this.shape && !CLICK_TOOLS.has(this.brush)) this.strokes.move(ray.origin, ray.dir, pressure);
+        else if (!this.shape && !CLICK_TOOLS.has(this.brush)) this.strokes.move(ray.origin, ray.dir, pressure, tilt);
       },
       end: () => {
         if (this.tube) void this.tubeEnd();
         else if (this.shape) void this.shapeEnd();
         else if (!CLICK_TOOLS.has(this.brush)) this.strokes.end();
       },
-      missed: () => (this.tube || this.shape || CLICK_TOOLS.has(this.brush) ? false : this.strokes.missed()),
+      // A press that misses the gizmo's handles or the lattice's points turns the view instead.
+      missed: () => (this.shape?.miss ? true : this.tube || this.shape || CLICK_TOOLS.has(this.brush) ? false : this.strokes.missed()),
     };
   }
 
@@ -1012,7 +1038,10 @@ class SceneView {
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
-  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number; edit?: number } | null = null;
+  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number; edit?: number; miss?: boolean } | null = null;
+  private gizmoDrag: GizmoDrag | null = null;
+  /** A lattice point being dragged: its index (i + j * n + k * n * n) and world offset so far. */
+  private latticeDrag: { index: number; offset: Vec3 } | null = null;
   /** The brush a curve stroke applies: the last sculpting or painting brush chosen before the Curve tool. */
   private lastBrush = 'draw';
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
@@ -1041,6 +1070,14 @@ class SceneView {
     }
     if (shape?.kind === 'curve') {
       await this.curveEnd(shape.pts, shape.wpp, shape.edit);
+      return;
+    }
+    if (shape?.kind === 'gizmo') {
+      await this.gizmoEnd();
+      return;
+    }
+    if (shape?.kind === 'lattice') {
+      await this.latticeEnd();
       return;
     }
     const box = shape?.kind === 'mask_box';
@@ -1146,6 +1183,175 @@ class SceneView {
     const line = SceneView.spline(shown, 8);
     this.shell.curveLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
     this.shell.curveHandles.setAttribute('d', shown.map((q) => `M${(q[0] - 4).toFixed(1)},${q[1].toFixed(1)}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`).join(''));
+  }
+
+  /** Projects world points to canvas pixels with the current camera (null behind it). */
+  private projector(): (p: Vec3) => [number, number] | null {
+    const m = this.viewport.camera.viewProjection();
+    const w = this.shell.canvas.clientWidth;
+    const h = this.shell.canvas.clientHeight;
+    return ([x, y, z]) => {
+      const cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+      if (cw <= 1e-6) return null;
+      return [((m[0] * x + m[4] * y + m[8] * z + m[12]) / cw * 0.5 + 0.5) * w, (0.5 - ((m[1] * x + m[5] * y + m[9] * z + m[13]) / cw) * 0.5) * h];
+    };
+  }
+
+  private activeObject(): ObjectSummary | undefined {
+    return this.scene.objects.find((o) => o.id === this.scene.active && o.visible);
+  }
+
+  /** The gizmo's centre (the bounds centre, as transform_object turns and scales about it) and arrow length. */
+  private gizmoFrame(o: ObjectSummary): { center: Vec3; len: number } {
+    const { min, max } = o.bounds;
+    const center: Vec3 = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+    return { center, len: this.viewport.camera.worldPerPixel(this.shell.canvas.clientHeight) * 90 };
+  }
+
+  /** The lattice's control points around an object, as lattice_deform places them (bounds grown by 2 percent). */
+  private latticePoints(o: ObjectSummary): Vec3[] {
+    const { min, max } = o.bounds;
+    const pad = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2], 1e-6) * 0.02;
+    const lo = min.map((v) => v - pad);
+    const hi = max.map((v) => v + pad);
+    const n = LATTICE_DIV;
+    const out: Vec3[] = [];
+    for (let k = 0; k < n; k++)
+      for (let j = 0; j < n; j++)
+        for (let i = 0; i < n; i++) out.push([lo[0] + ((hi[0] - lo[0]) * i) / (n - 1), lo[1] + ((hi[1] - lo[1]) * j) / (n - 1), lo[2] + ((hi[2] - lo[2]) * k) / (n - 1)]);
+    return out;
+  }
+
+  /** Presses and drags with the Transform and Lattice tools. */
+  private handleTool(shape: NonNullable<SceneView['shape']>, p: [number, number]): void {
+    const o = this.activeObject();
+    if (!o) {
+      shape.miss = true;
+      return;
+    }
+    const project = this.projector();
+    const first = shape.pts.length === 0;
+    shape.pts.push(p);
+    if (shape.kind === 'gizmo') {
+      const { center, len } = this.gizmoFrame(o);
+      if (first) {
+        const handle = Gizmo.hit(p, center, len, project);
+        if (!handle) {
+          shape.miss = true;
+          return;
+        }
+        this.gizmoDrag = { handle, start: p, translate: [0, 0, 0], degrees: 0, scale: [1, 1, 1] };
+        return;
+      }
+      const drag = this.gizmoDrag;
+      if (!drag) return;
+      const eye = this.viewport.camera.eye();
+      Gizmo.update(drag, p, center, len, project, normalize(sub(eye, center)));
+      this.viewport.renderer.setPreview(o.id, Gizmo.matrix(drag, center));
+      this.viewport.invalidate();
+      return;
+    }
+    const points = this.latticePoints(o);
+    if (first) {
+      const index = points.findIndex((q) => {
+        const s = project(q);
+        return s !== null && Math.hypot(s[0] - p[0], s[1] - p[1]) <= 9;
+      });
+      if (index < 0) {
+        shape.miss = true;
+        return;
+      }
+      this.latticeDrag = { index, offset: [0, 0, 0] };
+      return;
+    }
+    const drag = this.latticeDrag;
+    if (!drag) return;
+    // The point moves in the plane facing the camera, at the scale of the view at the object.
+    const cam = this.viewport.camera;
+    const up = cam.screenUp();
+    const forward = normalize(sub(cam.target, cam.eye()));
+    const right = normalize([forward[1] * up[2] - forward[2] * up[1], forward[2] * up[0] - forward[0] * up[2], forward[0] * up[1] - forward[1] * up[0]]);
+    const wpp = cam.worldPerPixel(this.shell.canvas.clientHeight);
+    const start = shape.pts[0];
+    const [dx, dy] = [p[0] - start[0], p[1] - start[1]];
+    drag.offset = add(scale(right, dx * wpp), scale(up, -dy * wpp));
+    this.drawTools();
+  }
+
+  private async gizmoEnd(): Promise<void> {
+    const drag = this.gizmoDrag;
+    this.gizmoDrag = null;
+    const o = this.activeObject();
+    if (!drag || !o) return;
+    const moved = Math.hypot(...drag.translate) > 1e-7 || Math.abs(drag.degrees) > 1e-4 || drag.scale.some((s) => Math.abs(s - 1) > 1e-5);
+    if (!moved) {
+      this.viewport.renderer.setPreview(o.id, null);
+      this.viewport.invalidate();
+      return;
+    }
+    const rotate: Vec3 = [0, 0, 0];
+    if (drag.handle.kind === 'rotate') rotate[drag.handle.axis] = drag.degrees;
+    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate: drag.translate, rotate, scale: drag.scale });
+    if (!reply.ok) {
+      // The preview goes on failure; on success it stays until the new geometry replaces it, so nothing jumps.
+      this.viewport.renderer.setPreview(o.id, null);
+      this.viewport.invalidate();
+    }
+    this.note(reply.ok ? '' : reply.error.message);
+    await this.refresh();
+  }
+
+  private async latticeEnd(): Promise<void> {
+    const drag = this.latticeDrag;
+    this.latticeDrag = null;
+    const o = this.activeObject();
+    this.drawTools();
+    if (!drag || !o || Math.hypot(...drag.offset) < 1e-9) return;
+    const n = LATTICE_DIV;
+    const point = [drag.index % n, Math.floor(drag.index / n) % n, Math.floor(drag.index / (n * n))];
+    await this.run('lattice_deform', { id: o.id, divisions: [n, n, n], moves: [{ point, offset: drag.offset }] });
+  }
+
+  /** Redraws the gizmo or the lattice cage for the tool in hand (nothing for other tools). */
+  drawTools(): void {
+    const s = this.shell;
+    const o = this.activeObject();
+    const project = this.projector();
+    if (this.brush === 'gizmo' && o) {
+      const { center, len } = this.gizmoFrame(o);
+      const t = this.gizmoDrag?.translate ?? [0, 0, 0];
+      const { axes, uniform } = Gizmo.paths(add(center, t), len, project);
+      s.gizmoAxes.forEach((p, i) => p.setAttribute('d', axes[i]));
+      s.gizmoUniform.setAttribute('d', uniform);
+    } else {
+      s.gizmoAxes.forEach((p) => p.setAttribute('d', ''));
+      s.gizmoUniform.setAttribute('d', '');
+    }
+    if (this.brush === 'lattice' && o) {
+      const pts = this.latticePoints(o);
+      const drag = this.latticeDrag;
+      if (drag) pts[drag.index] = add(pts[drag.index], drag.offset);
+      const scr = pts.map(project);
+      const n = LATTICE_DIV;
+      let lines = '';
+      const seg = (a: number, b: number): void => {
+        const [p, q] = [scr[a], scr[b]];
+        if (p && q) lines += `M${p[0].toFixed(1)},${p[1].toFixed(1)}L${q[0].toFixed(1)},${q[1].toFixed(1)}`;
+      };
+      for (let k = 0; k < n; k++)
+        for (let j = 0; j < n; j++)
+          for (let i = 0; i < n; i++) {
+            const at = i + j * n + k * n * n;
+            if (i + 1 < n) seg(at, at + 1);
+            if (j + 1 < n) seg(at, at + n);
+            if (k + 1 < n) seg(at, at + n * n);
+          }
+      s.latticeLines.setAttribute('d', lines);
+      s.latticePoints.setAttribute('d', scr.map((q) => (q ? `M${(q[0] - 4).toFixed(1)},${(q[1] - 4).toFixed(1)}h8v8h-8z` : '')).join(''));
+    } else {
+      s.latticeLines.setAttribute('d', '');
+      s.latticePoints.setAttribute('d', '');
+    }
   }
 
   /** Ends a Curve tool drag: a new curve becomes handles picked on the active object; a dragged handle is re-picked. */
@@ -1915,6 +2121,7 @@ export function start(root: HTMLElement): void {
     viewport.onFrame = (s) => {
       setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
       view.drawCurve();
+      view.drawTools();
     };
     void view.refresh();
     const overlay = document.getElementById('overlay-root');

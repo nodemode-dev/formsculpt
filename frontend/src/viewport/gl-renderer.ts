@@ -12,6 +12,7 @@ layout(location=3) in vec3 aCol;
 layout(location=4) in vec2 aMat;
 uniform mat4 uViewProj;
 uniform mat4 uView;
+uniform mat4 uModel;
 out vec3 vNrm;
 out vec3 vViewPos;
 out float vMask;
@@ -21,9 +22,11 @@ void main() {
   vMask = aMask;
   vCol = aCol;
   vMat = aMat;
-  vNrm = mat3(uView) * aNrm;
-  vViewPos = (uView * vec4(aPos, 1.0)).xyz;
-  gl_Position = uViewProj * vec4(aPos, 1.0);
+  // uModel is the identity except while the transform gizmo previews a move, turn or scale.
+  vec4 world = uModel * vec4(aPos, 1.0);
+  vNrm = mat3(uView) * (transpose(inverse(mat3(uModel))) * aNrm);
+  vViewPos = (uView * world).xyz;
+  gl_Position = uViewProj * world;
 }`;
 
 const MESH_FS = `#version 300 es
@@ -275,8 +278,18 @@ export class GlRenderer {
     return { vao, count: data.length / 6 };
   }
 
+  /** Previews a transform of one object (column-major 4 by 4) until its new geometry arrives; null clears it. */
+  setPreview(id: number, matrix: Float32Array | null): void {
+    if (matrix) this.previews.set(id, matrix);
+    else this.previews.delete(id);
+  }
+
+  private previews = new Map<number, Float32Array>();
+
   upload(mesh: MeshBuffers): void {
     const gl = this.gl;
+    // New geometry replaces any gizmo preview in the same frame, so the object never jumps back.
+    this.previews.delete(mesh.id);
     this.remove(mesh.id);
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
@@ -563,7 +576,9 @@ export class GlRenderer {
     gl.bindTexture(gl.TEXTURE_2D, env ? env.tex : this.blankEnv);
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uEnv'), 1);
     gl.activeTexture(gl.TEXTURE0);
+    const model = gl.getUniformLocation(this.meshProgram, 'uModel');
     for (const [id, m] of this.meshes) {
+      gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
       const name = this.shadingOf(id);
       const tex = this.matcaps.get(name);
       const s = SHADINGS[name] ?? SHADINGS.clay;
@@ -630,6 +645,8 @@ export class GlRenderer {
 }
 
 export const TONES = ['reinhard', 'aces', 'none'];
+
+const IDENTITY = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
 export interface Lighting {
   /** Light lit (PBR) shading with the environment image. */

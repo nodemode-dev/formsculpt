@@ -15,8 +15,8 @@ export interface Ray {
 
 export interface StrokeHandler {
   enabled(): boolean;
-  begin(ray: Ray, pressure: number, worldPerPixel: number, invert: boolean): void;
-  move(ray: Ray, pressure: number): void;
+  begin(ray: Ray, pressure: number, worldPerPixel: number, invert: boolean, tilt: number): void;
+  move(ray: Ray, pressure: number, tilt: number): void;
   end(): void;
   missed(): boolean;
 }
@@ -28,7 +28,7 @@ export class Viewport {
   private dirty = true;
   private frame = 0;
   private lastFrameMs = 0;
-  private drag: { button: number; x: number; y: number; mode: 'camera' | 'stroke' } | null = null;
+  private drag: { button: number; x: number; y: number; mode: 'camera' | 'stroke' | 'pending' } | null = null;
   onFrame: ((stats: ViewportStats) => void) | null = null;
   strokes: StrokeHandler | null = null;
 
@@ -135,26 +135,76 @@ export class Viewport {
     return e.pointerType === 'mouse' ? 1 : Math.max(0.05, e.pressure || 0.5);
   }
 
+  /** The direction a pen leans, in radians from the screen's up (0 when upright, or for a mouse or finger). */
+  private tilt(e: PointerEvent): number {
+    if (e.pointerType !== 'pen' || (Math.abs(e.tiltX) < 3 && Math.abs(e.tiltY) < 3)) return 0;
+    return Math.atan2(e.tiltX, -e.tiltY);
+  }
+
+  /** Fingers on the canvas, by pointer id, and the last two-finger span and midpoint while a gesture runs. */
+  private touches = new Map<number, [number, number]>();
+  private gesture: { span: number; mid: [number, number] } | null = null;
+
+  private gestureFrame(): { span: number; mid: [number, number] } {
+    const [a, b] = [...this.touches.values()];
+    return { span: Math.hypot(a[0] - b[0], a[1] - b[1]), mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] };
+  }
+
   private down(e: PointerEvent): void {
+    if (e.pointerType === 'touch') {
+      this.touches.set(e.pointerId, [e.clientX, e.clientY]);
+      if (this.touches.size === 2) {
+        // A second finger ends any stroke the first one began and starts pinch to zoom and two-finger pan.
+        if (this.drag?.mode === 'stroke') this.strokes?.end();
+        this.drag = null;
+        this.gesture = this.gestureFrame();
+        this.canvas.setPointerCapture(e.pointerId);
+        return;
+      }
+      if (this.touches.size > 2) return;
+    }
     this.canvas.setPointerCapture(e.pointerId);
     this.canvas.focus({ preventScroll: true });
     const sculpt = e.button === 0 && !e.altKey && !e.shiftKey && this.strokes?.enabled();
-    this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: sculpt ? 'stroke' : 'camera' };
-    if (sculpt) {
-      const ray = this.rayAt(e);
-      if (ray) this.strokes?.begin(ray, this.pressure(e), this.camera.worldPerPixel(this.canvas.clientHeight), e.ctrlKey || e.metaKey);
-    }
+    // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
+    const pending = sculpt && e.pointerType === 'touch';
+    this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera' };
+    this.pendingStart = pending ? { ray: this.rayAt(e), pressure: this.pressure(e), ctrl: e.ctrlKey || e.metaKey } : null;
+    if (sculpt && !pending) this.beginStroke(this.rayAt(e), this.pressure(e), e.ctrlKey || e.metaKey, this.tilt(e));
+  }
+
+  private pendingStart: { ray: Ray | null; pressure: number; ctrl: boolean } | null = null;
+
+  private beginStroke(ray: Ray | null, pressure: number, ctrl: boolean, tilt: number): void {
+    if (ray) this.strokes?.begin(ray, pressure, this.camera.worldPerPixel(this.canvas.clientHeight), ctrl, tilt);
   }
 
   private move(e: PointerEvent): void {
+    if (e.pointerType === 'touch' && this.touches.has(e.pointerId)) {
+      this.touches.set(e.pointerId, [e.clientX, e.clientY]);
+      if (this.gesture && this.touches.size === 2) {
+        const next = this.gestureFrame();
+        this.camera.pan(next.mid[0] - this.gesture.mid[0], next.mid[1] - this.gesture.mid[1], this.canvas.clientHeight);
+        if (next.span > 1 && this.gesture.span > 1) this.camera.zoom(this.gesture.span / next.span);
+        this.gesture = next;
+        this.invalidate();
+        return;
+      }
+    }
     if (!this.drag) return;
+    if (this.drag.mode === 'pending') {
+      if (Math.hypot(e.clientX - this.drag.x, e.clientY - this.drag.y) < 6 || !this.pendingStart) return;
+      this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
+      this.pendingStart = null;
+      this.drag.mode = 'stroke';
+    }
     if (this.drag.mode === 'stroke') {
       if (this.strokes?.missed()) {
         this.strokes.end();
         this.drag.mode = 'camera';
       } else {
         const ray = this.rayAt(e);
-        if (ray) this.strokes?.move(ray, this.pressure(e));
+        if (ray) this.strokes?.move(ray, this.pressure(e), this.tilt(e));
         this.drag.x = e.clientX;
         this.drag.y = e.clientY;
         return;
@@ -173,7 +223,21 @@ export class Viewport {
 
   private up(e: PointerEvent): void {
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
-    if (this.drag?.mode === 'stroke') this.strokes?.end();
+    if (e.pointerType === 'touch') {
+      this.touches.delete(e.pointerId);
+      if (this.gesture) {
+        // The gesture ends when a finger lifts; the remaining finger does nothing until it lifts too.
+        if (this.touches.size < 2) this.gesture = null;
+        this.drag = null;
+        return;
+      }
+    }
+    if (this.drag?.mode === 'pending' && this.pendingStart) {
+      // A tap: one dab where the finger touched.
+      this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
+      this.strokes?.end();
+    } else if (this.drag?.mode === 'stroke') this.strokes?.end();
+    this.pendingStart = null;
     this.drag = null;
   }
 

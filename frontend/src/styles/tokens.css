@@ -18,6 +18,10 @@
   --ok-color: #22c55e;
   --warn-color: #eab308;
   --danger-color: #ef4444;
+  /* The transform gizmo's axes, matching the grid's x (red) and z (blue) lines. */
+  --axis-x: #e5484d;
+  --axis-y: #46a758;
+  --axis-z: #3e7bfa;
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;

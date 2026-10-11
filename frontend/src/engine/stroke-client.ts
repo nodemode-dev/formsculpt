@@ -96,7 +96,7 @@ export class StrokeClient {
       .catch((err: Error) => this.onError?.(err.message));
   }
 
-  begin(objectId: number, brush: BrushState, worldPerPixel: number, invert: boolean, origin: Vec3, dir: Vec3, pressure: number): void {
+  begin(objectId: number, brush: BrushState, worldPerPixel: number, invert: boolean, origin: Vec3, dir: Vec3, pressure: number, tilt = 0): void {
     this.miss = false;
     this.live = true;
     this.objectId = objectId;
@@ -108,12 +108,13 @@ export class StrokeClient {
       brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}), ...(brush.alpha ?? {}), stroke: brush.stroke, ...(brush.falloffCurve ? { falloff_curve: brush.falloffCurve } : {}), pressure_gamma: brush.pressure.gamma, pressure_strength: brush.pressure.strength, pressure_size: brush.pressure.size },
     });
     this.firstSeq = ++this.seq;
-    this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure });
+    this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure, tilt });
   }
 
-  move(origin: Vec3, dir: Vec3, pressure: number): void {
+  /** `tilt` is the pen's lean in radians from the screen's up (turns the brush alpha); 0 for a mouse. */
+  move(origin: Vec3, dir: Vec3, pressure: number, tilt = 0): void {
     if (!this.live) return;
-    this.send({ type: 'sample', seq: ++this.seq, origin, dir, pressure });
+    this.send({ type: 'sample', seq: ++this.seq, origin, dir, pressure, tilt });
   }
 
   end(): void {
