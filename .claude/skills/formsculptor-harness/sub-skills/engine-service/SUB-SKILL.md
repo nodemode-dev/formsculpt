@@ -1,0 +1,36 @@
+---
+name: engine-service
+description: "Covers the formsculptor Python backend in backend/app: FastAPI on 127.0.0.1:8196, routers system, io, projects, jobs, assets, mcp and nodemode, the fsc-py PyO3 module built with maturin, and the PyInstaller sidecar entry backend/formsculptor_engine.py. Load for backend, API, job or freeze changes."
+---
+
+# Engine Service
+
+## Purpose
+
+Own `backend/app/`. Serves the built frontend, exposes the API and runs the engine headless. Hands back a backend change that boots under the dispatcher and freezes cleanly.
+
+## Preconditions
+
+State: v0.1.0 scaffold; routers beyond the scaffold are planned. `__version__` lives in `backend/app/__init__.py` and is one of the bump sites.
+
+## Procedure
+
+1. Bind 127.0.0.1:8196 only. Routers: system, io, projects, jobs, assets, mcp, nodemode.
+2. Heavy engine work (remesh, bake, import of large files) runs as a job with progress, not inside a request.
+3. Headless engine calls go through the `fsc-py` module, built with maturin. Rebuild it after any Rust change you depend on.
+4. `backend/formsculptor_engine.py` is the PyInstaller sidecar entry. The desktop shell starts it with port 0 and reads the uvicorn port line from its output; do not change that line format without updating `sub-skills/desktop-shell/SUB-SKILL.md`.
+5. The mcp router implements the contract in `sub-skills/agent-substrate/SUB-SKILL.md`.
+6. Rationale goes to `backend/HASHOUT_LOG.md`.
+7. Tasks run through the root dispatcher: `./formsculptor backend`, `serve`, `engine build`, `freeze`, `doctor`.
+
+## Gate
+
+Done when `./formsculptor doctor` is clean, the backend starts, and the changed route answers on 127.0.0.1:8196.
+
+## Hands back
+
+The change and the route or job evidence.
+
+## Owned resources
+
+None bundled.
