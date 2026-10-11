@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+source "$(dirname "$0")/lib.sh"
+command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
+cd "$FSC_ROOT/native"
+cargo check --workspace --all-targets
+if cargo clippy --version >/dev/null 2>&1; then cargo clippy --workspace --all-targets -- -D warnings; fi
+fs_say "engine check clean"
