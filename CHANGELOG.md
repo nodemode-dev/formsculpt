@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.5.0 · 2026-10-11
+
+### Added
+
+- `boolean`: union, difference and intersection of two objects through a voxel grid, watertight, with exact whole-scene undo. Non-manifold edges that surface nets leave along thin rims are split away.
+- Object commands `duplicate_object`, `rename_object`, `merge_objects`, `split_parts`, `transform_object` (move, rotate, scale around the bounds centre) and `deform_object` (bend, twist, taper); the mask holds vertices in place for transforms and deformers.
+- Sculpt layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`; strokes record into the active layer and undo exactly. `get_scene` lists each object's layers and active layer (35 commands in all).
+- The Object and Layers panel sections.
+
+### Changed
+
+- The voxel remesh is now split into a distance-field stage and a surface stage shared with booleans; its output is unchanged.
+- Remesh resolution in the panel is now Voxel resolution and also sets boolean resolution.
+
 ## 0.4.1 · 2026-10-11
 
 ### Added

@@ -6,7 +6,7 @@
 
 **3D sculpting & modeling for the web & the desktop, in the NodeMode style**
 
-![version](https://img.shields.io/badge/version-0.4.1-f97316) ![rust](https://img.shields.io/badge/rust-1.80%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+![version](https://img.shields.io/badge/version-0.5.0-f97316) ![rust](https://img.shields.io/badge/rust-1.80%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 </div>
 
@@ -87,7 +87,7 @@ Branching & versions follow [.docs/BRANCHING.md](.docs/BRANCHING.md). Work on th
 
 ## Status
 
-0.4.1 sculpts & manages topology: nine brushes (draw, clay, inflate, pinch, crease, flatten, smooth, grab, mask) w/ mirror & radial symmetry, dynamic topology that splits & collapses edges under the brush (brush, constant or screen detail), multiresolution levels (divide, step up & down w/ detail kept, delete higher & lower, rebuild lower), Loop subdivision, voxel remesh (watertight), quadric decimation, hole filling, masks, undo & redo, live strokes in the WebGL2 viewport, & an MCP server w/ 23 tools that drives the same engine w/ or w/o the window open (the window asks once before an agent's first change). Not yet: booleans, file import & export, WebGPU, the WASM engine build (this build machine could not fetch the wasm32 target) & a built desktop bundle.
+0.5.0 sculpts, manages topology & combines objects: nine brushes (draw, clay, inflate, pinch, crease, flatten, smooth, grab, mask) w/ mirror & radial symmetry, dynamic topology that splits & collapses edges under the brush (brush, constant or screen detail), multiresolution levels (divide, step up & down w/ detail kept, delete higher & lower, rebuild lower), Loop subdivision, voxel remesh (watertight), quadric decimation, hole filling, watertight voxel booleans (union, difference, intersection), duplicate, merge & split, transform, bend, twist & taper held by the mask, sculpt layers w/ strength, masks, undo & redo, live strokes in the WebGL2 viewport, & an MCP server w/ 35 tools that drives the same engine w/ or w/o the window open (the window asks once before an agent's first change). Not yet: folders, an on-canvas transform gizmo, lattice, file import & export, WebGPU, the WASM engine build (this build machine could not fetch the wasm32 target) & a built desktop bundle.
 
 ### Agents
 
