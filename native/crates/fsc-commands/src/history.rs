@@ -1,4 +1,4 @@
-use fsc_core::{Mesh, Multires, Object, ObjectId, Scene, Stencil};
+use fsc_core::{Layers, Mesh, Multires, Object, ObjectId, Scene, Stencil};
 use fsc_sculpt::VertexEdit;
 
 const LIMIT: usize = 200;
@@ -13,12 +13,22 @@ pub enum Edit {
     Divide { object: ObjectId, count: usize, parked: Vec<(Mesh, Stencil)> },
     Level { object: ObjectId, from: usize, to: usize },
     Levels { label: String, object: ObjectId, multires: Option<Multires> },
+    Scene { label: String, objects: Vec<Object>, active: Option<ObjectId> },
+    Rename { object: ObjectId, name: String },
+    LayerState { label: String, object: ObjectId, layers: Layers, positions: Vec<[f32; 3]> },
+    LayerStroke { label: String, object: ObjectId, layer: usize, edit: VertexEdit },
 }
 
 impl Edit {
     pub fn label(&self) -> String {
         match self {
-            Edit::Vertices { label, .. } | Edit::Topology { label, .. } | Edit::Levels { label, .. } => label.clone(),
+            Edit::Vertices { label, .. }
+            | Edit::Topology { label, .. }
+            | Edit::Levels { label, .. }
+            | Edit::Scene { label, .. }
+            | Edit::LayerState { label, .. }
+            | Edit::LayerStroke { label, .. } => label.clone(),
+            Edit::Rename { .. } => "Rename".into(),
             Edit::Divide { .. } => "Divide".into(),
             Edit::Level { to, .. } => format!("Level {to}"),
             Edit::Add { .. } => "Add Object".into(),
@@ -71,6 +81,36 @@ impl Edit {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 std::mem::swap(&mut o.multires, multires);
                 o.revision += 1;
+                scene.active = Some(*object);
+            }
+            Edit::Scene { objects, active, .. } => {
+                std::mem::swap(&mut scene.objects, objects);
+                std::mem::swap(&mut scene.active, active);
+                if let Some(top) = scene.objects.iter().map(|o| o.id).max() {
+                    scene.reserve(top);
+                }
+            }
+            Edit::Rename { object, name } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                std::mem::swap(&mut o.name, name);
+                o.revision += 1;
+            }
+            Edit::LayerState { object, layers, positions, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                if positions.len() != o.mesh.vertex_count() {
+                    return Err("the object's vertex count changed since this layer step".into());
+                }
+                std::mem::swap(&mut o.layers, layers);
+                std::mem::swap(&mut o.mesh.positions, positions);
+                o.mesh.recompute_normals();
+                o.bvh.refit(&o.mesh);
+                o.revision += 1;
+                scene.active = Some(*object);
+            }
+            Edit::LayerStroke { object, layer, edit, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                edit.apply(o, forward);
+                o.record_into_layer(*layer, &edit.indices, &edit.before, &edit.after, if forward { 1.0 } else { -1.0 });
                 scene.active = Some(*object);
             }
             Edit::Clear { parked, active } => {

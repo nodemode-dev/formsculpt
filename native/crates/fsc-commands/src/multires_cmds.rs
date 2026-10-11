@@ -1,6 +1,7 @@
 use serde_json::{json, Value};
 
 use crate::history::Edit;
+use crate::layer_cmds::layer_guard;
 use crate::scene_cmds::summary;
 use crate::sculpt_cmds::target;
 use crate::{CommandError, Session};
@@ -12,6 +13,7 @@ fn failed(msg: String) -> CommandError {
 }
 
 pub(crate) fn guard(s: &Session, id: u32, label: &str) -> Result<(), CommandError> {
+    layer_guard(s, id, label)?;
     let object = s.scene.get(id).expect("checked");
     if object.multires.is_some() {
         let (_, n) = object.levels();
@@ -38,6 +40,7 @@ pub(crate) fn divide_schema() -> Value {
 
 pub(crate) fn divide(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    layer_guard(s, id, "Divide")?;
     let count = args.get("count").and_then(Value::as_u64).unwrap_or(1);
     if !(1..=4).contains(&count) {
         return Err(CommandError::new("bad_arguments", "count must be 1 to 4"));
@@ -76,6 +79,7 @@ pub(crate) fn level_schema() -> Value {
 
 pub(crate) fn set_level(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
+    layer_guard(s, id, "Changing level")?;
     let object = s.scene.get_mut(id).expect("checked");
     let (cur, n) = object.levels();
     if n == 1 {

@@ -104,6 +104,9 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
     if settings.dyntopo.is_some() && object.multires.is_some() {
         return Err(CommandError::new("has_levels", "dynamic topology cannot run on an object with subdivision levels; sculpt without dyntopo, or multires_delete_lower and multires_delete_higher first"));
     }
+    if settings.dyntopo.is_some() && !object.layers.list.is_empty() {
+        return Err(CommandError::new("has_layers", "dynamic topology cannot run on an object with sculpt layers; sculpt without dyntopo, or layer_apply or layer_delete them first"));
+    }
     let mut stroke = Stroke::new(settings);
     if settings.kind == BrushKind::Grab {
         let (first, _) = parsed[0];
@@ -126,7 +129,15 @@ pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeE
     match result {
         StrokeEdit::Vertices(edit) => {
             let n = edit.indices.len();
-            s.history.push(Edit::Vertices { label, object: id, edit });
+            let layer = s.scene.get_mut(id).and_then(|o| {
+                let at = o.layers.active?;
+                o.record_into_layer(at, &edit.indices, &edit.before, &edit.after, 1.0);
+                Some(at)
+            });
+            match layer {
+                Some(layer) => s.history.push(Edit::LayerStroke { label, object: id, layer, edit }),
+                None => s.history.push(Edit::Vertices { label, object: id, edit }),
+            }
             json!(n)
         }
         StrokeEdit::Topology { mesh, mask } => {

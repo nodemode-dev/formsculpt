@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fsc_core::{Bvh, Mesh};
+use fsc_core::{Aabb, Bvh, Mesh};
 use glam::Vec3;
 
 use crate::edges::{key, Edge};
@@ -51,25 +51,128 @@ impl PseudoNormals {
     }
 }
 
+struct Grid {
+    origin: Vec3,
+    cell: f32,
+    dims: [usize; 3],
+}
+
+impl Grid {
+    fn around(bounds: Aabb, resolution: u32) -> Result<Grid, String> {
+        let resolution = resolution.clamp(8, 320) as f32;
+        let extent = bounds.extent();
+        let cell = extent.max_element().max(1e-6) / resolution;
+        let pad = 3usize;
+        let origin = bounds.min - Vec3::splat(cell * pad as f32);
+        let dims = [
+            (extent.x / cell).ceil() as usize + 2 * pad + 1,
+            (extent.y / cell).ceil() as usize + 2 * pad + 1,
+            (extent.z / cell).ceil() as usize + 2 * pad + 1,
+        ];
+        if dims[0] * dims[1] * dims[2] > 40_000_000 {
+            return Err("the grid would be too large; lower the resolution".into());
+        }
+        Ok(Grid { origin, cell, dims })
+    }
+
+    fn total(&self) -> usize {
+        self.dims[0] * self.dims[1] * self.dims[2]
+    }
+}
+
 pub fn voxel_remesh(mesh: &Mesh, bvh: &Bvh, resolution: u32) -> Result<Mesh, String> {
     if mesh.triangle_count() == 0 {
         return Err("the mesh is empty".into());
     }
-    let resolution = resolution.clamp(8, 320) as f32;
-    let bounds = mesh.bounds();
-    let extent = bounds.extent();
-    let cell = extent.max_element().max(1e-6) / resolution;
-    let pad = 3usize;
-    let origin = bounds.min - Vec3::splat(cell * pad as f32);
-    let dims = [
-        (extent.x / cell).ceil() as usize + 2 * pad + 1,
-        (extent.y / cell).ceil() as usize + 2 * pad + 1,
-        (extent.z / cell).ceil() as usize + 2 * pad + 1,
-    ];
-    let total = dims[0] * dims[1] * dims[2];
-    if total > 40_000_000 {
-        return Err("the grid would be too large; lower the resolution".into());
+    let grid = Grid::around(mesh.bounds(), resolution)?;
+    let field = narrow_band(mesh, bvh, &grid);
+    surface_nets(&field, &grid)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BooleanOp {
+    Union,
+    Difference,
+    Intersection,
+}
+
+pub fn voxel_boolean(a: &Mesh, a_bvh: &Bvh, b: &Mesh, b_bvh: &Bvh, op: BooleanOp, resolution: u32) -> Result<Mesh, String> {
+    if a.triangle_count() == 0 || b.triangle_count() == 0 {
+        return Err("a mesh is empty".into());
     }
+    let grid = Grid::around(a.bounds().merge(&b.bounds()), resolution)?;
+    let mut fa = narrow_band(a, a_bvh, &grid);
+    let mut fb = narrow_band(b, b_bvh, &grid);
+    fill_signs(&mut fa, &grid);
+    fill_signs(&mut fb, &grid);
+    let field: Vec<f32> = fa
+        .iter()
+        .zip(&fb)
+        .map(|(&x, &y)| match op {
+            BooleanOp::Union => x.min(y),
+            BooleanOp::Difference => x.max(-y),
+            BooleanOp::Intersection => x.max(y),
+        })
+        .collect();
+    let mesh = surface_nets(&field, &grid)?;
+    Ok(crate::manifold::split_nonmanifold(&mesh).0)
+}
+
+fn fill_signs(field: &mut [f32], g: &Grid) {
+    let dims = g.dims;
+    let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
+    let far = g.cell * 4.0;
+    let mut outside = vec![false; field.len()];
+    let mut stack: Vec<usize> = Vec::new();
+    for k in 0..dims[2] {
+        for j in 0..dims[1] {
+            for i in 0..dims[0] {
+                let edge = i == 0 || j == 0 || k == 0 || i + 1 == dims[0] || j + 1 == dims[1] || k + 1 == dims[2];
+                let at = idx(i, j, k);
+                if edge && (field[at].is_nan() || field[at] > 0.0) {
+                    outside[at] = true;
+                    stack.push(at);
+                }
+            }
+        }
+    }
+    while let Some(at) = stack.pop() {
+        let (i, j, k) = (at % dims[0], (at / dims[0]) % dims[1], at / (dims[0] * dims[1]));
+        let mut visit = |i: usize, j: usize, k: usize| {
+            let n = idx(i, j, k);
+            if !outside[n] && (field[n].is_nan() || field[n] > 0.0) {
+                outside[n] = true;
+                stack.push(n);
+            }
+        };
+        if i > 0 {
+            visit(i - 1, j, k);
+        }
+        if i + 1 < dims[0] {
+            visit(i + 1, j, k);
+        }
+        if j > 0 {
+            visit(i, j - 1, k);
+        }
+        if j + 1 < dims[1] {
+            visit(i, j + 1, k);
+        }
+        if k > 0 {
+            visit(i, j, k - 1);
+        }
+        if k + 1 < dims[2] {
+            visit(i, j, k + 1);
+        }
+    }
+    for (at, v) in field.iter_mut().enumerate() {
+        if v.is_nan() {
+            *v = if outside[at] { far } else { -far };
+        }
+    }
+}
+
+fn narrow_band(mesh: &Mesh, bvh: &Bvh, g: &Grid) -> Vec<f32> {
+    let (origin, cell, dims, total) = (g.origin, g.cell, g.dims, g.total());
     let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
     let point = |i: usize, j: usize, k: usize| origin + Vec3::new(i as f32, j as f32, k as f32) * cell;
     let band = cell * 2.0;
@@ -116,6 +219,13 @@ pub fn voxel_remesh(mesh: &Mesh, bvh: &Bvh, resolution: u32) -> Result<Mesh, Str
     };
     #[cfg(not(feature = "parallel"))]
     let field: Vec<f32> = (0..total).map(sample).collect();
+    field
+}
+
+fn surface_nets(field: &[f32], g: &Grid) -> Result<Mesh, String> {
+    let (origin, cell, dims) = (g.origin, g.cell, g.dims);
+    let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
+    let point = |i: usize, j: usize, k: usize| origin + Vec3::new(i as f32, j as f32, k as f32) * cell;
     let cdims = [dims[0] - 1, dims[1] - 1, dims[2] - 1];
     let cidx = |i: usize, j: usize, k: usize| (k * cdims[1] + j) * cdims[0] + i;
     let mut cell_vertex = vec![u32::MAX; cdims[0] * cdims[1] * cdims[2]];

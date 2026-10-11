@@ -51,7 +51,7 @@ impl Engine {
         let Some(object) = session.scene.get(id) else {
             return Err(PyKeyError::new_err(format!("no object {id}")));
         };
-        if object.multires.is_some() {
+        if object.multires.is_some() || !object.layers.list.is_empty() {
             brush.dyntopo = None;
             brush.dyntopo_size = None;
         }

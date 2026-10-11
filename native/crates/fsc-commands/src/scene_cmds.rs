@@ -15,6 +15,8 @@ pub(crate) fn summary(o: &Object) -> Value {
         "revision": o.revision,
         "level": o.levels().0,
         "levels": o.levels().1,
+        "layers": o.layers.list.iter().map(|l| json!({"name": l.name, "strength": l.strength})).collect::<Vec<_>>(),
+        "active_layer": o.layers.active,
         "bounds": {"min": b.min.to_array(), "max": b.max.to_array()},
     })
 }
