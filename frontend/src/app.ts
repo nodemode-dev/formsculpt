@@ -590,7 +590,7 @@ class SceneView {
     const axis = this.shell.deformAxis.value;
     const angle = Number(this.shell.deformAngle.value) || 0;
     const res = Math.max(16, Math.min(320, Number(this.shell.resolution.value) || 128));
-    if (action === 'duplicate') void this.run('duplicate_object', { id, offset: this.offsetFor(id) });
+    if (action === 'duplicate') void this.run('duplicate_object', { id });
     else if (action === 'split') void this.run('split_parts', { id });
     else if (action === 'merge') {
       const ids = [id, ...this.scene.objects.map((o) => o.id).filter((x) => x !== id)];
@@ -681,11 +681,6 @@ class SceneView {
     else void this.run(action, { id: o.id, index: o.active_layer });
   }
 
-  private offsetFor(id: number): [number, number, number] {
-    const o = this.scene.objects.find((x) => x.id === id);
-    if (!o) return [1, 0, 0];
-    return [(o.bounds.max[0] - o.bounds.min[0]) * 1.1, 0, 0];
-  }
 
   private patchList(next: SceneSummary): void {
     const keep = new Set(next.objects.map((o) => o.id));
