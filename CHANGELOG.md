@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.7.0 · 2026-10-11
+
+### Added
+
+- Vertex paint: colour, roughness and metalness per vertex. The `paint` brush on `sculpt_stroke` (with `color`, `roughness`, `metalness`), `paint_fill` held by the mask and `paint_clear` (43 commands in all), each with exact undo.
+- Paint follows subdivision levels, dyntopo, remesh, decimate, repair, booleans, split and merge, and is saved in `.fsc`, read and written in PLY and OBJ (vertex colours) and GLB (COLOR_0 plus a material with the average roughness and metalness).
+- The viewport shows paint live while painting, with a shading menu: five matcaps (clay, red wax, pearl, bronze, gray) and a lit PBR mode that uses the painted roughness and metalness. The Paint panel section and brush.
+
+### Fixed
+
+- Stepping down from a rebuilt lower level (multires_reconstruct) put the mask on the wrong vertices; levels now record which upper vertex each lower vertex is.
+
 ## 0.6.0 · 2026-10-11
 
 ### Added
