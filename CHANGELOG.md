@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.12.0 · 2026-10-11
+
+### Added
+
+- Brush alphas: `alpha` on `sculpt_stroke` and in the window shapes every dab with a gray stamp (built-ins square, noise, cracks, rings, star, stripes, dots), turned by `alpha_angle`, upright by `alpha_up` or rolled along the path with `stroke: "roll"`; `alpha_load` adds any PNG by name (75 commands in all).
+- `smudge` brush: drags paint colour along the stroke.
+- Window: Alpha, Alpha angle and Stroke fields with Load alpha; a Drag stamp tool (one dab sized and turned by the drag); Smudge.
+- Image matcaps (Load matcap in the View section) and Shade active only, for a different shading per object.
+- Custom hotkeys: a Keys section to bind any tool, view, file action or registry command; the registry's declared keys are now the defaults, and changes are kept in this browser.
+
 ## 0.11.0 · 2026-10-11
 
 ### Added
