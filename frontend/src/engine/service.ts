@@ -91,6 +91,38 @@ export async function dispatch<T>(name: string, args: Record<string, unknown> = 
   }
 }
 
+export async function uploadFile<T>(file: Blob, name: string): Promise<Reply<T>> {
+  try {
+    const form = new FormData();
+    form.append('file', file, name);
+    const response = await fetch('/api/engine/import', { method: 'POST', body: form });
+    if (!response.ok) return { ok: false, error: { code: `http_${response.status}`, message: (await response.text()) || response.statusText } };
+    return (await response.json()) as Reply<T>;
+  } catch (err) {
+    return { ok: false, error: { code: 'unreachable', message: String(err) } };
+  }
+}
+
+export async function fetchFile(path: string): Promise<Blob | string> {
+  try {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) return (await response.text()) || response.statusText;
+    return await response.blob();
+  } catch (err) {
+    return String(err);
+  }
+}
+
+export async function postJson<T>(path: string): Promise<Reply<T>> {
+  try {
+    const response = await fetch(path, { method: 'POST' });
+    if (!response.ok) return { ok: false, error: { code: `http_${response.status}`, message: (await response.text()) || response.statusText } };
+    return (await response.json()) as Reply<T>;
+  } catch (err) {
+    return { ok: false, error: { code: 'unreachable', message: String(err) } };
+  }
+}
+
 export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
   const response = await fetch(`/api/engine/mesh/${id}`, { cache: 'no-store' });
   if (!response.ok) return null;

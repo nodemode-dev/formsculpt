@@ -1,7 +1,15 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
-import { el, setAttr, setText } from './ui/dom';
-import { dispatch, fetchMesh, fetchVersion, type ObjectSummary, type SceneSummary } from './engine/service';
+import { el, saveBlob, setAttr, setText } from './ui/dom';
+import { dispatch, fetchFile, fetchMesh, fetchVersion, postJson, uploadFile, type ObjectSummary, type SceneSummary } from './engine/service';
+
+interface PrintReport {
+  printable: boolean;
+  size_mm: [number, number, number];
+  volume_mm3: number;
+  wall_mm: { min: number | null };
+  problems: string[];
+}
 import { Viewport } from './viewport/viewport';
 import type { ViewName } from './viewport/camera';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
@@ -29,6 +37,9 @@ interface Shell {
   dyntopo: HTMLInputElement;
   detail: HTMLInputElement;
   detailMode: HTMLSelectElement;
+  fileButtons: HTMLButtonElement[];
+  fileInput: HTMLInputElement;
+  exportFormat: HTMLSelectElement;
   objectButtons: HTMLButtonElement[];
   deformAxis: HTMLSelectElement;
   deformAngle: HTMLInputElement;
@@ -67,6 +78,15 @@ const MULTIRES: [string, string, Record<string, unknown>][] = [
   ['multires_delete_lower', 'Delete lower', {}],
   ['multires_delete_higher', 'Delete higher', {}],
   ['multires_reconstruct', 'Rebuild lower', {}],
+];
+
+const FILE_ACTIONS: [string, string][] = [
+  ['open', 'Open'],
+  ['save', 'Save'],
+  ['export', 'Export'],
+  ['print', 'Print check'],
+  ['repair', 'Repair'],
+  ['recover', 'Recover'],
 ];
 
 const OBJECT_ACTIONS: [string, string][] = [
@@ -135,7 +155,30 @@ function buildShell(root: HTMLElement): Shell {
   stage.append(canvas);
 
   const panel = el('aside', 'panel');
-  panel.append(el('h2', '', 'Add'));
+  panel.append(el('h2', '', 'File'));
+  const fileGrid = el('div', 'add-grid two');
+  const fileButtons = FILE_ACTIONS.map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    fileGrid.append(b);
+    return b;
+  });
+  panel.append(fileGrid);
+  const fileInput = input('file', { accept: '.fsc,.obj,.stl,.ply,.glb,.gltf,.3mf', 'aria-label': 'Choose a file' });
+  fileInput.hidden = true;
+  panel.append(fileInput);
+  const exportFormat = el('select');
+  exportFormat.setAttribute('aria-label', 'Export format');
+  for (const f of ['glb', 'obj', 'stl', 'ply', '3mf']) {
+    const option = el('option', '', f.toUpperCase());
+    option.value = f;
+    exportFormat.append(option);
+  }
+  const fileFields = el('div', 'fields');
+  fileFields.append(field('Export format', exportFormat));
+  panel.append(fileFields);
+  panel.append(el('h2', 'gap', 'Add'));
   const grid = el('div', 'add-grid');
   const addButtons = PRIMITIVES.map(([kind, label]) => {
     const b = el('button', 'btn', label);
@@ -290,7 +333,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
 }
 
 class SceneView {
@@ -325,6 +368,8 @@ class SceneView {
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
     );
+    shell.fileButtons.forEach((b) => b.addEventListener('click', () => void this.fileAction(b.dataset.action ?? '')));
+    shell.fileInput.addEventListener('change', () => void this.uploadChosen());
     shell.objectButtons.forEach((b) => b.addEventListener('click', () => this.objectAction(b.dataset.action ?? '')));
     shell.layerButtons.forEach((b) => b.addEventListener('click', () => this.layerAction(b.dataset.action ?? '')));
     shell.layerSelect.addEventListener('change', () => {
@@ -477,6 +522,57 @@ class SceneView {
     else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
   }
 
+  private async fileAction(action: string): Promise<void> {
+    const id = this.scene.active;
+    if (action === 'open') {
+      this.shell.fileInput.click();
+    } else if (action === 'save') {
+      await this.download('/api/engine/project', 'scene.fsc');
+    } else if (action === 'export') {
+      const format = this.shell.exportFormat.value;
+      await this.download(`/api/engine/export?format=${encodeURIComponent(format)}`, `formsculptor.${format}`);
+    } else if (action === 'recover') {
+      const reply = await postJson<unknown>('/api/engine/autosave/recover');
+      this.note(reply.ok ? 'Recovered the last autosave' : reply.error.message);
+      await this.refresh();
+      if (reply.ok) this.frameActive();
+    } else if (id === null) {
+      this.note('Select an object first');
+    } else if (action === 'repair') {
+      await this.run('repair_mesh', { id });
+    } else if (action === 'print') {
+      const reply = await dispatch<PrintReport>('print_check', { id });
+      if (!reply.ok) {
+        this.note(reply.error.message);
+        return;
+      }
+      const r = reply.result;
+      const size = r.size_mm.map((v) => v.toFixed(1)).join(' x ');
+      const wall = r.wall_mm.min === null ? 'no wall samples' : `thinnest wall ${r.wall_mm.min.toFixed(2)} mm`;
+      this.note(r.printable ? `Printable: ${size} mm, ${Math.round(r.volume_mm3).toLocaleString('en-US')} mm3, ${wall}` : `Not printable: ${r.problems.join('; ')}`);
+    }
+  }
+
+  private async download(path: string, name: string): Promise<void> {
+    const result = await fetchFile(path);
+    if (typeof result === 'string') {
+      this.note(result);
+      return;
+    }
+    saveBlob(result, name);
+    this.note(`Saved ${name}`);
+  }
+
+  private async uploadChosen(): Promise<void> {
+    const file = this.shell.fileInput.files?.[0];
+    this.shell.fileInput.value = '';
+    if (!file) return;
+    const reply = await uploadFile<unknown>(file, file.name);
+    this.note(reply.ok ? `Opened ${file.name}` : reply.error.message);
+    await this.refresh();
+    if (reply.ok) this.frameActive();
+  }
+
   private layerAction(action: string): void {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     if (!o) return;
@@ -550,6 +646,9 @@ class SceneView {
     else if ((e.key === 'Delete' || e.key === 'Backspace') && this.scene.active !== null) void this.run('delete_object', { id: this.scene.active });
     else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) void this.run(e.shiftKey ? 'redo' : 'undo');
     else if ((e.ctrlKey || e.metaKey) && e.key === 'y') void this.run('redo');
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) void this.fileAction('save');
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) void this.fileAction('open');
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) void this.fileAction('export');
     else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) void this.run('multires_divide');
     else if (e.key === 'd' || e.key === 'D') void this.run('multires_set_level', { step: e.shiftKey ? 'down' : 'up' });
     else return;
