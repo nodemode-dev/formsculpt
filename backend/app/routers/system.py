@@ -4,6 +4,7 @@ import sys
 from fastapi import APIRouter
 
 from app.core import config
+from app.services import engine
 
 router = APIRouter()
 
@@ -26,6 +27,6 @@ def capabilities() -> dict:
         "desktop": config.is_desktop(),
         "python": sys.version.split()[0],
         "platform": platform.system().lower(),
-        "engine": {"native": False, "commands": []},
+        "engine": engine.status(),
         "frontend_built": config.dist_dir() is not None,
     }

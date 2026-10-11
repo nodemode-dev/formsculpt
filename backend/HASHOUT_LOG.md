@@ -17,7 +17,9 @@ backend/
   app/main.py              FastAPI app, middleware, routers, static mount
   app/core/config.py       names, ports, dist_dir, is_desktop, cors_origins
   app/core/isolation.py    CrossOriginIsolation ASGI middleware
-  app/routers/system.py    /api/health, /api/version, /api/capabilities
+  app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module)
+  app/routers/engine.py    /api/engine/catalogue, /api/engine/dispatch, /api/engine/mesh/{id}
+  app/services/engine.py   the one fsc_engine.Engine, status, dispatch, mesh_payload (FSCM binary)
 ```
 
 ## Contents
@@ -49,3 +51,30 @@ A raw ASGI middleware rather than a `BaseHTTPMiddleware` so streamed and static 
 - kind: todo
 - logged: v0.1.0 · 2026-10-11
 `engine.native` is false and `engine.commands` empty until the PyO3 module lands (DEV_PLAN Phase 2); then they report the module's version and the catalogue.
+
+## app/services/engine.py
+
+### app/services/engine.py · mesh_payload
+- refers-to: app/services/engine.py :: MAGIC, mesh_payload
+- kind: explainer
+- logged: v0.2.0 · 2026-10-11
+Binary mesh transfer: `FSCM`, then four little-endian u32 (vertex count, index count, revision, reserved), then positions (f32 x3), normals (f32 x3) and indices (u32). The 20-byte header keeps every block 4-byte aligned so the frontend views it with typed arrays and no copy. One lock serialises calls into the engine; FastAPI runs these sync endpoints in its thread pool.
+
+### app/services/engine.py · import fallback
+- refers-to: app/services/engine.py :: fsc_engine import
+- kind: rationale
+- logged: v0.2.0 · 2026-10-11
+The service still boots without the compiled module (a fresh clone before `./formsculptor engine build`): `/api/capabilities` reports `engine.native` false and the engine routes answer 503 with the command to run.
+
+## app/routers/system.py
+
+### app/routers/system.py · capabilities
+- refers-to: app/routers/system.py :: capabilities
+- kind: removed-code
+- logged: v0.2.0 · 2026-10-11
+
+```python
+        "engine": {"native": False, "commands": []},
+```
+
+Replaced by `engine.status()` now that the PyO3 module exists; closes the 0.1.0 todo.
