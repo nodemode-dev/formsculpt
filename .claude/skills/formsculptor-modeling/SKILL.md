@@ -66,6 +66,13 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 1. For clean, even topology: `duplicate_object` (it copies in place), `quad_remesh` the copy with `faces` (a few thousand for a base mesh), `multires_divide` it two or three times, then `project_detail` with `source_id` set to the original to bring the sculpted detail back; delete or hide the original after.
 2. Mask an area, then `extract_mask` (`thickness`) for a separate shell such as a strap or armour plate, `extrude_mask` (`distance`) to raise or sink it with side walls, or `inset_mask` (`amount`, `depth`) for a panel or socket. Each needs faces fully inside the mask.
 
+## Workflow 9: base meshes from a skeleton, a curve or a profile
+
+1. To block out a figure, animal or hand, give `skeleton_mesh` the joints as `spheres` ([x, y, z, radius], y up, about 2 units tall for a figure) and the bones as `links` (index pairs). It returns one watertight, even mesh; raise `resolution` (up to 256) when limbs are thinner than about a fiftieth of the whole, lower `blend` (0 to 1) for sharper joints. Then sculpt it, or `multires_divide` it for detail.
+2. `curve_tube` sweeps a tube along `points` ([x, y, z] or [x, y, z, radius] to taper) for horns, tails, hair strands, cables or straps; `closed` makes a ring. Union it into the body with `boolean` when it should be one piece.
+3. `lathe` spins a `profile` of [radius, y] points around the y axis for vases, bottles, columns and turned parts; start and end at radius 0 for a closed top and bottom, or leave them open and they are capped flat.
+4. Each makes a new active object named by `name`; `transform_object` places it.
+
 ## Workflow 7: paint
 
 1. Colour a whole object with `paint_fill` (`color` as #rrggbb or [r, g, b] from 0 to 1, and optionally `roughness` and `metalness`); mask first to keep areas as they are.

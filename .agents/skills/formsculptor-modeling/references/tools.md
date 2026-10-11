@@ -1,12 +1,12 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.8.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.8.1) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`
-- Objects: `add_primitive`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
+- Objects: `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `extract_mask`, `extrude_mask`, `inset_mask`
@@ -49,6 +49,35 @@ Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an
 - `name`: string
 - `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
 - `thickness`: number; default 0.3; range -inf to 1000; Torus tube radius.
+
+## skeleton_mesh
+
+Build a base mesh from a skeleton of spheres ([x, y, z, radius]) joined by tapered limbs (links are index pairs), merged smoothly into one watertight, even mesh and made active: the quick way to block out a figure, animal or hand before sculpting. Unlinked spheres stay round. Raise resolution for thin limbs.
+
+- `blend`: number; default 0.3; range 0 to 1; How softly limbs merge where they meet, as a fraction of the mean radius.
+- `links`: array of array; Pairs of sphere indices joined by a tapered limb.
+- `name`: string; Name for the new object; a default when omitted.
+- `resolution`: integer; default 96; range 32 to 256; Voxel cells along the longest side.
+- `spheres`: array of array; required; Joints as [x, y, z, radius].
+
+## curve_tube
+
+Sweep a round tube along a smooth curve through the given points (radius per point or overall), capped or closed into a ring, and make it active: hair strands, horns, tails, cables, straps, piping.
+
+- `closed`: boolean; default false; Join the last point back to the first (a ring) instead of capping the ends.
+- `name`: string; Name for the new object; a default when omitted.
+- `points`: array of array; required; The curve as [x, y, z] or [x, y, z, radius] points; a point's radius overrides radius.
+- `radius`: number; default 0.1; range 0 to inf; Tube radius where a point gives none.
+- `segments`: integer; default 16; range 3 to 128; Sides around the tube.
+- `smooth`: integer; default 4; range 1 to 32; Rings per curve span (a smooth spline through the points).
+
+## lathe
+
+Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces.
+
+- `name`: string; Name for the new object; a default when omitted.
+- `profile`: array of array; required; The outline as [radius, y] points from bottom to top, spun around the y axis. A radius of 0 closes to a point; open ends are capped flat.
+- `segments`: integer; default 48; range 3 to 256; Steps around the axis.
 
 ## select_object
 
