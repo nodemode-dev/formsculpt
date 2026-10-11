@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.7.1 · 2026-10-11
+
+### Added
+
+- `uv_unwrap`: projection charts packed into the unit square (UVs per corner, cleared by topology changes).
+- `bake_maps`: colour and roughness-metal maps from paint, a tangent-space normal map and a 32-bit EXR displacement map from the highest subdivision level or another object (`source_id`), at 256 to 4096 pixels, optionally written to a folder (45 commands in all).
+- GLB export with UVs, tangents and embedded colour, roughness-metal and normal textures (Khronos-valid; renders in three.js); `.fsc` keeps UVs and maps; `/api/engine/maps/{id}` downloads the four files as a zip.
+- Unwrap UVs, Bake maps (with a size menu) and Download maps in the Paint section.
+
 ## 0.7.0 · 2026-10-11
 
 ### Added
