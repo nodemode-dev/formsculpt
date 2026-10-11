@@ -118,6 +118,31 @@ interface GpuMesh {
   revision: number;
   cpu: MeshBuffers;
   paintBuf: WebGLBuffer | null;
+  /** The indices actually drawn (hidden triangles left out) and the source triangle of each drawn one. */
+  drawn: Uint32Array;
+  drawnTris: Uint32Array;
+  /** De-indexed copy for showing face groups: an indexed mesh cannot give each triangle its own colour. */
+  expanded: Expanded | null;
+}
+
+interface Expanded {
+  vao: WebGLVertexArrayObject;
+  buffers: WebGLBuffer[];
+  corners: number;
+  pos: Float32Array;
+  nrm: Float32Array;
+  msk: Float32Array;
+}
+
+/** A distinct pastel per group: hues spaced by the golden ratio so neighbouring ids never look alike. */
+export function groupColor(g: number): [number, number, number] {
+  const h = (g * 0.6180339887) % 1;
+  const s = 0.45;
+  const l = 0.66;
+  const k = (n: number): number => (n + h * 12) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number): number => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [f(0), f(8), f(4)];
 }
 
 function compile(gl: WebGL2RenderingContext, vs: string, fs: string): WebGLProgram {
@@ -205,13 +230,101 @@ export class GlRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, mesh.mask, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(2);
     gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 0, 0);
+    const tris = mesh.indices.length / 3;
+    const hidden = mesh.hidden && mesh.hidden.length === tris ? mesh.hidden : null;
+    let shown = tris;
+    if (hidden) for (let t = 0; t < tris; t++) if (hidden[t]) shown--;
+    const drawn = hidden ? new Uint32Array(shown * 3) : new Uint32Array(mesh.indices);
+    const drawnTris = new Uint32Array(shown);
+    for (let t = 0, k = 0; t < tris; t++) {
+      if (hidden && hidden[t]) continue;
+      if (hidden) drawn.set(mesh.indices.subarray(t * 3, t * 3 + 3), k * 3);
+      drawnTris[k++] = t;
+    }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idx);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, drawn, gl.STATIC_DRAW);
     const paint = mesh.paint ? new Float32Array(mesh.paint) : null;
     const paintBuf = paint ? this.paintBuffer(paint) : null;
     gl.bindVertexArray(null);
-    const cpu: MeshBuffers = { ...mesh, positions: new Float32Array(mesh.positions), normals: new Float32Array(mesh.normals), mask: new Float32Array(mesh.mask), paint };
-    this.meshes.set(mesh.id, { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: mesh.indices.length, revision: mesh.revision, cpu, paintBuf });
+    const groups = mesh.groups && mesh.groups.length === tris ? new Uint32Array(mesh.groups) : null;
+    const cpu: MeshBuffers = { ...mesh, positions: new Float32Array(mesh.positions), normals: new Float32Array(mesh.normals), mask: new Float32Array(mesh.mask), paint, groups, hidden: null };
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null };
+    this.meshes.set(mesh.id, gpu);
+    if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
+  }
+
+  private showGroups = false;
+
+  /** Shows each face group in its own colour (meshes without groups draw as usual). */
+  setShowGroups(on: boolean): void {
+    this.showGroups = on;
+    for (const m of this.meshes.values()) {
+      if (on && m.cpu.groups && !m.expanded) m.expanded = this.expand(m);
+      if (!on && m.expanded) this.dropExpanded(m);
+    }
+  }
+
+  private expand(m: GpuMesh): Expanded {
+    const gl = this.gl;
+    const corners = m.drawn.length;
+    const col = new Float32Array(corners * 3);
+    const groups = m.cpu.groups as Uint32Array;
+    for (let k = 0; k < m.drawnTris.length; k++) {
+      const c = groupColor(groups[m.drawnTris[k]]);
+      for (let j = 0; j < 3; j++) col.set(c, (k * 3 + j) * 3);
+    }
+    const ex: Expanded = { vao: gl.createVertexArray(), buffers: [], corners, pos: new Float32Array(corners * 3), nrm: new Float32Array(corners * 3), msk: new Float32Array(corners) };
+    gl.bindVertexArray(ex.vao);
+    const attrib = (loc: number, size: number, data: Float32Array): void => {
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+      ex.buffers.push(buf);
+    };
+    this.fillExpanded(m, ex);
+    attrib(0, 3, ex.pos);
+    attrib(1, 3, ex.nrm);
+    attrib(2, 1, ex.msk);
+    attrib(3, 3, col);
+    gl.bindVertexArray(null);
+    return ex;
+  }
+
+  private fillExpanded(m: GpuMesh, ex: Expanded): void {
+    const { positions, normals, mask } = m.cpu;
+    for (let k = 0; k < ex.corners; k++) {
+      const v = m.drawn[k];
+      ex.pos[k * 3] = positions[v * 3];
+      ex.pos[k * 3 + 1] = positions[v * 3 + 1];
+      ex.pos[k * 3 + 2] = positions[v * 3 + 2];
+      ex.nrm[k * 3] = normals[v * 3];
+      ex.nrm[k * 3 + 1] = normals[v * 3 + 1];
+      ex.nrm[k * 3 + 2] = normals[v * 3 + 2];
+      ex.msk[k] = mask[v];
+    }
+  }
+
+  private refreshExpanded(m: GpuMesh): void {
+    const ex = m.expanded;
+    if (!ex) return;
+    const gl = this.gl;
+    this.fillExpanded(m, ex);
+    const [pos, nrm, msk] = ex.buffers;
+    gl.bindBuffer(gl.ARRAY_BUFFER, pos);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.pos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, nrm);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.nrm);
+    gl.bindBuffer(gl.ARRAY_BUFFER, msk);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.msk);
+  }
+
+  private dropExpanded(m: GpuMesh): void {
+    if (!m.expanded) return;
+    m.expanded.buffers.forEach((b) => this.gl.deleteBuffer(b));
+    this.gl.deleteVertexArray(m.expanded.vao);
+    m.expanded = null;
   }
 
   private paintBuffer(paint: Float32Array): WebGLBuffer {
@@ -272,6 +385,7 @@ export class GlRenderer {
     gl.bufferSubData(gl.ARRAY_BUFFER, lo * 12, cpu.normals, lo * 3, (hi - lo + 1) * 3);
     gl.bindBuffer(gl.ARRAY_BUFFER, msk);
     gl.bufferSubData(gl.ARRAY_BUFFER, lo * 4, cpu.mask, lo, hi - lo + 1);
+    this.refreshExpanded(m);
     m.revision = update.revision;
     return true;
   }
@@ -292,6 +406,7 @@ export class GlRenderer {
   remove(id: number): void {
     const m = this.meshes.get(id);
     if (!m) return;
+    this.dropExpanded(m);
     m.buffers.forEach((b) => this.gl.deleteBuffer(b));
     this.gl.deleteVertexArray(m.vao);
     this.meshes.delete(id);
@@ -320,6 +435,13 @@ export class GlRenderer {
     for (const [id, m] of this.meshes) {
       if (id === this.active) gl.uniform3f(base, 0.86, 0.74, 0.66);
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
+      if (this.showGroups && m.expanded) {
+        gl.uniform1f(painted, 1);
+        gl.bindVertexArray(m.expanded.vao);
+        gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
+        gl.drawArrays(gl.TRIANGLES, 0, m.expanded.corners);
+        continue;
+      }
       gl.uniform1f(painted, m.paintBuf ? 1 : 0);
       gl.bindVertexArray(m.vao);
       if (!m.paintBuf) {

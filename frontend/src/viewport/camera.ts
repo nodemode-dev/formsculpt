@@ -19,14 +19,43 @@ export class OrbitCamera {
   fov = (40 * Math.PI) / 180;
   orthographic = false;
   aspect = 1;
+  /** Trackball mode: the eye's direction from the target and a free up vector, so the view can roll and go over the
+   * poles. Turntable mode (the default) uses yaw and pitch with the world's up. */
+  trackball = false;
+  private dir: Vec3 = [0, 0, 1];
+  private up: Vec3 = [0, 1, 0];
+
+  private turntableDir(): Vec3 {
+    const cp = Math.cos(this.pitch);
+    return [cp * Math.sin(this.yaw), Math.sin(this.pitch), cp * Math.cos(this.yaw)];
+  }
 
   eye(): Vec3 {
-    const cp = Math.cos(this.pitch);
-    return add(this.target, [this.distance * cp * Math.sin(this.yaw), this.distance * Math.sin(this.pitch), this.distance * cp * Math.cos(this.yaw)]);
+    return add(this.target, scale(this.trackball ? this.dir : this.turntableDir(), this.distance));
+  }
+
+  /** The view's up and right directions in world space. */
+  private axes(): { up: Vec3; right: Vec3 } {
+    const forward = normalize(sub(this.target, this.eye()));
+    const right = normalize(cross(forward, this.trackball ? this.up : [0, 1, 0]));
+    return { up: cross(right, forward), right };
   }
 
   view(): Mat4 {
-    return lookAt(this.eye(), this.target, [0, 1, 0]);
+    return lookAt(this.eye(), this.target, this.trackball ? this.up : [0, 1, 0]);
+  }
+
+  setTrackball(on: boolean): void {
+    if (on === this.trackball) return;
+    if (on) {
+      this.dir = this.turntableDir();
+      this.up = this.axes().up;
+    } else {
+      this.pitch = Math.asin(Math.max(-1, Math.min(1, this.dir[1])));
+      this.yaw = Math.atan2(this.dir[0], this.dir[2]);
+      this.pitch = Math.max(-Math.PI / 2 + 1e-3, Math.min(Math.PI / 2 - 1e-3, this.pitch));
+    }
+    this.trackball = on;
   }
 
   projection(): Mat4 {
@@ -41,14 +70,21 @@ export class OrbitCamera {
   }
 
   orbit(dx: number, dy: number): void {
+    if (this.trackball) {
+      // Turn the eye direction and the up vector about the view's own axes: horizontal drags about its up, vertical
+      // drags about its right, so the view can roll and there is no pole to stop at.
+      const { up, right } = this.axes();
+      const turn = (v: Vec3): Vec3 => rotate(rotate(v, up, -dx * 0.008), right, dy * 0.008);
+      this.dir = normalize(turn(this.dir));
+      this.up = normalize(turn(this.up));
+      return;
+    }
     this.yaw -= dx * 0.008;
     this.pitch = Math.max(-Math.PI / 2 + 1e-3, Math.min(Math.PI / 2 - 1e-3, this.pitch + dy * 0.008));
   }
 
   pan(dx: number, dy: number, viewportHeight: number): void {
-    const forward = normalize(sub(this.target, this.eye()));
-    const right = normalize(cross(forward, [0, 1, 0]));
-    const up = cross(right, forward);
+    const { up, right } = this.axes();
     const unit = (2 * this.distance * Math.tan(this.fov / 2)) / Math.max(viewportHeight, 1);
     this.target = add(this.target, add(scale(right, -dx * unit), scale(up, dy * unit)));
   }
@@ -65,6 +101,13 @@ export class OrbitCamera {
     if (d < 1e-6) return;
     this.target = point;
     this.distance = d;
+    if (this.trackball) {
+      const up = this.axes().up;
+      this.dir = scale(v, 1 / d);
+      // Keep the up vector square to the new direction so the view does not twist.
+      this.up = normalize(sub(up, scale(this.dir, up[0] * this.dir[0] + up[1] * this.dir[1] + up[2] * this.dir[2])));
+      return;
+    }
     this.pitch = Math.asin(Math.max(-1, Math.min(1, v[1] / d)));
     this.yaw = Math.atan2(v[0], v[2]);
   }
@@ -93,5 +136,20 @@ export class OrbitCamera {
 
   snap(view: ViewName): void {
     [this.yaw, this.pitch] = VIEWS[view];
+    if (this.trackball) {
+      // A snapped view is upright again: the roll is dropped.
+      this.dir = this.turntableDir();
+      this.up = [0, 1, 0];
+      if (Math.abs(this.dir[1]) > 0.999) this.up = [0, 0, -Math.sign(this.dir[1])];
+    }
   }
+}
+
+/** `v` turned by `angle` radians about the unit `axis` (Rodrigues' formula). */
+function rotate(v: Vec3, axis: Vec3, angle: number): Vec3 {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const d = (axis[0] * v[0] + axis[1] * v[1] + axis[2] * v[2]) * (1 - c);
+  const k = cross(axis, v);
+  return [v[0] * c + k[0] * s + axis[0] * d, v[1] * c + k[1] * s + axis[1] * d, v[2] * c + k[2] * s + axis[2] * d];
 }

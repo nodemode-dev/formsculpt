@@ -37,6 +37,10 @@ export interface MeshBuffers {
   indices: Uint32Array;
   mask: Float32Array;
   paint: Float32Array | null;
+  /** Face group per triangle, or null when the object has none. */
+  groups?: Uint32Array | null;
+  /** Hidden flag per triangle (non-zero hides it), or null when nothing is hidden. */
+  hidden?: Uint8Array | null;
 }
 
 export interface VertexUpdate {
@@ -170,5 +174,10 @@ export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
   const mask = hasMask ? new Float32Array(buffer, offset, vertices) : new Float32Array(vertices);
   if (hasMask) offset += vertices * 4;
   const paint = (flags & 2) === 2 ? new Float32Array(buffer, offset, vertices * 5) : null;
-  return { id, revision, positions, normals, indices, mask, paint };
+  if (paint) offset += vertices * 20;
+  const triangles = indexCount / 3;
+  const groups = (flags & 4) === 4 ? new Uint32Array(buffer, offset, triangles) : null;
+  if (groups) offset += triangles * 4;
+  const hidden = (flags & 8) === 8 ? new Uint8Array(buffer, offset, triangles) : null;
+  return { id, revision, positions, normals, indices, mask, paint, groups, hidden };
 }

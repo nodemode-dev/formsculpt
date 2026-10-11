@@ -69,6 +69,11 @@ interface Shell {
   tubeLine: SVGPolylineElement;
   lazy: HTMLInputElement;
   fov: HTMLInputElement;
+  showGroups: HTMLInputElement;
+  trackball: HTMLInputElement;
+  insertKind: HTMLSelectElement;
+  insertSize: HTMLInputElement;
+  arrayCount: HTMLInputElement;
   viewButtons: HTMLButtonElement[];
   historyList: HTMLUListElement;
 }
@@ -107,10 +112,14 @@ const BRUSHES: [string, string][] = [
   ['mask_box', 'Box mask'],
   ['mask_lasso', 'Lasso mask'],
   ['mask_topo', 'Topo mask'],
+  ['mask_group', 'Mask group'],
+  ['hide_group', 'Hide group'],
+  ['insert', 'Insert'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
 const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -162,6 +171,11 @@ const ACTION_CALLS: Record<string, [string, Record<string, unknown>]> = {
   mask_shrink: ['mask_grow', { steps: -1 }],
   mask_cavity: ['mask_cavity', { mode: 'cavity' }],
   mask_peaks: ['mask_cavity', { mode: 'peaks' }],
+  group_mask: ['group_from_mask', {}],
+  group_auto: ['group_auto', { by: 'angle', angle: 30 }],
+  hide_masked: ['hide_faces', { action: 'hide', by: 'mask' }],
+  invert_hidden: ['hide_faces', { action: 'invert' }],
+  show_faces: ['hide_faces', { action: 'show_all' }],
 };
 
 const LAYER_ACTIONS: [string, string][] = [
@@ -182,6 +196,11 @@ const ACTIONS: [string, string][] = [
   ['mask_cavity', 'Mask cavity'],
   ['mask_peaks', 'Mask peaks'],
   ['mask_color', 'Mask colour'],
+  ['group_mask', 'Group from mask'],
+  ['group_auto', 'Auto groups'],
+  ['hide_masked', 'Hide masked'],
+  ['invert_hidden', 'Invert hidden'],
+  ['show_faces', 'Show faces'],
   ['extract_mask', 'Extract mask'],
   ['extrude_mask', 'Extrude mask'],
   ['inset_mask', 'Inset mask'],
@@ -279,14 +298,19 @@ function buildShell(root: HTMLElement): Shell {
   const skeleton = choices('Skeleton', Object.entries(SKELETONS).map(([k, v]) => [k, v.label]));
   const lathe = choices('Lathe profile', Object.entries(LATHES).map(([k, v]) => [k, v.label]));
   const tubeRadius = input('number', { min: '0.005', max: '1', step: '0.01', value: '0.05', 'aria-label': 'Tube radius' });
+  const insertKind = choices('Insert shape', [['sphere', 'Sphere'], ['cube', 'Cube'], ['cylinder', 'Cylinder'], ['cone', 'Cone'], ['torus', 'Torus'], ['previous', 'Previous object']]);
+  const insertSize = input('number', { min: '0.01', max: '10', step: '0.05', value: '0.2', 'aria-label': 'Insert size' });
+  const arrayCount = input('number', { min: '2', max: '200', value: '6', 'aria-label': 'Array copies' });
   const buildFields = el('div', 'fields');
-  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius));
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount));
   panel.append(buildFields);
   const buildGrid = el('div', 'add-grid two');
   const buildButtons = (
     [
       ['skeleton', 'Build skeleton'],
       ['lathe', 'Lathe'],
+      ['array_line', 'Array in line'],
+      ['array_radial', 'Array radial'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -455,8 +479,10 @@ function buildShell(root: HTMLElement): Shell {
 
   panel.append(el('h2', 'gap', 'View'));
   const fov = input('range', { min: '15', max: '100', value: '40', 'aria-label': 'Field of view' });
+  const showGroups = input('checkbox', { 'aria-label': 'Show face groups' });
+  const trackball = input('checkbox', { 'aria-label': 'Trackball rotation' });
   const viewFields = el('div', 'fields');
-  viewFields.append(field('Field of view', fov));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -512,7 +538,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount };
 }
 
 class SceneView {
@@ -550,6 +576,11 @@ class SceneView {
       }),
     );
     shell.fov.addEventListener('input', () => this.viewport.setFov(Number(shell.fov.value)));
+    shell.showGroups.addEventListener('change', () => {
+      this.viewport.renderer.setShowGroups(shell.showGroups.checked);
+      this.viewport.invalidate();
+    });
+    shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
     shell.historyList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
@@ -636,19 +667,19 @@ class SceneView {
       begin: (ray, pressure, wpp, inv) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv };
-        else if (this.brush === 'mask_topo') void this.topoMask(ray, wpp, inv);
+        else if (CLICK_TOOLS.has(this.brush)) void this.clickTool(ray, wpp, inv);
         else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure);
       },
       move: (ray, pressure) => {
         if (this.tube) this.tubeMove(ray);
-        else if (!this.shape && this.brush !== 'mask_topo') this.strokes.move(ray.origin, ray.dir, pressure);
+        else if (!this.shape && !CLICK_TOOLS.has(this.brush)) this.strokes.move(ray.origin, ray.dir, pressure);
       },
       end: () => {
         if (this.tube) void this.tubeEnd();
         else if (this.shape) void this.shapeEnd();
-        else if (this.brush !== 'mask_topo') this.strokes.end();
+        else if (!CLICK_TOOLS.has(this.brush)) this.strokes.end();
       },
-      missed: () => (this.tube || this.shape || this.brush === 'mask_topo' ? false : this.strokes.missed()),
+      missed: () => (this.tube || this.shape || CLICK_TOOLS.has(this.brush) ? false : this.strokes.missed()),
     };
   }
 
@@ -680,16 +711,35 @@ class SceneView {
     await this.run('mask_shape', { id, shape: box ? 'box' : 'lasso', points, view_proj: viewProj, op: shape.subtract ? 'subtract' : 'add' });
   }
 
-  private async topoMask(ray: Ray, wpp: number, subtract: boolean): Promise<void> {
+  /** Tools that act once on the clicked point: topology mask, group mask, hide group, insert. */
+  private async clickTool(ray: Ray, wpp: number, ctrl: boolean): Promise<void> {
     const id = this.scene.active;
     if (id === null) return;
-    const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
-    if (!hit.ok || !hit.result.hit || hit.result.id !== id || !hit.result.point) {
-      this.note('Click on the active object to mask outward from that point');
+    const tool = this.brush;
+    const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || hit.result.id === id);
+    if (!hit.ok || !onActive || !hit.result.point) {
+      this.note(tool === 'insert' ? 'Click on a surface to insert there' : 'Click on the active object');
       return;
     }
-    const distance = Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2);
-    await this.run('mask_topology', { id, point: hit.result.point, distance, op: subtract ? 'subtract' : 'add' });
+    const point = hit.result.point;
+    const op = ctrl ? 'subtract' : 'add';
+    if (tool === 'mask_topo') await this.run('mask_topology', { id, point, distance: Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2), op });
+    else if (tool === 'mask_group') await this.run('mask_by_group', { id, point, op });
+    else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
+    else {
+      const kind = this.shell.insertKind.value;
+      const size = Math.max(0.01, Math.min(10, Number(this.shell.insertSize.value) || 0.2));
+      const args: Record<string, unknown> = { point, normal: hit.result.normal, size };
+      if (kind === 'previous') {
+        if (this.previous === null) {
+          this.note('Select the object to insert first, then the one to insert onto');
+          return;
+        }
+        args.source_id = this.previous;
+      } else args.kind = kind;
+      await this.run('insert_mesh', args);
+    }
   }
 
   private async pivot(e: MouseEvent): Promise<void> {
@@ -745,6 +795,14 @@ class SceneView {
     } else if (action === 'lathe') {
       const preset = LATHES[this.shell.lathe.value] ?? LATHES.vase;
       await this.run('lathe', { profile: preset.profile, segments: 48, name: preset.label });
+    } else if (action === 'array_line' || action === 'array_radial') {
+      const id = this.scene.active;
+      if (id === null) {
+        this.note('Select the object to repeat first');
+        return;
+      }
+      const count = Math.max(2, Math.min(200, Math.round(Number(this.shell.arrayCount.value) || 6)));
+      await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y' });
     }
     if (first) this.frameActive();
   }
