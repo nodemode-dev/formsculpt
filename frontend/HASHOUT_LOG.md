@@ -203,3 +203,9 @@ One hidden file input serves Open: a .fsc replaces the scene, any mesh format im
 - kind: rationale
 - logged: v0.7.0 · 2026-10-11
 Paint arrives as one five-float buffer bound to two attributes; a mesh first painted mid-stroke gets its buffer created in the patch path, filled with the default for the vertices the update does not cover. Matcap presets stay procedural (key, specular strength and sharpness, rim, tint) so there are no image assets to ship; Lit (PBR) uses roughness and metalness per vertex with GGX, Smith and Schlick terms, three lights and a hemisphere ambient, then Reinhard and gamma. Paint material too adds roughness and metalness to the brush; otherwise only colour is painted. Verified under 4x throttling: a red stroke, a metallic stroke in PBR, the bronze matcap and undo, layout shift 0, no console errors.
+
+### src/app.ts · unwrap, bake and maps
+- refers-to: src/app.ts :: Paint section (Unwrap UVs, Bake maps, Download maps, bakeSize), SceneView.bake
+- kind: rationale
+- logged: v0.7.1 · 2026-10-11
+The bake reports its size, source and time in the panel note and points at the two ways out (GLB export, which embeds the maps, and Download maps, a zip of the four files from /api/engine/maps). Verified under 4x throttling: the refusal before unwrapping, unwrap, a 512 bake, the maps zip and a GLB download that validates, layout shift 0, no console errors.
