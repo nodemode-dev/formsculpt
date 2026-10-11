@@ -82,6 +82,11 @@ pub struct Stroke {
     prev_dab: Vec<Option<Vec3>>,
     /// Smudge: the colour carried from the previous dab.
     smudge: Option<Vec3>,
+    /// Spray: a seeded generator, and the current dab's extra turn (radians) and share of the strength.
+    rng: u64,
+    jitter: (f32, f32),
+    /// The area normal under the last unmirrored dab, the plane spray scatters in.
+    last_normal: Vec3,
     pub dabs: u32,
 }
 
@@ -106,6 +111,9 @@ impl Stroke {
             prev_dab: vec![None; transforms.len()],
             alpha: None,
             smudge: None,
+            rng: 0x9e37_79b9_7f4a_7c15,
+            jitter: (0.0, 1.0),
+            last_normal: Vec3::Y,
             planes,
             snake_prev: None,
             transforms,
@@ -120,6 +128,14 @@ impl Stroke {
             topology_changed: false,
             dabs: 0,
         }
+    }
+
+    /// A uniform number in 0..1 from a seeded xorshift, so a spray stroke is the same on every replay.
+    fn random(&mut self) -> f32 {
+        self.rng ^= self.rng << 13;
+        self.rng ^= self.rng >> 7;
+        self.rng ^= self.rng << 17;
+        (self.rng >> 40) as f32 / (1u64 << 24) as f32
     }
 
     /// Shapes every dab by a grayscale alpha (multiplied with the falloff).
@@ -201,7 +217,22 @@ impl Stroke {
         if let (Some(frac), false) = (self.settings.dyntopo, centers.is_empty()) {
             self.refine(object, &centers, frac);
         }
+        // Pen pressure through its curve: a gamma above 1 needs a firmer press for the same effect.
+        let pressure = pressure.clamp(0.0, 1.0).powf(self.settings.pressure_gamma.clamp(0.2, 5.0));
         for c in centers {
+            // Spray scatters each dab around the path (in the plane across the surface normal there), turns its
+            // alpha at random and gives it a random share of the strength.
+            let c = if self.settings.spray > 0.0 && self.settings.kind != BrushKind::SnakeHook {
+                let (a, d, t, k) = (self.random(), self.random(), self.random(), self.random());
+                let n = self.last_normal;
+                let u = n.any_orthonormal_vector();
+                let w = n.cross(u);
+                let ang = a * std::f32::consts::TAU;
+                self.jitter = (t * std::f32::consts::TAU, 0.4 + 0.6 * k);
+                c + (u * ang.cos() + w * ang.sin()) * (d.sqrt() * self.settings.spray.min(2.0) * self.settings.radius)
+            } else {
+                c
+            };
             if self.settings.kind == BrushKind::SnakeHook {
                 if let Some(prev) = self.snake_prev {
                     for k in 0..self.transforms.len() {
@@ -299,7 +330,7 @@ impl Stroke {
 
     fn dab(&mut self, object: &mut Object, copy: usize, center: Vec3, pressure: f32) {
         let s = self.settings;
-        let r = s.radius;
+        let r = if s.pressure_size { s.radius * pressure.max(0.1) } else { s.radius };
         let mut found = std::mem::take(&mut self.found);
         object.bvh.vertices_in_sphere(&object.mesh, center, r, &mut found);
         if found.is_empty() {
@@ -323,8 +354,11 @@ impl Stroke {
             })
             .collect();
         let area_n = area_n.normalize_or(Vec3::Y);
+        if copy == 0 {
+            self.last_normal = area_n;
+        }
         let area_c = if wsum > 0.0 { area_c / wsum } else { center };
-        let amount = s.strength * pressure;
+        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * self.jitter.1;
         // The alpha lies in the plane of the area under the brush. Its top points along `alpha_up` (mirrored with the
         // copy), or with roll along the stroke's direction since the previous dab, then turns by `alpha_angle`.
         let prev = self.prev_dab[copy].replace(center);
@@ -338,7 +372,7 @@ impl Stroke {
             let x_axis = y_axis.cross(area_n);
             for (k, &v) in found.iter().enumerate() {
                 let d = object.mesh.position(v) - center;
-                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle);
+                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle + self.jitter.0);
                 weights[k] *= alpha.sample(x, y);
             }
         }

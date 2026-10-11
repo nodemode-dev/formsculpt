@@ -28,7 +28,18 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
     let kind_name = args.get("brush").and_then(Value::as_str).unwrap_or("draw");
     let kind = BrushKind::parse(kind_name).ok_or_else(|| bad(format!("unknown brush {kind_name}; use one of {}", BrushKind::NAMES.join(", "))))?;
     let falloff_name = args.get("falloff").and_then(Value::as_str).unwrap_or("smooth");
-    let falloff = Falloff::parse(falloff_name).ok_or_else(|| bad(format!("unknown falloff {falloff_name}; use one of {}", Falloff::NAMES.join(", "))))?;
+    let falloff = match args.get("falloff_curve") {
+        None | Some(Value::Null) => Falloff::parse(falloff_name).ok_or_else(|| bad(format!("unknown falloff {falloff_name}; use one of {}", Falloff::NAMES.join(", "))))?,
+        Some(Value::Array(a)) if (2..=64).contains(&a.len()) => {
+            let w: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+            Falloff::curve(&w).ok_or_else(|| bad("falloff_curve holds numbers from 0 to 1"))?
+        }
+        Some(_) => return Err(bad("falloff_curve is 2 to 64 weights from the centre to the rim")),
+    };
+    let stroke_mode = args.get("stroke").and_then(Value::as_str).unwrap_or("dots");
+    if !["dots", "roll", "spray"].contains(&stroke_mode) {
+        return Err(bad(format!("unknown stroke {stroke_mode}; use dots, roll or spray")));
+    }
     let sym = args.get("symmetry").cloned().unwrap_or(Value::Null);
     let flag = |k: &str| sym.get(k).and_then(Value::as_bool).unwrap_or(false);
     let radial = sym.get("radial").and_then(Value::as_u64).unwrap_or(1).clamp(1, 150) as u32;
@@ -80,11 +91,11 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
             None => [0.0, 1.0, 0.0],
         },
         alpha_angle: f(args, "alpha_angle", 0.0, -360.0, 360.0)?.to_radians(),
-        roll: match args.get("stroke").and_then(Value::as_str).unwrap_or("dots") {
-            "dots" => false,
-            "roll" => true,
-            other => return Err(bad(format!("unknown stroke {other}; use dots or roll"))),
-        },
+        roll: stroke_mode == "roll",
+        spray: if stroke_mode == "spray" { f(args, "spray", 0.6, 0.05, 2.0)? } else { 0.0 },
+        pressure_gamma: f(args, "pressure_gamma", 1.0, 0.2, 5.0)?,
+        pressure_strength: args.get("pressure_strength").and_then(Value::as_bool).unwrap_or(true),
+        pressure_size: args.get("pressure_size").and_then(Value::as_bool).unwrap_or(false),
     })
 }
 
@@ -230,7 +241,12 @@ pub(crate) fn brush_props() -> Value {
         "alpha": {"type": "string", "description": "A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp."},
         "alpha_angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "Turns the alpha, in degrees."},
         "alpha_up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up."},
-        "stroke": {"type": "string", "enum": ["dots", "roll"], "default": "dots", "description": "dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line)."},
+        "stroke": {"type": "string", "enum": ["dots", "roll", "spray"], "default": "dots", "description": "dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly."},
+        "spray": {"type": "number", "minimum": 0.05, "maximum": 2, "default": 0.6, "description": "Spray stroke: how far dabs scatter from the path, in radii."},
+        "falloff_curve": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1}, "minItems": 2, "maxItems": 64, "description": "A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring."},
+        "pressure_gamma": {"type": "number", "minimum": 0.2, "maximum": 5, "default": 1, "description": "Pen pressure curve: pressure is raised to this power (above 1 needs a firmer press, below 1 a lighter one). Per-point pressure is the fourth number of a point."},
+        "pressure_strength": {"type": "boolean", "default": true, "description": "Pressure scales strength."},
+        "pressure_size": {"type": "boolean", "default": false, "description": "Pressure scales the radius (down to a tenth)."},
         "color": {"type": ["string", "array"], "description": "Paint brush: #rrggbb or [r, g, b] from 0 to 1."},
         "roughness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this roughness (only the channels given are painted)."},
         "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},

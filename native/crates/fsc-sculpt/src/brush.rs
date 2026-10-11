@@ -50,16 +50,36 @@ impl BrushKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Falloff {
     Smooth,
     Sphere,
     Linear,
     Sharp,
+    /// A drawn curve: the weight at 17 evenly spaced distances from the centre (0) to the rim (1), read linearly.
+    Curve([f32; Falloff::CURVE_SAMPLES]),
 }
 
 impl Falloff {
     pub const NAMES: [&'static str; 4] = ["smooth", "sphere", "linear", "sharp"];
+    pub const CURVE_SAMPLES: usize = 17;
+
+    /// A curve falloff from 2 or more weights evenly spaced from the centre to the rim (each clamped to 0..1),
+    /// resampled linearly to the fixed table.
+    pub fn curve(weights: &[f32]) -> Option<Falloff> {
+        if weights.len() < 2 || weights.iter().any(|w| !w.is_finite()) {
+            return None;
+        }
+        let last = (weights.len() - 1) as f32;
+        let mut table = [0.0; Falloff::CURVE_SAMPLES];
+        for (i, slot) in table.iter_mut().enumerate() {
+            let x = i as f32 / (Falloff::CURVE_SAMPLES - 1) as f32 * last;
+            let k = (x.floor() as usize).min(weights.len() - 2);
+            let f = x - k as f32;
+            *slot = (weights[k] * (1.0 - f) + weights[k + 1] * f).clamp(0.0, 1.0);
+        }
+        Some(Falloff::Curve(table))
+    }
 
     pub fn parse(name: &str) -> Option<Falloff> {
         Some(match name {
@@ -78,6 +98,12 @@ impl Falloff {
             Falloff::Sphere => (1.0 - t * t).max(0.0).sqrt(),
             Falloff::Linear => 1.0 - t,
             Falloff::Sharp => (1.0 - t) * (1.0 - t),
+            Falloff::Curve(table) => {
+                let x = t * (Falloff::CURVE_SAMPLES - 1) as f32;
+                let k = (x.floor() as usize).min(Falloff::CURVE_SAMPLES - 2);
+                let f = x - k as f32;
+                table[k] * (1.0 - f) + table[k + 1] * f
+            }
         }
     }
 }
@@ -103,6 +129,13 @@ pub struct BrushSettings {
     pub alpha_up: [f32; 3],
     pub alpha_angle: f32,
     pub roll: bool,
+    /// Spray: each dab lands up to `spray` radii from the path, turned at random and at a random share of the
+    /// strength (0 is an ordinary stroke).
+    pub spray: f32,
+    /// Pen pressure: raised to `pressure_gamma` (above 1 needs a firmer press), then scaling strength and or radius.
+    pub pressure_gamma: f32,
+    pub pressure_strength: bool,
+    pub pressure_size: bool,
 }
 
 impl Default for BrushSettings {
@@ -124,6 +157,10 @@ impl Default for BrushSettings {
             alpha_up: [0.0, 1.0, 0.0],
             alpha_angle: 0.0,
             roll: false,
+            spray: 0.0,
+            pressure_gamma: 1.0,
+            pressure_strength: true,
+            pressure_size: false,
         }
     }
 }
