@@ -1,3 +1,4 @@
+mod bake_cmds;
 mod file_cmds;
 mod history;
 mod layer_cmds;
@@ -184,6 +185,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::id_opt_schema,
         run: sculpt_cmds::paint_clear,
+    },
+    Command {
+        id: "paint.unwrap",
+        mcp: "uv_unwrap",
+        group: Group::Paint,
+        label: "Unwrap UVs",
+        description: "Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is projected flat and the charts are packed into the unit square keeping their relative sizes. Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::id_opt_schema,
+        run: bake_cmds::unwrap,
+    },
+    Command {
+        id: "paint.bake",
+        mcp: "bake_maps",
+        group: Group::Paint,
+        label: "Bake Maps",
+        description: "Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.",
+        keys: &[],
+        hints: WRITE,
+        schema: bake_cmds::bake_schema,
+        run: bake_cmds::bake,
     },
     Command {
         id: "mask.invert",

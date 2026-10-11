@@ -36,6 +36,20 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
         if o.mesh.has_paint() {
             entry["paint"] = json!(w.put(&format!("{dir}/paint.f32"), &o.mesh.paint_bytes())?);
         }
+        if !o.mesh.uvs.is_empty() {
+            let flat: Vec<f32> = o.mesh.uvs.iter().flatten().copied().collect();
+            entry["uvs"] = json!(w.put(&format!("{dir}/uvs.f32"), &f32s(&flat))?);
+        }
+        if let Some(m) = &o.maps {
+            entry["maps"] = json!({
+                "size": m.size,
+                "source": m.source,
+                "color": w.put(&format!("{dir}/maps/color.png"), &m.color_png)?,
+                "roughness_metal": w.put(&format!("{dir}/maps/roughness_metal.png"), &m.mr_png)?,
+                "normal": w.put(&format!("{dir}/maps/normal.png"), &m.normal_png)?,
+                "displacement": w.put(&format!("{dir}/maps/displacement.exr"), &m.displacement_exr)?,
+            });
+        }
         if let Some(m) = &o.multires {
             let mut levels = Vec::new();
             for (k, l) in m.levels.iter().enumerate() {
@@ -134,8 +148,27 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         let id = e["id"].as_u64().ok_or("an object has no id")? as u32;
         let mut mesh = checked(r.vec3(&e["positions"])?, r.u32(&e["indices"])?)?;
         mesh.paint = r.paint(&e["paint"], mesh.vertex_count())?;
+        if e["uvs"].is_string() {
+            let flat = r.f32(&e["uvs"])?;
+            if flat.len() != mesh.indices.len() * 2 {
+                return Err("a UV buffer does not match its mesh".into());
+            }
+            mesh.uvs = flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
+        }
+        let maps = match e.get("maps").filter(|m| m.is_object()) {
+            Some(m) => Some(fsc_core::Maps {
+                size: m["size"].as_u64().unwrap_or(0) as usize,
+                source: m["source"].as_str().unwrap_or("").to_string(),
+                color_png: r.raw(&m["color"])?,
+                mr_png: r.raw(&m["roughness_metal"])?,
+                normal_png: r.raw(&m["normal"])?,
+                displacement_exr: r.raw(&m["displacement"])?,
+            }),
+            None => None,
+        };
         let mut o = Object::new(id, e["name"].as_str().unwrap_or("Object").to_string(), mesh);
         o.visible = e["visible"].as_bool().unwrap_or(true);
+        o.maps = maps;
         let mask = r.f32(&e["mask"])?;
         if mask.len() == o.mesh.vertex_count() {
             o.mask = mask;

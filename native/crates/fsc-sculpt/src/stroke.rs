@@ -184,6 +184,7 @@ impl Stroke {
             splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge * 0.4);
         }
         if splits > 0 {
+            object.mesh.uvs.clear();
             object.retopologize();
             let mut region = Vec::new();
             for k in 0..self.transforms.len() {

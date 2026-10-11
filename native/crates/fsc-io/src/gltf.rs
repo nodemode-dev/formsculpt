@@ -15,6 +15,7 @@ pub struct GltfObject<'a> {
     pub name: &'a str,
     pub mesh: &'a Mesh,
     pub targets: Vec<Target<'a>>,
+    pub maps: Option<&'a fsc_core::Maps>,
 }
 
 fn pad(buf: &mut Vec<u8>, with: u8) {
@@ -29,19 +30,19 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
     let mut accessors = Vec::new();
     let mut meshes = Vec::new();
     let mut nodes = Vec::new();
-    let mut add_vec3 = |bin: &mut Vec<u8>, data: &[[f32; 3]], minmax: bool| -> usize {
+    let mut images = Vec::new();
+    let mut add = |bin: &mut Vec<u8>, data: &[f32], comps: usize, minmax: bool| -> usize {
         pad(bin, 0);
         let offset = bin.len();
-        let (mut lo, mut hi) = ([f32::INFINITY; 3], [f32::NEG_INFINITY; 3]);
-        for p in data {
-            for k in 0..3 {
-                bin.extend_from_slice(&p[k].to_le_bytes());
-                lo[k] = lo[k].min(p[k]);
-                hi[k] = hi[k].max(p[k]);
-            }
+        let (mut lo, mut hi) = (vec![f32::INFINITY; comps], vec![f32::NEG_INFINITY; comps]);
+        for (i, x) in data.iter().enumerate() {
+            bin.extend_from_slice(&x.to_le_bytes());
+            lo[i % comps] = lo[i % comps].min(*x);
+            hi[i % comps] = hi[i % comps].max(*x);
         }
-        views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": data.len() * 12, "target": 34962}));
-        let mut acc = json!({"bufferView": views.len() - 1, "componentType": 5126, "count": data.len(), "type": "VEC3"});
+        views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": data.len() * 4, "target": 34962}));
+        let ty = ["SCALAR", "VEC2", "VEC3", "VEC4"][comps - 1];
+        let mut acc = json!({"bufferView": views.len() - 1, "componentType": 5126, "count": data.len() / comps, "type": ty});
         if minmax {
             acc["min"] = json!(lo);
             acc["max"] = json!(hi);
@@ -49,41 +50,70 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         accessors.push(acc);
         accessors.len() - 1
     };
-    let mut index_accessors = Vec::new();
+    let mut prepared = Vec::new();
     for o in objects {
-        let base: Vec<[f32; 3]> = o
-            .mesh
-            .positions
+        let ex = (!o.mesh.uvs.is_empty()).then(|| fsc_paint::expand(o.mesh));
+        let src: Vec<usize> = match &ex {
+            Some(e) => e.source.iter().map(|&s| s as usize).collect(),
+            None => (0..o.mesh.vertex_count()).collect(),
+        };
+        let base: Vec<f32> = src
             .iter()
-            .enumerate()
-            .map(|(v, p)| {
-                let mut q = Vec3::from_array(*p);
+            .flat_map(|&v| {
+                let mut q = Vec3::from_array(o.mesh.positions[v]);
                 for t in &o.targets {
                     q -= Vec3::from_array(t.delta[v]) * t.weight;
                 }
                 q.to_array()
             })
             .collect();
-        let pos = add_vec3(&mut bin, &base, true);
-        let nor = add_vec3(&mut bin, &o.mesh.normals, false);
-        let targets: Vec<usize> = o.targets.iter().map(|t| add_vec3(&mut bin, t.delta, true)).collect();
-        let color = o.mesh.has_paint().then(|| {
-            let rgb: Vec<[f32; 3]> = o.mesh.paint.iter().map(|p| [p[0], p[1], p[2]]).collect();
-            add_vec3(&mut bin, &rgb, false)
+        let pos = add(&mut bin, &base, 3, true);
+        let normals: Vec<f32> = src.iter().flat_map(|&v| o.mesh.normals[v]).collect();
+        let nor = add(&mut bin, &normals, 3, false);
+        let targets: Vec<usize> = o
+            .targets
+            .iter()
+            .map(|t| {
+                let d: Vec<f32> = src.iter().flat_map(|&v| t.delta[v]).collect();
+                add(&mut bin, &d, 3, true)
+            })
+            .collect();
+        let color = (o.mesh.has_paint() && o.maps.is_none()).then(|| {
+            let rgb: Vec<f32> = src.iter().flat_map(|&v| [o.mesh.paint[v][0], o.mesh.paint[v][1], o.mesh.paint[v][2]]).collect();
+            add(&mut bin, &rgb, 3, false)
         });
-        index_accessors.push((pos, nor, targets, color));
+        let uv = ex.as_ref().map(|e| {
+            let flat: Vec<f32> = e.uv.iter().flatten().copied().collect();
+            add(&mut bin, &flat, 2, false)
+        });
+        let tangent = ex.as_ref().filter(|_| o.maps.is_some()).map(|e| {
+            let flat: Vec<f32> = e.tangent.iter().flatten().copied().collect();
+            add(&mut bin, &flat, 4, false)
+        });
+        let indices: Vec<u32> = match &ex {
+            Some(e) => e.corner.clone(),
+            None => o.mesh.indices.clone(),
+        };
+        prepared.push((pos, nor, targets, color, uv, tangent, indices));
     }
     let mut materials = Vec::new();
+    let mut textures = Vec::new();
     for (k, o) in objects.iter().enumerate() {
+        let (pos, nor, targets, color, uv, tangent, indices) = &prepared[k];
         pad(&mut bin, 0);
         let offset = bin.len();
-        for i in &o.mesh.indices {
+        for i in indices {
             bin.extend_from_slice(&i.to_le_bytes());
         }
-        views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": o.mesh.indices.len() * 4, "target": 34963}));
-        accessors.push(json!({"bufferView": views.len() - 1, "componentType": 5125, "count": o.mesh.indices.len(), "type": "SCALAR"}));
-        let (pos, nor, targets, color) = &index_accessors[k];
+        views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": indices.len() * 4, "target": 34963}));
+        accessors.push(json!({"bufferView": views.len() - 1, "componentType": 5125, "count": indices.len(), "type": "SCALAR"}));
         let mut prim = json!({"attributes": {"POSITION": pos, "NORMAL": nor}, "indices": accessors.len() - 1, "mode": 4, "material": materials.len()});
+        if let Some(u) = uv {
+            prim["attributes"]["TEXCOORD_0"] = json!(u);
+        }
+        if let Some(t) = tangent {
+            prim["attributes"]["TANGENT"] = json!(t);
+        }
         let n = o.mesh.vertex_count().max(1) as f32;
         let (rough, metal) = if o.mesh.has_paint() {
             (o.mesh.paint.iter().map(|p| p[3]).sum::<f32>() / n, o.mesh.paint.iter().map(|p| p[4]).sum::<f32>() / n)
@@ -91,7 +121,21 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
             (fsc_core::DEFAULT_PAINT[3], fsc_core::DEFAULT_PAINT[4])
         };
         let tint = if color.is_some() { [1.0, 1.0, 1.0, 1.0] } else { [0.8, 0.8, 0.8, 1.0] };
-        materials.push(json!({"name": o.name, "pbrMetallicRoughness": {"baseColorFactor": tint, "metallicFactor": metal, "roughnessFactor": rough}}));
+        let mut material = json!({"name": o.name, "pbrMetallicRoughness": {"baseColorFactor": tint, "metallicFactor": metal, "roughnessFactor": rough}});
+        if let (Some(maps), Some(_)) = (o.maps, uv) {
+            let mut texture = |png: &[u8]| -> usize {
+                pad(&mut bin, 0);
+                let offset = bin.len();
+                bin.extend_from_slice(png);
+                views.push(json!({"buffer": 0, "byteOffset": offset, "byteLength": png.len()}));
+                images.push(json!({"bufferView": views.len() - 1, "mimeType": "image/png"}));
+                textures.push(json!({"source": images.len() - 1, "sampler": 0}));
+                textures.len() - 1
+            };
+            let (c, mr, nm) = (texture(&maps.color_png), texture(&maps.mr_png), texture(&maps.normal_png));
+            material = json!({"name": o.name, "pbrMetallicRoughness": {"baseColorTexture": {"index": c}, "metallicRoughnessTexture": {"index": mr}, "metallicFactor": 1.0, "roughnessFactor": 1.0}, "normalTexture": {"index": nm}});
+        }
+        materials.push(material);
         if let Some(c) = color {
             prim["attributes"]["COLOR_0"] = json!(c);
         }
@@ -106,7 +150,7 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         nodes.push(json!({"name": o.name, "mesh": k}));
     }
     pad(&mut bin, 0);
-    let doc = json!({
+    let mut doc = json!({
         "asset": {"version": "2.0", "generator": format!("formsculptor {}", fsc_core::engine_version())},
         "scene": 0,
         "scenes": [{"nodes": (0..objects.len()).collect::<Vec<_>>()}],
@@ -117,6 +161,11 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         "bufferViews": views,
         "accessors": accessors,
     });
+    if !images.is_empty() {
+        doc["images"] = json!(images);
+        doc["textures"] = json!(textures);
+        doc["samplers"] = json!([{"magFilter": 9729, "minFilter": 9987, "wrapS": 33071, "wrapT": 33071}]);
+    }
     let mut text = serde_json::to_vec(&doc).expect("json");
     pad(&mut text, b' ');
     let total = 12 + 8 + text.len() + 8 + bin.len();

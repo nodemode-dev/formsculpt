@@ -55,6 +55,7 @@ pub struct Mesh {
     pub normals: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
     pub paint: Vec<Paint>,
+    pub uvs: Vec<[f32; 2]>,
 }
 
 pub type Paint = [f32; 5];
@@ -71,7 +72,7 @@ pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
 
 impl Mesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
-        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new() };
+        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new() };
         mesh.recompute_normals();
         mesh
     }
@@ -155,6 +156,9 @@ impl Mesh {
         }
         if !self.paint.is_empty() && self.paint.len() != self.positions.len() {
             return Err("paint count differs from vertex count".into());
+        }
+        if !self.uvs.is_empty() && self.uvs.len() != self.indices.len() {
+            return Err("UV count differs from corner count".into());
         }
         Ok(())
     }

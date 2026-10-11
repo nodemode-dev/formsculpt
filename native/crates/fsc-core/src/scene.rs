@@ -18,6 +18,17 @@ pub struct Object {
     pub revision: u64,
     pub multires: Option<Multires>,
     pub layers: Layers,
+    pub maps: Option<Maps>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Maps {
+    pub size: usize,
+    pub color_png: Vec<u8>,
+    pub mr_png: Vec<u8>,
+    pub normal_png: Vec<u8>,
+    pub displacement_exr: Vec<u8>,
+    pub source: String,
 }
 
 impl Object {
@@ -25,7 +36,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None }
     }
 
     pub fn rebuild(&mut self) {
