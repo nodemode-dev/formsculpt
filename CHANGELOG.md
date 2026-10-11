@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.8.0 · 2026-10-11
+
+### Added
+
+- `quad_remesh`: an even, quad-dominant mesh near a target face count (within 6 percent in the checks), relaxed on the original surface; OBJ export writes the quads.
+- `project_detail`: move an object's vertices onto another object's surface, for the remesh, divide and project workflow.
+- `extract_mask` (a closed shell from the masked area), `extrude_mask` and `inset_mask` (50 commands in all).
+- Quad remesh with a target, Project from, and Extract, Extrude and Inset mask in the window.
+
+### Changed
+
+- Duplicate in the window copies in place, as ZBrush does, instead of one object-width to the side.
+
 ## 0.7.1 · 2026-10-11
 
 ### Added
