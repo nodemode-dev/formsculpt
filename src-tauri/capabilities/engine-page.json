@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "engine-page",
+  "description": "The main window shows the page the engine sidecar serves on the loopback address; it may call the app's own save_file command (the native save dialog) and nothing else.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:*"] },
+  "permissions": ["core:default", "allow-save-file"]
+}

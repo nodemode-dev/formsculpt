@@ -54,6 +54,50 @@ fn check_for_updates(handle: tauri::AppHandle) {
     });
 }
 
+/// Saves a download through the native dialog. The page sends the file's bytes as the raw IPC body and its name in
+/// the `x-file-name` header (percent-encoded); returns the chosen path, or None when the person cancels.
+#[tauri::command]
+async fn save_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<Option<String>, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected the file's bytes".into());
+    };
+    let raw = request.headers().get("x-file-name").and_then(|v| v.to_str().ok()).unwrap_or("formsculptor");
+    let name = percent_decode(raw).replace(['/', '\\'], "_");
+    let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+    let mut dialog = app.dialog().file().set_file_name(&name);
+    // Start in Documents (or home): the process's working directory is the AppImage's temporary mount.
+    if let Some(dir) = app.path().document_dir().ok().filter(|d| d.is_dir()).or_else(|| app.path().home_dir().ok()) {
+        dialog = dialog.set_directory(dir);
+    }
+    if !ext.is_empty() {
+        dialog = dialog.add_filter(ext.to_ascii_uppercase(), &[ext.as_str()]);
+    }
+    let Some(chosen) = dialog.blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = chosen.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, bytes).map_err(|e| format!("could not write {}: {e}", path.display()))?;
+    Ok(Some(path.display().to_string()))
+}
+
+fn percent_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let Ok(b) = std::str::from_utf8(&bytes[i + 1..i + 3]).map_err(|_| ()).and_then(|h| u8::from_str_radix(h, 16).map_err(|_| ())) {
+                out.push(b);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 fn open_main(handle: &tauri::AppHandle, port: u16) {
     let url: tauri::Url = format!("http://127.0.0.1:{port}").parse().expect("loopback url");
     let (width, height) = handle
@@ -73,6 +117,8 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
         .title("formsculptor")
         .inner_size(width, height)
         .min_inner_size(MIN_LOGICAL.0, MIN_LOGICAL.1)
+        // The app's --bg-primary, so the first frame before the page paints is not the webview's default white.
+        .background_color(tauri::window::Color(17, 17, 17, 255))
         .center()
         .build();
 }
@@ -83,6 +129,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Backend(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![save_file])
         .setup(|app| {
             let handle = app.handle().clone();
             let (mut rx, child) = app
@@ -90,6 +137,7 @@ fn main() {
                 .sidecar("formsculptor-engine")
                 .expect("sidecar binary is bundled")
                 .env("FSC_PORT", "0")
+                .env("FSC_PARENT_PID", std::process::id().to_string())
                 .spawn()
                 .expect("the formsculptor engine failed to spawn");
             app.state::<Backend>().0.lock().unwrap().replace(child);
