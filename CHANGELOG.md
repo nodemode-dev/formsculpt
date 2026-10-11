@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.10.0 · 2026-10-11
+
+### Added
+
+- Brushes: `relax` (evens triangles without shrinking), `planar`, `trim`, `snake_hook` and `noise`; the lazy stabilizer is now a rope, with a Lazy mouse slider in the Brush panel.
+- `surface_noise`: fractal noise over the whole object in a new sculpt layer, adjustable by its strength.
+- Masks: `mask_shape` (box, ellipse, lasso, in get_view picture coordinates or the window's camera), `mask_topology` (by distance along the surface), `mask_cavity` (creases or peaks), `mask_by_color`, `mask_grow` (and shrink); Box mask, Lasso mask and Topo mask tools and mask buttons in the window.
+- `set_visibility` (hide, show, isolate, show all), `arrange_objects` (align and distribute, levels included), `pick`, `get_history` and `history_go_to` (65 commands in all); `get_scene` reports masked vertices.
+- Window: a View section (field of view, Hide, Isolate, Show all), pivot on a double-clicked point (with Orbit, or Alt), Align and Distribute, a Noise layer button and a History list that jumps to any step.
+
 ## 0.9.0 · 2026-10-11
 
 ### Added
