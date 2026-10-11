@@ -93,3 +93,44 @@ def stroke_end() -> dict:
     if reply.get("ok") and reply.get("result"):
         _bump()
     return reply
+
+
+def _require() -> None:
+    if _engine is None:
+        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+
+
+def save_bytes() -> bytes:
+    _require()
+    with _lock:
+        return _engine.save_bytes()
+
+
+def open_bytes(data: bytes) -> dict:
+    _require()
+    with _lock:
+        reply = json.loads(_engine.open_bytes(data))
+    if reply.get("ok"):
+        _bump()
+    return reply
+
+
+def import_bytes(file_name: str, data: bytes) -> dict:
+    _require()
+    with _lock:
+        reply = json.loads(_engine.import_bytes(file_name, data))
+    if reply.get("ok"):
+        _bump()
+    return reply
+
+
+def export_bytes(file_name: str, ids: list[int] | None) -> bytes:
+    _require()
+    with _lock:
+        return _engine.export_bytes(file_name, ids)
+
+
+def object_count() -> int:
+    _require()
+    with _lock:
+        return len(json.loads(_engine.dispatch("get_scene", "{}"))["result"]["objects"])

@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,11 +8,14 @@ from fastapi.staticfiles import StaticFiles
 from app.core import config
 from app.core.isolation import CrossOriginIsolation
 from app.routers import engine, mcp, system
+from app.services import autosave
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    task = asyncio.create_task(autosave.loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(title=config.APP_NAME, version=config.VERSION, lifespan=lifespan)
