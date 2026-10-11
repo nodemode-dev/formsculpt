@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <title>formsculptor</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    html, body { background: #111111; margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #app { visibility: hidden; }
+    body.app-ready #app { visibility: visible; }
+  </style>
+  <script>
+(function () {
+  var KEY = 'nodemode_ui_settings';
+  var accent = '#f97316';
+  var light = false;
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (typeof s.accentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(s.accentColor)) accent = s.accentColor;
+      light = s.theme === 'light' || s.theme === 'sand';
+    }
+  } catch (e) {}
+  var root = document.documentElement;
+  root.style.setProperty('--accent-color', accent);
+  root.style.setProperty('--accent-color-dim', accent + '33');
+  if (light) {
+    root.style.background = '#ecebe6';
+    var apply = function () { if (document.body) { document.body.classList.add('theme-light'); return true; } return false; };
+    if (!apply()) { var mo = new MutationObserver(function () { if (apply()) mo.disconnect(); }); mo.observe(root, { childList: true }); }
+  }
+})();
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlay-root"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
