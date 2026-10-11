@@ -89,6 +89,23 @@ pub fn voxel_remesh(mesh: &Mesh, bvh: &Bvh, resolution: u32) -> Result<Mesh, Str
     surface_nets(&field, &grid)
 }
 
+pub fn implicit_mesh<F: Fn(Vec3) -> f32 + Sync>(bounds: Aabb, resolution: u32, field_at: F) -> Result<Mesh, String> {
+    let grid = Grid::around(bounds, resolution)?;
+    let (origin, cell, dims) = (grid.origin, grid.cell, grid.dims);
+    let sample = |at: usize| -> f32 {
+        let (i, j, k) = (at % dims[0], (at / dims[0]) % dims[1], at / (dims[0] * dims[1]));
+        field_at(origin + Vec3::new(i as f32, j as f32, k as f32) * cell)
+    };
+    #[cfg(feature = "parallel")]
+    let field: Vec<f32> = {
+        use rayon::prelude::*;
+        (0..grid.total()).into_par_iter().map(sample).collect()
+    };
+    #[cfg(not(feature = "parallel"))]
+    let field: Vec<f32> = (0..grid.total()).map(sample).collect();
+    surface_nets(&field, &grid)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BooleanOp {
     Union,
