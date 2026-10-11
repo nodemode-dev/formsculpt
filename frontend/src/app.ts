@@ -74,6 +74,7 @@ interface Shell {
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
+  folderName: HTMLInputElement;
   reference: HTMLImageElement;
   referenceInput: HTMLInputElement;
   referenceOpacity: HTMLInputElement;
@@ -166,6 +167,8 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['project', 'Project from'],
   ['align', 'Align'],
   ['distribute', 'Distribute'],
+  ['folder', 'Put in folder'],
+  ['isolate_folder', 'Isolate folder'],
 ];
 
 /** Edit buttons whose engine call differs from their name. */
@@ -462,7 +465,8 @@ function buildShell(root: HTMLElement): Shell {
   }
   const deformAngle = input('number', { min: '-720', max: '720', value: '45', 'aria-label': 'Deform angle' });
   const objectFields = el('div', 'fields');
-  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle));
+  const folderName = input('text', { maxlength: '80', value: 'Folder 1', 'aria-label': 'Folder name', spellcheck: 'false' });
+  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName));
   panel.append(objectFields);
 
   panel.append(el('h2', 'gap', 'Layers'));
@@ -554,7 +558,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName };
 }
 
 class SceneView {
@@ -1005,6 +1009,12 @@ class SceneView {
       const source = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
       if (source === null) this.note('Select the object to take detail from first, then the one to project onto');
       else void this.run('project_detail', { id, source_id: source });
+    } else if (action === 'folder') {
+      void this.run('set_folder', { ids: [id], folder: this.shell.folderName.value.trim() });
+    } else if (action === 'isolate_folder') {
+      const folder = this.scene.objects.find((o) => o.id === id)?.folder ?? '';
+      if (!folder) this.note('The active object is not in a folder; Put in folder first');
+      else void this.run('set_visibility', { action: 'isolate', folder });
     } else if (action === 'align' || action === 'distribute') {
       if (this.scene.objects.length < 2) this.note('Align and Distribute need at least two objects');
       else void this.run('arrange_objects', { axis, mode: action === 'align' ? 'center' : 'distribute' });
@@ -1138,7 +1148,7 @@ class SceneView {
         this.shell.objectList.append(row);
         this.rows.set(o.id, row);
       }
-      setText(row.children[0], o.name);
+      setText(row.children[0], o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(row.children[1], `${o.triangles.toLocaleString('en-US')} tris`);
       setAttr(row, 'aria-current', o.id === next.active ? 'true' : 'false');
     }

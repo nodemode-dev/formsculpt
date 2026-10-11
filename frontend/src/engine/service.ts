@@ -7,6 +7,7 @@ export interface ObjectSummary {
   id: number;
   name: string;
   visible: boolean;
+  folder?: string;
   vertices: number;
   triangles: number;
   revision: number;
