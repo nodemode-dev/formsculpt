@@ -2,6 +2,26 @@ pub fn png_rgba(size: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
     png_rgba_rect(size, size, pixels)
 }
 
+/// An animated PNG (APNG) of equal-sized RGBA frames, looping forever at `fps`; browsers play it like a GIF but in
+/// full colour with alpha.
+pub fn apng_rgba(width: usize, height: usize, frames: &[Vec<[u8; 4]>], fps: u16) -> Result<Vec<u8>, String> {
+    let mut out = Vec::new();
+    {
+        let mut enc = png::Encoder::new(&mut out, width as u32, height as u32);
+        enc.set_color(png::ColorType::Rgba);
+        enc.set_depth(png::BitDepth::Eight);
+        enc.set_animated(frames.len() as u32, 0).map_err(|e| e.to_string())?;
+        enc.set_frame_delay(1, fps.max(1)).map_err(|e| e.to_string())?;
+        let mut w = enc.write_header().map_err(|e| e.to_string())?;
+        for f in frames {
+            let flat: Vec<u8> = f.iter().flatten().copied().collect();
+            w.write_image_data(&flat).map_err(|e| e.to_string())?;
+        }
+        w.finish().map_err(|e| e.to_string())?;
+    }
+    Ok(out)
+}
+
 pub fn png_rgba_rect(width: usize, height: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
     let mut out = Vec::new();
     {

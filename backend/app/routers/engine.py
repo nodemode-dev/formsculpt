@@ -1,3 +1,5 @@
+import os
+import tempfile
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Response, UploadFile, WebSocket, WebSocketDisconnect
@@ -82,6 +84,23 @@ async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64,
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return Response(content=data, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/turntable")
+async def turntable(frames: int = Query(48, ge=8, le=180), size: int = Query(384, ge=64, le=1024), shading: str = "clay", background: str = "dark") -> Response:
+    """A looping animated PNG of the scene turning once (record_turntable, written to a temporary file and returned)."""
+    _guard()
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    try:
+        reply = await run_in_threadpool(engine.dispatch, "record_turntable", {"path": path, "frames": frames, "size": size, "shading": shading, "background": background})
+        if not reply.get("ok"):
+            raise HTTPException(status_code=400, detail=(reply.get("error") or {}).get("message", "render failed"))
+        with open(path, "rb") as f:
+            data = f.read()
+    finally:
+        os.unlink(path)
+    return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="turntable.png"', "Cache-Control": "no-store"})
 
 
 @router.get("/maps/{object_id}")

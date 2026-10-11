@@ -24,7 +24,7 @@ pub use nearest::{closest_on_triangle, nearest_feature, nearest_point};
 pub use quad::{quad_remesh, QuadRemesh};
 pub use reconstruct::{reconstruct_lower, Reconstructed};
 pub use region::{extract_shell, extrude_region, project_onto, region_faces};
-pub use subdivide::{loop_subdivide, Subdivided};
+pub use subdivide::{loop_subdivide, loop_subdivide_with, Subdivided};
 pub use transfer::transfer_paint;
 pub use voxel::{voxel_boolean, voxel_remesh, BooleanOp};
 

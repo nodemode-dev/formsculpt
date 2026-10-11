@@ -12,6 +12,12 @@ pub struct Subdivided {
 }
 
 pub fn loop_subdivide(mesh: &Mesh, smooth: bool) -> Subdivided {
+    loop_subdivide_with(mesh, smooth, false)
+}
+
+/// Loop subdivision; with `sharp_border` the vertices on open borders stay where they are (borders split linearly),
+/// so a plane or a cut-open shell keeps its outline instead of shrinking it.
+pub fn loop_subdivide_with(mesh: &Mesh, smooth: bool, sharp_border: bool) -> Subdivided {
     let n = mesh.vertex_count();
     let faces_of_edge = edge_faces(mesh);
     let mut neighbors: Vec<Vec<u32>> = vec![Vec::new(); n];
@@ -31,7 +37,7 @@ pub fn loop_subdivide(mesh: &Mesh, smooth: bool) -> Subdivided {
         let bn = &boundary_nb[v as usize];
         let nb = &neighbors[v as usize];
         let k = nb.len() as f32;
-        if smooth && bn.len() == 2 {
+        if smooth && bn.len() == 2 && !sharp_border {
             row.extend_from_slice(&[(v, 0.75), (bn[0], 0.125), (bn[1], 0.125)]);
         } else if smooth && bn.is_empty() && k >= 3.0 {
             let beta = (0.625 - (0.375 + 0.25 * (TAU / k).cos()).powi(2)) / k;

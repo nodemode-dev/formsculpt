@@ -39,7 +39,66 @@ fn int(args: &Value, key: &str, default: u64, lo: u64, hi: u64) -> Result<usize,
     Ok(v as usize)
 }
 
+pub(crate) fn turntable_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "minLength": 1, "description": "Where to write the animation, ending in .png (an animated PNG that browsers play in a loop)."},
+            "frames": {"type": "integer", "minimum": 8, "maximum": 180, "default": 48, "description": "Frames for one full turn."},
+            "fps": {"type": "integer", "minimum": 1, "maximum": 60, "default": 24},
+            "size": {"type": "integer", "minimum": 64, "maximum": 1024, "default": 384, "description": "Width and height in pixels."},
+            "pitch": {"type": "number", "minimum": -89, "maximum": 89, "default": 15, "description": "Degrees above the horizon."},
+            "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay"},
+            "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"},
+            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Only these objects; every visible object when omitted."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+    })
+}
+
+/// A turntable: the scene rendered headless from `frames` angles around the vertical axis (framed once, so it turns
+/// in place), written as a looping animated PNG.
+pub(crate) fn record_turntable(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let path = args.get("path").and_then(Value::as_str).ok_or_else(|| bad("path is required"))?.to_string();
+    if !path.to_ascii_lowercase().ends_with(".png") {
+        return Err(bad("path must end in .png"));
+    }
+    let frames = int(args, "frames", 48, 8, 180)?;
+    let fps = int(args, "fps", 24, 1, 60)? as u16;
+    let size = int(args, "size", 384, 64, 1024)?;
+    let pitch = args.get("pitch").and_then(Value::as_f64).unwrap_or(15.0).clamp(-89.0, 89.0) as f32;
+    let started = std::time::Instant::now();
+    let mut shots = Vec::with_capacity(frames);
+    for k in 0..frames {
+        let mut frame_args = args.clone();
+        let obj = frame_args.as_object_mut().expect("object");
+        for key in ["path", "frames", "fps", "size", "pitch"] {
+            obj.remove(key);
+        }
+        obj.insert("yaw".into(), json!(360.0 * k as f64 / frames as f64));
+        obj.insert("pitch".into(), json!(pitch));
+        obj.insert("width".into(), json!(size));
+        obj.insert("height".into(), json!(size));
+        obj.insert("frame".into(), json!("all"));
+        let (pixels, _) = render_pixels(s, &frame_args)?;
+        shots.push(pixels);
+    }
+    let bytes = fsc_paint::apng_rgba(size, size, &shots, fps).map_err(|e| CommandError::new("render_failed", e))?;
+    std::fs::write(&path, &bytes).map_err(|e| CommandError::new("write_failed", format!("could not write {path}: {e}")))?;
+    Ok(json!({"path": path, "frames": frames, "size": size, "bytes": bytes.len(), "seconds": frames as f64 / fps as f64, "ms": started.elapsed().as_millis()}))
+}
+
 pub(crate) fn get_view(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let (pixels, mut facts) = render_pixels(s, args)?;
+    let (w, h) = (facts["width"].as_u64().unwrap_or(0) as usize, facts["height"].as_u64().unwrap_or(0) as usize);
+    let png = fsc_paint::png_rgba_rect(w, h, &pixels).map_err(|e| CommandError::new("render_failed", e))?;
+    facts["mime"] = json!("image/png");
+    facts["png_base64"] = json!(base64::engine::general_purpose::STANDARD.encode(&png));
+    Ok(facts)
+}
+
+fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value), CommandError> {
     let name = args.get("view").and_then(Value::as_str).unwrap_or("three_quarter");
     let &(_, yaw, pitch) = VIEWS.iter().find(|v| v.0 == name).ok_or_else(|| bad(format!("unknown view {name}")))?;
     let yaw = args.get("yaw").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(yaw);
@@ -81,10 +140,7 @@ pub(crate) fn get_view(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     let objects: Vec<RenderObject> = drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active }).collect();
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
     let out = fsc_paint::render(&objects, &view).map_err(|e| CommandError::new("render_failed", e))?;
-    let png = fsc_paint::png_rgba_rect(out.width, out.height, &out.pixels).map_err(|e| CommandError::new("render_failed", e))?;
-    Ok(json!({
-        "mime": "image/png",
-        "png_base64": base64::engine::general_purpose::STANDARD.encode(&png),
+    let facts = json!({
         "width": out.width,
         "height": out.height,
         "objects": objects.len(),
@@ -92,5 +148,6 @@ pub(crate) fn get_view(s: &mut Session, args: &Value) -> Result<Value, CommandEr
         "coverage": (out.covered as f64 * 1000.0).round() / 1000.0,
         "view": {"yaw": yaw, "pitch": pitch, "shading": shading_name},
         "ms": out.ms
-    }))
+    });
+    Ok((out.pixels, facts))
 }

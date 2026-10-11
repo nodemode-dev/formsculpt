@@ -128,6 +128,17 @@ pub static COMMANDS: &[Command] = &[
         run: view_cmds::get_view,
     },
     Command {
+        id: "view.turntable",
+        mcp: "record_turntable",
+        group: Group::View,
+        label: "Record Turntable",
+        description: "Render the scene turning once around the vertical axis and write it as a looping animated PNG (plays in browsers like a GIF, in full colour): a presentation of the model from every side. Rendered headless with get_view's shading; the window's View section downloads one.",
+        keys: &[],
+        hints: WRITE,
+        schema: view_cmds::turntable_schema,
+        run: view_cmds::record_turntable,
+    },
+    Command {
         id: "view.pick",
         mcp: "pick",
         group: Group::View,

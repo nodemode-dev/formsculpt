@@ -34,7 +34,8 @@ pub(crate) fn subdivide_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "levels": {"type": "integer", "minimum": 1, "maximum": 4, "default": 1, "description": "Each level multiplies the triangles by four."},
-            "smooth": {"type": "boolean", "default": true, "description": "Loop subdivision (smooths the shape); false splits flat."}
+            "smooth": {"type": "boolean", "default": true, "description": "Loop subdivision (smooths the shape); false splits flat."},
+            "sharp_border": {"type": "boolean", "default": false, "description": "Keep open borders where they are while the rest smooths (a plane keeps its corners, a cut shell its rim)."}
         },
         "required": [],
         "additionalProperties": false
@@ -49,6 +50,7 @@ pub(crate) fn subdivide(s: &mut Session, args: &Value) -> Result<Value, CommandE
         return Err(bad("levels must be 1 to 4"));
     }
     let smooth = args.get("smooth").and_then(Value::as_bool).unwrap_or(true);
+    let sharp_border = args.get("sharp_border").and_then(Value::as_bool).unwrap_or(false);
     let object = s.scene.get(id).expect("checked");
     let projected = object.mesh.triangle_count() * 4usize.pow(levels as u32);
     if projected > MAX_TRIANGLES {
@@ -57,7 +59,7 @@ pub(crate) fn subdivide(s: &mut Session, args: &Value) -> Result<Value, CommandE
     let mut mesh = object.mesh.clone();
     let mut mask = object.mask.clone();
     for _ in 0..levels {
-        let out = fsc_topo::loop_subdivide(&mesh, smooth);
+        let out = fsc_topo::loop_subdivide_with(&mesh, smooth, sharp_border);
         mask = out.parents.iter().map(|&(a, b)| 0.5 * (mask[a as usize] + mask[b as usize])).collect();
         mesh = out.mesh;
     }
