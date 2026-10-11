@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.7.1) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.8.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,8 +9,8 @@ Generated from the engine's command registry (formsculptor 0.7.1) by `./formscul
 - Objects: `add_primitive`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `merge_objects`, `split_parts`, `boolean`
 - Sculpting: `sculpt_stroke`
 - Painting: `paint_fill`, `paint_clear`, `uv_unwrap`, `bake_maps`
-- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`
-- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `extract_mask`, `extrude_mask`, `inset_mask`
+- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 - Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
 - History: `undo`, `redo`
@@ -183,6 +183,45 @@ Report an object's vertex, triangle and edge counts, open boundary edges, non-ma
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 Note: read-only.
+
+## quad_remesh
+
+Rebuild an object as an even, quad-dominant mesh near a target face count: quads from a voxel grid, relaxed along the original surface. OBJ export writes them as quads. The grid makes edge flow follow the axes rather than the form (no guide curves). One undo step; the mask is cleared, paint is carried over.
+
+- `faces`: integer; default 4000; range 100 to 400000; Target number of quads.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `relax`: integer; default 6; range 0 to 30; Smoothing passes that even out the quads while staying on the original surface.
+
+## project_detail
+
+Move an object's vertices along their normals onto another object's surface (within distance), carrying its detail over: for example from an old sculpt onto a quad-remeshed or subdivided copy. Masked vertices are held. One undo step.
+
+- `distance`: number; range 0 to inf; Furthest a vertex may move, in world units; 5 percent of the object's size when omitted.
+- `id`: integer; range 1 to inf; The object to move; the active object when omitted.
+- `source_id`: integer; required; range 1 to inf; The object whose surface detail is taken.
+- `strength`: number; default 1; range 0 to 1
+
+## extract_mask
+
+Make a new closed object from the masked part of an object, thickened along its normals: a shell for clothing, armour or straps. The original is unchanged.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `thickness`: number; range -10000 to 10000; Shell thickness along the surface normal, in world units; 2 percent of the object's size when omitted. Negative grows inward.
+
+## extrude_mask
+
+Push the masked faces out along their normals (or in, with a negative distance), joining them to the rest with new side faces. The mesh stays closed. One undo step.
+
+- `distance`: number; range -10000 to 10000; How far the masked faces move along their normals, in world units; 3 percent of the object's size when omitted. Negative pushes in.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## inset_mask
+
+Pull the border of the masked faces inward to make a rim of new faces, optionally pushing the inset area by depth (a panel, socket or button). One undo step.
+
+- `amount`: number; default 0.3; range 0 to 1; How far the masked area's border pulls inward, as a fraction of the border faces.
+- `depth`: number; default 0; range -10000 to 10000; Also move the inset faces along their normals by this much.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## multires_divide
 

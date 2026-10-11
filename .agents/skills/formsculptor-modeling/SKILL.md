@@ -61,6 +61,11 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. `deform_object` bends, twists or tapers along an axis of the object's bounds; mask an area first to hold it still (masks also hold vertices during `transform_object`).
 3. For an adjustable pass of detail, `layer_add`, sculpt, then `layer_set_strength` (0 hides it, 1 as sculpted, 2 exaggerates, negative inverts). `layer_select` with null records into the base again; `layer_apply` bakes a layer. While layers exist, remesh, decimate, dyntopo and level changes refuse with `has_layers`.
 
+## Workflow 8: retopology and mask modeling
+
+1. For clean, even topology: `duplicate_object` (it copies in place), `quad_remesh` the copy with `faces` (a few thousand for a base mesh), `multires_divide` it two or three times, then `project_detail` with `source_id` set to the original to bring the sculpted detail back; delete or hide the original after.
+2. Mask an area, then `extract_mask` (`thickness`) for a separate shell such as a strap or armour plate, `extrude_mask` (`distance`) to raise or sink it with side walls, or `inset_mask` (`amount`, `depth`) for a panel or socket. Each needs faces fully inside the mask.
+
 ## Workflow 7: paint
 
 1. Colour a whole object with `paint_fill` (`color` as #rrggbb or [r, g, b] from 0 to 1, and optionally `roughness` and `metalness`); mask first to keep areas as they are.
