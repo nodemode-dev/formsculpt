@@ -67,7 +67,12 @@ async def call_tool(name: str, args: dict) -> dict:
             return {"content": [{"type": "text", "text": refusal}], "isError": True}
     reply = await run_in_threadpool(engine.dispatch, name, args)
     if reply.get("ok"):
-        return _text(reply["result"])
+        result = reply["result"]
+        if isinstance(result, dict) and "png_base64" in result:
+            # A render comes back as an image the agent can look at, with the facts beside it as text.
+            facts = {k: v for k, v in result.items() if k != "png_base64"}
+            return {"content": [{"type": "image", "data": result["png_base64"], "mimeType": result.get("mime", "image/png")}, {"type": "text", "text": json.dumps(facts)}], "structuredContent": facts}
+        return _text(result)
     error = reply.get("error") or {}
     return _text({"error": error.get("code"), "message": error.get("message")}, error=True)
 

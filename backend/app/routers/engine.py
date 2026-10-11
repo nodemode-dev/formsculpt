@@ -73,6 +73,17 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf)
     return Response(content=data, media_type=media, headers={"Content-Disposition": f'attachment; filename="formsculptor.{format}"', "Cache-Control": "no-store"})
 
 
+@router.get("/view")
+async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048), shading: str = "clay", background: str = "dark") -> Response:
+    """The scene rendered headless (the get_view command) as a PNG, for previews and for anything that wants a picture."""
+    _guard()
+    try:
+        data, _ = await run_in_threadpool(engine.view_png, {"view": view, "width": width, "height": height, "shading": shading, "background": background})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return Response(content=data, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
 @router.get("/maps/{object_id}")
 async def maps_file(object_id: int) -> Response:
     _guard()

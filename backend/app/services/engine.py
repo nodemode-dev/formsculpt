@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 import struct
@@ -147,6 +148,15 @@ def maps_zip(object_id: int) -> bytes | None:
         for suffix, data in files:
             archive.writestr(f"{stem}_{suffix}", bytes(data))
     return out.getvalue()
+
+
+def view_png(args: dict) -> tuple[bytes, dict]:
+    """A headless render (get_view) as PNG bytes and its facts; ValueError carries the engine's refusal."""
+    reply = dispatch("get_view", args)
+    if not reply.get("ok"):
+        raise ValueError((reply.get("error") or {}).get("message", "render failed"))
+    result = reply["result"]
+    return base64.b64decode(result.pop("png_base64")), result
 
 
 def object_count() -> int:
