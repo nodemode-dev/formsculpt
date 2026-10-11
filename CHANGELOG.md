@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.6.0 · 2026-10-11
+
+### Added
+
+- `.fsc` projects: `save_project` and `open_project` keep objects, masks, subdivision levels and sculpt layers and reopen identical; the service autosaves every minute after a change and can recover it.
+- `import_mesh` for OBJ, STL, PLY, glTF/GLB (embedded buffers) and 3MF; `export_mesh` to OBJ, STL, PLY, GLB (sculpt layers as morph targets; passes the Khronos glTF validator) and 3MF.
+- `print_check`: watertight, non-manifold, inside-out, size, volume and area in millimetres, sampled wall thickness, and a printable verdict. `repair_mesh` splits touching surfaces, fills holes and drops degenerate triangles (41 commands in all).
+- The File section (Open, Save, Export with a format menu, Print check, Repair, Recover) and Mod+S, Mod+O, Mod+E; the service routes `/api/engine/import`, `/export`, `/project`, `/autosave`.
+
+### Fixed
+
+- After opening a project the window could keep drawing a cached mesh from the previous scene with the same object id and revision; loaded objects now get fresh revisions and ids never go back.
+
 ## 0.5.0 · 2026-10-11
 
 ### Added
