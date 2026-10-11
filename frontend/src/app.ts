@@ -43,6 +43,7 @@ interface Shell {
   paintMaterial: HTMLInputElement;
   shading: HTMLSelectElement;
   paintButtons: HTMLButtonElement[];
+  bakeSize: HTMLSelectElement;
   fileButtons: HTMLButtonElement[];
   fileInput: HTMLInputElement;
   exportFormat: HTMLSelectElement;
@@ -238,13 +239,24 @@ function buildShell(root: HTMLElement): Shell {
     shading.append(option);
   }
   const paintFields = el('div', 'fields');
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading));
+  const bakeSize = el('select');
+  bakeSize.setAttribute('aria-label', 'Bake size');
+  for (const size of ['512', '1024', '2048', '4096']) {
+    const option = el('option', '', `${size} px`);
+    option.value = size;
+    option.selected = size === '1024';
+    bakeSize.append(option);
+  }
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Bake size', bakeSize));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
     [
       ['paint_fill', 'Fill object'],
       ['paint_clear', 'Clear paint'],
+      ['uv_unwrap', 'Unwrap UVs'],
+      ['bake_maps', 'Bake maps'],
+      ['maps', 'Download maps'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -370,7 +382,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons };
 }
 
 class SceneView {
@@ -409,7 +421,10 @@ class SceneView {
       b.addEventListener('click', () => {
         const id = this.scene.active;
         if (id === null) return;
-        if (b.dataset.action === 'paint_clear') void this.run('paint_clear', { id });
+        const action = b.dataset.action;
+        if (action === 'paint_clear' || action === 'uv_unwrap') void this.run(action, { id });
+        else if (action === 'bake_maps') void this.bake(id);
+        else if (action === 'maps') void this.download(`/api/engine/maps/${id}`, 'maps.zip');
         else void this.run('paint_fill', { id, ...this.paintArgs(true) });
       }),
     );
@@ -611,6 +626,18 @@ class SceneView {
       const wall = r.wall_mm.min === null ? 'no wall samples' : `thinnest wall ${r.wall_mm.min.toFixed(2)} mm`;
       this.note(r.printable ? `Printable: ${size} mm, ${Math.round(r.volume_mm3).toLocaleString('en-US')} mm3, ${wall}` : `Not printable: ${r.problems.join('; ')}`);
     }
+  }
+
+  private async bake(id: number): Promise<void> {
+    this.note('Baking maps');
+    const reply = await dispatch<{ size: number; source: string; covered: number; ms: number }>('bake_maps', { id, size: Number(this.shell.bakeSize.value) });
+    if (!reply.ok) {
+      this.note(reply.error.message);
+      return;
+    }
+    const r = reply.result;
+    this.note(`Baked ${r.size} px maps from ${r.source} in ${(r.ms / 1000).toFixed(1)} s; Export GLB or Download maps`);
+    await this.refresh();
   }
 
   private async download(path: string, name: string): Promise<void> {
