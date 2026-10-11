@@ -146,3 +146,9 @@ The freeze rebuilds fsc_engine when it is missing or its version differs from th
 - kind: rationale
 - logged: v0.11.0 · 2026-10-11
 The mesh payload gains flag 4 (a u32 face group per triangle after the paint) and flag 8 (a u8 hidden flag per triangle after the groups), read from the engine's new faces() call rather than by widening mesh()'s tuple, which every caller unpacks. /api/engine/turntable runs record_turntable into a temporary file and returns it, deleting the file either way.
+
+### app/routers/engine.py, app/services/engine.py · pen tilt on the stroke socket
+- refers-to: app/routers/engine.py :: stroke socket sample message (tilt); app/services/engine.py :: stroke_sample (tilt)
+- kind: rationale
+- logged: v0.16.0 · 2026-10-11
+Sample messages may carry tilt (radians, the pen's lean from the screen's up); it defaults to 0, so older clients and agents are unaffected, and is passed to the engine's stroke_sample, which turns the brush alpha by it.
