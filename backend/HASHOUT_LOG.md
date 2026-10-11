@@ -140,3 +140,9 @@ Send to NodeMode follows formvis's /api/nodemode protocol so NodeMode needs one 
 - kind: rationale
 - logged: v0.9.0 · 2026-10-11
 The freeze rebuilds fsc_engine when it is missing or its version differs from the service's, and collects the whole package (the compiled extension included). The self-check now dispatches a real command through a fresh engine session and exits non-zero unless the engine answered and the frontend is bundled, so a sidecar without its engine can no longer pass. Measured here: 23 MB one-file sidecar, 53 commands, frontend inside. fs_venv, engine_build and doctor accept a Windows venv (Scripts/activate), which the desktop CI's Windows leg needs.
+
+### app/services/engine.py, app/routers/engine.py · group and hidden payload, turntable route
+- refers-to: app/services/engine.py :: FLAG_GROUPS, FLAG_HIDDEN, mesh_payload; app/routers/engine.py :: turntable
+- kind: rationale
+- logged: v0.11.0 · 2026-10-11
+The mesh payload gains flag 4 (a u32 face group per triangle after the paint) and flag 8 (a u8 hidden flag per triangle after the groups), read from the engine's new faces() call rather than by widening mesh()'s tuple, which every caller unpacks. /api/engine/turntable runs record_turntable into a temporary file and returns it, deleting the file either way.

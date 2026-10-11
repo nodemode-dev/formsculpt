@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.11.0 · 2026-10-11
+
+### Added
+
+- Face groups: `group_auto` (by angle or by parts), `group_from_mask`, `group_clear`, `mask_by_group`; groups carried through subdivision and levels, saved in projects, shown in colour (Face groups in the View section, `shading: "groups"` in get_view).
+- `hide_faces`: hide, show or isolate faces by group or mask, invert, show all; hidden faces are not drawn, rendered or hit, and their vertices hold still.
+- `array_object` (linear or radial, separate or merged), `insert_mesh` (a primitive or a copy at a point on a surface), `set_folder` with folder visibility, `record_turntable` (an animated PNG), `subdivide` with `sharp_border` (74 commands in all).
+- Window: Group from mask, Auto groups, Hide masked, Invert hidden, Show faces; Mask group, Hide group and Insert tools; Array in line and Array radial; Put in folder and Isolate folder; Trackball rotation; a reference image with opacity; a Turntable download.
+
 ## 0.10.0 · 2026-10-11
 
 ### Added
