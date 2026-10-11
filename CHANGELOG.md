@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.16.0 · 2026-10-11
+
+### Added
+
+- `lattice_deform`: free-form deformation by a lattice of 2 to 6 control points per axis around the object, held by the mask (82 commands in all).
+- Window: a Transform tool (an on-canvas gizmo: arrows move, rings turn, squares scale along an axis, the centre square scales evenly, previewed live and sent as one transform_object) and a Lattice tool (drag the cage's points).
+- Touch: two fingers pan and pinch-zoom; a finger's stroke starts once it moves, so a pinch leaves no dab.
+- Pen tilt turns the brush alpha (`tilt` on the stroke socket's samples).
+
 ## 0.15.0 · 2026-10-11
 
 ### Added
