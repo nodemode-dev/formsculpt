@@ -133,6 +133,7 @@ dependencies = [
 name = "fsc-commands"
 version = "0.8.1"
 dependencies = [
+ "base64",
  "fsc-core",
  "fsc-io",
  "fsc-paint",

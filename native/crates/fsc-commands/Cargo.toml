@@ -8,6 +8,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+base64 = "0.22"
 fsc-core.workspace = true
 fsc-io.workspace = true
 fsc-paint.workspace = true

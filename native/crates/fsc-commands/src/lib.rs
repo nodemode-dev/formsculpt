@@ -9,6 +9,7 @@ mod object_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
 mod topo_cmds;
+mod view_cmds;
 
 pub use history::{Edit, History};
 pub use file_cmds::{export_data, import_data, open_data, save_data};
@@ -110,6 +111,17 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: no_args,
         run: scene_cmds::get_scene,
+    },
+    Command {
+        id: "view.get",
+        mcp: "get_view",
+        group: Group::View,
+        label: "Get View",
+        description: "Render the scene to a PNG and return it, so you can see the model: drawn on the CPU with the window's shading (clay matcap by default, paint shown, masked areas darkened), framed to fit, with or without the window open. Check your work with it after each step that changes shape, from more than one view (front, right and top read proportions; three_quarter reads form).",
+        keys: &[],
+        hints: READ,
+        schema: view_cmds::view_schema,
+        run: view_cmds::get_view,
     },
     Command {
         id: "scene.new",
