@@ -144,8 +144,17 @@ impl Stroke {
     }
 
     pub fn sample_point(&mut self, object: &mut Object, point: Vec3, pressure: f32) {
+        // Lazy rope: the brush trails the pointer on a rope of lazy times three radii and moves only when the rope
+        // pulls taut, so hand jitter inside the rope never reaches the surface and lines come out steady.
         let point = match (self.lazy_point, self.settings.lazy) {
-            (Some(prev), lazy) if lazy > 0.0 => prev.lerp(point, 1.0 - lazy.clamp(0.0, 0.95)),
+            (Some(prev), lazy) if lazy > 0.0 => {
+                let rope = lazy.clamp(0.0, 0.95) * self.settings.radius * 3.0;
+                let d = prev.distance(point);
+                if d <= rope {
+                    return;
+                }
+                prev + (point - prev) * (1.0 - rope / d)
+            }
             _ => point,
         };
         self.lazy_point = Some(point);

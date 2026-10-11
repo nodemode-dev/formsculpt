@@ -665,6 +665,17 @@ pub static COMMANDS: &[Command] = &[
         run: layer_cmds::add,
     },
     Command {
+        id: "layer.surface_noise",
+        mcp: "surface_noise",
+        group: Group::Layer,
+        label: "Surface Noise",
+        description: "Cover the object with fractal noise along its normals (skin pores, stone, bark, hammered metal), held by the mask, in a new sculpt layer: change its strength with layer_set_strength to fade or invert it, layer_apply to bake it, layer_delete to remove it. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: layer_cmds::noise_schema,
+        run: layer_cmds::surface_noise,
+    },
+    Command {
         id: "layer.select",
         mcp: "layer_select",
         group: Group::Layer,

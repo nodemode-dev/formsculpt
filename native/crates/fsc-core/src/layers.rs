@@ -16,7 +16,8 @@ pub struct Layers {
 }
 
 impl Object {
-    fn shift(&mut self, delta: &[[f32; 3]], by: f32) {
+    /// Moves every vertex by `delta` times `by`, then refreshes normals and the BVH (a layer's strength change).
+    pub fn shift(&mut self, delta: &[[f32; 3]], by: f32) {
         if by == 0.0 {
             return;
         }
