@@ -63,7 +63,31 @@ def _describe(path: Path) -> dict | None:
         return None
     doc = (ast.get_docstring(tree) or "").strip()
     title, _, rest = doc.partition("\n")
-    return {"name": path.stem, "title": title or path.stem.replace("_", " ").capitalize(), "description": rest.strip(), "path": str(path)}
+    # PARAMS and CLICK are read as literals, never by running the file: listing plugins must not execute them.
+    params, click = {}, False
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            try:
+                value = ast.literal_eval(node.value)
+            except (ValueError, SyntaxError):
+                continue
+            if node.targets[0].id == "PARAMS" and isinstance(value, dict):
+                params = {k: _param(v) for k, v in value.items() if isinstance(k, str) and isinstance(v, dict)}
+            elif node.targets[0].id == "CLICK":
+                click = value is True
+    return {"name": path.stem, "title": title or path.stem.replace("_", " ").capitalize(), "description": rest.strip(), "path": str(path), "params": params, "click": click}
+
+
+def _param(spec: dict) -> dict:
+    """A plugin field, kept to what the window can draw: number, integer, boolean, choice or text."""
+    kind = spec.get("type") if spec.get("type") in ("number", "integer", "boolean", "choice", "text") else "number"
+    out = {"type": kind, "label": str(spec.get("label", ""))[:40]}
+    for key in ("default", "min", "max", "step"):
+        if isinstance(spec.get(key), (int, float, bool, str)):
+            out[key] = spec[key]
+    if kind == "choice":
+        out["options"] = [str(o) for o in spec.get("options", []) if isinstance(o, (str, int, float))][:32]
+    return out
 
 
 def list_plugins() -> list[dict]:

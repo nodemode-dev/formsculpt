@@ -3,6 +3,8 @@ Puts a round pedestal under the active object, sized to its footprint, so a mode
 turntable or a render. args: height (fraction of the object's height, default 0.15).
 """
 
+PARAMS = {"height": {"type": "number", "label": "Height", "default": 0.15, "min": 0.02, "max": 1, "step": 0.01}}
+
 
 def run(fsc, args):
     target = fsc.active()

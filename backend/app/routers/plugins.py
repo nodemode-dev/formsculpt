@@ -17,7 +17,7 @@ class RunRequest(BaseModel):
 
 @router.get("/plugins")
 def plugins() -> dict:
-    return {"plugins": [{k: p[k] for k in ("name", "title", "description")} for p in scripting.list_plugins()]}
+    return {"plugins": [{k: p[k] for k in ("name", "title", "description", "params", "click")} for p in scripting.list_plugins()]}
 
 
 @router.post("/plugins/run")

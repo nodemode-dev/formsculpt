@@ -3,6 +3,11 @@ Adds a detailed sphere, squashes it with a lattice, then layers ridged crests an
 strengths stay adjustable. args: size (default 1), seed (default 0).
 """
 
+PARAMS = {
+    "size": {"type": "number", "label": "Size", "default": 1, "min": 0.1, "max": 10, "step": 0.1},
+    "seed": {"type": "integer", "label": "Seed", "default": 0, "min": 0, "max": 9999},
+}
+
 
 def run(fsc, args):
     size = float(args.get("size", 1.0))

@@ -104,6 +104,27 @@ async def turntable(frames: int = Query(48, ge=8, le=180), size: int = Query(384
     return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="turntable.png"', "Cache-Control": "no-store"})
 
 
+class BridgeOut(BaseModel):
+    id: int = Field(ge=1)
+    format: str = Field("obj", pattern="^(obj|glb|ply|stl)$")
+
+
+@router.post("/bridge")
+def bridge(body: BridgeOut) -> dict:
+    """Sends an object to a file in the bridge folder (FSC_BRIDGE_DIR, or ~/.formsculptor/bridge) for another app to
+    open; bridge_sync brings that app's saves back. Returns the file's path to open there."""
+    _guard()
+    folder = os.environ.get("FSC_BRIDGE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculptor", "bridge")
+    os.makedirs(folder, exist_ok=True)
+    scene = engine.dispatch("get_scene", {})
+    found = next((o for o in scene.get("result", {}).get("objects", []) if o["id"] == body.id), None)
+    if found is None:
+        raise HTTPException(status_code=404, detail=f"no object {body.id}")
+    stem = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in found["name"]).strip("_") or "object"
+    path = os.path.join(folder, f"{stem}-{body.id}.{body.format}")
+    return engine.dispatch("bridge_send", {"id": body.id, "path": path})
+
+
 @router.get("/animation")
 async def animation(keys: str = Query(..., max_length=20000), fps: int = Query(24, ge=1, le=60), size: int = Query(384, ge=64, le=1024), shading: str = "clay", background: str = "dark") -> Response:
     """A looping animated PNG of keyframed camera moves and layer strengths (record_animation; keys is its JSON list)."""
