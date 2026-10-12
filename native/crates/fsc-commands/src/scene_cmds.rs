@@ -28,7 +28,63 @@ pub(crate) fn summary(o: &Object) -> Value {
         "paint_layers": o.paint_layers.list.iter().filter(|_| o.paint_layers.valid(o.mesh.vertex_count())).map(|l| json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible})).collect::<Vec<_>>(),
         "active_paint_layer": o.paint_layers.active.filter(|_| o.paint_layers.valid(o.mesh.vertex_count())),
         "bounds": {"min": b.min.to_array(), "max": b.max.to_array()},
+        "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior},
     })
+}
+
+pub(crate) fn material_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "subsurface": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much light enters and comes back out tinted: skin 0.3 to 0.6, wax and jade 0.8."},
+            "subsurface_color": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1}, "minItems": 3, "maxItems": 3, "description": "The tint light picks up inside, linear RGB (skin is a warm red)."},
+            "subsurface_radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "How far light travels inside, in world units; thin parts such as ears glow when lit from behind."},
+            "transmission": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much light passes through, refracted: 1 for clear glass or water."},
+            "ior": {"type": "number", "minimum": 1, "maximum": 2.5, "description": "Index of refraction: water 1.33, glass 1.5, diamond 2.4."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Sets an object's subsurface and transmission, keeping what is not given, as one undo step.
+pub(crate) fn set_material(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = crate::sculpt_cmds::target(s, args)?;
+    let object = s.scene.get_mut(id).expect("checked");
+    let before = object.material;
+    let mut m = before;
+    let num = |key: &str, lo: f64, hi: f64| -> Result<Option<f32>, CommandError> {
+        match args.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(v) => v.as_f64().filter(|x| (lo..=hi).contains(x)).map(|x| Some(x as f32)).ok_or_else(|| CommandError::new("bad_arguments", format!("{key} must be from {lo} to {hi}"))),
+        }
+    };
+    if let Some(v) = num("subsurface", 0.0, 1.0)? {
+        m.subsurface = v;
+    }
+    if let Some(v) = num("subsurface_radius", 1e-6, 1000.0)? {
+        m.subsurface_radius = v;
+    }
+    if let Some(v) = num("transmission", 0.0, 1.0)? {
+        m.transmission = v;
+    }
+    if let Some(v) = num("ior", 1.0, 2.5)? {
+        m.ior = v;
+    }
+    if let Some(c) = args.get("subsurface_color") {
+        let f: Vec<f32> = c.as_array().map(|a| a.iter().filter_map(Value::as_f64).map(|x| x as f32).collect()).unwrap_or_default();
+        if f.len() != 3 || f.iter().any(|x| !(0.0..=1.0).contains(x)) {
+            return Err(CommandError::new("bad_arguments", "subsurface_color is [r, g, b] from 0 to 1"));
+        }
+        m.subsurface_color = [f[0], f[1], f[2]];
+    }
+    if m == before {
+        return Ok(json!({"object": summary(object), "changed": false}));
+    }
+    object.material = m;
+    s.history.push(Edit::Material { object: id, material: before });
+    Ok(json!({"object": summary(s.scene.get(id).expect("checked")), "changed": true}))
 }
 
 pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandError> {

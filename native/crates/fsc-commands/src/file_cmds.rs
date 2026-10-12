@@ -79,7 +79,7 @@ fn chosen(s: &Session, args: &Value) -> Result<Vec<ObjectId>, CommandError> {
 }
 
 pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec<u8>, CommandError> {
-    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb and 3mf, not {file_name}")))?;
+    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb, gltf, fbx and 3mf, not {file_name}")))?;
     if ids.is_empty() {
         return Err(bad("there is nothing to export"));
     }
@@ -151,7 +151,7 @@ pub(crate) fn bridge_send_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "path": {"type": "string", "minLength": 1, "description": "The file to hand over, by extension: .obj, .glb, .ply, .stl or .3mf (OBJ is the most widely read)."}
+            "path": {"type": "string", "minLength": 1, "description": "The file to hand over, by extension: .obj, .glb, .fbx, .ply, .stl or .3mf (OBJ is the most widely read; FBX for Maya and 3ds Max)."}
         },
         "required": ["path"],
         "additionalProperties": false
@@ -170,7 +170,7 @@ fn modified(path: &str) -> Option<std::time::SystemTime> {
 pub(crate) fn bridge_send(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let path = path_arg(args)?.to_string();
-    let format = Format::parse(&path).ok_or_else(|| bad("the bridge file must end in .obj, .glb, .ply, .stl or .3mf"))?;
+    let format = Format::parse(&path).ok_or_else(|| bad("the bridge file must end in .obj, .glb, .fbx, .ply, .stl or .3mf"))?;
     if matches!(format, Format::Gltf) {
         return Err(bad("use .glb for the bridge; a .gltf is two files"));
     }

@@ -19,6 +19,8 @@ pub enum Edit {
     LayerStroke { label: String, object: ObjectId, layer: usize, edit: VertexEdit },
     /// A paint layer step (add, delete, settings, merge, flatten): the whole stack and the composite swap back.
     PaintLayers { label: String, object: ObjectId, layers: PaintLayers, paint: Vec<Paint> },
+    /// A material change (subsurface, transmission): the previous material swaps back.
+    Material { object: ObjectId, material: fsc_core::Material },
 }
 
 impl Edit {
@@ -32,6 +34,7 @@ impl Edit {
             | Edit::LayerStroke { label, .. }
             | Edit::PaintLayers { label, .. } => label.clone(),
             Edit::Rename { .. } => "Rename".into(),
+            Edit::Material { .. } => "Material".into(),
             Edit::Divide { .. } => "Divide".into(),
             Edit::Level { to, .. } => format!("Level {to}"),
             Edit::Add { .. } => "Add Object".into(),
@@ -107,6 +110,10 @@ impl Edit {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 std::mem::swap(&mut o.name, name);
                 o.revision += 1;
+            }
+            Edit::Material { object, material } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                std::mem::swap(&mut o.material, material);
             }
             Edit::LayerState { object, layers, positions, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;

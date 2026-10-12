@@ -28,6 +28,30 @@ pub struct Object {
     pub primitive: Option<(String, u64)>,
     /// A linked copy: rebuilt from its source whenever the source changes, until it is changed itself.
     pub instance: Option<Instance>,
+    /// How light passes into and through the surface, beyond its painted colour, roughness and metalness.
+    pub material: Material,
+}
+
+/// An object's light transport in lit shading: subsurface scattering (skin, wax, jade) and transmission with refraction
+/// (glass, water, resin). Zero subsurface and transmission is an ordinary opaque surface.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Material {
+    /// 0 to 1: how much light enters the surface and comes back out tinted.
+    pub subsurface: f32,
+    /// The colour light picks up inside (linear RGB, 0 to 1).
+    pub subsurface_color: [f32; 3],
+    /// How far light travels inside, in world units; thin parts glow through when lit from behind.
+    pub subsurface_radius: f32,
+    /// 0 to 1: how much light passes through, refracted.
+    pub transmission: f32,
+    /// Index of refraction, 1 to 2.5 (water 1.33, glass 1.5, diamond 2.4).
+    pub ior: f32,
+}
+
+impl Default for Material {
+    fn default() -> Material {
+        Material { subsurface: 0.0, subsurface_color: [1.0, 0.35, 0.25], subsurface_radius: 0.2, transmission: 0.0, ior: 1.45 }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +79,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default() }
     }
 
     pub fn rebuild(&mut self) {
