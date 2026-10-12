@@ -92,13 +92,82 @@ pub(crate) fn group_from_mask(s: &mut Session, args: &Value) -> Result<Value, Co
     Ok(json!({"object": object, "group": new, "faces": n}))
 }
 
+pub(crate) fn paint_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": ID},
+            "points": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "The stroke over the surface as [x, y, z] points (pick gives them), in order."},
+            "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "The brush radius in world units; faces whose middle lies within it of the stroke are painted."},
+            "group": {"type": "integer", "minimum": 0, "description": "Paint this existing group number; a new group when omitted."}
+        },
+        "required": ["points", "radius"],
+        "additionalProperties": false
+    })
+}
+
+/// Group brush: paints the faces along a stroke into one face group, as one undo step.
+pub(crate) fn group_paint(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let pts: Vec<Vec3> = args
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("points is a list of [x, y, z]"))?
+        .iter()
+        .map(|p| {
+            let f: Vec<f32> = p.as_array().map(|a| a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect()).unwrap_or_default();
+            if f.len() == 3 && f.iter().all(|x| x.is_finite()) {
+                Ok(Vec3::new(f[0], f[1], f[2]))
+            } else {
+                Err(bad("each point is [x, y, z]"))
+            }
+        })
+        .collect::<Result<_, _>>()?;
+    if pts.is_empty() {
+        return Err(bad("points needs at least one point"));
+    }
+    let radius = args.get("radius").and_then(Value::as_f64).filter(|r| *r > 0.0 && *r <= 1000.0).ok_or_else(|| bad("radius must be above 0 and at most 1000"))? as f32;
+    let o = s.scene.get(id).expect("checked");
+    let mut groups = groups_of(&o.mesh);
+    let group = match args.get("group").and_then(Value::as_u64) {
+        Some(g) => g as u32,
+        None => groups.iter().max().map(|m| m + 1).unwrap_or(1),
+    };
+    let near = |c: Vec3| -> bool {
+        if pts.len() == 1 {
+            return c.distance(pts[0]) <= radius;
+        }
+        pts.windows(2).any(|w| {
+            let e = w[1] - w[0];
+            let t = ((c - w[0]).dot(e) / e.length_squared().max(1e-12)).clamp(0.0, 1.0);
+            c.distance(w[0] + e * t) <= radius
+        })
+    };
+    let mut painted = 0;
+    for (t, g) in groups.iter_mut().enumerate() {
+        let c = o.mesh.triangle(t).iter().map(|&v| o.mesh.position(v)).sum::<Vec3>() / 3.0;
+        if near(c) && *g != group {
+            *g = group;
+            painted += 1;
+        }
+    }
+    if painted == 0 {
+        return Err(CommandError::new("nothing_painted", "no face lies under the stroke; check the points and radius"));
+    }
+    let mut mesh = o.mesh.clone();
+    mesh.groups = groups;
+    let object = commit(s, id, "Paint Group", mesh);
+    Ok(json!({"object": object, "group": group, "faces": painted}))
+}
+
 pub(crate) fn auto_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": ID},
-            "by": {"type": "string", "enum": ["angle", "parts"], "default": "angle", "description": "angle starts a new group wherever neighbouring faces turn by more than `angle` degrees (the planes of a hard-surface model, the sides of a cube); parts gives each loose piece its own group."},
-            "angle": {"type": "number", "minimum": 1, "maximum": 179, "default": 30}
+            "by": {"type": "string", "enum": ["angle", "parts", "paint", "uv"], "default": "angle", "description": "angle starts a new group wherever neighbouring faces turn by more than `angle` degrees (the planes of a hard-surface model, the sides of a cube); parts gives each loose piece its own group; paint groups connected faces of one painted colour (within `tolerance`); uv gives each UV island its own group (from the object's UVs, or an automatic unwrap when it has none)."},
+            "angle": {"type": "number", "minimum": 1, "maximum": 179, "default": 30},
+            "tolerance": {"type": "number", "minimum": 0.001, "maximum": 1, "default": 0.12, "description": "paint: how far apart two colours (0 to 1 per channel) may be and still share a group."}
         },
         "required": [],
         "additionalProperties": false
@@ -151,7 +220,41 @@ pub(crate) fn group_auto(s: &mut Session, args: &Value) -> Result<Value, Command
                 }
             }
         }
-        other => return Err(bad(format!("unknown by {other}; use angle or parts"))),
+        "paint" => {
+            if !mesh.has_paint() {
+                return Err(CommandError::new("no_paint", "the object has no paint to group by; paint it or group by angle or parts"));
+            }
+            let tolerance = args.get("tolerance").and_then(Value::as_f64).unwrap_or(0.12).clamp(0.001, 1.0) as f32;
+            // A face's colour is its corners' mean; neighbours across an edge join when their colours are close.
+            let colour = |t: usize| -> Vec3 { mesh.triangle(t).iter().map(|&v| Vec3::new(mesh.paint[v as usize][0], mesh.paint[v as usize][1], mesh.paint[v as usize][2])).sum::<Vec3>() / 3.0 };
+            let colours: Vec<Vec3> = (0..tris).map(colour).collect();
+            for faces in fsc_topo::edge_faces(mesh).values() {
+                for &a in faces {
+                    for &b in faces {
+                        if a != b && colours[a as usize].distance(colours[b as usize]) <= tolerance {
+                            neighbours[a as usize].push(b);
+                        }
+                    }
+                }
+            }
+        }
+        "uv" => {
+            // UV islands: faces join across an edge whose two ends have the same UVs on both sides.
+            let uvs = if mesh.uvs.len() == mesh.indices.len() { mesh.uvs.clone() } else { fsc_paint::unwrap(mesh, 0.0).uvs };
+            let corner_uv = |t: usize, v: u32| -> Option<[f32; 2]> { (0..3).find(|&k| mesh.indices[t * 3 + k] == v).map(|k| uvs[t * 3 + k]) };
+            let same = |p: Option<[f32; 2]>, q: Option<[f32; 2]>| matches!((p, q), (Some(p), Some(q)) if (p[0] - q[0]).abs() < 1e-5 && (p[1] - q[1]).abs() < 1e-5);
+            for (edge, faces) in fsc_topo::edge_faces(mesh) {
+                let (va, vb) = (edge.0, edge.1);
+                for &a in &faces {
+                    for &b in &faces {
+                        if a != b && same(corner_uv(a as usize, va), corner_uv(b as usize, va)) && same(corner_uv(a as usize, vb), corner_uv(b as usize, vb)) {
+                            neighbours[a as usize].push(b);
+                        }
+                    }
+                }
+            }
+        }
+        other => return Err(bad(format!("unknown by {other}; use angle, parts, paint or uv"))),
     }
     let mut groups = vec![u32::MAX; tris];
     let mut next = 0u32;
@@ -172,9 +275,61 @@ pub(crate) fn group_auto(s: &mut Session, args: &Value) -> Result<Value, Command
         }
         next += 1;
     }
+    if by == "paint" {
+        // A soft brush edge leaves slivers of in-between colour; fold groups under a thousandth of the faces (at
+        // least four) into the neighbour they share most edges with, then number the groups again from 0.
+        let min = ((tris as f32 * 0.001).ceil() as usize).max(4);
+        let edges = fsc_topo::edge_faces(mesh);
+        for _ in 0..4 {
+            let mut size = vec![0usize; next as usize];
+            for &g in &groups {
+                size[g as usize] += 1;
+            }
+            let mut votes: HashMap<(u32, u32), usize> = HashMap::new();
+            for faces in edges.values() {
+                for &a in faces {
+                    for &b in faces {
+                        let (ga, gb) = (groups[a as usize], groups[b as usize]);
+                        if ga != gb && size[ga as usize] < min {
+                            *votes.entry((ga, gb)).or_default() += 1;
+                        }
+                    }
+                }
+            }
+            if votes.is_empty() {
+                break;
+            }
+            let mut into: HashMap<u32, (u32, usize)> = HashMap::new();
+            for ((ga, gb), n) in votes {
+                let best = into.entry(ga).or_insert((gb, 0));
+                if n > best.1 || (n == best.1 && gb < best.0) {
+                    *best = (gb, n);
+                }
+            }
+            for g in groups.iter_mut() {
+                if let Some(&(to, _)) = into.get(g) {
+                    // Two slivers may point at each other; the larger id follows the smaller so they still meet.
+                    if !(into.contains_key(&to) && to > *g) {
+                        *g = to;
+                    }
+                }
+            }
+        }
+        let mut renumber: HashMap<u32, u32> = HashMap::new();
+        for g in groups.iter_mut() {
+            let n = renumber.len() as u32;
+            *g = *renumber.entry(*g).or_insert(n);
+        }
+        next = renumber.len() as u32;
+    }
     let mut mesh = mesh.clone();
     mesh.groups = groups;
-    let label = if by == "angle" { "Group by Angle" } else { "Group by Parts" };
+    let label = match by.as_str() {
+        "angle" => "Group by Angle",
+        "parts" => "Group by Parts",
+        "paint" => "Group by Paint",
+        _ => "Group by UV",
+    };
     let object = commit(s, id, label, mesh);
     Ok(json!({"object": object, "groups": next}))
 }

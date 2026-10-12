@@ -6,7 +6,7 @@ mod project;
 use fsc_core::Mesh;
 
 pub use formats::Named;
-pub use gltf::{GltfObject, Target};
+pub use gltf::{GltfObject, Resolve, Target};
 pub use project::{open as open_project, save as save_project};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,11 +37,16 @@ impl Format {
 }
 
 pub fn import(format: Format, bytes: &[u8]) -> Result<Vec<Named>, String> {
+    import_with(format, bytes, &|uri: &str| Err(format!("the glTF refers to an outside file ({uri}); import it from its path so the file beside it can be read, or use GLB")))
+}
+
+/// Imports a file whose glTF buffers may live in files beside it, read through `resolve`.
+pub fn import_with(format: Format, bytes: &[u8], resolve: gltf::Resolve) -> Result<Vec<Named>, String> {
     let meshes = match format {
         Format::Obj => formats::read_obj(bytes)?,
         Format::Stl => formats::read_stl(bytes)?,
         Format::Ply => formats::read_ply(bytes)?,
-        Format::Glb | Format::Gltf => gltf::read_gltf(bytes)?,
+        Format::Glb | Format::Gltf => gltf::read_gltf_with(bytes, resolve)?,
         Format::ThreeMf => formats::read_3mf(bytes)?,
     };
     for (name, mesh) in &meshes {
@@ -78,9 +83,14 @@ pub fn export(format: Format, objects: &[GltfObject]) -> Result<Vec<u8>, String>
         Format::Stl => formats::write_stl(&merged()),
         Format::Ply => formats::write_ply(&merged()),
         Format::Glb => gltf::write_glb(objects),
-        Format::Gltf => return Err("export glTF as glb, the single-file binary form".into()),
+        Format::Gltf => return Err("a .gltf is written as two files; export it to a path (export_mesh) or as glb".into()),
         Format::ThreeMf => formats::write_3mf(&plain)?,
     })
+}
+
+/// The separate glTF form: the .gltf document pointing at `bin_name`, and the .bin's bytes.
+pub fn export_gltf(objects: &[GltfObject], bin_name: &str) -> (Vec<u8>, Vec<u8>) {
+    gltf::write_gltf(objects, bin_name)
 }
 
 pub fn engine_version() -> &'static str {

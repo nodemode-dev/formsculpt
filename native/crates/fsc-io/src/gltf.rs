@@ -24,7 +24,34 @@ fn pad(buf: &mut Vec<u8>, with: u8) {
     }
 }
 
+/// A GLB: the document and its one buffer in a single file.
 pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
+    let (doc, bin) = document(objects);
+    let mut text = serde_json::to_vec(&doc).expect("json");
+    pad(&mut text, b' ');
+    let total = 12 + 8 + text.len() + 8 + bin.len();
+    let mut out = Vec::with_capacity(total);
+    out.extend_from_slice(b"glTF");
+    out.extend_from_slice(&2u32.to_le_bytes());
+    out.extend_from_slice(&(total as u32).to_le_bytes());
+    out.extend_from_slice(&(text.len() as u32).to_le_bytes());
+    out.extend_from_slice(b"JSON");
+    out.extend_from_slice(&text);
+    out.extend_from_slice(&(bin.len() as u32).to_le_bytes());
+    out.extend_from_slice(b"BIN\0");
+    out.extend_from_slice(&bin);
+    out
+}
+
+/// A glTF in its separate form: the JSON document, whose buffer points at `bin_name` beside it, and that buffer's
+/// bytes (geometry, paint, layers and any baked maps, as in the GLB).
+pub fn write_gltf(objects: &[GltfObject], bin_name: &str) -> (Vec<u8>, Vec<u8>) {
+    let (mut doc, bin) = document(objects);
+    doc["buffers"][0]["uri"] = json!(bin_name);
+    (serde_json::to_vec_pretty(&doc).expect("json"), bin)
+}
+
+fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
     let mut bin: Vec<u8> = Vec::new();
     let mut views = Vec::new();
     let mut accessors = Vec::new();
@@ -166,23 +193,13 @@ pub fn write_glb(objects: &[GltfObject]) -> Vec<u8> {
         doc["textures"] = json!(textures);
         doc["samplers"] = json!([{"magFilter": 9729, "minFilter": 9987, "wrapS": 33071, "wrapT": 33071}]);
     }
-    let mut text = serde_json::to_vec(&doc).expect("json");
-    pad(&mut text, b' ');
-    let total = 12 + 8 + text.len() + 8 + bin.len();
-    let mut out = Vec::with_capacity(total);
-    out.extend_from_slice(b"glTF");
-    out.extend_from_slice(&2u32.to_le_bytes());
-    out.extend_from_slice(&(total as u32).to_le_bytes());
-    out.extend_from_slice(&(text.len() as u32).to_le_bytes());
-    out.extend_from_slice(b"JSON");
-    out.extend_from_slice(&text);
-    out.extend_from_slice(&(bin.len() as u32).to_le_bytes());
-    out.extend_from_slice(b"BIN\0");
-    out.extend_from_slice(&bin);
-    out
+    (doc, bin)
 }
 
-fn buffer_bytes(doc: &Value, glb_bin: Option<&[u8]>) -> Result<Vec<Vec<u8>>, String> {
+/// Reads a file a glTF refers to by URI (a .bin beside it); the importer passes one that looks next to the .gltf.
+pub type Resolve<'a> = &'a dyn Fn(&str) -> Result<Vec<u8>, String>;
+
+fn buffer_bytes(doc: &Value, glb_bin: Option<&[u8]>, resolve: Resolve) -> Result<Vec<Vec<u8>>, String> {
     let mut out = Vec::new();
     for (k, b) in doc["buffers"].as_array().cloned().unwrap_or_default().iter().enumerate() {
         match b["uri"].as_str() {
@@ -191,7 +208,14 @@ fn buffer_bytes(doc: &Value, glb_bin: Option<&[u8]>) -> Result<Vec<Vec<u8>>, Str
                 let data = uri.split(",").nth(1).ok_or("a data URI has no data")?;
                 out.push(base64::engine::general_purpose::STANDARD.decode(data).map_err(|e| format!("a data URI is not base64: {e}"))?);
             }
-            Some(uri) => return Err(format!("the glTF refers to an outside file ({uri}); export it as GLB or embedded glTF")),
+            Some(uri) => {
+                let data = resolve(uri)?;
+                let need = b["byteLength"].as_u64().unwrap_or(0) as usize;
+                if data.len() < need {
+                    return Err(format!("{uri} is shorter than the glTF says ({} of {need} bytes)", data.len()));
+                }
+                out.push(data);
+            }
             None => return Err("a buffer has no data".into()),
         }
     }
@@ -245,7 +269,7 @@ fn local(node: &Value) -> Mat4 {
     Mat4::from_scale_rotation_translation(Vec3::new(s[0], s[1], s[2]), Quat::from_xyzw(r[0], r[1], r[2], r[3]), Vec3::new(t[0], t[1], t[2]))
 }
 
-pub fn read_gltf(bytes: &[u8]) -> Result<Vec<Named>, String> {
+pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, String> {
     let (doc, bin): (Value, Option<&[u8]>) = if bytes.starts_with(b"glTF") {
         let jlen = u32::from_le_bytes(bytes.get(12..16).ok_or("the GLB is truncated")?.try_into().expect("4")) as usize;
         let doc = serde_json::from_slice(bytes.get(20..20 + jlen).ok_or("the GLB is truncated")?).map_err(|e| format!("the GLB JSON is broken: {e}"))?;
@@ -258,7 +282,7 @@ pub fn read_gltf(bytes: &[u8]) -> Result<Vec<Named>, String> {
     } else {
         (serde_json::from_slice(bytes).map_err(|e| format!("the glTF JSON is broken: {e}"))?, None)
     };
-    let buffers = buffer_bytes(&doc, bin)?;
+    let buffers = buffer_bytes(&doc, bin, resolve)?;
     let scene = doc["scene"].as_u64().unwrap_or(0) as usize;
     let roots: Vec<usize> = doc["scenes"][scene]["nodes"].as_array().map(|a| a.iter().filter_map(|x| x.as_u64().map(|v| v as usize)).collect()).unwrap_or_else(|| (0..doc["nodes"].as_array().map(|a| a.len()).unwrap_or(0)).collect());
     let mut stack: Vec<(usize, Mat4)> = roots.into_iter().map(|n| (n, Mat4::IDENTITY)).collect();

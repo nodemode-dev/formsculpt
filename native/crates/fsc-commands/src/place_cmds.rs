@@ -235,15 +235,9 @@ pub(crate) fn insert_schema() -> Value {
     })
 }
 
-pub(crate) fn insert_mesh(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let point = vec3(args, "point")?.ok_or_else(|| bad("point is required"))?;
-    let normal = vec3(args, "normal")?.unwrap_or(Vec3::Y).normalize_or(Vec3::Y);
-    let size = args.get("size").and_then(Value::as_f64).unwrap_or(0.2) as f32;
-    let sink = args.get("sink").and_then(Value::as_f64).unwrap_or(0.25) as f32;
-    if !(size > 0.0 && size.is_finite()) || !(-1.0..=1.0).contains(&sink) {
-        return Err(bad("size must be above 0 and sink -1 to 1"));
-    }
-    let (source, name) = match args.get("source_id").and_then(Value::as_u64) {
+/// The mesh an insert places: a copy of source_id, or a primitive of kind.
+fn insert_source(s: &Session, args: &Value) -> Result<(Mesh, String), CommandError> {
+    Ok(match args.get("source_id").and_then(Value::as_u64) {
         Some(sid) => {
             let o = s.scene.get(sid as u32).ok_or_else(|| CommandError::new("not_found", format!("no object {sid}")))?;
             (o.mesh.clone(), format!("{} insert", o.name))
@@ -264,7 +258,122 @@ pub(crate) fn insert_mesh(s: &mut Session, args: &Value) -> Result<Value, Comman
             }
             (p.build(), c)
         }
+    })
+}
+
+pub(crate) fn insert_along_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "path": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 6, "maxItems": 6}, "description": "The stroke over the surface as [x, y, z, nx, ny, nz] points with their normals (pick gives both), in order."},
+            "kind": {"type": "string", "enum": ["sphere", "cube", "cylinder", "cone", "torus"], "default": "sphere", "description": "A primitive to insert, unless source_id is given."},
+            "source_id": {"type": "integer", "minimum": 1, "description": "Insert copies of this object instead (scales, studs, spikes, chain links, teeth)."},
+            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "default": 0.2, "description": "Each copy's largest dimension, in world units."},
+            "spacing": {"type": "number", "minimum": 0.1, "maximum": 20, "default": 1.2, "description": "Distance between copies along the stroke, as a multiple of size."},
+            "sink": {"type": "number", "minimum": -1, "maximum": 1, "default": 0.25, "description": "How far each copy sinks into the surface, as a fraction of its height."},
+            "align": {"type": "boolean", "default": true, "description": "Turn each copy so its x follows the stroke (a chain, a row of scales)."},
+            "merge": {"type": "boolean", "default": true, "description": "Make all copies one object; false gives one object per copy."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+    })
+}
+
+/// Insert mesh along a stroke: copies strung over the surface at even spacing, each standing on its normal.
+pub(crate) fn insert_along(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let path: Vec<(Vec3, Vec3)> = args
+        .get("path")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("path is a list of [x, y, z, nx, ny, nz] points"))?
+        .iter()
+        .map(|p| {
+            let f: Vec<f32> = p.as_array().map(|a| a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect()).unwrap_or_default();
+            if f.len() != 6 || f.iter().any(|x| !x.is_finite()) {
+                return Err(bad("each path point is [x, y, z, nx, ny, nz]"));
+            }
+            Ok((Vec3::new(f[0], f[1], f[2]), Vec3::new(f[3], f[4], f[5]).normalize_or(Vec3::Y)))
+        })
+        .collect::<Result<_, _>>()?;
+    if path.is_empty() {
+        return Err(bad("path needs at least one point"));
+    }
+    let size = args.get("size").and_then(Value::as_f64).unwrap_or(0.2) as f32;
+    let spacing = args.get("spacing").and_then(Value::as_f64).unwrap_or(1.2).clamp(0.1, 20.0) as f32;
+    let sink = args.get("sink").and_then(Value::as_f64).unwrap_or(0.25) as f32;
+    if !(size > 0.0 && size.is_finite()) || !(-1.0..=1.0).contains(&sink) {
+        return Err(bad("size must be above 0 and sink -1 to 1"));
+    }
+    let align = args.get("align").and_then(Value::as_bool).unwrap_or(true);
+    let merge = args.get("merge").and_then(Value::as_bool).unwrap_or(true);
+    let (source, name) = insert_source(s, args)?;
+    // Places along the stroke every `step` of arc length, normals blended between samples.
+    let step = size * spacing;
+    let mut places: Vec<(Vec3, Vec3, Vec3)> = Vec::new();
+    let tangent_at = |i: usize| -> Vec3 {
+        let (a, b) = (path[i.saturating_sub(1)].0, path[(i + 1).min(path.len() - 1)].0);
+        (b - a).normalize_or(Vec3::X)
     };
+    places.push((path[0].0, path[0].1, tangent_at(0)));
+    let mut carried = 0.0;
+    for i in 1..path.len() {
+        let (a, b) = (path[i - 1], path[i]);
+        let len = (b.0 - a.0).length();
+        let mut at = step - carried;
+        while at <= len {
+            let t = at / len.max(1e-9);
+            places.push((a.0.lerp(b.0, t), a.1.lerp(b.1, t).normalize_or(Vec3::Y), (b.0 - a.0).normalize_or(Vec3::X)));
+            at += step;
+        }
+        carried = (carried + len) % step;
+        if places.len() > 2000 {
+            return Err(bad("that would place more than 2000 copies; raise spacing or size"));
+        }
+    }
+    let b = source.bounds();
+    let scale = size / b.extent().max_element().max(1e-9);
+    let base = Vec3::new(b.center().x, b.min.y, b.center().z);
+    let height = b.extent().y * scale;
+    let copy = |(point, normal, dir): (Vec3, Vec3, Vec3)| -> Mesh {
+        let stand = Quat::from_rotation_arc(Vec3::Y, normal);
+        // Turn about the normal so the copy's x follows the stroke across the surface.
+        let rot = if align {
+            let along = (dir - normal * dir.dot(normal)).normalize_or(stand * Vec3::X);
+            let x_now = stand * Vec3::X;
+            let angle = x_now.cross(along).dot(normal).atan2(x_now.dot(along));
+            Quat::from_axis_angle(normal, angle) * stand
+        } else {
+            stand
+        };
+        let place = point - normal * (height * sink);
+        let positions = source.positions.iter().map(|&p| (rot * ((Vec3::from(p) - base) * scale) + place).to_array()).collect();
+        let mut m = Mesh::new(positions, source.indices.clone());
+        m.paint = source.paint.clone();
+        m
+    };
+    let count = places.len();
+    if merge {
+        let parts: Vec<Mesh> = places.into_iter().map(copy).collect();
+        let mesh = fsc_topo::merge(&parts.iter().collect::<Vec<_>>());
+        let id = add_object(s, &format!("{name} row"), mesh, true);
+        return Ok(json!({"object": summary(s.scene.get(id).expect("added")), "active": id, "copies": count}));
+    }
+    let mut ids = Vec::with_capacity(count);
+    for p in places {
+        let m = copy(p);
+        ids.push(add_object(s, &name, m, true));
+    }
+    Ok(json!({"ids": ids, "active": ids.last(), "copies": count}))
+}
+
+pub(crate) fn insert_mesh(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let point = vec3(args, "point")?.ok_or_else(|| bad("point is required"))?;
+    let normal = vec3(args, "normal")?.unwrap_or(Vec3::Y).normalize_or(Vec3::Y);
+    let size = args.get("size").and_then(Value::as_f64).unwrap_or(0.2) as f32;
+    let sink = args.get("sink").and_then(Value::as_f64).unwrap_or(0.25) as f32;
+    if !(size > 0.0 && size.is_finite()) || !(-1.0..=1.0).contains(&sink) {
+        return Err(bad("size must be above 0 and sink -1 to 1"));
+    }
+    let (source, name) = insert_source(s, args)?;
     // Scale to `size`, stand it on its local y along the normal, and sink it by a fraction of its height.
     let b = source.bounds();
     let scale = size / b.extent().max_element().max(1e-9);

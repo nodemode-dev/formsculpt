@@ -41,8 +41,12 @@ pub fn open_data(s: &mut Session, bytes: Vec<u8>) -> Result<Value, CommandError>
 }
 
 pub fn import_data(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>) -> Result<Value, CommandError> {
+    import_resolved(s, file_name, bytes, name, &|uri: &str| Err(format!("the glTF refers to an outside file ({uri}); import it from its path with import_mesh so the file beside it is read, or use GLB")))
+}
+
+fn import_resolved(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>, resolve: fsc_io::Resolve) -> Result<Value, CommandError> {
     let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor reads {}", Format::NAMES.join(", "))))?;
-    let meshes = fsc_io::import(format, bytes).map_err(|e| CommandError::new("bad_file", e))?;
+    let meshes = fsc_io::import_with(format, bytes, resolve).map_err(|e| CommandError::new("bad_file", e))?;
     s.history.push(Edit::Scene { label: "Import".into(), objects: s.scene.objects.clone(), active: s.scene.active });
     let stem = Path::new(file_name).file_stem().and_then(|x| x.to_str()).unwrap_or("Imported").to_string();
     let single = meshes.len() == 1;
@@ -126,7 +130,16 @@ pub(crate) fn import_schema() -> Value {
 pub(crate) fn import(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let path = path_arg(args)?;
     let bytes = std::fs::read(path).map_err(|e| io(format!("could not read {path}: {e}")))?;
-    import_data(s, path, &bytes, args.get("name").and_then(Value::as_str))
+    // A .gltf's buffers may be files beside it, named relative to it.
+    let dir = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
+    let beside = move |uri: &str| -> Result<Vec<u8>, String> {
+        let decoded = uri.replace("%20", " ");
+        if decoded.contains("://") || Path::new(&decoded).is_absolute() {
+            return Err(format!("the glTF points at {uri}, which is not a file beside it"));
+        }
+        std::fs::read(dir.join(&decoded)).map_err(|e| format!("could not read {decoded} beside the glTF: {e}"))
+    };
+    import_resolved(s, path, &bytes, args.get("name").and_then(Value::as_str), &beside)
 }
 
 pub(crate) fn export_schema() -> Value {
@@ -136,6 +149,26 @@ pub(crate) fn export_schema() -> Value {
 pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let path = path_arg(args)?;
     let ids = chosen(s, args)?;
+    if path.to_ascii_lowercase().ends_with(".gltf") {
+        // The separate form: the .gltf document and a .bin of the same name beside it.
+        if ids.is_empty() {
+            return Err(bad("there is nothing to export"));
+        }
+        let p = Path::new(path);
+        let bin_name = format!("{}.bin", p.file_stem().and_then(|x| x.to_str()).unwrap_or("scene"));
+        let objects: Vec<GltfObject> = ids
+            .iter()
+            .map(|&id| {
+                let o = s.scene.get(id).expect("checked");
+                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.strength, delta: &l.delta }).collect(), maps: o.maps.as_ref() }
+            })
+            .collect();
+        let (doc, bin) = fsc_io::export_gltf(&objects, &bin_name);
+        let bin_path = p.with_file_name(&bin_name);
+        std::fs::write(&bin_path, &bin).map_err(|e| io(format!("could not write {}: {e}", bin_path.display())))?;
+        std::fs::write(path, &doc).map_err(|e| io(format!("could not write {path}: {e}")))?;
+        return Ok(json!({"path": path, "bin": bin_path.to_string_lossy(), "bytes": doc.len() + bin.len(), "objects": ids.len()}));
+    }
     let bytes = export_data(s, path, &ids)?;
     std::fs::write(path, &bytes).map_err(|e| io(format!("could not write {path}: {e}")))?;
     Ok(json!({"path": path, "bytes": bytes.len(), "objects": ids.len()}))
