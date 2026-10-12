@@ -120,6 +120,14 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. `import_mesh` reads OBJ, STL, PLY, GLB, glTF (embedded or with its .bin beside it), binary FBX, USD as text (.usda) and 3MF from a path as new objects; `export_mesh` writes OBJ, STL, PLY, GLB, FBX (for Maya, 3ds Max and game engines; layers as blend shapes), USD (.usda, for Omniverse, Houdini and Apple tools), glTF (a .gltf and a .bin of the same name) or 3MF by the path's extension (GLB and glTF keep layers as morph targets, paint and baked maps; STL and PLY join objects). To hand an object to another app and take its edits back (retopology, UVs, a Blender modifier), `bridge_send` it to a path, have the person open and save it there, then `bridge_sync`: the saved file replaces the same object's mesh.
 3. Before printing, `print_check` (set `units_per_mm` to the scale you mean and `min_wall_mm` to the printer's limit) and fix what it lists: `repair_mesh` for open or non-manifold edges, thicken or `remesh_voxel` thin walls, then check again.
 
+## Workflow 11: pose, drape, groom, retopologize and render
+
+1. Pose: mask what must stay (the body), then `pose` with the joint as `pivot`, a hinge `axis` and an `angle`; `falloff` (a tenth of the limb's length) bends the joint smoothly. One joint per call.
+2. Cloth: `add_primitive` plane with detail 48 to 96 above the model, then `cloth_drape` on it (`floor` for a ground; mask an edge first to hang a curtain from it).
+3. Hair, fur and grass: mask the scalp or the patch, `grow_fibers` with `length`, `droop` (0.5 to 0.8 for hair), `clump` (0.3 for locks) and a `color`; the fibers are a new object.
+4. Manual retopology: `retopo_face` with `target` and four `points` per quad in order around it (pass `into` from the first call's id); then `insert_edge_loop` where joints need more loops, `delete_faces` and `bridge` to open and join borders, `multires_divide` and `project_detail` from the sculpt.
+5. Final images: `get_view` with `render: "path"` (`samples` 32 for a look, 256 for a final; `bounces` 4); painted `emissive` parts light the scene. For texturing elsewhere, `send_to_substance` writes a Painter package (UVs first).
+
 ## Not yet available
 
-There are no edge loop or polygon bridge tools, `bevel_edges` rounds every convex or concave edge of an object rather than chosen ones and makes no chamfers, UVs are edited by whole islands (seams come from face groups; single UV points cannot be moved), and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There is no chamfer bevel on chosen edges (`bevel_edges` rounds every convex or concave edge of an object rather than chosen ones), no skeleton rig (pose turns one masked part at a time), no cloth or groom brushes, UVs are edited by whole islands (seams come from face groups; single UV points cannot be moved), and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.

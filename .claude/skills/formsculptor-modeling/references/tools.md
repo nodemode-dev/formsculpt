@@ -1,21 +1,21 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.28.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.29.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
-- Topology: `bevel_edges`, `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
+- Files: `send_to_substance`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
-- Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 
 ## get_engine_info
 
@@ -38,10 +38,13 @@ Note: read-only.
 Render the scene to a PNG and return it, so you can see the model: drawn on the CPU with the window's shading (clay matcap by default, paint shown, masked areas darkened), framed to fit, with or without the window open. Check your work with it after each step that changes shape, from more than one view (front, right and top read proportions; three_quarter reads form).
 
 - `background`: string (dark | light | transparent); default "dark"
+- `bounces`: integer; default 4; range 1 to 8; Path render: how many times light may bounce.
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
 - `height`: integer; default 640; range 64 to 2048
 - `ids`: array of integer; Only these objects; every visible object when omitted.
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
+- `render`: string (preview | path); default "preview"; preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise).
+- `samples`: integer; default 32; range 1 to 1024; Path render: paths per pixel; 32 is a quick look, 256 a clean final image.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
@@ -435,6 +438,81 @@ Give an object UV coordinates: faces are grouped into charts by the direction th
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `method`: string (conformal | project); default "conformal"; conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle).
 - `seams`: string (direction | groups); default "direction"; Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction).
+
+## cloth_drape
+
+Simulate an object as cloth falling under gravity onto the other objects (or chosen colliders, and an optional floor) until it settles: edges keep their length, the cloth cannot pass through what it lands on, and masked vertices stay pinned (hang a curtain by masking its top edge). Typical: add_primitive plane with detail 64 above a model, then cloth_drape. One undo step.
+
+- `colliders`: array of integer; Objects the cloth lands on and cannot pass through; every other visible object when omitted.
+- `floor`: number; A floor height the cloth rests on; none when omitted.
+- `gravity`: array of number; Direction and strength of the pull in world units per second squared; [0, -9.8, 0] when omitted.
+- `id`: integer; range 1 to inf; The cloth: usually a plane (add_primitive kind plane, detail 48 to 96) placed above what it should fall on; the active object when omitted.
+- `steps`: integer; default 180; range 1 to 2000; Simulation steps of 1/60 s; more lets it fall further and settle.
+- `stiffness`: number; default 0.9; range 0.05 to 1; How firmly edges keep their length (1 is stiff cotton, lower is stretchy).
+- `thickness`: number; range -inf to 100; How far the cloth stays off colliders; 1 percent of the cloth's size when omitted.
+
+## pose
+
+Pose a part as with ZBrush's Transpose: mask what must stay (the body), and the unmasked part (an arm) turns about a joint pivot by an angle around an axis; partly masked vertices turn partly, and falloff spreads the bend smoothly near the joint. One undo step.
+
+- `angle`: number; required; range -360 to 360; Degrees to turn, counter-clockwise about the axis.
+- `axis`: array of number; The hinge direction; [0, 0, 1] when omitted.
+- `falloff`: number; default 0; range 0 to 100; Spread the bend over this distance from the pivot (world units), so the joint bends smoothly instead of hinging.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pivot`: array of number; required; The joint to turn about (a shoulder, an elbow, a neck), in world space.
+
+## grow_fibers
+
+Grow hair, fur or grass as fibers from an object's masked area (or all of it): a new object of thin tapered tubes placed at random over the surface, leaving along the normal and drooping toward gravity, with optional clumping into locks and a colour. One undo step.
+
+- `clump`: number; default 0; range 0 to 1; How much tips gather toward their neighbours' tips (locks of hair).
+- `color`: ['string', 'array']; Paint the fibers this colour (#rrggbb or [r, g, b]).
+- `count`: integer; default 1500; range 1 to 50000
+- `droop`: number; default 0.4; range 0 to 1; How much fibers bend toward gravity (0 stands straight out, 1 hangs).
+- `id`: integer; range 1 to inf; The object to grow from; the active object when omitted. Fibers grow from its masked area, or everywhere without a mask.
+- `length`: number; range -inf to 1000; Fiber length; 15 percent of the object's size when omitted.
+- `radius`: number; range -inf to 100; Root radius (fibers taper to a third at the tip); a fortieth of the length when omitted.
+- `seed`: integer; default 1; range 0 to inf
+- `segments`: integer; default 5; range 2 to 16; Points along each fiber.
+
+## retopo_face
+
+Manual retopology: add one quad (four corners) or triangle (three) to a retopology object, the corners snapped onto the sculpt's surface and joined to existing corners within the weld distance, facing out. Build a clean quad mesh over a sculpt face by face (eye loops, mouth loops, joints), then multires_divide it and project_detail from the sculpt. The first call makes the object; pass its id as into after that.
+
+- `into`: integer; range 1 to inf; The retopology object to add to (from an earlier call's id); a new one when omitted.
+- `points`: array of array; required; Three or four corners of the new face, in order around it, near the target's surface.
+- `target`: integer; required; range 1 to inf; The sculpt to retopologize; the points snap onto its surface.
+- `weld`: number; range -inf to 100; Corners within this distance of an existing vertex reuse it, so faces join; 1.5 percent of the target's size when omitted.
+
+## insert_edge_loop
+
+Insert an edge loop into a quad mesh: the ring of quads crossing the edge nearest point is split down the middle all the way around (or to an open border), for more detail where a joint bends or a crease runs. Needs quads (quad_remesh or retopo_face first). One undo step.
+
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `point`: array of number; required; A point on or near the edge the new loop crosses (from pick); the loop runs across it, around the ring of quads.
+
+## delete_faces
+
+Delete the hidden faces (hide_faces) or the fully masked ones, opening the mesh there, and drop vertices left unused: to open holes for bridge, or remove a part. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `which`: string (hidden | masked); default "hidden"; Delete the hidden faces (hide_faces), or the faces whose corners are all masked.
+
+## bridge
+
+Bridge two open borders with a band of quads (segments rows), joining them into one surface: two tube ends into a sleeve, a hole to another hole. The borders need the same number of vertices; with more than two borders, near_a and near_b choose them. One undo step.
+
+- `id`: integer; range 1 to inf; An object with open borders (merge two open objects, or open holes with delete_faces); the active object when omitted.
+- `near_a`: array of number; A point near the first border, when the object has more than two.
+- `near_b`: array of number; A point near the second border.
+- `segments`: integer; default 4; range 1 to 64; Rows of quads along the bridge.
+
+## send_to_substance
+
+Write a Substance 3D Painter package to a folder: the mesh to texture as OBJ with UVs (level 0 when the object has subdivision levels), the high-resolution mesh to bake detail from, any baked maps under Painter's names, and a README with the steps. The object needs UVs (uv_unwrap).
+
+- `folder`: string; required; Where to write the package (created if missing).
+- `id`: integer; range 1 to inf; The object to texture; the active object when omitted. It needs UVs (uv_unwrap).
 
 ## get_uv_layout
 
