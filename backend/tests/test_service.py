@@ -65,6 +65,15 @@ def test_import_and_export_by_upload(client):
     assert len(call(client, "get_scene")["objects"]) == 2
 
 
+def test_fbx_export_route(client):
+    call(client, "add_primitive", kind="torus")
+    r = client.get("/api/engine/export", params={"format": "fbx"})
+    assert r.status_code == 200 and r.content.startswith(b"Kaydara FBX Binary  \x00")
+    up = client.post("/api/engine/import", files={"file": ("torus.fbx", io.BytesIO(r.content), "application/octet-stream")})
+    assert up.status_code == 200
+    assert [o["vertices"] for o in call(client, "get_scene")["objects"]] == [2048, 2048]
+
+
 def test_mcp_lists_and_calls_tools(client):
     headers = {"origin": "http://127.0.0.1:5196", "mcp-protocol-version": "2025-11-25"}
     init = client.post("/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}}, headers=headers).json()

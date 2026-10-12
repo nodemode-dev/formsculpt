@@ -68,13 +68,15 @@ def main() -> int:
         page.wait_for_timeout(400)
 
         rev = objects()[0]["revision"]
+        # new_scene is itself an undo step, so the history may hold earlier work; compare against where it stood.
+        done = call("get_history")["result"]["done"]
         btn("Draw").click()
         drag([(cx - 80, cy), (cx + 80, cy)])
         page.wait_for_timeout(2000)
         check("a stroke changes the mesh", objects()[0]["revision"] > rev)
         btn("Undo").click()
         page.wait_for_timeout(1000)
-        check("undo takes the stroke back", call("get_history")["result"]["done"] == 1)
+        check("undo takes the stroke back", call("get_history")["result"]["done"] == done)
 
         btn("Lasso cut").click()
         drag([(cx - 50, cy - 50), (cx + 50, cy - 50), (cx + 50, cy + 50), (cx - 50, cy + 50), (cx - 50, cy - 45)])

@@ -30,7 +30,7 @@ fn every_format_round_trips_the_triangles() {
     let mut s = Session::default();
     let id = add(&mut s, "cube", json!({"detail": 4}));
     let tris = object(&mut s, id)["triangles"].clone();
-    for ext in ["obj", "stl", "ply", "glb", "gltf", "3mf"] {
+    for ext in ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx"] {
         let path = temp(&format!("cube.{ext}"));
         call(&mut s, "export_mesh", json!({"path": path, "ids": [id]}));
         let r = call(&mut s, "import_mesh", json!({"path": path}));
@@ -77,6 +77,48 @@ fn a_bridged_file_saved_elsewhere_comes_back_into_its_object() {
     // Deleting the object ends the bridge.
     call(&mut s, "delete_object", json!({"id": cube}));
     assert!(call(&mut s, "bridge_sync", json!({}))["bridges"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn fbx_keeps_objects_placement_and_paint() {
+    let mut s = Session::default();
+    let t = add(&mut s, "torus", json!({}));
+    call(&mut s, "paint_fill", json!({"id": t, "color": "#2060ff"}));
+    let sph = add(&mut s, "sphere", json!({"detail": 3}));
+    call(&mut s, "transform_object", json!({"id": sph, "translate": [3, 0, 0]}));
+    let path = temp("scene.fbx");
+    call(&mut s, "export_mesh", json!({"path": path}));
+    let bytes = std::fs::read(&path).unwrap();
+    assert!(bytes.starts_with(b"Kaydara FBX Binary  \x00"));
+    let mut t2 = Session::default();
+    let r = call(&mut t2, "import_mesh", json!({"path": path}));
+    let objs = r["objects"].as_array().unwrap();
+    assert_eq!(objs.len(), 2);
+    assert_eq!(objs[0]["name"], "Torus");
+    assert_eq!(objs[0]["vertices"], object(&mut s, t)["vertices"]);
+    assert!((objs[1]["bounds"]["min"][0].as_f64().unwrap() - 2.0).abs() < 1e-3, "the sphere lost its placement");
+    let ascii = temp("ascii.fbx");
+    std::fs::write(&ascii, b"; FBX 7.4.0 project file\n").unwrap();
+    assert_eq!(fails(&mut t2, "import_mesh", json!({"path": ascii})), "bad_file");
+}
+
+#[test]
+fn materials_are_one_undo_step_and_saved() {
+    let mut s = Session::default();
+    let id = add(&mut s, "sphere", json!({"detail": 3}));
+    assert_eq!(object(&mut s, id)["material"]["subsurface"], 0.0);
+    call(&mut s, "set_material", json!({"id": id, "subsurface": 0.5, "subsurface_color": [1, 0.2, 0.1], "transmission": 0.25, "ior": 1.33}));
+    let m = object(&mut s, id)["material"].clone();
+    assert_eq!(m["subsurface"], 0.5);
+    assert!((m["ior"].as_f64().unwrap() - 1.33).abs() < 1e-6);
+    assert_eq!(fails(&mut s, "set_material", json!({"id": id, "ior": 3})), "bad_arguments");
+    let path = temp("material.fsc");
+    call(&mut s, "save_project", json!({"path": path}));
+    let mut t = Session::default();
+    call(&mut t, "open_project", json!({"path": path}));
+    assert_eq!(call(&mut t, "get_scene", json!({}))["objects"][0]["material"], m);
+    assert_eq!(call(&mut s, "undo", json!({}))["undone"], "Material");
+    assert_eq!(object(&mut s, id)["material"]["subsurface"], 0.0);
 }
 
 #[test]
