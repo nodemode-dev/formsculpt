@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 from typing import Any
@@ -101,6 +102,27 @@ async def turntable(frames: int = Query(48, ge=8, le=180), size: int = Query(384
     finally:
         os.unlink(path)
     return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="turntable.png"', "Cache-Control": "no-store"})
+
+
+@router.get("/animation")
+async def animation(keys: str = Query(..., max_length=20000), fps: int = Query(24, ge=1, le=60), size: int = Query(384, ge=64, le=1024), shading: str = "clay", background: str = "dark") -> Response:
+    """A looping animated PNG of keyframed camera moves and layer strengths (record_animation; keys is its JSON list)."""
+    _guard()
+    try:
+        parsed = json.loads(keys)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"keys is not JSON: {exc}") from exc
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    try:
+        reply = await run_in_threadpool(engine.dispatch, "record_animation", {"path": path, "keys": parsed, "fps": fps, "size": size, "shading": shading, "background": background})
+        if not reply.get("ok"):
+            raise HTTPException(status_code=400, detail=(reply.get("error") or {}).get("message", "render failed"))
+        with open(path, "rb") as f:
+            data = f.read()
+    finally:
+        os.unlink(path)
+    return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="animation.png"', "Cache-Control": "no-store"})
 
 
 @router.get("/maps/{object_id}")
