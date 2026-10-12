@@ -232,6 +232,8 @@ const BRUSHES: [string, string][] = [
   ['trim_shape', 'Lasso trim'],
   ['insert_brush', 'Insert brush'],
   ['group_brush', 'Group brush'],
+  ['retopo', 'Retopo quad'],
+  ['edge_loop', 'Edge loop'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
@@ -267,7 +269,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -275,6 +277,8 @@ const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['decimate', 'Decimate 50%', { ratio: 0.5 }],
   ['fill_holes', 'Fill holes', {}],
   ['quad_remesh', 'Quad remesh', {}],
+  ['delete_faces', 'Delete masked faces', { which: 'masked' }],
+  ['bridge', 'Bridge borders', { segments: 4 }],
 ];
 
 const MULTIRES: [string, string, Record<string, unknown>][] = [
@@ -315,6 +319,11 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['isolate_folder', 'Isolate folder'],
   ['bevel', 'Bevel edges'],
   ['bridge', 'Bridge to app'],
+  ['cloth', 'Drape cloth'],
+  ['pose', 'Pose'],
+  ['fibers', 'Grow fibers'],
+  ['render', 'Path render'],
+  ['substance', 'To Substance'],
 ];
 
 /** Edit buttons whose engine call differs from their name. */
@@ -2116,7 +2125,8 @@ class SceneView {
     if (id === null) return;
     const tool = this.brush;
     const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
-    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || hit.result.id === id);
+    // Retopology lands on the sculpt or on the retopology already laid over it; the engine snaps to the sculpt.
+    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || tool === 'retopo' || hit.result.id === id);
     if (!hit.ok || !onActive || !hit.result.point) {
       this.note(tool === 'insert' ? 'Click on a surface to insert there' : 'Click on the active object');
       return;
@@ -2127,6 +2137,25 @@ class SceneView {
     else if (tool === 'mask_group') await this.run('mask_by_group', { id, point, op });
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
     else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
+    else if (tool === 'edge_loop') await this.run('insert_edge_loop', { id, point });
+    else if (tool === 'retopo') {
+      // Four clicks around a face, in order; each quad joins the corners it shares with earlier ones.
+      this.retopoPoints.push(point);
+      if (this.retopoPoints.length < 4) {
+        this.note(`Retopology: corner ${this.retopoPoints.length} of 4 placed`);
+        return;
+      }
+      const points = this.retopoPoints;
+      this.retopoPoints = [];
+      const into = this.retopoInto !== null && this.scene.objects.some((o) => o.id === this.retopoInto) ? this.retopoInto : undefined;
+      const reply = await dispatch<{ id: number; faces: number }>('retopo_face', { target: id, points, ...(into ? { into } : {}) });
+      if (!reply.ok) this.note(reply.error.message);
+      else {
+        this.retopoInto = reply.result.id;
+        this.note(`Retopology: ${reply.result.faces} faces`);
+      }
+      await this.refresh();
+    }
     else if (tool === 'vdm') {
       // As wide as the brush on screen; the alpha angle turns it, Ctrl presses it in.
       const radius = Math.max(1e-4, Number(this.shell.radius.value) * wpp);
@@ -2480,6 +2509,33 @@ class SceneView {
       void this.bridgeOut(id);
       return;
     }
+    if (action === 'cloth') {
+      // The active object is the cloth; it falls onto every other visible object.
+      void this.run('cloth_drape', { id, steps: 240 });
+      return;
+    }
+    if (action === 'pose') {
+      // Turns the unmasked part about the view's pivot (double-click sets it) by the angle, around the deform axis.
+      const axisVec = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const o = this.scene.objects.find((x) => x.id === id);
+      const size = o ? Math.max(...[0, 1, 2].map((k) => o.bounds.max[k] - o.bounds.min[k])) : 1;
+      void this.run('pose', { id, pivot: this.viewport.camera.target, axis: axisVec, angle: angle || 30, falloff: size * 0.08 });
+      return;
+    }
+    if (action === 'fibers') {
+      void this.run('grow_fibers', { id, color: this.shell.paintColor.value });
+      return;
+    }
+    if (action === 'render') {
+      const shading = this.shell.shading.value === 'pbr' ? 'pbr' : 'clay';
+      void this.download(`/api/engine/view?render=path&samples=64&bounces=4&width=768&height=768&shading=${shading}`, 'render.png');
+      this.note('Path rendering 64 samples per pixel; the picture downloads when it is done');
+      return;
+    }
+    if (action === 'substance') {
+      void this.substanceOut(id);
+      return;
+    }
     if (action === 'duplicate') void this.run('duplicate_object', { id });
     else if (action === 'split') void this.run('split_parts', { id });
     else if (action === 'merge') {
@@ -2660,6 +2716,17 @@ class SceneView {
     this.note(`Open ${body.result.path} in the other app; saving there brings it back here`);
     if (this.bridgeTimer) return;
     this.bridgeTimer = window.setInterval(() => void this.bridgeSync(), 3000);
+  }
+
+  /** Writes a Substance 3D Painter package for the object to ~/.formsculptor/substance and says where. */
+  private async substanceOut(id: number): Promise<void> {
+    const reply = await postBody<{ ok: boolean; result?: { folder: string; files: string[] }; error?: { message: string } }>('/api/engine/substance', { id });
+    const body = reply.ok ? reply.result : null;
+    if (!body?.ok || !body.result) {
+      this.note(body?.error?.message ?? (reply.ok ? 'The package was not written' : reply.error.message));
+      return;
+    }
+    this.note(`Substance package in ${body.result.folder}: open its _low.obj in Painter (its README has the steps)`);
   }
 
   private async bridgeSync(): Promise<void> {
@@ -2884,6 +2951,10 @@ class SceneView {
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
   }
+
+  /** Retopology corners placed so far, and the retopology object the next quads go into. */
+  private retopoPoints: Vec3[] = [];
+  private retopoInto: number | null = null;
 
   /** Live boolean: objects a and b drawn as `a op b`, recomputed when either changes; the key is what was drawn. */
   private live: { a: number; b: number; op: string } | null = null;

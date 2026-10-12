@@ -164,7 +164,7 @@ function localFile(engine: WasmEngine, path: string): Blob | string {
   if (maps) return bytes(engine.maps(Number(maps[1])), 'application/zip');
   if (url.pathname === '/api/engine/view') {
     const args: Record<string, unknown> = {};
-    for (const [k, v] of q) args[k] = k === 'width' || k === 'height' ? Number(v) : v;
+    for (const [k, v] of q) args[k] = ['width', 'height', 'samples', 'bounces'].includes(k) ? Number(v) : v;
     const reply = engine.dispatch('get_view', args);
     if (!reply.ok) return reply.error?.message ?? 'render failed';
     const raw = atob((reply.result as { png_base64: string }).png_base64);
