@@ -122,6 +122,78 @@ pub(crate) fn shadow_box(s: &mut Session, args: &Value) -> Result<Value, Command
     Ok(add(s, args, "Shadow Box", mesh, started))
 }
 
+pub(crate) fn text_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "text": {"type": "string", "minLength": 1, "maxLength": 160, "description": "The words; a newline starts another line. Letters are drawn as capitals; the font has A-Z, 0-9, space and . , : - + ! ? ' /."},
+            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "default": 1, "description": "Capital height in world units."},
+            "weight": {"type": "number", "minimum": 0.04, "maximum": 0.4, "default": 0.14, "description": "Stroke width as a fraction of the size."},
+            "depth": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "How deep the letters are along z; a quarter of the size when omitted."},
+            "resolution": {"type": "integer", "minimum": 48, "maximum": 512, "description": "Voxel cells along the longest side; chosen so each stroke is about six cells wide when omitted."},
+            "name": {"type": "string", "description": NAME}
+        },
+        "required": ["text"],
+        "additionalProperties": false
+    })
+}
+
+/// 3D text: words in a rounded stroke font as one watertight solid facing the front.
+pub(crate) fn text(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let started = Instant::now();
+    let words = args.get("text").and_then(Value::as_str).filter(|t| !t.trim().is_empty()).ok_or_else(|| bad("text is required"))?;
+    if words.chars().count() > 160 {
+        return Err(bad("text is at most 160 characters"));
+    }
+    let size = number(args, "size", 1.0, 1e-4, 100.0)? as f32;
+    let weight = number(args, "weight", 0.14, 0.04, 0.4)? as f32;
+    let depth = number(args, "depth", (size * 0.25) as f64, 1e-5, 100.0)? as f32;
+    let resolution = args.get("resolution").and_then(Value::as_u64).map(|r| r.clamp(48, 512) as u32);
+    let mesh = fsc_topo::text_mesh(words, size, weight, depth, resolution).map_err(|e| CommandError::new("build_failed", e))?;
+    let base: String = words.lines().next().unwrap_or("Text").chars().take(24).collect();
+    let mut named = args.clone();
+    if named.get("name").is_none() {
+        named["name"] = json!(base.trim());
+    }
+    Ok(add(s, &named, "Text", mesh, started))
+}
+
+pub(crate) fn extrude_shape_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "outlines": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "array", "minItems": 3, "maxItems": 2048, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}}, "description": "Closed outlines as lists of [x, y] points in world units, seen from the front; an outline inside another cuts a hole (a ring, a letter O, a window)."},
+            "depth": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "Thickness along z; a fifth of the shape's width when omitted."},
+            "round": {"type": "number", "minimum": 0, "maximum": 50, "default": 0, "description": "Rounds the edges by this many world units (at most half the depth)."},
+            "resolution": {"type": "integer", "minimum": 48, "maximum": 512, "description": "Voxel cells along the longest side; 160 to 512 by the shape's detail when omitted."},
+            "name": {"type": "string", "description": NAME}
+        },
+        "required": ["outlines"],
+        "additionalProperties": false
+    })
+}
+
+/// Vector shape: closed outlines extruded into a watertight solid.
+pub(crate) fn extrude_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let started = Instant::now();
+    let mut outlines = Vec::new();
+    for o in list(args, "outlines")? {
+        let pts = o.as_array().ok_or_else(|| bad("each outline is a list of [x, y] points"))?;
+        outlines.push(pts.iter().map(|v| floats(v, "outlines", &[2]).map(|f| glam::Vec2::new(f[0], f[1]))).collect::<Result<Vec<_>, _>>()?);
+    }
+    let (mut lo, mut hi) = (glam::Vec2::splat(f32::INFINITY), glam::Vec2::splat(f32::NEG_INFINITY));
+    for p in outlines.iter().flatten() {
+        lo = lo.min(*p);
+        hi = hi.max(*p);
+    }
+    let width = (hi - lo).max_element().max(1e-4);
+    let depth = number(args, "depth", (width * 0.2) as f64, 1e-5, 100.0)? as f32;
+    let round = number(args, "round", 0.0, 0.0, 50.0)? as f32;
+    let resolution = args.get("resolution").and_then(Value::as_u64).map(|r| r.clamp(48, 512) as u32);
+    let mesh = fsc_topo::extrude_shape(&outlines, depth, round, resolution).map_err(|e| CommandError::new("build_failed", e))?;
+    Ok(add(s, args, "Shape", mesh, started))
+}
+
 pub(crate) fn tube_schema() -> Value {
     json!({
         "type": "object",

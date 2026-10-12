@@ -14,6 +14,7 @@ mod place_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
 mod topo_cmds;
+mod vdm_cmds;
 mod view_cmds;
 
 pub use history::{Edit, History};
@@ -70,6 +71,8 @@ pub struct Session {
     pub loads: u64,
     /// Brush alphas loaded by name with alpha_load (the built-in ones are generated on demand).
     pub alphas: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Alpha>>,
+    /// Vector displacement maps captured by name with vdm_capture (the built-in ones are generated on demand).
+    pub vdms: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Vdm>>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -263,6 +266,39 @@ pub static COMMANDS: &[Command] = &[
         run: build_cmds::shadow_box,
     },
     Command {
+        id: "build.text",
+        mcp: "text_mesh",
+        group: Group::Object,
+        label: "3D Text",
+        description: "Make solid 3D text: the words in a rounded single-stroke font (capitals, digits, common punctuation; newlines for more lines), `size` tall, `weight` thick and `depth` deep, centred on the origin and facing the front. One watertight object, ready to sculpt, boolean into a base (engraved or raised lettering on a plinth) or print.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::text_schema,
+        run: build_cmds::text,
+    },
+    Command {
+        id: "build.extrude_shape",
+        mcp: "extrude_shape",
+        group: Group::Object,
+        label: "Extrude Shape",
+        description: "Make a solid from flat vector outlines: closed [x, y] outlines seen from the front, outlines inside others cut holes, pushed out to `depth` with edges rounded by `round`. Logos, badges, cookie-cutter shapes, panels and plates. One watertight object.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::extrude_shape_schema,
+        run: build_cmds::extrude_shape,
+    },
+    Command {
+        id: "topo.cut_shape",
+        mcp: "cut_shape",
+        group: Group::Topo,
+        label: "Cut Shape",
+        description: "Hard-surface cut: extrude a closed outline straight through the object along `direction` (the way it is seen) and take away what it covers, or with keep inside keep only that, as one undo step. Lasso a notch, a vent, a window or a bevelled slot; trim a block to a profile. round softens the cut edges. The object is remeshed watertight at resolution; points from pick or a view's frame give the outline.",
+        keys: &[],
+        hints: WRITE,
+        schema: topo_cmds::cut_schema,
+        run: topo_cmds::cut_shape,
+    },
+    Command {
         id: "build.tube",
         mcp: "curve_tube",
         group: Group::Object,
@@ -327,6 +363,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::alpha_load_schema,
         run: sculpt_cmds::alpha_load,
+    },
+    Command {
+        id: "sculpt.vdm_stamp",
+        mcp: "vdm_stamp",
+        group: Group::Sculpt,
+        label: "VDM Stamp",
+        description: "Stamp a vector displacement map onto the surface at a point and normal (from pick), as one undo step. Unlike an alpha, a vector map moves the surface sideways and back over itself, so one stamp makes a curled horn, a hook or a mushroom with an overhanging cap. Built in: horn, hook, mushroom; vdm_capture makes more from a sculpted plane. radius is half the stamp's width, angle turns it about the normal, strength scales it (negative presses it in), and masked vertices are held. The surface needs enough vertices under the stamp for the shape to show: divide or remesh first if it is coarse.",
+        keys: &[],
+        hints: WRITE,
+        schema: vdm_cmds::stamp_schema,
+        run: vdm_cmds::vdm_stamp,
+    },
+    Command {
+        id: "sculpt.vdm_capture",
+        mcp: "vdm_capture",
+        group: Group::Sculpt,
+        label: "Capture VDM",
+        description: "Capture the sculpting on a plane as a named vector displacement map for vdm_stamp. Make the plane with add_primitive (kind plane, detail 64 or more), sculpt a shape in its middle with the edges left flat (strokes without dynamic topology, so its vertices stay a grid), then capture; the plane's up is the map's out and its x the map's across. Maps last for the engine session.",
+        keys: &[],
+        hints: WRITE,
+        schema: vdm_cmds::capture_schema,
+        run: vdm_cmds::vdm_capture,
     },
     Command {
         id: "paint.fill",

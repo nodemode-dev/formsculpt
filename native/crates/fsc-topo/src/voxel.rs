@@ -85,7 +85,7 @@ pub fn voxel_remesh(mesh: &Mesh, bvh: &Bvh, resolution: u32) -> Result<Mesh, Str
         return Err("the mesh is empty".into());
     }
     let grid = Grid::around(mesh.bounds(), resolution)?;
-    let field = narrow_band(mesh, bvh, &grid);
+    let field = narrow_band(mesh, bvh, &grid, grid.cell * 2.0);
     surface_nets(&field, &grid)
 }
 
@@ -114,31 +114,51 @@ pub enum BooleanOp {
 }
 
 pub fn voxel_boolean(a: &Mesh, a_bvh: &Bvh, b: &Mesh, b_bvh: &Bvh, op: BooleanOp, resolution: u32) -> Result<Mesh, String> {
+    voxel_boolean_blend(a, a_bvh, b, b_bvh, op, 0.0, resolution)
+}
+
+/// A voxel boolean whose seam is filleted over `blend` world units (a smooth minimum or maximum of the two distance
+/// fields), so a union fuses two meshes with a soft web where they meet and a difference leaves a rounded cut edge.
+/// With blend 0 it is the sharp boolean. The distance band around each mesh widens to cover the blend.
+pub fn voxel_boolean_blend(a: &Mesh, a_bvh: &Bvh, b: &Mesh, b_bvh: &Bvh, op: BooleanOp, blend: f32, resolution: u32) -> Result<Mesh, String> {
     if a.triangle_count() == 0 || b.triangle_count() == 0 {
         return Err("a mesh is empty".into());
     }
-    let grid = Grid::around(a.bounds().merge(&b.bounds()), resolution)?;
-    let mut fa = narrow_band(a, a_bvh, &grid);
-    let mut fb = narrow_band(b, b_bvh, &grid);
-    fill_signs(&mut fa, &grid);
-    fill_signs(&mut fb, &grid);
+    let mut bounds = a.bounds().merge(&b.bounds());
+    // A fillet can reach past both meshes' bounds by a fraction of the blend.
+    bounds.grow(bounds.min - Vec3::splat(blend * 0.5));
+    bounds.grow(bounds.max + Vec3::splat(blend * 0.5));
+    let grid = Grid::around(bounds, resolution)?;
+    let band = (grid.cell * 2.0).max(blend * 1.2);
+    let mut fa = narrow_band(a, a_bvh, &grid, band);
+    let mut fb = narrow_band(b, b_bvh, &grid, band);
+    fill_signs(&mut fa, &grid, band);
+    fill_signs(&mut fb, &grid, band);
+    let k = blend.max(0.0);
+    let smin = |x: f32, y: f32| -> f32 {
+        if k <= 0.0 {
+            return x.min(y);
+        }
+        let h = (k - (x - y).abs()).max(0.0) / k;
+        x.min(y) - h * h * k * 0.25
+    };
     let field: Vec<f32> = fa
         .iter()
         .zip(&fb)
         .map(|(&x, &y)| match op {
-            BooleanOp::Union => x.min(y),
-            BooleanOp::Difference => x.max(-y),
-            BooleanOp::Intersection => x.max(y),
+            BooleanOp::Union => smin(x, y),
+            BooleanOp::Difference => -smin(-x, y),
+            BooleanOp::Intersection => -smin(-x, -y),
         })
         .collect();
     let mesh = surface_nets(&field, &grid)?;
     Ok(crate::manifold::split_nonmanifold(&mesh).0)
 }
 
-fn fill_signs(field: &mut [f32], g: &Grid) {
+fn fill_signs(field: &mut [f32], g: &Grid, band: f32) {
     let dims = g.dims;
     let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
-    let far = g.cell * 4.0;
+    let far = (g.cell * 4.0).max(band * 2.0);
     let mut outside = vec![false; field.len()];
     let mut stack: Vec<usize> = Vec::new();
     for k in 0..dims[2] {
@@ -188,11 +208,10 @@ fn fill_signs(field: &mut [f32], g: &Grid) {
     }
 }
 
-fn narrow_band(mesh: &Mesh, bvh: &Bvh, g: &Grid) -> Vec<f32> {
+fn narrow_band(mesh: &Mesh, bvh: &Bvh, g: &Grid, band: f32) -> Vec<f32> {
     let (origin, cell, dims, total) = (g.origin, g.cell, g.dims, g.total());
     let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
     let point = |i: usize, j: usize, k: usize| origin + Vec3::new(i as f32, j as f32, k as f32) * cell;
-    let band = cell * 2.0;
     let signs = PseudoNormals::new(mesh);
     let mut marked = vec![false; total];
     for t in 0..mesh.triangle_count() {

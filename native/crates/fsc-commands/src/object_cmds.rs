@@ -319,6 +319,7 @@ pub(crate) fn boolean_schema() -> Value {
             "b": {"type": "integer", "minimum": 1, "description": "The object to add, cut away or intersect with."},
             "op": {"type": "string", "enum": ["union", "difference", "intersection"], "default": "union"},
             "resolution": {"type": "integer", "minimum": 16, "maximum": 320, "default": 160, "description": "Voxels along the longest side of both objects together; higher keeps sharper detail."},
+            "blend": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Fillets the seam over this many world units: a union fuses the two with a soft web where they meet (an arm into a shoulder, a horn into a head), a difference leaves a rounded cut edge. 0 is a sharp boolean."},
             "keep_inputs": {"type": "boolean", "default": false, "description": "Keep a and b instead of replacing them with the result."}
         },
         "required": ["a", "b"],
@@ -343,8 +344,12 @@ pub(crate) fn boolean(s: &mut Session, args: &Value) -> Result<Value, CommandErr
         return Err(bad("resolution must be 16 to 320"));
     }
     let keep = args.get("keep_inputs").and_then(Value::as_bool).unwrap_or(false);
+    let blend = match args.get("blend") {
+        None | Some(Value::Null) => 0.0,
+        Some(v) => v.as_f64().filter(|b| (0.0..=100.0).contains(b)).ok_or_else(|| bad("blend must be from 0 to 100"))? as f32,
+    };
     let (oa, ob): (&Object, &Object) = (s.scene.get(a).expect("checked"), s.scene.get(b).expect("checked"));
-    let mut mesh = fsc_topo::voxel_boolean(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
+    let mut mesh = fsc_topo::voxel_boolean_blend(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, blend, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
     if oa.mesh.has_paint() || ob.mesh.has_paint() {
         fsc_topo::transfer_paint(&[(&oa.mesh, &oa.bvh), (&ob.mesh, &ob.bvh)], &mut mesh);
     }

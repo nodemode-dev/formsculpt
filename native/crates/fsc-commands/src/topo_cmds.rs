@@ -160,3 +160,73 @@ pub(crate) fn mesh_check(s: &mut Session, args: &Value) -> Result<Value, Command
         "watertight": boundary == 0 && non_manifold == 0,
     }))
 }
+
+pub(crate) fn cut_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "outline": {"type": "array", "minItems": 3, "maxItems": 2048, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "A closed outline as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count)."},
+            "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The way the outline is seen, from the eye into the scene; the cut goes all the way through the object along it."},
+            "keep": {"type": "string", "enum": ["outside", "inside"], "default": "outside", "description": "outside removes what the outline covers (a lasso cut, a hole, a notch); inside keeps only what it covers (trimming a block to a profile)."},
+            "round": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Rounds the cut edges by this many world units; 0 leaves them sharp."},
+            "resolution": {"type": "integer", "minimum": 32, "maximum": 320, "default": 192, "description": "Voxels along the longest side; the object is remeshed at this resolution."}
+        },
+        "required": ["outline", "direction"],
+        "additionalProperties": false
+    })
+}
+
+/// Hard-surface cut: the outline extruded through the object along the view, taken away (or kept) by a voxel boolean,
+/// as one undo step. The result is watertight; flat cut faces are as sharp as the resolution allows.
+pub(crate) fn cut_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    use glam::{Vec2, Vec3};
+    let id = target(s, args)?;
+    guard(s, id, "Cut")?;
+    let vec3 = |v: &Value| -> Option<Vec3> {
+        let a = v.as_array().filter(|a| a.len() == 3)?;
+        let f: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+        f.iter().all(|x| x.is_finite()).then(|| Vec3::new(f[0], f[1], f[2]))
+    };
+    let d = args.get("direction").and_then(vec3).filter(|d| d.length_squared() > 1e-12).ok_or_else(|| bad("direction is [x, y, z], not zero"))?.normalize();
+    let pts: Vec<Vec3> = args.get("outline").and_then(Value::as_array).ok_or_else(|| bad("outline is a list of [x, y, z] points"))?.iter().map(|p| vec3(p).ok_or_else(|| bad("each outline point is [x, y, z]"))).collect::<Result<_, _>>()?;
+    if pts.len() < 3 {
+        return Err(bad("outline needs at least three points"));
+    }
+    let inside = match args.get("keep").and_then(Value::as_str).unwrap_or("outside") {
+        "outside" => false,
+        "inside" => true,
+        other => return Err(bad(format!("keep must be outside or inside, not {other}"))),
+    };
+    let round = args.get("round").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 100.0) as f32;
+    let resolution = args.get("resolution").and_then(Value::as_u64).unwrap_or(192);
+    if !(32..=320).contains(&resolution) {
+        return Err(bad("resolution must be 32 to 320"));
+    }
+    // A right-handed frame with z along the view: u, v across it.
+    let seed = if d.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+    let u = (seed - d * seed.dot(d)).normalize();
+    let v = d.cross(u);
+    let flat: Vec<Vec2> = pts.iter().map(|p| Vec2::new(p.dot(u), p.dot(v))).collect();
+    let object = s.scene.get(id).expect("checked");
+    let b = object.mesh.bounds();
+    let corners = (0..8).map(|i| Vec3::new(if i & 1 == 0 { b.min.x } else { b.max.x }, if i & 2 == 0 { b.min.y } else { b.max.y }, if i & 4 == 0 { b.min.z } else { b.max.z }).dot(d));
+    let (near, far) = corners.fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), x| (lo.min(x), hi.max(x)));
+    let size = (b.max - b.min).max_element().max(1e-4);
+    let depth = (far - near) + size * 0.5;
+    let mut cutter = fsc_topo::extrude_shape(&[flat], depth, 0.0, Some(resolution.min(256) as u32)).map_err(|e| CommandError::new("cut_failed", e))?;
+    let middle = (near + far) * 0.5;
+    for p in cutter.positions.iter_mut() {
+        let q = Vec3::from_array(*p);
+        *p = (u * q.x + v * q.y + d * (q.z + middle)).to_array();
+    }
+    cutter.recompute_normals();
+    let cutter_bvh = fsc_core::Bvh::build(&cutter);
+    let op = if inside { fsc_topo::BooleanOp::Intersection } else { fsc_topo::BooleanOp::Difference };
+    let mesh = fsc_topo::voxel_boolean_blend(&object.mesh, &object.bvh, &cutter, &cutter_bvh, op, round, resolution as u32).map_err(|e| CommandError::new("cut_failed", e))?;
+    if mesh.triangle_count() == 0 {
+        return Err(CommandError::new("empty_result", if inside { "the outline covers none of the object" } else { "the outline covers the whole object" }));
+    }
+    let mask = vec![0.0; mesh.vertex_count()];
+    apply(s, id, "Cut", mesh, mask)
+}
