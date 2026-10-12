@@ -368,6 +368,12 @@ Live boolean (Off, Union, Difference, Intersection) in the Object section takes 
 
 A slip against the hand-edit rule: the import line at the top of src/app.ts (adding fetchBooleanPreview) was changed with sed -i rather than an edit. It changed only that line, read back afterwards.
 
+### src/app.ts, src/engine/service.ts · retopology and edge loop tools, cloth, pose, fibers, path render, Substance
+- refers-to: src/app.ts :: BRUSHES (retopo, edge_loop), CLICK_TOOLS, TOPOLOGY (delete_faces, bridge), OBJECT_ACTIONS (cloth, pose, fibers, render, substance), clickTool (retopo, edge_loop), retopoPoints, retopoInto, objectAction, substanceOut; src/engine/service.ts :: localFile (samples, bounces)
+- kind: rationale
+- logged: v0.29.0 · 2026-10-12
+Retopo quad is a click tool: four clicks on the sculpt (or on retopology already over it) make a quad that joins its neighbours; the sculpt stays active and the note counts corners. Edge loop is a click tool that inserts a loop across the clicked edge of a quad mesh. The Topology section gains Delete masked faces and Bridge borders; the Object section gains Drape cloth (the active object falls onto the others), Pose (the unmasked part turns about the view's pivot by the angle field around the deform axis), Grow fibers (in the paint colour), Path render (a 768-pixel, 64-sample path-traced PNG download) and To Substance (the package in ~/.formsculptor/substance, through the service). Verified under the window: two retopology quads sharing an edge (6 vertices), an edge loop adding 96 triangles to a quad-remeshed sphere, a 216 KB path render, a plane draped over the sphere as one step, fibers as a new object, and the Substance button refusing an object without UVs in words; layout shift 0, no console errors.
+
 ### src/viewport/gl-renderer.ts, src/engine/service.ts, src/app.ts · opacity and emissive in the viewport
 - refers-to: src/viewport/gl-renderer.ts :: MESH_VS (aFx, location 5), MESH_FS (vFx: screen-door opacity, emissive), PAINT_DEFAULT, PF, paintBuffer (28-byte stride), patch, render (vertexAttrib2f 5); src/engine/service.ts :: PAINT_FLOATS, parseUpdate, fetchMesh; src/app.ts :: Paint section (Opacity, Emissive), paintArgs
 - kind: rationale

@@ -206,3 +206,9 @@ The export route takes usda (served as model/vnd.usda); upload import needed no 
 - kind: rationale
 - logged: v0.28.0 · 2026-10-12
 GET /api/engine/boolean_preview?a=&b=&op= returns the exact result as an FSCM payload (revision 0, a zero mask) without touching the scene or the history: 404 for a missing object, 422 for an unknown op, 400 with the engine's reason when the input is not closed. 17 service tests.
+
+### routers/engine.py · path render and the Substance package
+- refers-to: app/routers/engine.py :: view_image (render, samples, bounces), SubstanceOut, substance; tests/test_service.py :: test_path_render_and_substance_routes
+- kind: rationale
+- logged: v0.29.0 · 2026-10-12
+GET /api/engine/view takes render=path with samples (1 to 1,024) and bounces (1 to 8). POST /api/engine/substance writes send_to_substance's package to FSC_SUBSTANCE_DIR or ~/.formsculptor/substance/<object name>; 404 for a missing object, the engine's no_uvs refusal as data. 18 service tests.
