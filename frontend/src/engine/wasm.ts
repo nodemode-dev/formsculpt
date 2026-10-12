@@ -22,6 +22,7 @@ interface Exports {
   fsc_import(name: number, nameLen: number, data: number, len: number): void;
   fsc_export(name: number, nameLen: number, ids: number, idsLen: number): number;
   fsc_maps(id: number): number;
+  fsc_boolean_preview(a: number, b: number, op: number): number;
 }
 
 export interface WasmReply {
@@ -174,6 +175,12 @@ export class WasmEngine {
   /** A file of the given name's format from the chosen objects (every visible one when null), or the error's message. */
   exportFile(name: string, ids: number[] | null): Uint8Array | string {
     return this.with([enc.encode(name), enc.encode(ids ? JSON.stringify(ids) : '')], (np, nl, ip, il) => (this.x.fsc_export(np, nl, ip, il) === 0 ? this.out() : (this.failed().error?.message ?? 'export failed')));
+  }
+
+  /** The live boolean preview of two objects as an FSCM payload, or the refusal's message. */
+  booleanPreview(a: number, b: number, op: string): ArrayBuffer | string {
+    const code = ['union', 'difference', 'intersection'].indexOf(op);
+    return this.with([], () => (this.x.fsc_boolean_preview(a, b, code) === 0 ? this.out().buffer : (this.failed().error?.message ?? 'boolean failed')));
   }
 
   /** An object's baked maps as a zip, or the error's message. */

@@ -1,7 +1,7 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
 import { el, saveBlob, setAttr, setText } from './ui/dom';
-import { browserEngine, dispatch, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
+import { browserEngine, dispatch, fetchBooleanPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
 import { WasmEngine } from './engine/wasm';
 import { dataUrl, HostLink } from './host';
 import { inDesktop, saveNative } from './ui/desktop';
@@ -152,6 +152,7 @@ interface Shell {
   vdmPick: HTMLSelectElement;
   textInput: HTMLInputElement;
   fuseBlend: HTMLInputElement;
+  liveBoolean: HTMLSelectElement;
   pluginPick: HTMLSelectElement;
   pluginParams: HTMLElement;
   subsurface: HTMLInputElement;
@@ -765,7 +766,8 @@ function buildShell(root: HTMLElement): Shell {
   const objectFields = el('div', 'fields');
   const folderName = input('text', { maxlength: '80', value: 'Folder 1', 'aria-label': 'Folder name', spellcheck: 'false' });
   const fuseBlend = input('number', { min: '0', max: '10', step: '0.02', value: '0', 'aria-label': 'Boolean blend' });
-  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName), field('Boolean blend', fuseBlend));
+  const liveBoolean = choices('Live boolean', [['', 'Off'], ['union', 'Union'], ['difference', 'Difference'], ['intersection', 'Intersection']]);
+  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName), field('Boolean blend', fuseBlend), field('Live boolean', liveBoolean));
   panel.append(objectFields);
 
   panel.append(el('h2', 'gap', 'Layers'));
@@ -981,7 +983,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1027,6 +1029,7 @@ class SceneView {
     shell.referencePlace.addEventListener('change', applyReference);
     shell.smoothPick.addEventListener('change', () => this.setSmoothPreview(Number(shell.smoothPick.value)));
     this.wireUvView();
+    shell.liveBoolean.addEventListener('change', () => this.setLive(shell.liveBoolean.value));
     shell.referenceInput.addEventListener('change', () => {
       const file = shell.referenceInput.files?.[0];
       shell.referenceInput.value = '';
@@ -2351,13 +2354,16 @@ class SceneView {
   }
 
   private async apply(next: SceneSummary): Promise<void> {
+    // Under Live boolean its two objects are drawn as their result (renderer id 0) instead of themselves.
+    const replaced = this.live ? [this.live.a, this.live.b] : [];
     for (const o of next.objects) {
-      if (o.visible && !this.viewport.renderer.has(o.id, o.revision)) {
+      if (o.visible && !replaced.includes(o.id) && !this.viewport.renderer.has(o.id, o.revision)) {
         const mesh = await fetchMesh(o.id, this.smoothPreview);
         if (mesh) this.viewport.setMesh(mesh);
       }
     }
-    const keep = new Set(next.objects.filter((o) => o.visible).map((o) => o.id));
+    const keep = new Set(next.objects.filter((o) => o.visible && !replaced.includes(o.id)).map((o) => o.id));
+    if (this.live && (await this.updateLive(next))) keep.add(0);
     for (const id of this.viewport.renderer.ids()) if (!keep.has(id)) this.viewport.removeMesh(id);
     this.viewport.setActive(next.active);
     this.patchList(next);
@@ -2480,6 +2486,13 @@ class SceneView {
       const ids = [id, ...this.scene.objects.map((o) => o.id).filter((x) => x !== id)];
       if (ids.length < 2) this.note('Merge needs at least two objects');
       else void this.run('merge_objects', { ids });
+    } else if ((action === 'union' || action === 'difference' || action === 'intersection') && this.live) {
+      // Keeps the live result: the same two objects, with the operation pressed.
+      const { a, b } = this.live;
+      this.live = null;
+      this.liveKey = '';
+      this.shell.liveBoolean.value = '';
+      void this.run('boolean', { a, b, op: action, resolution: res, blend: Math.max(0, Math.min(10, Number(this.shell.fuseBlend.value) || 0)) });
     } else if (action === 'union' || action === 'difference' || action === 'intersection') {
       const others = this.scene.objects.map((o) => o.id).filter((x) => x !== id);
       const b = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
@@ -2870,6 +2883,57 @@ class SceneView {
     const reply = await dispatch<unknown>(name, args);
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
+  }
+
+  /** Live boolean: objects a and b drawn as `a op b`, recomputed when either changes; the key is what was drawn. */
+  private live: { a: number; b: number; op: string } | null = null;
+  private liveKey = '';
+
+  /** Turns Live boolean on (the active object as a, the one chosen before it as b) or off (`op` empty). */
+  private setLive(op: string): void {
+    if (!op) {
+      this.live = null;
+      this.liveKey = '';
+      this.note('');
+      void this.refresh();
+      return;
+    }
+    const a = this.scene.active;
+    const others = this.scene.objects.map((o) => o.id).filter((x) => x !== a);
+    const b = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
+    if (a === null || b === null) {
+      this.shell.liveBoolean.value = '';
+      this.note('Select the object to combine with first, then the one to keep');
+      return;
+    }
+    this.live = { a, b, op };
+    this.liveKey = '';
+    const button = OBJECT_ACTIONS.find(([k]) => k === op)?.[1] ?? op;
+    this.note(`Live ${op}: move or sculpt either object and the result follows; press ${button} to keep it`);
+    void this.refresh();
+  }
+
+  /** Recomputes the live result when either object changed; false (and Live boolean off) when it cannot be shown. */
+  private async updateLive(next: SceneSummary): Promise<boolean> {
+    const live = this.live;
+    if (!live) return false;
+    const [a, b] = [next.objects.find((o) => o.id === live.a), next.objects.find((o) => o.id === live.b)];
+    const stop = (message: string): boolean => {
+      this.live = null;
+      this.liveKey = '';
+      this.shell.liveBoolean.value = '';
+      this.note(message);
+      void this.refresh();
+      return false;
+    };
+    if (!a || !b) return stop('Live boolean stopped: one of its objects is gone');
+    const key = `${a.revision}:${b.revision}:${live.op}`;
+    if (key === this.liveKey) return true;
+    const result = await fetchBooleanPreview(live.a, live.b, live.op);
+    if (typeof result === 'string') return stop(`Live boolean stopped: ${result}`);
+    this.liveKey = key;
+    this.viewport.setMesh(result);
+    return true;
   }
 
   /** The island chosen in the UV view (null: none), and what the picture last showed, `id:revision:island`. */

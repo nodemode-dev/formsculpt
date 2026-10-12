@@ -230,6 +230,28 @@ export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | n
   return parseMesh(id, await response.arrayBuffer());
 }
 
+/** Live Boolean: the exact result of `a op b` as mesh buffers (id 0) to draw in their place, or the refusal's message. */
+export async function fetchBooleanPreview(a: number, b: number, op: string): Promise<MeshBuffers | string> {
+  if (local) {
+    const result = local.booleanPreview(a, b, op);
+    return typeof result === 'string' ? result : (parseMesh(0, result) ?? 'the preview could not be read');
+  }
+  try {
+    const response = await fetch(`/api/engine/boolean_preview?a=${a}&b=${b}&op=${op}`, { cache: 'no-store' });
+    if (!response.ok) {
+      const text = await response.text();
+      try {
+        return String((JSON.parse(text) as { detail?: unknown }).detail ?? text);
+      } catch {
+        return text || response.statusText;
+      }
+    }
+    return parseMesh(0, await response.arrayBuffer()) ?? 'the preview could not be read';
+  } catch (err) {
+    return String(err);
+  }
+}
+
 /** The engine's catalogue of commands (for keys and menus), or null when it cannot be reached. */
 export async function fetchCatalogue<T>(): Promise<T | null> {
   if (local) return local.catalogue() as T;

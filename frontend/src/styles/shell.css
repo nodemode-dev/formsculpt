@@ -92,7 +92,8 @@ button { font: inherit; color: inherit; }
 .history .step[aria-current="true"] { border-left-color: var(--accent-color); background: var(--accent-color-dim); }
 .object[aria-current="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
 .object .count { font: 11px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.panel-note { margin: var(--space-2) 0 0; min-height: 18px; font-size: 12px; color: var(--warn-color); }
+/* A fixed three-line box: notes of any length never move the sections below (a longer one scrolls inside it). */
+.panel-note { margin: var(--space-2) 0 0; height: 48px; line-height: 16px; overflow-y: auto; font-size: 12px; color: var(--warn-color); }
 
 .status { grid-area: status; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-4); padding-inline: var(--space-3); background: var(--bg-secondary); border-top: 1px solid var(--border-color); color: var(--text-secondary); font: 11px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); margin-right: var(--space-2); vertical-align: 0; }
