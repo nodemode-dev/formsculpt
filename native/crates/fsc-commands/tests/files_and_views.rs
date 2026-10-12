@@ -167,10 +167,68 @@ fn conformal_unwrap_keeps_angles_better_than_projection() {
     assert_eq!(fails(&mut s, "uv_unwrap", json!({"method": "cylindrical"})), "bad_arguments");
 }
 
+fn uvs_in_square(s: &mut Session, id: u64) -> bool {
+    let layout = call(s, "get_uv_layout", json!({"id": id, "size": 64}));
+    layout["listed"].as_array().unwrap().iter().all(|i| {
+        let (lo, hi) = (&i["min"], &i["max"]);
+        lo[0].as_f64().unwrap() >= -1e-3 && lo[1].as_f64().unwrap() >= -1e-3 && hi[0].as_f64().unwrap() <= 1.001 && hi[1].as_f64().unwrap() <= 1.001
+    })
+}
+
+#[test]
+fn face_groups_place_the_seams() {
+    let mut s = Session::default();
+    let id = add(&mut s, "cube", json!({}));
+    assert_eq!(fails(&mut s, "uv_unwrap", json!({"seams": "groups"})), "no_groups");
+    call(&mut s, "group_auto", json!({"id": id, "by": "angle"}));
+    let r = call(&mut s, "uv_unwrap", json!({"id": id, "seams": "groups"}));
+    assert_eq!(r["charts"], 6, "a cube grouped by angle unwraps into its six faces");
+    assert!(r["stretch"]["max"].as_f64().unwrap() < 1.01);
+    // One group over a closed sphere cannot lie flat; it is split by direction rather than folded.
+    let mut s = Session::default();
+    let id = add(&mut s, "sphere", json!({"detail": 4}));
+    call(&mut s, "group_auto", json!({"id": id, "by": "parts"}));
+    let r = call(&mut s, "uv_unwrap", json!({"id": id, "seams": "groups"}));
+    assert!(r["charts"].as_u64().unwrap() > 1);
+    assert!(r["stretch"]["mean"].as_f64().unwrap() < 1.08, "{}", r["stretch"]);
+    assert!(uvs_in_square(&mut s, id));
+}
+
+#[test]
+fn uv_islands_can_be_seen_moved_and_packed() {
+    let mut s = Session::default();
+    let id = add(&mut s, "torus", json!({}));
+    assert_eq!(fails(&mut s, "get_uv_layout", json!({})), "no_uvs");
+    let unwrapped = call(&mut s, "uv_unwrap", json!({"id": id}));
+    let layout = call(&mut s, "get_uv_layout", json!({"id": id, "size": 256}));
+    assert_eq!(layout["islands"], unwrapped["charts"]);
+    assert!(layout["png_base64"].as_str().unwrap().len() > 1000);
+    let first = layout["listed"][0].clone();
+    let centre = |i: &serde_json::Value, k: usize| (i["min"][k].as_f64().unwrap() + i["max"][k].as_f64().unwrap()) / 2.0;
+    let width = |i: &serde_json::Value| i["max"][0].as_f64().unwrap() - i["min"][0].as_f64().unwrap();
+    let picked = call(&mut s, "get_uv_layout", json!({"id": id, "size": 64, "at": [centre(&first, 0), centre(&first, 1)]}));
+    let before = call(&mut s, "get_history", json!({}))["steps"].as_array().unwrap().len();
+    let moved = call(&mut s, "uv_transform", json!({"id": id, "island": 0, "scale": 2, "rotate": 90, "translate": [0.1, 0]}));
+    assert_eq!(moved["island"], 0);
+    let after = call(&mut s, "get_uv_layout", json!({"id": id, "size": 64}))["listed"][0].clone();
+    // Turned a quarter and doubled: the new width is twice the old height.
+    let old_height = first["max"][1].as_f64().unwrap() - first["min"][1].as_f64().unwrap();
+    assert!((width(&after) - 2.0 * old_height).abs() < 0.01, "{after} from {first}");
+    assert!((centre(&after, 0) - centre(&first, 0) - 0.1).abs() < 0.01);
+    assert_eq!(call(&mut s, "get_history", json!({}))["steps"].as_array().unwrap().len(), before + 1);
+    let packed = call(&mut s, "uv_pack", json!({"id": id}));
+    assert_eq!(packed["islands"], unwrapped["charts"]);
+    assert!(uvs_in_square(&mut s, id));
+    call(&mut s, "bake_maps", json!({"id": id, "size": 512}));
+    // The torus's first island is a solid strip, so its box centre is on it.
+    assert_eq!(picked["selected"], 0);
+    assert_eq!(fails(&mut s, "uv_transform", json!({"id": id, "at": [5.0, 5.0], "scale": 2})), "no_island");
+}
+
 #[test]
 fn smooth_preview_carries_paint_to_new_vertices() {
     let mut mesh = fsc_core::Mesh::new(vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], vec![0, 1, 2]);
-    mesh.paint = vec![[1.0, 0.0, 0.0, 0.5, 0.0], [0.0, 1.0, 0.0, 0.5, 0.0], [0.0, 0.0, 1.0, 0.5, 0.0]];
+    mesh.paint = vec![[1.0, 0.0, 0.0, 0.5, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 0.5, 0.0, 1.0, 0.0], [0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 0.0]];
     let out = fsc_topo::smooth_preview(&mesh, 1);
     assert_eq!(out.triangle_count(), 4);
     assert_eq!(out.paint.len(), out.vertex_count());
@@ -198,4 +256,56 @@ fn animations_leave_the_scene_and_history_as_they_were() {
     assert_eq!(scene["objects"][0]["layers"], after["objects"][0]["layers"]);
     assert_eq!(call(&mut s, "get_history", json!({})), history);
     assert_eq!(fails(&mut s, "record_animation", json!({"path": temp("x.png"), "keys": [{"time": 0}]})), "bad_arguments");
+}
+
+/// The JSON chunk of a GLB file.
+fn glb_json(path: &str) -> serde_json::Value {
+    let bytes = std::fs::read(path).expect("glb");
+    let len = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
+    serde_json::from_slice(&bytes[20..20 + len]).expect("glb json")
+}
+
+#[test]
+fn opacity_and_emissive_paint_travel_through_files_and_bakes() {
+    let mut s = Session::default();
+    let id = add(&mut s, "sphere", json!({"detail": 3}));
+    call(&mut s, "paint_fill", json!({"id": id, "color": "#3080ff"}));
+    // A stroke paints only the channels it is given: here opacity, leaving the colour.
+    call(&mut s, "sculpt_stroke", json!({"id": id, "brush": "paint", "opacity": 0.25, "points": [[0, 0, 1]], "radius": 0.4, "strength": 1}));
+    call(&mut s, "paint_fill", json!({"id": id, "emissive": 0.8}));
+    let paint = s.scene.get(id as u32).unwrap().mesh.paint.clone();
+    assert!(paint.iter().any(|p| p[5] < 0.5) && paint.iter().any(|p| p[5] > 0.99), "the stroke made part of it see-through");
+    assert!(paint.iter().all(|p| (p[6] - 0.8).abs() < 1e-4 && (p[2] - 1.0).abs() < 0.01), "glow everywhere, colour kept");
+    // A project keeps all seven floats.
+    let project = temp("channels.fsc");
+    call(&mut s, "save_project", json!({"path": project}));
+    let mut t = Session::default();
+    call(&mut t, "open_project", json!({"path": project}));
+    let reopened = t.scene.objects[0].mesh.paint.clone();
+    assert_eq!(reopened, paint);
+    // GLB: colour with alpha, blended, and the mean glow as the emissive factor; it reads back with its opacity.
+    let glb = temp("channels.glb");
+    call(&mut s, "export_mesh", json!({"path": glb, "ids": [id]}));
+    let doc = glb_json(&glb);
+    assert_eq!(doc["materials"][0]["alphaMode"], "BLEND");
+    let color = doc["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"].as_u64().unwrap() as usize;
+    assert_eq!(doc["accessors"][color]["type"], "VEC4");
+    assert!(doc["materials"][0]["emissiveFactor"][2].as_f64().unwrap() > 0.7);
+    let back = call(&mut s, "import_mesh", json!({"path": glb}))["objects"][0]["id"].as_u64().unwrap();
+    let min_alpha = s.scene.get(back as u32).unwrap().mesh.paint.iter().map(|p| p[5]).fold(1.0f32, f32::min);
+    assert!(min_alpha < 0.5, "opacity came back as {min_alpha}");
+    // Bakes: opacity in the colour map's alpha and a glow map, also in GLB.
+    call(&mut s, "uv_unwrap", json!({"id": id}));
+    call(&mut s, "bake_maps", json!({"id": id, "size": 512}));
+    let maps = s.scene.get(id as u32).unwrap().maps.clone().unwrap();
+    assert!(!maps.emissive_png.is_empty());
+    call(&mut s, "export_mesh", json!({"path": glb, "ids": [id]}));
+    let doc = glb_json(&glb);
+    assert!(doc["materials"][0]["emissiveTexture"]["index"].is_u64());
+    // Undo of the glow fill restores the paint without it.
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    call(&mut s, "undo", json!({}));
+    let undone = s.scene.get(id as u32).unwrap().mesh.paint.clone();
+    assert!(undone.iter().all(|p| p[6] == 0.0));
 }

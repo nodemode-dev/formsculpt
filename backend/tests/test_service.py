@@ -3,6 +3,7 @@
 import io
 import json
 import struct
+import zipfile
 
 import pytest
 
@@ -79,6 +80,35 @@ def test_import_and_export_by_upload(client):
     up = client.post("/api/engine/import", files={"file": ("cube.stl", io.BytesIO(r.content), "application/octet-stream")})
     assert up.status_code == 200
     assert len(call(client, "get_scene")["objects"]) == 2
+
+
+def _glb_json(data: bytes) -> dict:
+    (length,) = struct.unpack("<I", data[12:16])
+    return json.loads(data[20 : 20 + length])
+
+
+def test_paint_has_seven_floats_and_old_projects_open_opaque(client):
+    o = call(client, "add_primitive", kind="cube")["object"]
+    call(client, "paint_fill", id=o["id"], color="#ff8800", opacity=0.5, emissive=0.25)
+    mesh = client.get(f"/api/engine/mesh/{o['id']}").content
+    vertices, indices, _, flags = struct.unpack("<IIII", mesh[4:20])
+    paint_at = 20 + vertices * 24 + indices * 4 + vertices * 4
+    first = struct.unpack("<7f", mesh[paint_at : paint_at + 28])
+    assert flags & 2 and abs(first[5] - 0.5) < 1e-6 and abs(first[6] - 0.25) < 1e-6
+    # A project from before 0.26.0 held five floats of paint per vertex; rewrite this one that way and open it.
+    saved = client.get("/api/engine/project").content
+    src, out = zipfile.ZipFile(io.BytesIO(saved)), io.BytesIO()
+    with zipfile.ZipFile(out, "w") as dst:
+        for item in src.infolist():
+            data = src.read(item.filename)
+            if item.filename.endswith("paint.f32"):
+                floats = struct.unpack(f"<{len(data) // 4}f", data)
+                data = b"".join(struct.pack("<5f", *floats[i : i + 5]) for i in range(0, len(floats), 7))
+            dst.writestr(item, data)
+    up = client.post("/api/engine/import", files={"file": ("old.fsc", io.BytesIO(out.getvalue()), "application/octet-stream")})
+    assert up.status_code == 200 and up.json()["ok"], up.text
+    doc = _glb_json(client.get("/api/engine/export", params={"format": "glb"}).content)
+    assert "alphaMode" not in doc["materials"][0] and "emissiveFactor" not in doc["materials"][0]
 
 
 def test_fbx_export_route(client):
