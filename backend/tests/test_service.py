@@ -84,9 +84,30 @@ def test_mcp_refuses_other_origins(client):
     assert r.status_code == 403
 
 
+def test_plugins_declare_fields_and_tools(client):
+    plugins = {p["name"]: p for p in client.get("/api/plugins").json()["plugins"]}
+    assert set(plugins["rock"]["params"]) == {"size", "seed"} and plugins["rock"]["click"] is False
+    assert plugins["rivets"]["click"] is True and plugins["rivets"]["params"]["shape"]["options"] == ["sphere", "cylinder", "cube"]
+    o = call(client, "add_primitive", kind="sphere", detail=4)["object"]
+    hit = call(client, "pick", origin=[0, 0, 5], direction=[0, 0, -1])
+    ran = client.post("/api/plugins/run", json={"name": "rivets", "args": {"point": hit["point"], "normal": hit["normal"], "count": 6}}).json()
+    assert ran["ok"] and ran["result"]["copies"] == 6, ran
+    assert o["id"] in {x["id"] for x in call(client, "get_scene")["objects"]}
+
+
+def test_bridge_route_writes_to_the_bridge_folder(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("FSC_BRIDGE_DIR", str(tmp_path))
+    o = call(client, "add_primitive", kind="cube", name="Block A")["object"]
+    reply = client.post("/api/engine/bridge", json={"id": o["id"], "format": "obj"}).json()
+    assert reply["ok"], reply
+    assert reply["result"]["path"] == str(tmp_path / f"Block_A-{o['id']}.obj")
+    assert (tmp_path / f"Block_A-{o['id']}.obj").stat().st_size > 0
+    assert client.post("/api/engine/bridge", json={"id": 9999}).status_code == 404
+
+
 def test_plugins_list_and_run(client):
     listed = {p["name"] for p in client.get("/api/plugins").json()["plugins"]}
-    assert {"rock", "pedestal"} <= listed
+    assert {"rock", "pedestal", "rivets"} <= listed
     # With nothing selected the pedestal refuses; after the rock (now active) it stands it on one.
     refused = client.post("/api/plugins/run", json={"name": "pedestal", "args": {}}).json()
     assert refused["ok"] is False

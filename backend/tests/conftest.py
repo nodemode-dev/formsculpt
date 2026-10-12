@@ -18,7 +18,8 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def call(client: TestClient, name: str, **args) -> dict:
-    reply = client.post("/api/engine/dispatch", json={"name": name, "args": args}).json()
+def call(client: TestClient, command: str, /, **args) -> dict:
+    # Positional-only, so a command's own `name` argument never collides with the command.
+    reply = client.post("/api/engine/dispatch", json={"name": command, "args": args}).json()
     assert reply["ok"], reply
     return reply["result"]

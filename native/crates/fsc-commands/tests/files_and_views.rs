@@ -56,6 +56,30 @@ fn gltf_is_written_with_its_bin_and_needs_it_to_read() {
 }
 
 #[test]
+fn a_bridged_file_saved_elsewhere_comes_back_into_its_object() {
+    let mut s = Session::default();
+    let cube = add(&mut s, "cube", json!({"detail": 2}));
+    let path = temp("bridge.obj");
+    call(&mut s, "bridge_send", json!({"id": cube, "path": path}));
+    assert!(call(&mut s, "bridge_sync", json!({}))["updated"].as_array().unwrap().is_empty(), "an unchanged file synced");
+    // Another app saves a torus over the file.
+    let mut other = Session::default();
+    add(&mut other, "torus", json!({}));
+    let theirs = temp("theirs.obj");
+    call(&mut other, "export_mesh", json!({"path": theirs}));
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    std::fs::copy(&theirs, &path).unwrap();
+    let r = call(&mut s, "bridge_sync", json!({}));
+    assert_eq!(r["updated"][0]["id"], cube);
+    let torus_vertices = object(&mut other, 1)["vertices"].clone();
+    assert_eq!(object(&mut s, cube)["vertices"], torus_vertices);
+    assert_eq!(call(&mut s, "undo", json!({}))["undone"], "Bridge Update");
+    // Deleting the object ends the bridge.
+    call(&mut s, "delete_object", json!({"id": cube}));
+    assert!(call(&mut s, "bridge_sync", json!({}))["bridges"].as_array().unwrap().is_empty());
+}
+
+#[test]
 fn get_view_renders_the_scene() {
     let mut s = Session::default();
     add(&mut s, "sphere", json!({"detail": 4}));

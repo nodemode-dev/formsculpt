@@ -160,6 +160,51 @@ fn arrays_mirror_and_linked_copies_follow() {
 }
 
 #[test]
+fn bevel_rounds_corners_and_fills_inner_edges() {
+    let mut s = Session::default();
+    let cube = add(&mut s, "cube", json!({"size": 1}));
+    call(&mut s, "bevel_edges", json!({"id": cube, "radius": 0.15, "resolution": 128}));
+    assert!(watertight(&mut s, cube));
+    // A 0.15 round pulls the corner from 0.866 to about 0.756 from the centre; the faces stay at 0.5.
+    let k = -1.0 / 3f64.sqrt();
+    let corner = call(&mut s, "pick", json!({"origin": [2, 2, 2], "direction": [k, k, k]}));
+    let d = corner["point"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap().powi(2)).sum::<f64>().sqrt();
+    assert!((d - 0.756).abs() < 0.03, "corner at {d}");
+    let face = call(&mut s, "pick", json!({"origin": [0, 0, 3], "direction": [0, 0, -1]}));
+    assert!((face["point"][2].as_f64().unwrap() - 0.5).abs() < 0.01);
+    assert_eq!(fails(&mut s, "bevel_edges", json!({"id": cube, "radius": 0.0001})), "bevel_failed");
+    // An L: the concave corner at (0.5, 0.5) fills to about (0.441, 0.559) with a 0.2 round.
+    let mut s = Session::default();
+    let a = add(&mut s, "cube", json!({"size": 1}));
+    let b = add(&mut s, "cube", json!({"size": 1}));
+    call(&mut s, "transform_object", json!({"id": b, "translate": [1, 0.5, 0], "scale": [1, 2, 1]}));
+    let l = call(&mut s, "boolean", json!({"a": a, "b": b, "resolution": 128}))["id"].as_u64().unwrap();
+    call(&mut s, "bevel_edges", json!({"id": l, "radius": 0.2, "edges": "concave", "resolution": 128}));
+    let h = std::f64::consts::FRAC_1_SQRT_2;
+    let hit = call(&mut s, "pick", json!({"origin": [0, 1, 0], "direction": [h, -h, 0]}));
+    assert!((hit["point"][0].as_f64().unwrap() - 0.441).abs() < 0.02, "inner corner at {}", hit["point"]);
+}
+
+#[test]
+fn tubes_and_lathes_stay_editable_until_changed() {
+    let mut s = Session::default();
+    let t = call(&mut s, "curve_tube", json!({"points": [[0, 0, 0], [0, 1, 0], [0.5, 1.5, 0]], "radius": 0.1}))["object"].clone();
+    assert_eq!(t["editable_build"], "tube");
+    assert!(t["primitive"].is_null(), "the tube's curve leaked into the primitive field");
+    let id = t["id"].as_u64().unwrap();
+    let o = call(&mut s, "edit_build", json!({"id": id, "radius": 0.25, "move": [{"index": 2, "to": [1.5, 1.5, 0]}]}))["object"].clone();
+    assert!((size(&o, 0) - 1.91).abs() < 0.05, "{}", size(&o, 0));
+    assert_eq!(call(&mut s, "undo", json!({}))["undone"], "Edit Tube");
+    call(&mut s, "sculpt_stroke", json!({"id": id, "brush": "draw", "points": [[0, 0.5, 0.1]], "radius": 0.2}));
+    assert_eq!(fails(&mut s, "edit_build", json!({"id": id, "radius": 0.1})), "not_editable");
+    let l = call(&mut s, "lathe", json!({"profile": [[0, 0], [0.5, 0], [0.4, 1], [0, 1]]}))["object"]["id"].as_u64().unwrap();
+    let o = call(&mut s, "edit_build", json!({"id": l, "move": [{"index": 2, "to": [0.9, 1]}]}))["object"].clone();
+    assert!((size(&o, 0) - 1.8).abs() < 0.02);
+    let sphere = add(&mut s, "sphere", json!({}));
+    assert_eq!(fails(&mut s, "edit_build", json!({"id": sphere})), "not_editable");
+}
+
+#[test]
 fn shadow_box_needs_two_overlapping_outlines() {
     let mut s = Session::default();
     let rect = json!([[-0.5, 0], [0.5, 0], [0.5, 1], [-0.5, 1]]);
