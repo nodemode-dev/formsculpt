@@ -176,3 +176,9 @@ pytest on the FastAPI app through its test client, with the built engine module 
 - kind: rationale
 - logged: v0.23.0 · 2026-10-12
 A plugin may declare PARAMS (fields: number, integer, boolean, choice or text, with label, default, min, max, step and options) and CLICK = True (a surface tool that receives the clicked point, normal and object id). Both are read with ast.literal_eval from the file's top level, so listing plugins never runs them; anything that is not a literal is ignored. The list route passes them to the window, which draws the fields. A new example, rivets, sets a ring of rivets around a clicked point through pick and insert_along. POST /api/engine/bridge sends an object to <name>-<id>.<format> in FSC_BRIDGE_DIR or ~/.formsculptor/bridge and returns the path to open in the other app. The suite's call helper had the same keyword collision Fsc.call had at 0.18.0 (a command's own name argument); it is positional-only now. 12 service tests.
+
+### routers/engine.py · FBX through the service
+- refers-to: app/routers/engine.py :: export_file (fbx), BridgeOut (fbx)
+- kind: rationale
+- logged: v0.24.0 · 2026-10-12
+The export route and the bridge take fbx; upload import needed no change since the engine picks the format from the file name. A test exports a torus as FBX, uploads it back and finds both with 2,048 vertices. 13 service tests.
