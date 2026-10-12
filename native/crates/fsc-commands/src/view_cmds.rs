@@ -24,7 +24,8 @@ pub(crate) fn view_schema() -> Value {
             "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay", "description": "The window's matcaps, or pbr for painted roughness and metalness under three lights."},
             "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Only these objects; every visible object when omitted."},
             "frame": {"type": "string", "enum": ["all", "active"], "default": "all", "description": "Fit the camera to all drawn objects or to the active one (others still drawn)."},
-            "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"}
+            "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"},
+            "smooth": {"type": "integer", "minimum": 0, "maximum": 3, "default": 0, "description": "Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed."}
         },
         "required": [],
         "additionalProperties": false
@@ -355,7 +356,22 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
     } else {
         frame
     };
-    let objects: Vec<RenderObject> = drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active }).collect();
+    let smooth = int(args, "smooth", 0, 0, 3)? as u32;
+    // The smooth preview draws subdivided copies without the mask, which belongs to the sculpted vertices.
+    let smoothed: Vec<(fsc_core::Mesh, Vec<f32>)> = if smooth > 0 {
+        drawn.iter().map(|o| {
+            let m = fsc_topo::smooth_preview(&o.mesh, smooth);
+            let mask = vec![0.0; m.vertex_count()];
+            (m, mask)
+        }).collect()
+    } else {
+        Vec::new()
+    };
+    let objects: Vec<RenderObject> = if smooth > 0 {
+        drawn.iter().zip(&smoothed).map(|(o, (m, mask))| RenderObject { mesh: m, mask, active: Some(o.id) == active }).collect()
+    } else {
+        drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active }).collect()
+    };
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
     let out = fsc_paint::render(&objects, &view).map_err(|e| CommandError::new("render_failed", e))?;
     let facts = json!({

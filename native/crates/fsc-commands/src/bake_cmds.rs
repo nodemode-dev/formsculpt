@@ -13,11 +13,29 @@ fn bad(msg: impl Into<String>) -> CommandError {
     CommandError::new("bad_arguments", msg)
 }
 
+pub(crate) fn unwrap_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "method": {"type": "string", "enum": ["conformal", "project"], "default": "conformal", "description": "conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle)."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
 pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let flatten = match args.get("method").and_then(Value::as_str).unwrap_or("conformal") {
+        "conformal" => fsc_paint::Flatten::Conformal,
+        "project" => fsc_paint::Flatten::Project,
+        other => return Err(bad(format!("unknown method {other}; conformal or project"))),
+    };
     let id = target(s, args)?;
     let started = Instant::now();
     let object = s.scene.get_mut(id).expect("checked");
-    let result = fsc_paint::unwrap(&object.mesh, 4.0 / 1024.0);
+    let result = fsc_paint::unwrap_with(&object.mesh, 4.0 / 1024.0, flatten);
+    let (mean, worst) = fsc_paint::stretch(&object.mesh, &result.uvs);
     let mut mesh = object.mesh.clone();
     mesh.uvs = result.uvs;
     let mask = object.mask.clone();
@@ -25,7 +43,8 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     object.maps = None;
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
-    Ok(json!({"object": after, "charts": result.charts, "coverage": result.coverage, "ms": started.elapsed().as_millis()}))
+    let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
+    Ok(json!({"object": after, "charts": result.charts, "coverage": result.coverage, "stretch": {"mean": round(mean), "max": round(worst)}, "ms": started.elapsed().as_millis()}))
 }
 
 pub(crate) fn bake_schema() -> Value {

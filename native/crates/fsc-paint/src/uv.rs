@@ -31,7 +31,21 @@ pub struct Unwrap {
     pub coverage: f32,
 }
 
+/// How each chart is laid flat.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Flatten {
+    /// Straight projection along the chart's axis: fast, but faces at an angle to the axis are stretched.
+    Project,
+    /// Least-squares conformal maps (Levy et al. 2002) started from the projection: angles kept, little stretch.
+    Conformal,
+}
+
+/// The box-projection unwrap (charts by facing direction, projected flat, packed).
 pub fn unwrap(mesh: &Mesh, padding: f32) -> Unwrap {
+    unwrap_with(mesh, padding, Flatten::Project)
+}
+
+pub fn unwrap_with(mesh: &Mesh, padding: f32, flatten: Flatten) -> Unwrap {
     let tris = mesh.triangle_count();
     let normals: Vec<Vec3> = mesh.face_normals().into_iter().map(|n| n.normalize_or(Vec3::Y)).collect();
     let mut labels: Vec<u8> = normals.iter().map(|&n| label_of(n)).collect();
@@ -90,17 +104,30 @@ pub fn unwrap(mesh: &Mesh, padding: f32) -> Unwrap {
         }
         charts.push(members);
     }
+    // Each chart's flat coordinates per mesh vertex (a seam vertex has one in each chart it borders).
+    let flat: Vec<HashMap<u32, Vec2>> = charts
+        .iter()
+        .map(|members| {
+            let label = labels[members[0] as usize];
+            let mut at: HashMap<u32, Vec2> = HashMap::new();
+            for &t in members {
+                for v in mesh.triangle(t as usize) {
+                    at.entry(v).or_insert_with(|| project(mesh.position(v), label));
+                }
+            }
+            if flatten == Flatten::Conformal {
+                conformal(mesh, members, &mut at);
+            }
+            at
+        })
+        .collect();
     let mut boxes: Vec<(Vec2, Vec2)> = Vec::with_capacity(charts.len());
     let mut area = 0.0;
-    for members in &charts {
-        let label = labels[members[0] as usize];
+    for at in &flat {
         let (mut lo, mut hi) = (Vec2::splat(f32::INFINITY), Vec2::splat(f32::NEG_INFINITY));
-        for &t in members {
-            for v in mesh.triangle(t as usize) {
-                let q = project(mesh.position(v), label);
-                lo = lo.min(q);
-                hi = hi.max(q);
-            }
+        for &q in at.values() {
+            lo = lo.min(q);
+            hi = hi.max(q);
         }
         let size = (hi - lo).max(Vec2::splat(1e-6));
         area += size.x * size.y;
@@ -136,16 +163,219 @@ pub fn unwrap(mesh: &Mesh, padding: f32) -> Unwrap {
     };
     let mut uvs = vec![[0.0f32; 2]; mesh.indices.len()];
     for (c, members) in charts.iter().enumerate() {
-        let label = labels[members[0] as usize];
         for &t in members {
             for k in 0..3 {
                 let v = mesh.indices[3 * t as usize + k];
-                let q = (project(mesh.position(v), label) - boxes[c].0 + offsets[c]) / side;
+                let q = (flat[c][&v] - boxes[c].0 + offsets[c]) / side;
                 uvs[3 * t as usize + k] = q.to_array();
             }
         }
     }
     Unwrap { uvs, charts: charts.len(), coverage: area / (side * side) }
+}
+
+/// A triangle in its own plane: corners at q[0] = origin and q[1] on +x, counter-clockwise about the normal, and twice
+/// its area; None when it is degenerate.
+fn local_triangle(p: [Vec3; 3]) -> Option<([[f64; 2]; 3], f64)> {
+    let n = (p[1] - p[0]).cross(p[2] - p[0]);
+    let twice = n.length();
+    let along = (p[1] - p[0]).length();
+    if twice <= 1e-20 || along <= 1e-12 {
+        return None;
+    }
+    let x = (p[1] - p[0]) / along;
+    let y = (n / twice).cross(x);
+    let q = p.map(|c| [f64::from((c - p[0]).dot(x)), f64::from((c - p[0]).dot(y))]);
+    Some((q, f64::from(twice)))
+}
+
+/// Edge opposite each corner, counter-clockwise: e[i] = q[i+2] - q[i+1].
+fn opposite_edges(q: &[[f64; 2]; 3]) -> [[f64; 2]; 3] {
+    std::array::from_fn(|i| {
+        let (a, b) = (q[(i + 1) % 3], q[(i + 2) % 3]);
+        [b[0] - a[0], b[1] - a[1]]
+    })
+}
+
+/// Lays one chart flat by least-squares conformal maps: for every triangle, the residual of the Cauchy-Riemann
+/// condition (grad v = rot90 grad u), area-weighted, minimised by conjugate gradients with two vertices pinned.
+/// `at` holds the projection on entry (the start and the pins) and the result on return; a chart whose solution
+/// folds over itself keeps its projection.
+fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
+    let mut verts: Vec<u32> = at.keys().copied().collect();
+    verts.sort_unstable();
+    let n = verts.len();
+    if n < 4 {
+        return;
+    }
+    let index: HashMap<u32, usize> = verts.iter().enumerate().map(|(i, &v)| (v, i)).collect();
+    // The projection may be mirrored relative to the faces' winding; start from its orientation-preserving twin.
+    let mut signed = 0.0f64;
+    for &t in members {
+        let [a, b, c] = mesh.triangle(t as usize).map(|v| at[&v]);
+        signed += f64::from((b - a).perp_dot(c - a));
+    }
+    let mirror = if signed < 0.0 { -1.0 } else { 1.0 };
+    let mut x = vec![0.0f64; 2 * n];
+    for (i, v) in verts.iter().enumerate() {
+        let q = at[v];
+        x[i] = f64::from(q.x) * mirror;
+        x[n + i] = f64::from(q.y);
+    }
+    // Rows of the energy: two per triangle, six (column, coefficient) entries each.
+    let mut rows: Vec<[(usize, f64); 6]> = Vec::with_capacity(members.len() * 2);
+    let mut area3 = 0.0f64;
+    for &t in members {
+        let tri = mesh.triangle(t as usize);
+        let Some((q, twice)) = local_triangle(tri.map(|v| mesh.position(v))) else { continue };
+        area3 += twice * 0.5;
+        let e = opposite_edges(&q);
+        let w = 1.0 / (2.0 * twice).sqrt();
+        let id = tri.map(|v| index[&v]);
+        rows.push(std::array::from_fn(|k| if k < 3 { (id[k], e[k][0] * w) } else { (n + id[k - 3], -e[k - 3][1] * w) }));
+        rows.push(std::array::from_fn(|k| if k < 3 { (id[k], e[k][1] * w) } else { (n + id[k - 3], e[k - 3][0] * w) }));
+    }
+    if rows.is_empty() {
+        return;
+    }
+    // Pins: the two vertices furthest apart along the projection's longer side.
+    let wide = {
+        let (mut lo, mut hi) = ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]);
+        for i in 0..n {
+            for k in 0..2 {
+                lo[k] = lo[k].min(x[k * n + i]);
+                hi[k] = hi[k].max(x[k * n + i]);
+            }
+        }
+        usize::from(hi[1] - lo[1] > hi[0] - lo[0])
+    };
+    let key = |i: usize| x[wide * n + i];
+    let pin_a = (0..n).min_by(|&i, &j| key(i).total_cmp(&key(j))).unwrap_or(0);
+    let pin_b = (0..n).max_by(|&i, &j| key(i).total_cmp(&key(j))).unwrap_or(n - 1);
+    if pin_a == pin_b {
+        return;
+    }
+    let free = |c: usize| c % n != pin_a && c % n != pin_b;
+    // H d = M^T (M d), restricted to the free unknowns.
+    let apply = |d: &[f64], out: &mut [f64]| {
+        out.iter_mut().for_each(|o| *o = 0.0);
+        for row in &rows {
+            let s: f64 = row.iter().map(|&(c, a)| a * d[c]).sum();
+            for &(c, a) in row {
+                out[c] += a * s;
+            }
+        }
+        for (c, o) in out.iter_mut().enumerate() {
+            if !free(c) {
+                *o = 0.0;
+            }
+        }
+    };
+    let mut diag = vec![0.0f64; 2 * n];
+    for row in &rows {
+        for &(c, a) in row {
+            diag[c] += a * a;
+        }
+    }
+    let mut r = vec![0.0f64; 2 * n];
+    apply(&x, &mut r);
+    r.iter_mut().for_each(|v| *v = -*v);
+    let precondition = |r: &[f64], z: &mut [f64]| {
+        for c in 0..2 * n {
+            z[c] = if free(c) && diag[c] > 0.0 { r[c] / diag[c] } else { 0.0 };
+        }
+    };
+    let mut z = vec![0.0f64; 2 * n];
+    precondition(&r, &mut z);
+    let mut p = z.clone();
+    let mut rz: f64 = r.iter().zip(&z).map(|(a, b)| a * b).sum();
+    let start = rz.abs().max(1e-300);
+    let mut hp = vec![0.0f64; 2 * n];
+    // Bounded work: about 6e8 multiply-adds per chart, between 200 and 4000 iterations.
+    let budget = (600_000_000 / (rows.len() * 12 + 1)).clamp(200, 4000);
+    for _ in 0..budget {
+        if rz.abs() <= start * 1e-14 {
+            break;
+        }
+        apply(&p, &mut hp);
+        let php: f64 = p.iter().zip(&hp).map(|(a, b)| a * b).sum();
+        if php <= 0.0 || !php.is_finite() {
+            break;
+        }
+        let alpha = rz / php;
+        for c in 0..2 * n {
+            x[c] += alpha * p[c];
+            r[c] -= alpha * hp[c];
+        }
+        precondition(&r, &mut z);
+        let next: f64 = r.iter().zip(&z).map(|(a, b)| a * b).sum();
+        let beta = next / rz;
+        rz = next;
+        for c in 0..2 * n {
+            p[c] = z[c] + beta * p[c];
+        }
+    }
+    // Keep the result only if nothing folded; then give it the chart's true area so chart sizes stay comparable.
+    let mut flat_area = 0.0f64;
+    let mut folds = 0usize;
+    for &t in members {
+        let id = mesh.triangle(t as usize).map(|v| index[&v]);
+        let [a, b, c] = id.map(|i| [x[i], x[n + i]]);
+        let s = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+        if !s.is_finite() {
+            return;
+        }
+        if s <= 0.0 {
+            folds += 1;
+        }
+        flat_area += s * 0.5;
+    }
+    if folds * 200 > members.len() || flat_area <= 0.0 {
+        return;
+    }
+    let scale = (area3 / flat_area).sqrt();
+    for (i, v) in verts.iter().enumerate() {
+        at.insert(*v, Vec2::new((x[i] * scale) as f32, (x[n + i] * scale) as f32));
+    }
+}
+
+/// Angle distortion of a UV layout: per triangle the ratio of the larger to the smaller singular value of the map
+/// from the surface to UV space (1 is conformal), as an area-weighted mean and the worst triangle.
+pub fn stretch(mesh: &Mesh, uvs: &[[f32; 2]]) -> (f32, f32) {
+    if uvs.len() != mesh.indices.len() {
+        return (0.0, 0.0);
+    }
+    let (mut sum, mut weight, mut worst) = (0.0f64, 0.0f64, 1.0f64);
+    for t in 0..mesh.triangle_count() {
+        let Some((q, twice)) = local_triangle(mesh.triangle(t).map(|v| mesh.position(v))) else { continue };
+        let e = opposite_edges(&q);
+        let uv: [[f64; 2]; 3] = std::array::from_fn(|k| uvs[3 * t + k].map(f64::from));
+        // grad f = sum f_i rot90(e_i) / (2A), rot90(x, y) = (-y, x).
+        let grad = |c: usize| -> [f64; 2] {
+            let (mut gx, mut gy) = (0.0, 0.0);
+            for i in 0..3 {
+                gx -= uv[i][c] * e[i][1];
+                gy += uv[i][c] * e[i][0];
+            }
+            [gx / twice, gy / twice]
+        };
+        let ([a, b], [c, d]) = (grad(0), grad(1));
+        let half = (a * a + b * b + c * c + d * d) * 0.5;
+        let det = (a * d - b * c).abs();
+        let root = (half * half - det * det).max(0.0).sqrt();
+        let (big, small) = ((half + root).sqrt(), (half - root).max(0.0).sqrt());
+        if big <= 1e-12 {
+            continue;
+        }
+        let ratio = if small > big * 1e-6 { big / small } else { 1e6 };
+        sum += ratio * twice;
+        weight += twice;
+        worst = worst.max(ratio);
+    }
+    if weight <= 0.0 {
+        return (0.0, 0.0);
+    }
+    ((sum / weight) as f32, worst as f32)
 }
 
 pub struct Expanded {

@@ -82,3 +82,22 @@ pub fn loop_subdivide_with(mesh: &Mesh, smooth: bool, sharp_border: bool) -> Sub
     }
     Subdivided { mesh: out, parents, stencil }
 }
+
+/// Dynamic subdivision for display: `mesh` Loop-subdivided `levels` times (1 to 3, stopping past two million
+/// triangles), with paint carried to each new vertex from the pair it splits. The source mesh is not changed.
+pub fn smooth_preview(mesh: &Mesh, levels: u32) -> Mesh {
+    let mut out = mesh.clone();
+    for _ in 0..levels.clamp(1, 3) {
+        if out.triangle_count() > 2_000_000 {
+            break;
+        }
+        let sub = loop_subdivide(&out, true);
+        let mut next = sub.mesh;
+        // parents names each output vertex's pair (an original vertex is its own pair).
+        if out.has_paint() && sub.parents.len() == next.vertex_count() {
+            next.paint = sub.parents.iter().map(|&(a, b)| std::array::from_fn(|c| (out.paint[a as usize][c] + out.paint[b as usize][c]) * 0.5)).collect();
+        }
+        out = next;
+    }
+    out
+}

@@ -9,7 +9,8 @@ use pyo3::types::PyBytes;
 use serde_json::{json, Value};
 
 type MapFiles<'py> = (String, Vec<(String, Bound<'py, PyBytes>)>);
-type MeshBuffers<'py> = (Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64, Bound<'py, PyBytes>);
+type SmoothBuffers<'py> = (Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64, Bound<'py, PyBytes>);
+type MeshBuffers<'py> =(Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, Bound<'py, PyBytes>, u64, Bound<'py, PyBytes>);
 
 #[pyclass]
 struct Engine {
@@ -93,6 +94,15 @@ impl Engine {
             object.revision,
             PyBytes::new(py, &object.mesh.paint_bytes()),
         ))
+    }
+
+    /// Dynamic subdivision: the object's mesh Loop-subdivided `levels` times (1 to 3) for display only, the sculpted mesh
+    /// unchanged (fsc_topo::smooth_preview). Returns positions, normals, indices, revision and paint (empty if none).
+    fn mesh_smooth<'py>(&self, py: Python<'py>, id: u32, levels: u32) -> PyResult<SmoothBuffers<'py>> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;
+        let mesh = fsc_topo::smooth_preview(&object.mesh, levels);
+        Ok((PyBytes::new(py, &mesh.positions_bytes()), PyBytes::new(py, &mesh.normals_bytes()), PyBytes::new(py, &mesh.indices_bytes()), object.revision, PyBytes::new(py, &mesh.paint_bytes())))
     }
 
     fn stroke_begin(&self, id: u32, settings: &str) -> PyResult<()> {

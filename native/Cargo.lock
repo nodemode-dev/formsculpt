@@ -131,7 +131,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-commands"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "base64",
  "fsc-core",
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-core"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "glam",
  "rayon",
@@ -154,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-io"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "base64",
  "fsc-core",
@@ -167,7 +167,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-paint"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "fsc-core",
  "glam",
@@ -177,11 +177,12 @@ dependencies = [
 
 [[package]]
 name = "fsc-py"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "fsc-commands",
  "fsc-core",
  "fsc-sculpt",
+ "fsc-topo",
  "glam",
  "pyo3",
  "serde_json",
@@ -189,7 +190,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-sculpt"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "fsc-core",
  "fsc-topo",
@@ -198,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "fsc-topo"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "fsc-core",
  "glam",

@@ -547,10 +547,10 @@ pub static COMMANDS: &[Command] = &[
         mcp: "uv_unwrap",
         group: Group::Paint,
         label: "Unwrap UVs",
-        description: "Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is projected flat and the charts are packed into the unit square keeping their relative sizes. Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.",
+        description: "Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.",
         keys: &[],
         hints: WRITE,
-        schema: sculpt_cmds::id_opt_schema,
+        schema: bake_cmds::unwrap_schema,
         run: bake_cmds::unwrap,
     },
     Command {
