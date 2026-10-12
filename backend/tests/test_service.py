@@ -128,6 +128,19 @@ def test_boolean_preview_draws_without_changing_the_scene(client):
     assert refused.status_code == 400 and "closed manifold" in refused.json()["detail"]
 
 
+def test_path_render_and_substance_routes(client, tmp_path, monkeypatch):
+    s = call(client, "add_primitive", kind="sphere", detail=3)["object"]["id"]
+    r = client.get("/api/engine/view", params={"render": "path", "samples": 4, "width": 64, "height": 64})
+    assert r.status_code == 200 and r.content[:8] == b"\x89PNG\r\n\x1a\n"
+    assert client.get("/api/engine/view", params={"render": "raytrace"}).status_code == 422
+    monkeypatch.setenv("FSC_SUBSTANCE_DIR", str(tmp_path))
+    assert client.post("/api/engine/substance", json={"id": s}).json()["error"]["code"] == "no_uvs"
+    call(client, "uv_unwrap", id=s)
+    out = client.post("/api/engine/substance", json={"id": s}).json()
+    assert out["ok"] and (tmp_path / "Sphere" / "Sphere_low.obj").exists()
+    assert client.post("/api/engine/substance", json={"id": 999}).status_code == 404
+
+
 def test_usda_export_route(client):
     call(client, "add_primitive", kind="cone")
     r = client.get("/api/engine/export", params={"format": "usda"})
