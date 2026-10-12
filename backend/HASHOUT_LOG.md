@@ -182,3 +182,9 @@ A plugin may declare PARAMS (fields: number, integer, boolean, choice or text, w
 - kind: rationale
 - logged: v0.24.0 · 2026-10-12
 The export route and the bridge take fbx; upload import needed no change since the engine picks the format from the file name. A test exports a torus as FBX, uploads it back and finds both with 2,048 vertices. 13 service tests.
+
+### services/engine.py, routers/engine.py · the smooth preview mesh
+- refers-to: app/services/engine.py :: mesh_payload (smooth); app/routers/engine.py :: mesh (smooth query); tests/test_service.py :: test_smooth_preview_subdivides_for_display_only
+- kind: rationale
+- logged: v0.25.0 · 2026-10-12
+GET /api/engine/mesh/{id}?smooth=1..3 returns the engine's smooth_preview of the object in the same FSCM layout with only the paint flag (no mask, groups or hidden faces, which belong to the sculpted mesh) and the object's own revision; smooth above 3 is a 422 from the query validation. The test checks 4 to the power of the level times the triangles, the unchanged revision, the plain mesh byte-identical afterwards and a 404 for a missing object. 14 service tests.
