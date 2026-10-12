@@ -380,6 +380,12 @@ Retopo quad is a click tool: four clicks on the sculpt (or on retopology already
 - logged: v0.30.0 · 2026-10-12
 Bevel edge is a click tool: a click on or beside an edge chamfers its straight run (Ctrl rounds it). Clip is a click tool: a level cut through the clicked point as seen (the plane's normal is the camera's screen up, so everything above the click on screen goes); Ctrl slices into two objects. Add joint is a click tool on a skeleton base mesh: a joint just off the clicked surface, linked to the nearest joint, and the mesh remade. In the UV view, Shift-drag moves the nearest UV point and Shift-Alt-drag moves the points around it with falloff; a plain drag still moves the island. From Substance reads Painter's export from the object's package folder through the service and redraws.
 
+### src/app.ts · Pose joint, Comb fibers and Cut fibers tools
+- refers-to: src/app.ts :: BRUSHES (pose_joint, groom_comb, groom_cut), CLICK_TOOLS, clickTool (pose_joint, groom_comb, groom_cut); import cross
+- kind: rationale
+- logged: v0.31.0 · 2026-10-12
+Pose joint is a click tool: the joint nearest the click turns by the Angle field about the Deform axis (Ctrl the other way). Comb fibers and Cut fibers are click tools on a fibers object: a short stroke through the click, as wide as the brush radius on screen, combs toward the screen's right (Ctrl left) or cuts there. Verified under the window: a click on a skeleton arm made a Pose Joint step, a click over a crown of fibers a Groom (comb) step; layout shift 0, no console errors.
+
 ### src/viewport/gl-renderer.ts, src/engine/service.ts, src/app.ts · opacity and emissive in the viewport
 - refers-to: src/viewport/gl-renderer.ts :: MESH_VS (aFx, location 5), MESH_FS (vFx: screen-door opacity, emissive), PAINT_DEFAULT, PF, paintBuffer (28-byte stride), patch, render (vertexAttrib2f 5); src/engine/service.ts :: PAINT_FLOATS, parseUpdate, fetchMesh; src/app.ts :: Paint section (Opacity, Emissive), paintArgs
 - kind: rationale
