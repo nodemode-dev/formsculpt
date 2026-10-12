@@ -58,6 +58,22 @@ float keyShadow() {
     for (int y = -1; y <= 1; y++) lit += q.z - uShadowBias <= texture(uShadowMap, q.xy + vec2(x, y) * texel).r ? 1.0 : 0.0;
   return mix(0.25, 1.0, lit / 9.0);
 }
+uniform float uDepthOn;
+uniform float uShadowRange;
+uniform float uSss;
+uniform vec3 uSssColor;
+uniform float uSssRadius;
+uniform float uTrans;
+uniform float uIor;
+// How much material lies between this point and the key light, in world units, from the light's depth map; -1 when
+// there is no map.
+float thickness() {
+  if (uDepthOn < 0.5) return -1.0;
+  vec4 c = uShadowVP * vec4(vWorld, 1.0);
+  vec3 q = c.xyz / c.w * 0.5 + 0.5;
+  if (q.x < 0.0 || q.y < 0.0 || q.x > 1.0 || q.y > 1.0 || q.z > 1.0) return -1.0;
+  return max(q.z - texture(uShadowMap, q.xy).r - uShadowBias, 0.0) * uShadowRange;
+}
 in float vMask;
 in vec3 vCol;
 in vec2 vMat;
@@ -125,6 +141,19 @@ void main() {
     for (int i = 0; i < 3; i++) if (i < uExtraCount) col += light(n, v, uExtraDir[i], uExtraColor[i], albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.6, 0.1, 0.5)), vec3(0.55, 0.62, 0.75), albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.0, 0.35, -1.0)), vec3(0.9), albedo, rough, metal);
+    if (uSss > 0.0) {
+      // Subsurface: key light wraps past the terminator tinted, and passes through parts thinner than the radius when
+      // lit from behind (thickness from the light's depth map; a view-angle guess without one).
+      float ndl = dot(n, uKeyDir);
+      float w = 0.6 * uSss;
+      float wrap = max((ndl + w) / (1.0 + w), 0.0) - max(ndl, 0.0);
+      float t = thickness();
+      float through = t >= 0.0 ? exp(-t / max(uSssRadius, 1e-4)) : pow(clamp(dot(v, -uKeyDir), 0.0, 1.0), 3.0) * 0.5;
+      // Only surfaces turned away from the light pass it through, fading in past the terminator so there is no seam.
+      through *= smoothstep(0.0, 0.6, -ndl);
+      col = mix(col, col * mix(vec3(1.0), uSssColor, 0.35), uSss * 0.5);
+      col += (uSssColor * albedo * wrap / PI + uSssColor * through * 0.35) * uKeyColor * uSss;
+    }
     col *= uLightScale;
     vec3 f0 = mix(vec3(0.04), albedo, metal);
     if (uEnvOn > 0.5) {
@@ -145,6 +174,15 @@ void main() {
     } else {
       vec3 sky = mix(vec3(0.16, 0.15, 0.14), vec3(0.42, 0.45, 0.5), n.y * 0.5 + 0.5);
       col += sky * (albedo * (1.0 - metal) + f0 * (1.0 - rough * 0.7));
+    }
+    if (uTrans > 0.0) {
+      // Transmission: what lies behind (the environment, or the sky without one) refracted through the surface at the
+      // index of refraction and tinted by its colour, with the Fresnel reflection kept on top.
+      float ft = pow((uIor - 1.0) / (uIor + 1.0), 2.0);
+      float fres = ft + (1.0 - ft) * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+      vec3 wd = transpose(mat3(uView)) * refract(-v, n, 1.0 / uIor);
+      vec3 behind = uEnvOn > 0.5 ? envAt(wd, rough * (uEnvMaxLod - 2.0)) : mix(vec3(0.16, 0.15, 0.14), vec3(0.42, 0.45, 0.5), wd.y * 0.5 + 0.5) * 1.6;
+      col = mix(col, behind * albedo + col * fres, uTrans * (1.0 - fres));
     }
     col = tonemap(col * uExposure);
   } else if (uImage > 0.5) {
@@ -475,6 +513,20 @@ export class GlRenderer {
     return this.perObject.get(id) ?? this.shading;
   }
 
+  private materials = new Map<number, ObjectMaterial>();
+
+  /** An object's subsurface and transmission, as the engine stores them (null clears it to opaque). Returns whether
+   * the drawing changes, so the caller redraws only then. */
+  setMaterial(id: number, m: ObjectMaterial | null): boolean {
+    const was = this.materials.get(id);
+    if (m && (m.subsurface > 0 || m.transmission > 0)) {
+      if (was && JSON.stringify(was) === JSON.stringify(m)) return false;
+      this.materials.set(id, m);
+      return true;
+    }
+    return this.materials.delete(id);
+  }
+
   addMatcap(name: string, image: TexImageSource): void {
     const gl = this.gl;
     const old = this.matcaps.get(name);
@@ -571,7 +623,9 @@ export class GlRenderer {
     const toWorld = (d: [number, number, number]): [number, number, number] => [view[0] * d[0] + view[1] * d[1] + view[2] * d[2], view[4] * d[0] + view[5] * d[1] + view[6] * d[2], view[8] * d[0] + view[9] * d[1] + view[10] * d[2]];
     const keyView = L.keyFollowsView ? dir : toView(dir);
     const keyWorld = L.keyFollowsView ? toWorld(dir) : dir;
-    const shadowMap = (L.shadows || L.ground) && this.meshes.size > 0 ? this.renderShadow(keyWorld) : null;
+    // Subsurface reads thickness from the key light's depth map, so the map is drawn for it too.
+    const subsurface = [...this.materials.entries()].some(([id, m]) => m.subsurface > 0 && this.meshes.has(id));
+    const shadowMap = (L.shadows || L.ground || subsurface) && this.meshes.size > 0 ? this.renderShadow(keyWorld) : null;
     const shadowVP = L.shadows ? shadowMap : null;
     if (post) post.begin(width, height);
     else gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -631,6 +685,9 @@ export class GlRenderer {
     gl.uniform3f(gl.getUniformLocation(this.meshProgram, 'uKeyDir'), ...keyView);
     gl.uniform3f(gl.getUniformLocation(this.meshProgram, 'uKeyColor'), 2.6 * k * L.keyColor[0], 2.6 * k * L.keyColor[1], 2.6 * k * L.keyColor[2]);
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uShadowOn'), shadowVP ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uDepthOn'), shadowMap ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uShadowRange'), this.shadowRange);
+    if (shadowMap && !shadowVP) gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uShadowVP'), false, shadowMap);
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uShadowBias'), 0.003);
     const extra = L.extra.slice(0, 3);
     const dirs = new Float32Array(9);
@@ -647,12 +704,23 @@ export class GlRenderer {
     gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraColor'), cols);
     if (shadowVP) gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uShadowVP'), false, shadowVP);
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, shadowVP && this.shadow ? this.shadow.tex : this.blankEnv);
+    gl.bindTexture(gl.TEXTURE_2D, shadowMap && this.shadow ? this.shadow.tex : this.blankEnv);
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uShadowMap'), 2);
     gl.activeTexture(gl.TEXTURE0);
     const model = gl.getUniformLocation(this.meshProgram, 'uModel');
+    const sss = gl.getUniformLocation(this.meshProgram, 'uSss');
+    const sssColor = gl.getUniformLocation(this.meshProgram, 'uSssColor');
+    const sssRadius = gl.getUniformLocation(this.meshProgram, 'uSssRadius');
+    const trans = gl.getUniformLocation(this.meshProgram, 'uTrans');
+    const ior = gl.getUniformLocation(this.meshProgram, 'uIor');
     for (const [id, m] of this.meshes) {
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
+      const mat = this.materials.get(id);
+      gl.uniform1f(sss, mat?.subsurface ?? 0);
+      gl.uniform3f(sssColor, ...(mat?.subsurfaceColor ?? [1, 0.35, 0.25]));
+      gl.uniform1f(sssRadius, mat?.subsurfaceRadius ?? 0.2);
+      gl.uniform1f(trans, mat?.transmission ?? 0);
+      gl.uniform1f(ior, mat?.ior ?? 1.45);
       const name = this.shadingOf(id);
       const tex = this.matcaps.get(name);
       const s = SHADINGS[name] ?? SHADINGS.clay;
@@ -689,6 +757,7 @@ export class GlRenderer {
   }
 
   private post: PostFx | null = null;
+  private shadowRange = 1;
   private postSettings: PostSettings = { ...NO_POST };
   private shadow: { fb: WebGLFramebuffer; tex: WebGLTexture; size: number } | null = null;
   private shadowProgram: WebGLProgram | null = null;
@@ -831,6 +900,8 @@ export class GlRenderer {
     const eye: [number, number, number] = [center[0] + keyWorld[0] * r * 2, center[1] + keyWorld[1] * r * 2, center[2] + keyWorld[2] * r * 2];
     const up: [number, number, number] = Math.abs(keyWorld[1]) > 0.99 ? [0, 0, 1] : [0, 1, 0];
     const vp = multiply(ortho(r, 1, r * 0.5, r * 3.5), lookAt(eye, center, up));
+    // The orthographic depth is linear over 3r, which turns a depth difference into a thickness in world units.
+    this.shadowRange = r * 3;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.shadow.fb);
     gl.viewport(0, 0, size, size);
     gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -972,6 +1043,15 @@ export interface Lighting {
   ground: boolean;
   /** Up to three added lights. */
   extra: LightSpec[];
+}
+
+/** An object's light transport in lit shading (the engine's set_material). */
+export interface ObjectMaterial {
+  subsurface: number;
+  subsurfaceColor: [number, number, number];
+  subsurfaceRadius: number;
+  transmission: number;
+  ior: number;
 }
 
 export interface LightSpec {

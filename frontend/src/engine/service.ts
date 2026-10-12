@@ -24,6 +24,7 @@ export interface ObjectSummary {
   instance_of?: number | null;
   /** "tube" or "lathe" while edit_build can still remake the object (null once anything else changed it). */
   editable_build?: string | null;
+  material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number };
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

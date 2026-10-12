@@ -22,6 +22,7 @@ import { AgentLink } from './ui/agent-link';
 import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { PanelLayout } from './ui/layout';
+import { SpaceMouse } from './ui/spacemouse';
 import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
 
 /** A plugin as the service lists it: its fields come from the PARAMS it declares, and CLICK makes it a surface tool. */
@@ -144,6 +145,8 @@ interface Shell {
   fuseBlend: HTMLInputElement;
   pluginPick: HTMLSelectElement;
   pluginParams: HTMLElement;
+  subsurface: HTMLInputElement;
+  transmission: HTMLInputElement;
   pluginButtons: HTMLButtonElement[];
   projectOpacity: HTMLInputElement;
   projectInput: HTMLInputElement;
@@ -425,12 +428,12 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(fileGrid);
-  const fileInput = input('file', { accept: '.fsc,.obj,.stl,.ply,.glb,.gltf,.3mf', 'aria-label': 'Choose a file' });
+  const fileInput = input('file', { accept: '.fsc,.obj,.stl,.ply,.glb,.gltf,.3mf,.fbx', 'aria-label': 'Choose a file' });
   fileInput.hidden = true;
   panel.append(fileInput);
   const exportFormat = el('select');
   exportFormat.setAttribute('aria-label', 'Export format');
-  for (const f of ['glb', 'obj', 'stl', 'ply', '3mf']) {
+  for (const f of ['glb', 'obj', 'fbx', 'stl', 'ply', '3mf']) {
     const option = el('option', '', f.toUpperCase());
     option.value = f;
     exportFormat.append(option);
@@ -603,7 +606,9 @@ function buildShell(root: HTMLElement): Shell {
   const projectInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose an image to paint' });
   projectInput.hidden = true;
   panel.append(projectInput);
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
+  const subsurface = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Subsurface' });
+  const transmission = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Transmission' });
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
@@ -778,6 +783,7 @@ function buildShell(root: HTMLElement): Shell {
       ['anim_record', 'Record animation'],
       ['anim_clear', 'Clear keys'],
       ['history_movie', 'History movie'],
+      ['spacemouse', '3D mouse'],
       ['matcap', 'Load matcap'],
     ] as const
   ).map(([action, label]) => {
@@ -929,7 +935,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
 }
 
 class SceneView {
@@ -1008,6 +1014,10 @@ class SceneView {
         if (action === 'turntable') {
           this.note('Recording a turntable');
           void this.download(`/api/engine/turntable?frames=48&size=384&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'turntable.png');
+          return;
+        }
+        if (action === 'spacemouse') {
+          void this.connectSpaceMouse();
           return;
         }
         if (action === 'history_movie') {
@@ -1107,6 +1117,18 @@ class SceneView {
     shell.projectInput.addEventListener('change', () => void this.projectImage());
     shell.pluginButtons.forEach((b) => b.addEventListener('click', () => void (b.dataset.action === 'run' ? this.runPlugin() : this.loadPlugins())));
     shell.pluginPick.addEventListener('change', () => this.drawPluginParams());
+    // Subsurface and transmission belong to the object (saved with it); they show in lit (PBR) shading.
+    for (const [control, key] of [[shell.subsurface, 'subsurface'], [shell.transmission, 'transmission']] as const) {
+      control.addEventListener('change', () => {
+        const id = this.scene.active;
+        if (id === null) return;
+        if (shell.shading.value !== 'pbr') {
+          shell.shading.value = 'pbr';
+          shell.shading.dispatchEvent(new Event('change'));
+        }
+        void this.run('set_material', { id, [key]: Number(control.value) / 100 });
+      });
+    }
     // A tube or lathe that has not been changed since it was made follows these fields.
     const editable = (kind: string): number | null => {
       const o = this.scene.objects.find((x) => x.id === this.scene.active);
@@ -2295,6 +2317,16 @@ class SceneView {
     this.patchLayers(active);
     this.patchPaintLayers(active);
     this.patchPrimitive(active);
+    let restyled = false;
+    for (const o of next.objects) {
+      const m = o.material;
+      restyled = this.viewport.renderer.setMaterial(o.id, m ? { subsurface: m.subsurface, subsurfaceColor: m.subsurface_color, subsurfaceRadius: m.subsurface_radius, transmission: m.transmission, ior: m.ior } : null) || restyled;
+    }
+    if (active?.material) {
+      if (document.activeElement !== this.shell.subsurface) this.shell.subsurface.value = String(Math.round(active.material.subsurface * 100));
+      if (document.activeElement !== this.shell.transmission) this.shell.transmission.value = String(Math.round(active.material.transmission * 100));
+    }
+    if (restyled) this.viewport.invalidate();
     if (next.active !== this.scene.active && this.scene.active !== null) this.previous = this.scene.active;
     this.scene = next;
   }
@@ -2518,6 +2550,28 @@ class SceneView {
   }
 
   /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
+  private spaceMouse: SpaceMouse | null = null;
+
+  /** Connects a 3Dconnexion device over WebHID; its cap then pans, zooms and turns the view. */
+  private async connectSpaceMouse(): Promise<void> {
+    if (!SpaceMouse.supported()) {
+      this.note('This browser has no WebHID for a 3D mouse; use Chrome or Edge');
+      return;
+    }
+    const cam = this.viewport.camera;
+    this.spaceMouse ??= new SpaceMouse((m) => {
+      if (m.orbitX || m.orbitY) cam.orbit(m.orbitX, m.orbitY);
+      if (m.panX || m.panY) cam.pan(m.panX, m.panY, this.shell.canvas.clientHeight);
+      if (m.zoom !== 1) cam.zoom(m.zoom);
+      this.viewport.invalidate();
+    });
+    try {
+      this.note(`${await this.spaceMouse.connect()} connected: push to pan, lift or press to zoom, tilt and twist to turn`);
+    } catch (err) {
+      this.note(err instanceof Error ? err.message : 'The 3D mouse could not be opened');
+    }
+  }
+
   private bridgeTimer = 0;
 
   /** Sends the object to the bridge folder for another app, then checks every few seconds for that app's saves. */
