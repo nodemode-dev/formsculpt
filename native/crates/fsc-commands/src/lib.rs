@@ -13,6 +13,7 @@ mod multires_cmds;
 mod object_cmds;
 mod paint_layer_cmds;
 mod place_cmds;
+mod rig_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
 mod sim_cmds;
@@ -643,6 +644,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sim_cmds::substance_schema,
         run: sim_cmds::substance_send,
+    },
+    Command {
+        id: "object.pose_joint",
+        mcp: "pose_joint",
+        group: Group::Object,
+        label: "Pose Joint",
+        description: "Pose an object made by skeleton_mesh by its own skeleton: turn one joint (by index, or the joint nearest point) about an axis, and every bone beyond it follows with the mesh around it, weighted automatically by distance to each bone so the bend blends across the joint (softness). Works after sculpting; detail rides along. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: rig_cmds::pose_joint_schema,
+        run: rig_cmds::pose_joint,
+    },
+    Command {
+        id: "object.groom",
+        mcp: "groom_fibers",
+        group: Group::Object,
+        label: "Groom Fibers",
+        description: "Groom fibers made by grow_fibers along a stroke: comb bends them toward the stroke's direction, cut trims them where it passes, curl twists them into spirals, lengthen grows them; strands keep their segment lengths when combed or curled. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: rig_cmds::groom_schema,
+        run: rig_cmds::groom_fibers,
     },
     Command {
         id: "file.substance_sync",

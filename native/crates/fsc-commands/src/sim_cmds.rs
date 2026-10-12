@@ -290,8 +290,7 @@ pub(crate) fn fibers_grow(s: &mut Session, args: &Value) -> Result<Value, Comman
     // Clumping pulls each tip toward the mean tip of a few seeded clump centres nearby.
     let centres: Vec<Vec3> = roots.iter().step_by(24.max(count / 60)).map(|r| r.0).collect();
     let down = Vec3::NEG_Y;
-    let mut positions = Vec::new();
-    let mut indices = Vec::new();
+    let mut curves: Vec<Vec<(Vec3, f32)>> = Vec::with_capacity(roots.len());
     for (p, n) in &roots {
         let jitter = Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * 0.3;
         let toward = centres.iter().min_by(|a, b| a.distance(*p).total_cmp(&b.distance(*p))).copied().unwrap_or(*p);
@@ -304,25 +303,22 @@ pub(crate) fn fibers_grow(s: &mut Session, args: &Value) -> Result<Value, Comman
             let dir = ((*n + jitter) * (1.0 - droop * t) + down * (droop * t * 1.5)).normalize_or(*n);
             at += dir * step;
         }
-        if let Ok(tube) = fsc_topo::tube(&pts, 4, 0, false) {
-            let base = positions.len() as u32;
-            positions.extend_from_slice(&tube.positions);
-            indices.extend(tube.indices.iter().map(|i| i + base));
-        }
+        curves.push(pts);
     }
-    if indices.is_empty() {
+    let out = crate::rig_cmds::fiber_mesh(&curves, color);
+    if out.indices.is_empty() {
         return Err(bad("the fibers came out empty; give a larger length or radius"));
-    }
-    let mut out = Mesh::new(positions, indices);
-    if let Some(c) = color {
-        let mut paint = fsc_core::DEFAULT_PAINT;
-        paint[..3].copy_from_slice(&c);
-        out.paint = vec![paint; out.vertex_count()];
     }
     let name = s.scene.unique_name(&format!("{} fibers", s.scene.get(id).expect("checked").name));
     let new_id = s.scene.add(name, out);
     let index = s.scene.index_of(new_id).expect("just added");
     s.history.push(Edit::Add { id: new_id, index, parked: None });
+    // The guide curves stay with the object so groom_fibers can comb, cut, curl and lengthen them.
+    if let Some(o) = s.scene.get_mut(new_id) {
+        let mut record = crate::rig_cmds::fiber_record(&curves, color);
+        record["fp"] = json!(crate::rig_cmds::fingerprint(&o.mesh));
+        o.primitive = Some((record.to_string(), u64::MAX));
+    }
     Ok(json!({"object": summary(s.scene.get(new_id).expect("just added")), "fibers": roots.len(), "active": new_id, "ms": started.elapsed().as_millis()}))
 }
 
