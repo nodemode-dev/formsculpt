@@ -1,3 +1,20 @@
+import type { WasmEngine } from './wasm';
+
+/** The browser engine when the window runs without the engine service; null while the service is in use. */
+let local: WasmEngine | null = null;
+
+/** Sends every engine call from here on to the browser engine instead of the service. */
+export function useBrowserEngine(engine: WasmEngine): void {
+  local = engine;
+}
+
+/** The browser engine in use, or null when the window talks to the engine service. */
+export function browserEngine(): WasmEngine | null {
+  return local;
+}
+
+const NEEDS_SERVICE = 'This needs the engine service (./formsculptor boot); the window is running the browser engine';
+
 export interface Version {
   app: string;
   version: string;
@@ -89,6 +106,7 @@ export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
 }
 
 export async function fetchVersion(signal?: AbortSignal): Promise<Version | null> {
+  if (local) return { app: 'formsculptor', version: local.version() };
   try {
     const response = await fetch('/api/version', { signal, cache: 'no-store' });
     if (!response.ok) return null;
@@ -99,6 +117,7 @@ export async function fetchVersion(signal?: AbortSignal): Promise<Version | null
 }
 
 export async function dispatch<T>(name: string, args: Record<string, unknown> = {}): Promise<Reply<T>> {
+  if (local) return local.dispatch(name, args) as Reply<T>;
   try {
     const response = await fetch('/api/engine/dispatch', {
       method: 'POST',
@@ -116,6 +135,10 @@ export async function dispatch<T>(name: string, args: Record<string, unknown> = 
 }
 
 export async function uploadFile<T>(file: Blob, name: string): Promise<Reply<T>> {
+  if (local) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return (name.toLowerCase().endsWith('.fsc') ? local.open(bytes) : local.importFile(name, bytes)) as Reply<T>;
+  }
   try {
     const form = new FormData();
     form.append('file', file, name);
@@ -127,7 +150,33 @@ export async function uploadFile<T>(file: Blob, name: string): Promise<Reply<T>>
   }
 }
 
+/** A service file route answered by the browser engine: the project, exports, baked maps and view pictures. */
+function localFile(engine: WasmEngine, path: string): Blob | string {
+  const url = new URL(path, location.origin);
+  const q = url.searchParams;
+  const bytes = (r: Uint8Array | string, type: string): Blob | string => (typeof r === 'string' ? r : new Blob([r as BlobPart], { type }));
+  if (url.pathname === '/api/engine/project') return bytes(engine.save(), 'application/x-formsculptor');
+  if (url.pathname === '/api/engine/export') {
+    const ids = q.get('ids');
+    return bytes(engine.exportFile(`export.${q.get('format') ?? 'glb'}`, ids ? ids.split(',').map(Number) : null), 'application/octet-stream');
+  }
+  const maps = /^\/api\/engine\/maps\/(\d+)$/.exec(url.pathname);
+  if (maps) return bytes(engine.maps(Number(maps[1])), 'application/zip');
+  if (url.pathname === '/api/engine/view') {
+    const args: Record<string, unknown> = {};
+    for (const [k, v] of q) args[k] = k === 'width' || k === 'height' ? Number(v) : v;
+    const reply = engine.dispatch('get_view', args);
+    if (!reply.ok) return reply.error?.message ?? 'render failed';
+    const raw = atob((reply.result as { png_base64: string }).png_base64);
+    const png = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) png[i] = raw.charCodeAt(i);
+    return new Blob([png], { type: 'image/png' });
+  }
+  return NEEDS_SERVICE;
+}
+
 export async function fetchFile(path: string): Promise<Blob | string> {
+  if (local) return localFile(local, path);
   try {
     const response = await fetch(path, { cache: 'no-store' });
     if (!response.ok) return (await response.text()) || response.statusText;
@@ -138,6 +187,7 @@ export async function fetchFile(path: string): Promise<Blob | string> {
 }
 
 export async function postJson<T>(path: string): Promise<Reply<T>> {
+  if (local) return { ok: false, error: { code: 'no_service', message: NEEDS_SERVICE } };
   try {
     const response = await fetch(path, { method: 'POST' });
     if (!response.ok) return { ok: false, error: { code: `http_${response.status}`, message: (await response.text()) || response.statusText } };
@@ -149,6 +199,7 @@ export async function postJson<T>(path: string): Promise<Reply<T>> {
 
 /** POSTs JSON to a plain service route (not the dispatcher); a refusal's FastAPI `detail` becomes the message. */
 export async function postBody<T>(path: string, body: unknown): Promise<Reply<T>> {
+  if (local) return { ok: false, error: { code: 'no_service', message: NEEDS_SERVICE } };
   try {
     const response = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const text = await response.text();
@@ -170,9 +221,28 @@ export async function postBody<T>(path: string, body: unknown): Promise<Reply<T>
 
 /** An object's mesh; with `smooth` 1 to 3, a dynamic-subdivision preview of it for display (the sculpted mesh unchanged). */
 export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | null> {
+  if (local) {
+    const buffer = local.mesh(id, smooth);
+    return buffer ? parseMesh(id, buffer) : null;
+  }
   const response = await fetch(`/api/engine/mesh/${id}${smooth > 0 ? `?smooth=${smooth}` : ''}`, { cache: 'no-store' });
   if (!response.ok) return null;
-  const buffer = await response.arrayBuffer();
+  return parseMesh(id, await response.arrayBuffer());
+}
+
+/** The engine's catalogue of commands (for keys and menus), or null when it cannot be reached. */
+export async function fetchCatalogue<T>(): Promise<T | null> {
+  if (local) return local.catalogue() as T;
+  try {
+    const res = await fetch('/api/engine/catalogue');
+    return res.ok ? ((await res.json()) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** An FSCM payload (as the service sends it, or the browser engine builds it) as typed arrays over its bytes. */
+function parseMesh(id: number, buffer: ArrayBuffer): MeshBuffers | null {
   const head = new DataView(buffer, 0, 20);
   const magic = String.fromCharCode(head.getUint8(0), head.getUint8(1), head.getUint8(2), head.getUint8(3));
   if (magic !== 'FSCM') return null;

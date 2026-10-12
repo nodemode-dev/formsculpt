@@ -1,7 +1,8 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
 import { el, saveBlob, setAttr, setText } from './ui/dom';
-import { dispatch, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, type ObjectSummary, type SceneSummary } from './engine/service';
+import { browserEngine, dispatch, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
+import { WasmEngine } from './engine/wasm';
 import { dataUrl, HostLink } from './host';
 import { inDesktop, saveNative } from './ui/desktop';
 
@@ -436,12 +437,12 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(fileGrid);
-  const fileInput = input('file', { accept: '.fsc,.obj,.stl,.ply,.glb,.gltf,.3mf,.fbx', 'aria-label': 'Choose a file' });
+  const fileInput = input('file', { accept: '.fsc,.obj,.stl,.ply,.glb,.gltf,.3mf,.fbx,.usda,.usd', 'aria-label': 'Choose a file' });
   fileInput.hidden = true;
   panel.append(fileInput);
   const exportFormat = el('select');
   exportFormat.setAttribute('aria-label', 'Export format');
-  for (const f of ['glb', 'obj', 'fbx', 'stl', 'ply', '3mf']) {
+  for (const f of ['glb', 'obj', 'fbx', 'usda', 'stl', 'ply', '3mf']) {
     const option = el('option', '', f.toUpperCase());
     option.value = f;
     exportFormat.append(option);
@@ -2045,12 +2046,9 @@ class SceneView {
   }
 
   private async loadCatalogue(): Promise<void> {
-    try {
-      const res = await fetch('/api/engine/catalogue');
-      if (res.ok) this.catalogue = ((await res.json()) as { commands: CatalogueCommand[] }).commands;
-    } catch {
-      // the service is down; the window's own keys still work
-    }
+    // With the engine unreachable the window's own keys still work.
+    const found = await fetchCatalogue<{ commands: CatalogueCommand[] }>();
+    if (found) this.catalogue = found.commands;
     this.hotkeys.addCatalogue(this.catalogue);
     const actions = [...WINDOW_ACTIONS, ...BRUSHES.map(([k, label]) => ({ id: `brush:${k}`, label: `Tool: ${label}` })), ...commandActions(this.catalogue)];
     for (const a of actions) {
@@ -2709,11 +2707,14 @@ class SceneView {
   /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
   private async loadPlugins(): Promise<void> {
     let list: PluginInfo[] = [];
-    try {
-      const res = await fetch('/api/plugins');
-      if (res.ok) list = ((await res.json()) as { plugins: typeof list }).plugins;
-    } catch {
-      // the service is down; the list stays empty
+    // Plugins are Python files the service runs; the browser engine has none.
+    if (!browserEngine()) {
+      try {
+        const res = await fetch('/api/plugins');
+        if (res.ok) list = ((await res.json()) as { plugins: typeof list }).plugins;
+      } catch {
+        // the service is down; the list stays empty
+      }
     }
     this.plugins = list;
     const select = this.shell.pluginPick;
@@ -2993,7 +2994,11 @@ class SceneView {
 
 async function poll(shell: Shell): Promise<void> {
   const version = await fetchVersion();
-  if (version) {
+  if (version && browserEngine()) {
+    setAttr(shell.engineDot, 'data-state', 'ok');
+    setText(shell.engineText, 'browser engine');
+    setText(shell.engineVersion, version.version);
+  } else if (version) {
     setAttr(shell.engineDot, 'data-state', 'ok');
     setText(shell.engineText, 'service connected');
     setText(shell.engineVersion, version.version);
@@ -3004,9 +3009,27 @@ async function poll(shell: Shell): Promise<void> {
   }
 }
 
+/**
+ * Picks the engine before anything asks it: the engine service when it answers, otherwise the browser engine
+ * (frontend/public/engine/fsc_engine.wasm) so the window still sculpts on its own. ?engine=wasm or ?engine=service
+ * forces one.
+ */
+async function chooseEngine(): Promise<void> {
+  const want = new URLSearchParams(location.search).get('engine');
+  if (want === 'service') return;
+  if (want !== 'wasm' && (await fetchVersion())) return;
+  const engine = await WasmEngine.load();
+  if (engine) useBrowserEngine(engine);
+}
+
 export function start(root: HTMLElement): void {
   const shell = buildShell(root);
   document.body.classList.add('app-ready');
+  void boot(shell);
+}
+
+async function boot(shell: Shell): Promise<void> {
+  await chooseEngine();
   try {
     const viewport = new Viewport(shell.canvas);
     setText(shell.statRenderer, viewport.renderer.kind);
@@ -3017,7 +3040,8 @@ export function start(root: HTMLElement): void {
       view.drawTools();
     };
     void view.refresh();
-    const overlay = document.getElementById('overlay-root');
+    // Agents reach the engine through the service's MCP server; the browser engine has none to follow.
+    const overlay = browserEngine() ? null : document.getElementById('overlay-root');
     if (overlay) {
       const link = new AgentLink(overlay);
       link.onChange = () => void view.refresh();
@@ -3029,5 +3053,5 @@ export function start(root: HTMLElement): void {
     setText(shell.message, `The viewport could not start: ${String(err)}`);
   }
   void poll(shell);
-  window.setInterval(() => void poll(shell), 5000);
+  if (!browserEngine()) window.setInterval(() => void poll(shell), 5000);
 }

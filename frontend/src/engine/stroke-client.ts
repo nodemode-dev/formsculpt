@@ -1,4 +1,5 @@
-import { parseUpdate, type VertexUpdate } from './service';
+import { browserEngine, parseUpdate, type VertexUpdate } from './service';
+import type { WasmEngine } from './wasm';
 
 export interface BrushState {
   brush: string;
@@ -69,6 +70,7 @@ export class StrokeClient {
   }
 
   warm(): void {
+    if (browserEngine()) return;
     void this.open().catch(() => undefined);
   }
 
@@ -90,7 +92,38 @@ export class StrokeClient {
     else if (msg.type === 'error') this.onError?.(msg.message ?? 'stroke error');
   }
 
+  /** With the browser engine there is no socket: each message runs in the page at once. */
+  private sendLocal(engine: WasmEngine, payload: Record<string, unknown>): void {
+    try {
+      if (payload.type === 'begin') {
+        const refused = engine.strokeBegin(payload.id as number, payload.brush as Record<string, unknown>);
+        if (refused) {
+          this.live = false;
+          this.onError?.(refused);
+        }
+      } else if (payload.type === 'sample') {
+        const r = engine.strokeSample(payload.origin as number[], payload.dir as number[], payload.pressure as number, payload.tilt as number);
+        if (r.error) return;
+        if (r.topology) this.onTopology?.(this.objectId);
+        if (payload.seq === this.firstSeq && !r.hit) this.miss = true;
+        const update = r.update ? parseUpdate(r.update) : null;
+        if (update) this.onUpdate?.(update);
+      } else if (payload.type === 'end') {
+        const reply = engine.strokeEnd();
+        this.onEnd?.(reply.ok ? (reply.result as StrokeResult | null) : null);
+      }
+    } catch (err) {
+      this.live = false;
+      this.onError?.(String((err as Error).message ?? err));
+    }
+  }
+
   private send(payload: Record<string, unknown>): void {
+    const engine = browserEngine();
+    if (engine) {
+      this.sendLocal(engine, payload);
+      return;
+    }
     void this.open()
       .then((ws) => ws.send(JSON.stringify(payload)))
       .catch((err: Error) => this.onError?.(err.message));
