@@ -163,4 +163,4 @@ Scripts and plugins are plain Python with one handle, fsc, whose call(command, *
 - refers-to: app/routers/engine.py :: animation
 - kind: rationale
 - logged: v0.21.0 · 2026-10-12
-GET /api/engine/animation takes the keyframes as a JSON query value (at most 20,000 characters, which holds 64 keys), runs record_animation into a temporary file and returns the APNG as a download, like the turntable route; bad JSON is a 400 with the parse error.
+GET /api/engine/animation takes the keyframes as a JSON query value (at most 20,000 characters, which holds 64 keys), runs record_animation into a temporary file and returns the APNG as a download, like the turntable route; bad JSON is a 400 with the parse error. GET /api/engine/history_movie does the same for record_history (fps, size, turn).
