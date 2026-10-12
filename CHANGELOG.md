@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.31.0 · 2026-10-12
+
+### Added
+
+- `pose_joint`: a skeleton_mesh object is posed by its own skeleton: one joint turns, the bones beyond it follow, and the mesh moves with automatic weights by distance to each bone, blended across the joint (softness). Works after sculpting; undo brings back the matching skeleton. Window: the Pose joint tool (the Angle field about the Deform axis, Ctrl the other way).
+- `groom_fibers`: comb, cut, curl or lengthen fibers from grow_fibers along a stroke; grow_fibers keeps each fiber's guide curve for it. Window: the Comb fibers and Cut fibers tools.
+- Desktop: the Linux AppImage, deb and rpm rebuilt at 0.30.0 (the 92.5 of 97 release) and the AppImage launched under Xvfb: window up, service connected, 114 commands in its bundled engine, bevel_edge and clip_plane run through it.
+- 116 commands in all. Tests: engine 51, service 18.
+
 ## 0.30.0 · 2026-10-12
 
 ### Added
