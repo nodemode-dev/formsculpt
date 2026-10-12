@@ -86,9 +86,10 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Workflow 5: combine, bend and layer
 
-1. Build parts as separate objects (`add_primitive`, `duplicate_object` with an `offset`, `transform_object` to move, rotate and scale), then `boolean` with `a`, `b` and `op` (union, difference as a minus b, intersection). The result is one watertight object and replaces both unless `keep_inputs`; detail finer than a voxel softens, so use `resolution` 160 to 256 for crisp joins. `merge_objects` only groups meshes; `split_parts` separates loose pieces.
-2. `deform_object` bends, twists or tapers along an axis of the object's bounds; mask an area first to hold it still (masks also hold vertices during `transform_object`).
-3. For an adjustable pass of detail, `layer_add`, sculpt, then `layer_set_strength` (0 hides it, 1 as sculpted, 2 exaggerates, negative inverts). `layer_select` with null records into the base again; `layer_apply` bakes a layer. While layers exist, remesh, decimate, dyntopo and level changes refuse with `has_layers`.
+1. Build parts as separate objects (`add_primitive`, `duplicate_object` with an `offset`, `transform_object` to move, rotate and scale), then `boolean` with `a`, `b` and `op` (union, difference as a minus b, intersection). The result is one watertight object and replaces both unless `keep_inputs`; detail finer than a voxel softens, so use `resolution` 160 to 256 for crisp joins. `merge_objects` only groups meshes; `split_parts` separates loose pieces. `blend` (world units) fillets the seam: a union with blend 0.1 to 0.3 of the parts' size fuses an arm into a shoulder or a horn into a head with a soft web, a difference with a blend leaves a rounded cut.
+2. `cut_shape` cuts hard-surface shapes: a closed `outline` of world points and the `direction` it is seen along (from `get_view`'s camera, or an axis such as [0, 0, -1] for the front); the outline is extruded straight through the object and taken away, or with `keep: "inside"` kept alone. Vents, slots, windows, notches, a block trimmed to a profile; `round` softens the cut edges.
+3. `deform_object` bends, twists or tapers along an axis of the object's bounds; mask an area first to hold it still (masks also hold vertices during `transform_object`).
+4. For an adjustable pass of detail, `layer_add`, sculpt, then `layer_set_strength` (0 hides it, 1 as sculpted, 2 exaggerates, negative inverts). `layer_select` with null records into the base again; `layer_apply` bakes a layer. While layers exist, remesh, decimate, dyntopo and level changes refuse with `has_layers`.
 
 ## Workflow 8: retopology and mask modeling
 
@@ -101,7 +102,9 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. `curve_tube` sweeps a tube along `points` ([x, y, z] or [x, y, z, radius] to taper) for horns, tails, hair strands, cables or straps; `closed` makes a ring. Union it into the body with `boolean` when it should be one piece.
 3. `lathe` spins a `profile` of [radius, y] points around the y axis for vases, bottles, columns and turned parts; start and end at radius 0 for a closed top and bottom, or leave them open and they are capped flat.
 4. `shadow_box` builds a closed solid from two or three outlines: `front` as [x, y] points, `side` as [z, y], `top` as [x, z]; the solid is what all of them agree on, like a shadow box. A boot, a chair, a gun stock, a head block from a profile and a front view. The outlines must overlap; `blend` (0 to 0.5) rounds the meeting edges.
-5. Each makes a new active object named by `name`; `transform_object` places it.
+5. `text_mesh` makes solid lettering (`text`, `size`, `weight`, `depth`; capitals, digits and . , : - + ! ? ' /), facing the front and centred on the origin: a name on a plinth (union it, or subtract it to engrave). `extrude_shape` turns flat [x, y] `outlines` into a solid of `depth`, inner outlines cutting holes: badges, logos, plates.
+6. `vdm_stamp` stamps a vector displacement map at a `point` and `normal` from `pick`: `horn`, `hook` or `mushroom`, or a map made with `vdm_capture` from a plane (add_primitive kind plane, detail 64 or more, sculpted in the middle without dyntopo). `radius` sets its half-width, `angle` its lean, negative `strength` presses it in. The surface needs enough vertices under the stamp: divide first.
+7. Each makes a new active object named by `name`; `transform_object` places it.
 
 ## Workflow 7: paint
 
@@ -118,4 +121,4 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Not yet available
 
-There are no folders or on-canvas gizmo, `get_view` has no turntable or orbit beyond its named views and `yaw` and `pitch`, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no bevel, edge loop or bridge tools, `get_view` has no turntable or orbit beyond its named views and `yaw` and `pitch`, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
