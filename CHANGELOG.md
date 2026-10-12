@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.30.0 · 2026-10-12
+
+### Added
+
+- Guided quad remesh: `quad_remesh` takes `guides` (curves as point lists); the grid's edge loops turn to run along their mean direction while flat sides stay square to the world.
+- `bevel_edge`: a chamfer or round fillet of a given width on the straight run of sharp edges nearest a point, cut exactly with a prism so the rest of the mesh is untouched. Window: the Bevel edge tool (Ctrl for round).
+- `clip_plane`: a flat exact cut along a plane, keeping one side or slicing into two capped objects. Window: the Clip tool (a level cut through the click as seen; Ctrl slices).
+- Skeleton editing: `skeleton_mesh` objects stay editable; `edit_build` takes `add` (a joint linked to the nearest) and `drag` (move the nearest joint), and `spheres`, `links`, `blend`, `resolution`. Window: the Add joint tool.
+- `uv_move_point`: drag one UV vertex, or every corner within a radius with falloff. Window: Shift-drag in the UV view (Alt for the soft reach).
+- `substance_sync`: Painter's exported BaseColor, Roughness and Metallic read back onto the paint and the colour map. Window: From Substance; service: `/api/engine/substance/sync`.
+- Path render: added directional `lights`, `sun` off, depth of field (`aperture`, `focus`) and `pass` (depth, normal, ao). Service: `pass` and `aperture` on `/api/engine/view`.
+- 114 commands in all. Tests: engine 49, service 18.
+
 ## 0.29.0 · 2026-10-12
 
 ### Added
