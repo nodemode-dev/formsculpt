@@ -234,6 +234,9 @@ const BRUSHES: [string, string][] = [
   ['group_brush', 'Group brush'],
   ['retopo', 'Retopo quad'],
   ['edge_loop', 'Edge loop'],
+  ['bevel_edge', 'Bevel edge'],
+  ['clip', 'Clip'],
+  ['zsphere', 'Add joint'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
@@ -269,7 +272,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -324,6 +327,7 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['fibers', 'Grow fibers'],
   ['render', 'Path render'],
   ['substance', 'To Substance'],
+  ['substance_sync', 'From Substance'],
 ];
 
 /** Edit buttons whose engine call differs from their name. */
@@ -2138,6 +2142,18 @@ class SceneView {
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
     else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
     else if (tool === 'edge_loop') await this.run('insert_edge_loop', { id, point });
+    else if (tool === 'bevel_edge') await this.run('bevel_edge', { id, point, mode: ctrl ? 'round' : 'chamfer' });
+    else if (tool === 'clip') {
+      // A level cut through the click as seen: everything above it on screen goes (Ctrl keeps both halves).
+      await this.run('clip_plane', { id, point, normal: this.viewport.camera.screenUp(), mode: ctrl ? 'slice' : 'keep' });
+    } else if (tool === 'zsphere') {
+      // A new joint just off the surface, linked to the nearest one; the skeleton is remade around it.
+      const o = this.scene.objects.find((x) => x.id === id);
+      const size = o ? Math.max(...[0, 1, 2].map((k) => o.bounds.max[k] - o.bounds.min[k])) : 1;
+      const n = hit.result.normal ?? [0, 0, 0];
+      const at = [0, 1, 2].map((k) => point[k] + n[k] * size * 0.12);
+      await this.run('edit_build', { id, add: { point: at } });
+    }
     else if (tool === 'retopo') {
       // Four clicks around a face, in order; each quad joins the corners it shares with earlier ones.
       this.retopoPoints.push(point);
@@ -2536,6 +2552,10 @@ class SceneView {
       void this.substanceOut(id);
       return;
     }
+    if (action === 'substance_sync') {
+      void this.substanceIn(id);
+      return;
+    }
     if (action === 'duplicate') void this.run('duplicate_object', { id });
     else if (action === 'split') void this.run('split_parts', { id });
     else if (action === 'merge') {
@@ -2727,6 +2747,18 @@ class SceneView {
       return;
     }
     this.note(`Substance package in ${body.result.folder}: open its _low.obj in Painter (its README has the steps)`);
+  }
+
+  /** Reads Painter's exported BaseColor (and Roughness, Metallic) from the package folder onto the paint. */
+  private async substanceIn(id: number): Promise<void> {
+    const reply = await postBody<{ ok: boolean; result?: { vertices_painted: number }; error?: { message: string } }>('/api/engine/substance/sync', { id });
+    const body = reply.ok ? reply.result : null;
+    if (!body?.ok || !body.result) {
+      this.note(body?.error?.message ?? (reply.ok ? 'Nothing came back from Painter' : reply.error.message));
+      return;
+    }
+    this.note(`Painter's textures are on ${body.result.vertices_painted} vertices`);
+    await this.refresh();
   }
 
   private async bridgeSync(): Promise<void> {
@@ -3039,7 +3071,7 @@ class SceneView {
     return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
   }
 
-  /** Click chooses the island under the pointer; a drag moves the island it started on by the drag. */
+  /** Click chooses the island under the pointer; a drag moves the island it started on by the drag, Shift-drag one UV point. */
   private wireUvView(): void {
     const view = this.shell.uvView;
     let start: { x: number; y: number; uv: [number, number] } | null = null;
@@ -3055,7 +3087,9 @@ class SceneView {
       if (!from || id === null) return;
       const to = this.uvAt(e);
       if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 3) {
-        void this.uvRun('uv_transform', { id, at: from.uv, translate: [to[0] - from.uv[0], to[1] - from.uv[1]] });
+        // Shift drags the nearest UV point (Alt with a soft reach) instead of the whole island.
+        if (e.shiftKey) void this.uvRun('uv_move_point', { id, at: from.uv, to, radius: e.altKey ? 0.06 : 0 });
+        else void this.uvRun('uv_transform', { id, at: from.uv, translate: [to[0] - from.uv[0], to[1] - from.uv[1]] });
         return;
       }
       void dispatch<{ selected: number | null }>('get_uv_layout', { id, size: 64, at: from.uv }).then((reply) => {
