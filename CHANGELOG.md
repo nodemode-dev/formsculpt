@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.29.0 · 2026-10-12
+
+### Added
+
+- `cloth_drape`: cloth falling under gravity onto the other objects and a floor, edges keeping their length, masked vertices pinned. Window: Drape cloth.
+- `pose`: Transpose-style posing; the unmasked part turns about a joint, with falloff. Window: Pose.
+- `grow_fibers`: hair, fur and grass as tapered fibers from the masked area, with droop, clumping and colour. Window: Grow fibers.
+- Path-traced rendering: `get_view` with `render: "path"` (samples, bounces): sky and sun light, soft shadows, bounced light, glossy paint, glow and see-through paint. Window: Path render; service: `/api/engine/view?render=path`.
+- Manual retopology: `retopo_face` adds quads snapped onto the sculpt and joined to their neighbours. Window: the Retopo quad tool.
+- Edge tools: `insert_edge_loop` (window: the Edge loop tool), `bridge` and `delete_faces` (window: Bridge borders, Delete masked faces).
+- `send_to_substance`: a Substance 3D Painter package (low mesh with UVs, high mesh, baked maps under Painter's names, README). OBJ export writes UVs. Window: To Substance; service: `/api/engine/substance`.
+- 110 commands in all. Tests: engine 42, service 18.
+
 ## 0.28.0 · 2026-10-12
 
 ### Added
