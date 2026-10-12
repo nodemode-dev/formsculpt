@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.30.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.31.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -524,6 +524,27 @@ Write a Substance 3D Painter package to a folder: the mesh to texture as OBJ wit
 
 - `folder`: string; required; Where to write the package (created if missing).
 - `id`: integer; range 1 to inf; The object to texture; the active object when omitted. It needs UVs (uv_unwrap).
+
+## pose_joint
+
+Pose an object made by skeleton_mesh by its own skeleton: turn one joint (by index, or the joint nearest point) about an axis, and every bone beyond it follows with the mesh around it, weighted automatically by distance to each bone so the bend blends across the joint (softness). Works after sculpting; detail rides along. One undo step.
+
+- `angle`: number; required; range -360 to 360; Degrees to turn.
+- `axis`: array of number; default [0, 0, 1]; The hinge axis.
+- `id`: integer; range 1 to inf; An object made by skeleton_mesh (sculpted or not); the active object when omitted.
+- `joint`: integer; range 0 to inf; The joint (sphere index) to turn; everything beyond it in the skeleton follows.
+- `point`: array of number; Choose the joint nearest this point instead (a click).
+- `softness`: number; default 0.6; range 0.05 to 4; How widely the bend blends across the joint, as a fraction of the joint's radius.
+
+## groom_fibers
+
+Groom fibers made by grow_fibers along a stroke: comb bends them toward the stroke's direction, cut trims them where it passes, curl twists them into spirals, lengthen grows them; strands keep their segment lengths when combed or curled. One undo step.
+
+- `id`: integer; range 1 to inf; A fibers object from grow_fibers; the active object when omitted.
+- `mode`: string (comb | cut | curl | lengthen); required; comb bends fibers along the stroke, cut trims them where the stroke passes, curl twists them into spirals, lengthen grows them.
+- `points`: array of array; required; The stroke as world points over the fibers (comb follows its direction).
+- `radius`: number; range 0 to inf; Reach of the stroke in world units; a third of a fiber's length when omitted.
+- `strength`: number; default 0.6; range 0 to 1
 
 ## substance_sync
 

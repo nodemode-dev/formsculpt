@@ -135,7 +135,9 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 3. Guided quads: give `quad_remesh` `guides` (point lists along a limb, a jaw line or a cylinder's axis) and its edge loops run along their mean direction.
 4. ZSphere-style base meshes: after `skeleton_mesh`, `edit_build` with `add` ({point, radius}) grows a joint linked to the nearest one and `drag` ({from, to}) moves the joint nearest from; the base mesh is remade each time until it is sculpted.
 5. UV fixes: `uv_move_point` drags the UV vertex nearest `at` to `to` (with `radius`, its neighbours follow with falloff); bake again after.
+6. Posing a skeleton-built figure: `pose_joint` with a `joint` index (or a `point` near it), an `axis` and an `angle` turns that joint and everything beyond it, with automatic weights; sculpt first if you like, the detail rides along. Joint 0 is the root. For meshes not made by skeleton_mesh, mask and use `pose`.
+7. Grooming: on a grow_fibers object, `groom_fibers` with `mode` comb (stroke `points` give the direction), cut, curl or lengthen, a `radius` and `strength`.
 
 ## Not yet available
 
-There is no skeleton rig (pose turns one masked part at a time), no cloth or groom brushes, guides set one direction for a whole quad remesh rather than a field that bends with each curve, there are no panel lines along face-group borders, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There is no rig for meshes not built from a skeleton and no painted weights (pose turns one masked part at a time there), no cloth brushes, guides set one direction for a whole quad remesh rather than a field that bends with each curve, there are no panel lines along face-group borders, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
