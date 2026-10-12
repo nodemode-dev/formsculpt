@@ -59,6 +59,8 @@ interface Shell {
   paintColor: HTMLInputElement;
   paintRough: HTMLInputElement;
   paintMetal: HTMLInputElement;
+  paintOpacityCh: HTMLInputElement;
+  paintEmissive: HTMLInputElement;
   paintMaterial: HTMLInputElement;
   shading: HTMLSelectElement;
   paintButtons: HTMLButtonElement[];
@@ -103,6 +105,11 @@ interface Shell {
   matcapInput: HTMLInputElement;
   shadeActive: HTMLInputElement;
   smoothPick: HTMLSelectElement;
+  uvSeams: HTMLSelectElement;
+  uvView: HTMLDivElement;
+  uvImage: HTMLImageElement;
+  uvEmpty: HTMLSpanElement;
+  uvButtons: HTMLButtonElement[];
   keyAction: HTMLSelectElement;
   keyCombo: HTMLInputElement;
   keyButtons: HTMLButtonElement[];
@@ -587,6 +594,8 @@ function buildShell(root: HTMLElement): Shell {
   const paintRough = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Paint roughness' });
   const paintMetal = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint metalness' });
   const paintMaterial = input('checkbox', { 'aria-label': 'Paint roughness and metalness' });
+  const paintOpacityCh = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Paint opacity channel' });
+  const paintEmissive = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint emissive' });
   const shading = el('select');
   shading.setAttribute('aria-label', 'Shading');
   for (const [value, label] of [['clay', 'Clay matcap'], ['wax', 'Red wax'], ['pearl', 'Pearl'], ['bronze', 'Bronze'], ['gray', 'Gray'], ['pbr', 'Lit (PBR)']]) {
@@ -609,7 +618,7 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(projectInput);
   const subsurface = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Subsurface' });
   const transmission = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Transmission' });
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
@@ -658,6 +667,40 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(paintLayerGrid);
+
+  panel.append(el('h2', 'gap', 'UV'));
+  const uvSeams = choices('UV seams', [['direction', 'By facing'], ['groups', 'Along face groups']]);
+  const uvFields = el('div', 'fields');
+  uvFields.append(field('Seams', uvSeams));
+  panel.append(uvFields);
+  // The layout picture keeps its square whether or not there is a layout, so nothing below it moves.
+  const uvView = el('div', 'uv-view');
+  const uvImage = el('img');
+  uvImage.alt = 'UV layout of the active object';
+  uvImage.draggable = false;
+  uvImage.hidden = true;
+  const uvEmpty = el('span', '', 'No UVs yet; Unwrap to make them');
+  uvView.append(uvImage, uvEmpty);
+  panel.append(uvView);
+  const uvGrid = el('div', 'add-grid three after-fields');
+  const uvButtons = (
+    [
+      ['unwrap', 'Unwrap'],
+      ['pack', 'Pack'],
+      ['rotate', 'Turn 90'],
+      ['grow', 'Scale up'],
+      ['shrink', 'Scale down'],
+      ['refresh', 'Redraw'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    uvGrid.append(b);
+    return b;
+  });
+  panel.append(uvGrid);
+  panel.append(el('p', 'panel-hint', 'Click an island to choose it; drag to move it.'));
 
   panel.append(el('h2', 'gap', 'Edit'));
   const actionGrid = el('div', 'add-grid two');
@@ -937,7 +980,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
 }
 
 class SceneView {
@@ -982,6 +1025,7 @@ class SceneView {
     shell.referenceOpacity.addEventListener('input', applyReference);
     shell.referencePlace.addEventListener('change', applyReference);
     shell.smoothPick.addEventListener('change', () => this.setSmoothPreview(Number(shell.smoothPick.value)));
+    this.wireUvView();
     shell.referenceInput.addEventListener('change', () => {
       const file = shell.referenceInput.files?.[0];
       shell.referenceInput.value = '';
@@ -2256,12 +2300,15 @@ class SceneView {
     };
   }
 
-  private paintArgs(material: boolean): { color: string; roughness?: number; metalness?: number } {
+  /** The paint brush's or fill's channels: the colour always; with `material`, roughness, metalness, opacity and glow. */
+  private paintArgs(material: boolean): { color: string; roughness?: number; metalness?: number; opacity?: number; emissive?: number } {
     const s = this.shell;
-    const out: { color: string; roughness?: number; metalness?: number } = { color: s.paintColor.value };
+    const out: { color: string; roughness?: number; metalness?: number; opacity?: number; emissive?: number } = { color: s.paintColor.value };
     if (material) {
       out.roughness = Number(s.paintRough.value) / 100;
       out.metalness = Number(s.paintMetal.value) / 100;
+      out.opacity = Number(s.paintOpacityCh.value) / 100;
+      out.emissive = Number(s.paintEmissive.value) / 100;
     }
     return out;
   }
@@ -2280,6 +2327,7 @@ class SceneView {
       return;
     }
     await this.apply(reply.result);
+    void this.drawUv(false);
     const history = await dispatch<{ steps: string[]; done: number }>('get_history');
     if (history.ok) this.patchHistory(history.result.steps, history.result.done);
   }
@@ -2823,9 +2871,97 @@ class SceneView {
     await this.refresh();
   }
 
+  /** The island chosen in the UV view (null: none), and what the picture last showed, `id:revision:island`. */
+  private uvIsland: number | null = null;
+  private uvShown = '';
+
+  /** Redraws the UV view for the active object when it changed (or always with force). */
+  private async drawUv(force: boolean): Promise<void> {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    const has = o?.uvs === true;
+    const key = o && has ? `${o.id}:${o.revision}:${this.uvIsland ?? ''}` : '';
+    if (!force && key === this.uvShown) return;
+    this.uvShown = key;
+    this.shell.uvEmpty.hidden = has;
+    if (!o || !has) {
+      this.shell.uvImage.removeAttribute('src');
+      this.shell.uvImage.hidden = true;
+      return;
+    }
+    const args: Record<string, unknown> = { id: o.id, size: 512 };
+    if (this.uvIsland !== null) args.island = this.uvIsland;
+    const reply = await dispatch<{ png_base64: string; islands: number; selected: number | null }>('get_uv_layout', args);
+    if (!reply.ok) return;
+    if (this.uvIsland !== null && reply.result.selected === null) this.uvIsland = null;
+    this.shell.uvImage.src = `data:image/png;base64,${reply.result.png_base64}`;
+    this.shell.uvImage.hidden = false;
+  }
+
+  /** A pointer position over the UV view as [u, v] (v up). */
+  private uvAt(e: PointerEvent): [number, number] {
+    const r = this.shell.uvView.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
+  }
+
+  /** Click chooses the island under the pointer; a drag moves the island it started on by the drag. */
+  private wireUvView(): void {
+    const view = this.shell.uvView;
+    let start: { x: number; y: number; uv: [number, number] } | null = null;
+    view.addEventListener('pointerdown', (e) => {
+      if (this.scene.active === null) return;
+      view.setPointerCapture(e.pointerId);
+      start = { x: e.clientX, y: e.clientY, uv: this.uvAt(e) };
+    });
+    view.addEventListener('pointerup', (e) => {
+      const from = start;
+      start = null;
+      const id = this.scene.active;
+      if (!from || id === null) return;
+      const to = this.uvAt(e);
+      if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 3) {
+        void this.uvRun('uv_transform', { id, at: from.uv, translate: [to[0] - from.uv[0], to[1] - from.uv[1]] });
+        return;
+      }
+      void dispatch<{ selected: number | null }>('get_uv_layout', { id, size: 64, at: from.uv }).then((reply) => {
+        if (!reply.ok) return;
+        this.uvIsland = reply.result.selected;
+        this.note(this.uvIsland === null ? 'No island there' : `Island ${this.uvIsland} chosen`);
+        void this.drawUv(false);
+      });
+    });
+    view.addEventListener('pointercancel', () => {
+      start = null;
+    });
+    this.shell.uvButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const id = this.scene.active;
+        if (id === null) return;
+        const action = b.dataset.action;
+        if (action === 'unwrap') void this.unwrapUvs(id);
+        else if (action === 'pack') void this.uvRun('uv_pack', { id });
+        else if (action === 'refresh') void this.drawUv(true);
+        else if (this.uvIsland === null) this.note('Click an island in the UV view first');
+        else if (action === 'rotate') void this.uvRun('uv_transform', { id, island: this.uvIsland, rotate: 90 });
+        else void this.uvRun('uv_transform', { id, island: this.uvIsland, scale: action === 'grow' ? 1.25 : 0.8 });
+      }),
+    );
+  }
+
+  private async uvRun(name: string, args: Record<string, unknown>): Promise<void> {
+    const reply = await dispatch<{ island?: number; coverage?: number }>(name, args);
+    if (!reply.ok) this.note(reply.error.message);
+    else if (name === 'uv_pack') this.note(`Packed; islands cover ${Math.round((reply.result.coverage ?? 0) * 100)}% of the square`);
+    else {
+      if (reply.result.island !== undefined) this.uvIsland = reply.result.island;
+      this.note('');
+    }
+    await this.refresh();
+  }
+
   /** Conformal unwrap, then says how many charts it made and how much it bends angles (1 is none). */
   private async unwrapUvs(id: number): Promise<void> {
-    const reply = await dispatch<{ charts: number; stretch: { mean: number; max: number } }>('uv_unwrap', { id });
+    this.uvIsland = null;
+    const reply = await dispatch<{ charts: number; stretch: { mean: number; max: number } }>('uv_unwrap', { id, seams: this.shell.uvSeams.value });
     this.note(reply.ok ? `Unwrapped into ${reply.result.charts} charts; angle distortion ${reply.result.stretch.mean.toFixed(2)} on average, ${reply.result.stretch.max.toFixed(2)} at worst` : reply.error.message);
     await this.refresh();
   }

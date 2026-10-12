@@ -1,4 +1,4 @@
-import type { MeshBuffers, VertexUpdate } from '../engine/service';
+import { PAINT_FLOATS, type MeshBuffers, type VertexUpdate } from '../engine/service';
 import type { OrbitCamera } from './camera';
 import { mipChain, type EnvImage } from './environment';
 import { invert, lookAt, multiply, ortho } from './math';
@@ -10,6 +10,7 @@ layout(location=1) in vec3 aNrm;
 layout(location=2) in float aMask;
 layout(location=3) in vec3 aCol;
 layout(location=4) in vec2 aMat;
+layout(location=5) in vec2 aFx;
 uniform mat4 uViewProj;
 uniform mat4 uView;
 uniform mat4 uModel;
@@ -19,10 +20,12 @@ out vec3 vWorld;
 out float vMask;
 out vec3 vCol;
 out vec2 vMat;
+out vec2 vFx;
 void main() {
   vMask = aMask;
   vCol = aCol;
   vMat = aMat;
+  vFx = aFx;
   // uModel is the identity except while the transform gizmo previews a move, turn or scale.
   vec4 world = uModel * vec4(aPos, 1.0);
   vNrm = mat3(uView) * (transpose(inverse(mat3(uModel))) * aNrm);
@@ -77,6 +80,8 @@ float thickness() {
 in float vMask;
 in vec3 vCol;
 in vec2 vMat;
+// Painted opacity (x) and emissive (y).
+in vec2 vFx;
 uniform vec3 uBase;
 uniform float uOrtho;
 uniform float uPainted;
@@ -129,6 +134,12 @@ vec3 light(vec3 n, vec3 v, vec3 l, vec3 radiance, vec3 albedo, float rough, floa
   return (kd * albedo / PI + spec) * radiance * ndl;
 }
 void main() {
+  // Painted opacity draws as a screen-door: a fixed noise per pixel decides which fragments stay, so see-through
+  // parts need no sorting and keep writing depth where they are drawn.
+  if (uPainted > 0.5 && vFx.x < 0.999) {
+    float gate = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    if (vFx.x <= gate) discard;
+  }
   vec3 n = normalize(vNrm);
   vec3 v = uOrtho > 0.5 ? vec3(0.0, 0.0, 1.0) : normalize(-vViewPos);
   if (dot(n, v) < 0.0) n = -n;
@@ -203,6 +214,8 @@ void main() {
     col = base * (0.18 + key * uCap.x + fill) * cavity + (vec3(rim) + spec * mix(vec3(1.0), uTint, 0.6));
     col = pow(col, vec3(1.0 / 1.1));
   }
+  // Emissive paint glows in its own colour whatever the light or matcap.
+  if (uPainted > 0.5 && vFx.y > 0.0) col = mix(col, pow(albedo, vec3(1.0 / 2.2)) * 1.15, clamp(vFx.y, 0.0, 1.0));
   col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
   outColor = vec4(col, 1.0);
 }`;
@@ -216,7 +229,9 @@ export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, numb
   pbr: { lit: true, cap: [0, 0, 1, 0], tint: [1, 1, 1] },
 };
 
-const PAINT_DEFAULT = [0.8, 0.8, 0.8, 0.5, 0.0];
+/** Colour, roughness, metalness, opacity, emissive: the engine's default paint. */
+const PAINT_DEFAULT = [0.8, 0.8, 0.8, 0.5, 0.0, 1.0, 0.0];
+const PF = PAINT_FLOATS;
 
 const LINE_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -489,9 +504,11 @@ export class GlRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, paint, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(3);
-    gl.vertexAttribPointer(3, 3, gl.FLOAT, false, 20, 0);
+    gl.vertexAttribPointer(3, 3, gl.FLOAT, false, PF * 4, 0);
     gl.enableVertexAttribArray(4);
-    gl.vertexAttribPointer(4, 2, gl.FLOAT, false, 20, 12);
+    gl.vertexAttribPointer(4, 2, gl.FLOAT, false, PF * 4, 12);
+    gl.enableVertexAttribArray(5);
+    gl.vertexAttribPointer(5, 2, gl.FLOAT, false, PF * 4, 20);
     return buf;
   }
 
@@ -561,17 +578,17 @@ export class GlRenderer {
     if (update.paint) {
       if (!cpu.paint) {
         const n = cpu.mask.length;
-        cpu.paint = new Float32Array(n * 5);
-        for (let v = 0; v < n; v++) cpu.paint.set(PAINT_DEFAULT, v * 5);
-        for (let k = 0; k < update.indices.length; k++) if (update.indices[k] < n) cpu.paint.set(update.paint.subarray(k * 5, k * 5 + 5), update.indices[k] * 5);
+        cpu.paint = new Float32Array(n * PF);
+        for (let v = 0; v < n; v++) cpu.paint.set(PAINT_DEFAULT, v * PF);
+        for (let k = 0; k < update.indices.length; k++) if (update.indices[k] < n) cpu.paint.set(update.paint.subarray(k * PF, k * PF + PF), update.indices[k] * PF);
         gl.bindVertexArray(m.vao);
         m.paintBuf = this.paintBuffer(cpu.paint);
         gl.bindVertexArray(null);
         m.buffers.push(m.paintBuf);
       } else {
-        for (let k = 0; k < update.indices.length; k++) if (update.indices[k] < cpu.mask.length) cpu.paint.set(update.paint.subarray(k * 5, k * 5 + 5), update.indices[k] * 5);
+        for (let k = 0; k < update.indices.length; k++) if (update.indices[k] < cpu.mask.length) cpu.paint.set(update.paint.subarray(k * PF, k * PF + PF), update.indices[k] * PF);
         gl.bindBuffer(gl.ARRAY_BUFFER, m.paintBuf);
-        gl.bufferSubData(gl.ARRAY_BUFFER, lo * 20, cpu.paint, lo * 5, (hi - lo + 1) * 5);
+        gl.bufferSubData(gl.ARRAY_BUFFER, lo * PF * 4, cpu.paint, lo * PF, (hi - lo + 1) * PF);
       }
     }
     const [pos, nrm, , msk] = m.buffers;
@@ -735,6 +752,7 @@ export class GlRenderer {
         gl.uniform1f(painted, 1);
         gl.bindVertexArray(m.expanded.vao);
         gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
+        gl.vertexAttrib2f(5, 1, 0);
         gl.drawArrays(gl.TRIANGLES, 0, m.expanded.corners);
         continue;
       }
@@ -743,6 +761,7 @@ export class GlRenderer {
       if (!m.paintBuf) {
         gl.vertexAttrib3f(3, PAINT_DEFAULT[0], PAINT_DEFAULT[1], PAINT_DEFAULT[2]);
         gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
+        gl.vertexAttrib2f(5, 1, 0);
       }
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
     }

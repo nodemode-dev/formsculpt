@@ -52,6 +52,10 @@ button { font: inherit; color: inherit; }
 .falloff-editor { display: block; width: 100%; height: 64px; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); cursor: ns-resize; touch-action: none; }
 .falloff-editor polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .falloff-editor path { fill: var(--accent-color); stroke: none; }
+.uv-view { position: relative; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
+.uv-view img { display: block; width: 100%; height: 100%; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
+.uv-view [hidden] { display: none; }
+.uv-view span { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-2); text-align: center; color: var(--text-muted); font-size: 12px; pointer-events: none; }
 .panel h2.gap { margin-top: var(--space-5); }
 .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .btn { height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: border-color var(--transition-fast), background var(--transition-fast); }

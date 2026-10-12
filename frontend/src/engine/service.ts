@@ -24,6 +24,8 @@ export interface ObjectSummary {
   instance_of?: number | null;
   /** "tube" or "lathe" while edit_build can still remake the object (null once anything else changed it). */
   editable_build?: string | null;
+  /** Whether the object has UVs (uv_unwrap; topology changes clear them). */
+  uvs?: boolean;
   material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number };
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
@@ -39,6 +41,9 @@ export interface CommandError {
 }
 
 export type Reply<T> = { ok: true; result: T } | { ok: false; error: CommandError };
+
+/** Floats of paint per vertex in the engine's buffers: colour, roughness, metalness, opacity, emissive. */
+export const PAINT_FLOATS = 7;
 
 export interface MeshBuffers {
   id: number;
@@ -79,7 +84,7 @@ export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
   offset += count * 12;
   const mask = new Float32Array(buffer, offset, count);
   offset += count * 4;
-  const paint = buffer.byteLength >= offset + count * 20 ? new Float32Array(buffer, offset, count * 5) : null;
+  const paint = buffer.byteLength >= offset + count * PAINT_FLOATS * 4 ? new Float32Array(buffer, offset, count * PAINT_FLOATS) : null;
   return { id, revision, indices, positions, normals, mask, paint };
 }
 
@@ -185,8 +190,8 @@ export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | n
   const hasMask = (flags & 1) === 1;
   const mask = hasMask ? new Float32Array(buffer, offset, vertices) : new Float32Array(vertices);
   if (hasMask) offset += vertices * 4;
-  const paint = (flags & 2) === 2 ? new Float32Array(buffer, offset, vertices * 5) : null;
-  if (paint) offset += vertices * 20;
+  const paint = (flags & 2) === 2 ? new Float32Array(buffer, offset, vertices * PAINT_FLOATS) : null;
+  if (paint) offset += vertices * PAINT_FLOATS * 4;
   const triangles = indexCount / 3;
   const groups = (flags & 4) === 4 ? new Uint32Array(buffer, offset, triangles) : null;
   if (groups) offset += triangles * 4;
