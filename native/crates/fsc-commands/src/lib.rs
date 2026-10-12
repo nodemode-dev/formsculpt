@@ -1043,7 +1043,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "boolean",
         group: Group::Object,
         label: "Boolean",
-        description: "Union, difference (a minus b) or intersection of two objects through a voxel grid, giving one watertight object; the inputs are replaced unless keep_inputs. Detail finer than a voxel is smoothed, so raise resolution for sharp results. Both inputs should be closed meshes (mesh_check).",
+        description: "Union, difference (a minus b) or intersection of two objects, giving one watertight object; the inputs are replaced unless keep_inputs. By default the cut is exact: the surfaces are split along their true intersection, so every detail, sharp edge and flat face is kept and paint follows. Both inputs must be closed (mesh_check; repair_mesh if not), or it falls back to the voxel method and says why in fallback. method voxel (and any blend) rebuilds the result through a grid at resolution, which smooths detail finer than a voxel but mends open input. The result reports the method used.",
         keys: &[],
         hints: WRITE,
         schema: object_cmds::boolean_schema,

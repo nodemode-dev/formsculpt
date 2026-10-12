@@ -247,7 +247,7 @@ trait Far {
 
 impl Far for Option<&(Vec3, f32)> {
     fn is_none_or_far(&self, p: Vec3) -> bool {
-        self.map_or(true, |q| q.0.distance(p) > 1e-5)
+        self.is_none_or(|q| q.0.distance(p) > 1e-5)
     }
 }
 

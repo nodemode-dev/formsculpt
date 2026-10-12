@@ -18,4 +18,5 @@ formsculptor is licensed under the Apache License 2.0 (see `LICENSE`). Copyright
 | regex, serde, serde_json | MIT or Apache-2.0 | shell and engine |
 | zip (deflate only), base64 | MIT; MIT or Apache-2.0 | engine file formats (.fsc, 3MF, embedded glTF) |
 | png | MIT or Apache-2.0 | baked texture maps |
+| boolmesh (Saki Komikado) | MPL-2.0 | exact mesh booleans; used unmodified from crates.io, its source available there and at github.com/komietty/boolmesh |
 | FastAPI, Starlette, uvicorn, python-multipart | MIT or BSD-3-Clause | engine service |

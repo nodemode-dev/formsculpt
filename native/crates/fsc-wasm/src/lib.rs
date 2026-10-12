@@ -239,6 +239,23 @@ pub unsafe extern "C" fn fsc_export(name: *const u8, name_len: usize, ids: *cons
     }
 }
 
+/// The live boolean preview of objects `a` and `b` (op 0 union, 1 difference, 2 intersection) as FSCM (0), or -1
+/// with the error JSON.
+#[no_mangle]
+pub extern "C" fn fsc_boolean_preview(a: u32, b: u32, op: u32) -> i32 {
+    let name = ["union", "difference", "intersection"].get(op as usize).copied().unwrap_or("?");
+    match SESSION.with(|s| fsc_commands::live::boolean_payload(&s.borrow(), a, b, name)) {
+        Ok(bytes) => {
+            put(bytes);
+            0
+        }
+        Err(e) => {
+            put_json(json!(e));
+            -1
+        }
+    }
+}
+
 /// An object's baked maps as one zip (0), or -1 with the error JSON.
 #[no_mangle]
 pub extern "C" fn fsc_maps(id: u32) -> i32 {

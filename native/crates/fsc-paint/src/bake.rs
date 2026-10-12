@@ -153,6 +153,6 @@ trait BestDistance {
 
 impl BestDistance for Option<&(f32, fsc_core::Hit)> {
     fn is_none_or_le(&self, d: f32) -> bool {
-        self.map_or(true, |b| d < b.0.abs())
+        self.is_none_or(|b| d < b.0.abs())
     }
 }

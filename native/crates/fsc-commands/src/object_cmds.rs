@@ -318,7 +318,8 @@ pub(crate) fn boolean_schema() -> Value {
             "a": {"type": "integer", "minimum": 1, "description": "The object to keep or cut from."},
             "b": {"type": "integer", "minimum": 1, "description": "The object to add, cut away or intersect with."},
             "op": {"type": "string", "enum": ["union", "difference", "intersection"], "default": "union"},
-            "resolution": {"type": "integer", "minimum": 16, "maximum": 320, "default": 160, "description": "Voxels along the longest side of both objects together; higher keeps sharper detail."},
+            "method": {"type": "string", "enum": ["exact", "voxel"], "default": "exact", "description": "exact cuts the two surfaces along their true intersection, keeping every detail, sharp edges and flat faces (both must be closed; repair_mesh first if not); voxel rebuilds the result through a grid, which also mends open or self-crossing input and is what blend uses. An exact boolean on input that is not closed falls back to voxel and says so."},
+            "resolution": {"type": "integer", "minimum": 16, "maximum": 320, "default": 160, "description": "Voxel method: voxels along the longest side of both objects together; higher keeps sharper detail."},
             "blend": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Fillets the seam over this many world units: a union fuses the two with a soft web where they meet (an arm into a shoulder, a horn into a head), a difference leaves a rounded cut edge. 0 is a sharp boolean."},
             "keep_inputs": {"type": "boolean", "default": false, "description": "Keep a and b instead of replacing them with the result."}
         },
@@ -348,11 +349,36 @@ pub(crate) fn boolean(s: &mut Session, args: &Value) -> Result<Value, CommandErr
         None | Some(Value::Null) => 0.0,
         Some(v) => v.as_f64().filter(|b| (0.0..=100.0).contains(b)).ok_or_else(|| bad("blend must be from 0 to 100"))? as f32,
     };
-    let (oa, ob): (&Object, &Object) = (s.scene.get(a).expect("checked"), s.scene.get(b).expect("checked"));
-    let mut mesh = fsc_topo::voxel_boolean_blend(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, blend, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
-    if oa.mesh.has_paint() || ob.mesh.has_paint() {
-        fsc_topo::transfer_paint(&[(&oa.mesh, &oa.bvh), (&ob.mesh, &ob.bvh)], &mut mesh);
+    let method = args.get("method").and_then(Value::as_str).unwrap_or("exact");
+    if method != "exact" && method != "voxel" {
+        return Err(bad(format!("method must be exact or voxel, not {method}")));
     }
+    let (oa, ob): (&Object, &Object) = (s.scene.get(a).expect("checked"), s.scene.get(b).expect("checked"));
+    // Exact unless a blend asks for the voxel fillet; input that is not closed falls back to voxel with the reason.
+    let mut fallback: Option<String> = None;
+    let exact = if method == "exact" && blend <= 0.0 {
+        match fsc_topo::exact_boolean(&oa.mesh, &ob.mesh, op) {
+            Ok(mesh) => Some(mesh),
+            Err(e) if e.contains("closed manifold") => {
+                fallback = Some(e);
+                None
+            }
+            Err(e) => return Err(CommandError::new("boolean_failed", e)),
+        }
+    } else {
+        None
+    };
+    let used = if exact.is_some() { "exact" } else { "voxel" };
+    let mesh = match exact {
+        Some(mesh) => mesh,
+        None => {
+            let mut mesh = fsc_topo::voxel_boolean_blend(&oa.mesh, &oa.bvh, &ob.mesh, &ob.bvh, op, blend, resolution as u32).map_err(|e| CommandError::new("boolean_failed", e))?;
+            if oa.mesh.has_paint() || ob.mesh.has_paint() {
+                fsc_topo::transfer_paint(&[(&oa.mesh, &oa.bvh), (&ob.mesh, &ob.bvh)], &mut mesh);
+            }
+            mesh
+        }
+    };
     let label = match op {
         BooleanOp::Union => "Union",
         BooleanOp::Difference => "Difference",
@@ -368,5 +394,10 @@ pub(crate) fn boolean(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     let new_id = s.scene.add(name, mesh);
     let o = s.scene.remove(new_id).expect("added");
     s.scene.insert(at.min(s.scene.objects.len()), o);
-    Ok(summary(s.scene.get(new_id).expect("added")))
+    let mut out = summary(s.scene.get(new_id).expect("added"));
+    out["method"] = json!(used);
+    if let Some(why) = fallback {
+        out["fallback"] = json!(why);
+    }
+    Ok(out)
 }

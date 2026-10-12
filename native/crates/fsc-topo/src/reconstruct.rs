@@ -76,7 +76,7 @@ fn label_from(mesh: &Mesh, topo: &Topology, seed: u32, label: &mut [u8], ends: &
 
 pub fn reconstruct_lower(mesh: &Mesh) -> Result<Reconstructed, String> {
     let not_loop = || "the mesh does not have the regular one-to-four structure of a subdivided mesh, so no lower level can be rebuilt".to_string();
-    if mesh.triangle_count() % 4 != 0 || mesh.triangle_count() < 16 {
+    if !mesh.triangle_count().is_multiple_of(4) || mesh.triangle_count() < 16 {
         return Err(not_loop());
     }
     let topo = Topology::build(mesh);

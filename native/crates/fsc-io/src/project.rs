@@ -171,7 +171,7 @@ fn layer_floats(flat: &[f32], n: usize) -> Option<Vec<LayerPaint>> {
 }
 
 fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> {
-    if indices.len() % 3 != 0 || indices.iter().any(|&i| i as usize >= positions.len()) {
+    if !indices.len().is_multiple_of(3) || indices.iter().any(|&i| i as usize >= positions.len()) {
         return Err("a mesh in the project has broken indices".into());
     }
     Ok(Mesh::new(positions, indices))

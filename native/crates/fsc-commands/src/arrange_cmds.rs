@@ -250,7 +250,7 @@ trait Farther {
 
 impl Farther for Option<(f32, ObjectId, Vec3, Vec3)> {
     fn is_none_or_farther(&self, t: f32) -> bool {
-        self.map_or(true, |b| t < b.0)
+        self.is_none_or(|b| t < b.0)
     }
 }
 

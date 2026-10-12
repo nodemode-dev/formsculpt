@@ -19,7 +19,7 @@ pub struct GltfObject<'a> {
 }
 
 fn pad(buf: &mut Vec<u8>, with: u8) {
-    while buf.len() % 4 != 0 {
+    while !buf.len().is_multiple_of(4) {
         buf.push(with);
     }
 }
@@ -344,7 +344,7 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
                     colors.extend(vals.chunks_exact(comps).map(|c| [(c[0] / scale) as f32, (c[1] / scale) as f32, (c[2] / scale) as f32, if comps == 4 { (c[3] / scale) as f32 } else { 1.0 }]));
                     any_color = true;
                 }
-                None => colors.extend(std::iter::repeat([0.8f32, 0.8, 0.8, 1.0]).take(p.len() / 3)),
+                None => colors.extend(std::iter::repeat_n([0.8f32, 0.8, 0.8, 1.0], p.len() / 3)),
             }
             let count = (p.len() / 3) as u32;
             match prim["indices"].as_u64() {

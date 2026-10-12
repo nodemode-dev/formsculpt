@@ -105,7 +105,7 @@ impl Mesh {
     }
 
     pub fn quad_faces(&self) -> Option<Vec<[u32; 4]>> {
-        if !self.quads || self.indices.len() % 6 != 0 {
+        if !self.quads || !self.indices.len().is_multiple_of(6) {
             return None;
         }
         self.indices
@@ -231,7 +231,7 @@ impl Mesh {
     }
 
     pub fn validate(&self) -> Result<(), String> {
-        if self.indices.len() % 3 != 0 {
+        if !self.indices.len().is_multiple_of(3) {
             return Err(format!("index count {} is not a multiple of 3", self.indices.len()));
         }
         let n = self.positions.len() as u32;

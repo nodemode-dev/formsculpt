@@ -3,6 +3,7 @@ mod decimate;
 mod deform;
 mod dyntopo;
 mod edges;
+mod exact;
 mod holes;
 mod manifold;
 mod nearest;
@@ -28,6 +29,7 @@ pub use region::{extract_shell, extrude_region, project_onto, region_faces};
 pub use subdivide::{loop_subdivide, loop_subdivide_with, smooth_preview, Subdivided};
 pub use text::{extrude_shape, text_mesh, TEXT_CHARACTERS};
 pub use transfer::transfer_paint;
+pub use exact::exact_boolean;
 pub use voxel::{round_edges, voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp, RoundEdges};
 
 pub fn engine_version() -> &'static str {

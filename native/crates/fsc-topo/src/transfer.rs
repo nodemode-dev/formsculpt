@@ -23,7 +23,7 @@ pub fn transfer_paint(sources: &[(&Mesh, &Bvh)], dst: &mut Mesh) {
         let mut best: Option<(Paint, f32)> = None;
         for (m, bvh) in &painted {
             if let Some((v, d)) = sample(m, bvh, p, reach) {
-                if best.map_or(true, |b| d < b.1) {
+                if best.is_none_or(|b| d < b.1) {
                     best = Some((v, d));
                 }
             }

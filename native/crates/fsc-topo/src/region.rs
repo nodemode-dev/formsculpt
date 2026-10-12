@@ -145,7 +145,7 @@ pub fn project_onto(dst: &Mesh, mask: &[f32], src: &Mesh, src_bvh: &Bvh, max_dis
             for dir in [n, -n] {
                 if let Some(h) = src_bvh.raycast(src, p - dir * 1e-5, dir) {
                     let d = h.t - 1e-5;
-                    if d <= max_dist && best.map_or(true, |b| d < b.abs()) {
+                    if d <= max_dist && best.is_none_or(|b| d < b.abs()) {
                         best = Some(if dir == n { d } else { -d });
                     }
                 }

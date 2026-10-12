@@ -59,6 +59,28 @@ pub fn mesh_payload(s: &Session, id: u32, smooth: u32) -> Result<Vec<u8>, Comman
     Ok(out)
 }
 
+/// A live boolean preview: the exact union, difference or intersection of objects `a` and `b` as an FSCM payload
+/// (revision 0, no mask), computed without changing the scene, for the window to draw in their place while either moves.
+pub fn boolean_payload(s: &Session, a: u32, b: u32, op: &str) -> Result<Vec<u8>, CommandError> {
+    let oa = s.scene.get(a).ok_or_else(|| not_found(a))?;
+    let ob = s.scene.get(b).ok_or_else(|| not_found(b))?;
+    let op = match op {
+        "union" => fsc_topo::BooleanOp::Union,
+        "difference" => fsc_topo::BooleanOp::Difference,
+        "intersection" => fsc_topo::BooleanOp::Intersection,
+        other => return Err(CommandError::new("bad_arguments", format!("op must be union, difference or intersection, not {other}"))),
+    };
+    let mesh = fsc_topo::exact_boolean(&oa.mesh, &ob.mesh, op).map_err(|e| CommandError::new("boolean_failed", e))?;
+    let (paint, indices) = (mesh.paint_bytes(), mesh.indices_bytes());
+    let mut out = header(mesh.vertex_count(), indices.len(), 0, FLAG_MASK | if paint.is_empty() { 0 } else { FLAG_PAINT });
+    out.extend_from_slice(&mesh.positions_bytes());
+    out.extend_from_slice(&mesh.normals_bytes());
+    out.extend_from_slice(&indices);
+    out.extend(std::iter::repeat_n(0u8, mesh.vertex_count() * 4));
+    out.extend_from_slice(&paint);
+    Ok(out)
+}
+
 /// Starts a live stroke on an object with brush settings as the window sends them (sculpt_stroke's brush keys).
 /// Dynamic topology is off on objects with levels or sculpt layers, which need a fixed vertex order.
 pub fn stroke_begin(s: &mut Session, id: u32, settings: &Value) -> Result<(), CommandError> {

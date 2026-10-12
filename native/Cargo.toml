@@ -12,11 +12,11 @@ members = [
 ]
 
 [workspace.package]
-version = "0.27.0"
+version = "0.28.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["nodemode-ai"]
-rust-version = "1.80"
+rust-version = "1.88"
 publish = false
 
 [workspace.dependencies]

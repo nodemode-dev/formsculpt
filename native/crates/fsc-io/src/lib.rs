@@ -79,7 +79,7 @@ pub fn export(format: Format, objects: &[GltfObject]) -> Result<Vec<u8>, String>
                 if m.has_paint() {
                     paint.extend_from_slice(&m.paint);
                 } else {
-                    paint.extend(std::iter::repeat(fsc_core::DEFAULT_PAINT).take(m.vertex_count()));
+                    paint.extend(std::iter::repeat_n(fsc_core::DEFAULT_PAINT, m.vertex_count()));
                 }
             }
         }

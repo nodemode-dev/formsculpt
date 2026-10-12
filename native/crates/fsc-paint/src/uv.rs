@@ -11,14 +11,14 @@ fn label_of(n: Vec3) -> u8 {
 
 fn axis_dir(label: u8) -> Vec3 {
     let mut d = Vec3::ZERO;
-    d[(label / 2) as usize] = if label % 2 == 0 { 1.0 } else { -1.0 };
+    d[(label / 2) as usize] = if label.is_multiple_of(2) { 1.0 } else { -1.0 };
     d
 }
 
 fn project(p: Vec3, label: u8) -> Vec2 {
     let k = (label / 2) as usize;
     let (u, v) = (p[(k + 1) % 3], p[(k + 2) % 3]);
-    if label % 2 == 0 {
+    if label.is_multiple_of(2) {
         Vec2::new(u, v)
     } else {
         Vec2::new(-u, v)

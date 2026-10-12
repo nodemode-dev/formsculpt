@@ -113,7 +113,7 @@ pub fn read_stl(bytes: &[u8]) -> Result<Vec<Named>, String> {
                 tris.push([num(it.next(), "vertex")?, num(it.next(), "vertex")?, num(it.next(), "vertex")?]);
             }
         }
-        if tris.len() % 3 != 0 {
+        if !tris.len().is_multiple_of(3) {
             return Err("the ASCII STL has an incomplete facet".into());
         }
     }

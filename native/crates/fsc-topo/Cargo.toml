@@ -12,6 +12,8 @@ default = ["parallel"]
 parallel = ["dep:rayon"]
 
 [dependencies]
+# Exact mesh booleans (a pure-Rust implementation after Manifold; MPL-2.0, used unmodified as a dependency).
+boolmesh = { version = "0.2.1", default-features = false }
 fsc-core.workspace = true
 glam = "0.34"
 rayon = { version = "1.12", optional = true }
