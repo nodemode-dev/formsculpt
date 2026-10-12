@@ -329,6 +329,17 @@ pub static COMMANDS: &[Command] = &[
         run: sculpt_cmds::paint_fill,
     },
     Command {
+        id: "paint.project",
+        mcp: "paint_project",
+        group: Group::Paint,
+        label: "Project Image",
+        description: "Paint an image onto the surface: from a view like a slide projector (only onto surfaces that face it and are not hidden behind others, fading at grazing angles), or tiled triplanar over the whole object. Goes into the active paint layer when there is one; masked areas are protected; the image's alpha and opacity set how strongly it replaces the paint. Vertex paint, so detail is limited by the mesh's resolution: subdivide first for fine images. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: sculpt_cmds::project_schema,
+        run: sculpt_cmds::paint_project,
+    },
+    Command {
         id: "paint.layer_add",
         mcp: "paint_layer_add",
         group: Group::Paint,

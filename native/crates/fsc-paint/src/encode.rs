@@ -2,6 +2,30 @@ pub fn png_rgba(size: usize, pixels: &[[u8; 4]]) -> Result<Vec<u8>, String> {
     png_rgba_rect(size, size, pixels)
 }
 
+/// Decodes a PNG to 8-bit RGBA (gray widened, alpha 255 when absent), for projection painting.
+pub fn png_rgba_decode(bytes: &[u8]) -> Result<(usize, usize, Vec<[u8; 4]>), String> {
+    let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
+    dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+    let mut reader = dec.read_info().map_err(|e| format!("not a readable PNG: {e}"))?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).map_err(|e| format!("not a readable PNG: {e}"))?;
+    let (w, h) = (info.width as usize, info.height as usize);
+    if w * h > 8192 * 8192 {
+        return Err("the image is larger than 8192 by 8192".into());
+    }
+    let channels = info.color_type.samples();
+    let px = buf[..info.buffer_size()]
+        .chunks_exact(channels)
+        .map(|p| match channels {
+            1 => [p[0], p[0], p[0], 255],
+            2 => [p[0], p[0], p[0], p[1]],
+            3 => [p[0], p[1], p[2], 255],
+            _ => [p[0], p[1], p[2], p[3]],
+        })
+        .collect();
+    Ok((w, h, px))
+}
+
 /// Decodes a PNG to 8-bit gray (the mean of RGB; alpha ignored), for brush alphas.
 pub fn png_gray(bytes: &[u8]) -> Result<(usize, usize, Vec<u8>), String> {
     let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));

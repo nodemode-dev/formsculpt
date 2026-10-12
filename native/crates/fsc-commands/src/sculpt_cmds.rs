@@ -208,6 +208,190 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
     Ok(json!({"object": after, "vertices_painted": n}))
 }
 
+pub(crate) fn project_schema() -> Value {
+    json!({"type": "object", "properties": {
+        "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+        "png_base64": {"type": "string", "description": "The image as a base64 PNG."},
+        "path": {"type": "string", "description": "A PNG file on the engine's machine, instead of png_base64."},
+        "mode": {"type": "string", "enum": ["view", "triplanar"], "default": "view", "description": "view: projected from a camera like a slide projector, onto the surfaces facing it and not hidden behind others; triplanar: tiled over the whole surface from the three axis planes (fabric, stone, skin texture)."},
+        "view": {"type": "string", "enum": ["front", "back", "right", "left", "top", "bottom", "three_quarter"], "default": "front", "description": "view mode: the named camera, framed as get_view frames it, so the image lands where it would sit over a get_view picture of the same view and aspect."},
+        "yaw": {"type": "number"}, "pitch": {"type": "number"},
+        "width": {"type": "number", "minimum": 1, "maximum": 8192, "default": 640}, "height": {"type": "number", "minimum": 1, "maximum": 8192, "default": 640},
+        "view_proj": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16, "description": "view mode: a column-major view-projection matrix instead of a named view (the window sends its camera's); the image covers the whole view."},
+        "scale": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "triplanar: the image's size in world units; a quarter of the object's size when omitted."},
+        "opacity": {"type": "number", "minimum": 0, "maximum": 1, "default": 1, "description": "How strongly the image replaces the paint (its own alpha multiplies this)."}
+    }, "additionalProperties": false})
+}
+
+/// Projection painting: an image painted onto the surface from a view or tiled triplanar, into the active paint target.
+pub(crate) fn paint_project(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    use base64::Engine as _;
+    use glam::{Mat4, Vec4};
+    let id = target(s, args)?;
+    let bytes = match (args.get("png_base64").and_then(Value::as_str), args.get("path").and_then(Value::as_str)) {
+        (Some(b), None) => base64::engine::general_purpose::STANDARD.decode(b.trim()).map_err(|e| bad(format!("png_base64 is not base64: {e}")))?,
+        (None, Some(p)) => std::fs::read(p).map_err(|e| CommandError::new("read_failed", format!("could not read {p}: {e}")))?,
+        _ => return Err(bad("give exactly one of png_base64 or path")),
+    };
+    let (iw, ih, img) = fsc_paint::png_rgba_decode(&bytes).map_err(bad)?;
+    let opacity = f(args, "opacity", 1.0, 0.0, 1.0)?;
+    // Bilinear sample at u, v in 0..1 (v down), clamped or tiled.
+    let sample = |u: f32, v: f32, tile: bool| -> [f32; 4] {
+        let (u, v) = if tile { (u.rem_euclid(1.0), v.rem_euclid(1.0)) } else { (u.clamp(0.0, 1.0), v.clamp(0.0, 1.0)) };
+        let x = u * (iw as f32 - 1.0);
+        let y = v * (ih as f32 - 1.0);
+        let (x0, y0) = (x.floor() as usize, y.floor() as usize);
+        let (x1, y1) = ((x0 + 1).min(iw - 1), (y0 + 1).min(ih - 1));
+        let (fx, fy) = (x - x0 as f32, y - y0 as f32);
+        let px = |x: usize, y: usize| img[y * iw + x];
+        let mut out = [0.0; 4];
+        for (c, o) in out.iter_mut().enumerate() {
+            let a = px(x0, y0)[c] as f32 * (1.0 - fx) + px(x1, y0)[c] as f32 * fx;
+            let b = px(x0, y1)[c] as f32 * (1.0 - fx) + px(x1, y1)[c] as f32 * fx;
+            *o = (a * (1.0 - fy) + b * fy) / 255.0;
+        }
+        out
+    };
+    let srgb = |c: f32| c.powf(2.2);
+    let mode = args.get("mode").and_then(Value::as_str).unwrap_or("view");
+    let object = s.scene.get(id).expect("checked");
+    let vc = object.mesh.vertex_count();
+    // Per vertex: the colour to paint and its weight (0 leaves the vertex alone).
+    let mut targets: Vec<Option<([f32; 3], f32)>> = vec![None; vc];
+    match mode {
+        "triplanar" => {
+            let size = object.mesh.bounds().extent().length();
+            let scale = args.get("scale").and_then(Value::as_f64).map(|x| x as f32).unwrap_or(size * 0.25).max(1e-6);
+            for (v, slot) in targets.iter_mut().enumerate() {
+                let p = Vec3::from(object.mesh.positions[v]) / scale;
+                let n = Vec3::from(object.mesh.normals[v]);
+                let w = Vec3::new(n.x.abs(), n.y.abs(), n.z.abs()).powf(4.0);
+                let total = (w.x + w.y + w.z).max(1e-6);
+                let mut c = [0.0f32; 4];
+                for (s4, wt) in [(sample(p.z, -p.y, true), w.x), (sample(p.x, -p.z, true), w.y), (sample(p.x, -p.y, true), w.z)] {
+                    for k in 0..4 {
+                        c[k] += s4[k] * wt / total;
+                    }
+                }
+                *slot = Some(([srgb(c[0]), srgb(c[1]), srgb(c[2])], c[3] * opacity));
+            }
+        }
+        "view" => {
+            // Screen coordinates (0..1, y down) and the direction toward the camera for each vertex.
+            let matrix = match args.get("view_proj") {
+                Some(Value::Array(a)) if a.len() == 16 => {
+                    let m: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+                    if m.iter().any(|x| !x.is_finite()) {
+                        return Err(bad("view_proj values must be numbers"));
+                    }
+                    Some(Mat4::from_cols_slice(&m))
+                }
+                Some(Value::Null) | None => None,
+                Some(_) => return Err(bad("view_proj is 16 numbers")),
+            };
+            type Toward = Box<dyn Fn(Vec3) -> Vec3>;
+            let (screen, toward): (Vec<Option<[f32; 2]>>, Toward) = match matrix {
+                Some(m) => {
+                    let inv = m.inverse();
+                    let screen = object.mesh.positions.iter().map(|&p| {
+                        let c = m * Vec4::new(p[0], p[1], p[2], 1.0);
+                        (c.w > 1e-9).then(|| [(c.x / c.w) * 0.5 + 0.5, 0.5 - (c.y / c.w) * 0.5])
+                    }).collect();
+                    let toward = move |p: Vec3| {
+                        let c = m * p.extend(1.0);
+                        let near = inv * Vec4::new(c.x / c.w, c.y / c.w, -1.0, 1.0);
+                        (near.truncate() / near.w - p).normalize_or_zero()
+                    };
+                    (screen, Box::new(toward))
+                }
+                None => {
+                    let views = [("three_quarter", 30.0, 20.0), ("front", 0.0, 0.0), ("back", 180.0, 0.0), ("right", 90.0, 0.0), ("left", -90.0, 0.0), ("top", 0.0, 89.9), ("bottom", 0.0, -89.9)];
+                    let name = args.get("view").and_then(Value::as_str).unwrap_or("front");
+                    let &(_, yaw0, pitch0) = views.iter().find(|v| v.0 == name).ok_or_else(|| bad(format!("unknown view {name}")))?;
+                    let yaw = args.get("yaw").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(yaw0).to_radians();
+                    let pitch = args.get("pitch").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(pitch0).clamp(-89.9, 89.9).to_radians();
+                    let aspect = f(args, "width", 640.0, 1.0, 8192.0)? / f(args, "height", 640.0, 1.0, 8192.0)?;
+                    let mut frame = fsc_core::Aabb::EMPTY;
+                    for o in s.scene.objects.iter().filter(|o| o.visible) {
+                        for &p in &o.mesh.positions {
+                            frame.grow(Vec3::from(p));
+                        }
+                    }
+                    let screen = fsc_paint::view_coordinates(frame, yaw, pitch, aspect, &object.mesh.positions).into_iter().map(Some).collect();
+                    let dir = Vec3::new(pitch.cos() * yaw.sin(), pitch.sin(), pitch.cos() * yaw.cos());
+                    (screen, Box::new(move |_| dir))
+                }
+            };
+            let size = object.mesh.bounds().extent().length().max(1e-6);
+            for (v, slot) in targets.iter_mut().enumerate() {
+                let Some([u, w]) = screen[v] else { continue };
+                if !(0.0..=1.0).contains(&u) || !(0.0..=1.0).contains(&w) {
+                    continue;
+                }
+                let p = Vec3::from(object.mesh.positions[v]);
+                let n = Vec3::from(object.mesh.normals[v]);
+                let to_cam = toward(p);
+                let facing = n.dot(to_cam);
+                if facing <= 0.05 {
+                    continue;
+                }
+                // Hidden behind another part of the object: a ray toward the camera hits it first.
+                if object.bvh.raycast(&object.mesh, p + n * size * 1e-4, to_cam).is_some() {
+                    continue;
+                }
+                let c = sample(u, w, false);
+                // Grazing surfaces take less, so the image does not smear around the silhouette.
+                let grazing = ((facing - 0.05) / 0.25).clamp(0.0, 1.0);
+                *slot = Some(([srgb(c[0]), srgb(c[1]), srgb(c[2])], c[3] * opacity * grazing));
+            }
+        }
+        other => return Err(bad(format!("unknown mode {other}; use view or triplanar"))),
+    }
+    let object = s.scene.get_mut(id).expect("checked");
+    let had = object.mesh.has_paint();
+    object.mesh.ensure_paint();
+    let mut edit = VertexEdit::default();
+    let mut layer = object.layered().then(|| (object.paint_layers.active, Vec::new(), Vec::new()));
+    for (v, t) in targets.iter().enumerate() {
+        let Some((rgb, w)) = *t else { continue };
+        let w = w * (1.0 - object.mask[v]);
+        if w <= 1e-4 {
+            continue;
+        }
+        let before = object.mesh.paint[v];
+        let was = object.paint_target(v as u32);
+        object.paint_vertex(v as u32, [rgb[0], rgb[1], rgb[2], 0.5, 0.0], [true, false, false], w.min(1.0), false);
+        object.composite_paint(Some(&[v as u32]));
+        let after = object.mesh.paint[v];
+        let now = object.paint_target(v as u32);
+        if after == before && was == now {
+            continue;
+        }
+        if let (Some((_, b, a)), Some(was), Some(now)) = (layer.as_mut(), was, now) {
+            b.push(was);
+            a.push(now);
+        }
+        let p = object.mesh.positions[v];
+        edit.indices.push(v as u32);
+        edit.before.push(p);
+        edit.after.push(p);
+        edit.mask_before.push(object.mask[v]);
+        edit.mask_after.push(object.mask[v]);
+        edit.paint_before.push(if had { before } else { fsc_core::DEFAULT_PAINT });
+        edit.paint_after.push(after);
+    }
+    if layer.as_ref().is_some_and(|(_, b, _)| b.len() == edit.indices.len()) {
+        edit.layer = layer;
+    }
+    object.revision += 1;
+    let n = edit.indices.len();
+    let after = summary(object);
+    if n > 0 {
+        s.history.push(Edit::Vertices { label: "Project Image".into(), object: id, edit });
+    }
+    Ok(json!({"object": after, "vertices_painted": n, "image": [iw, ih]}))
+}
+
 pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let object = s.scene.get_mut(id).expect("checked");
