@@ -194,3 +194,9 @@ GET /api/engine/mesh/{id}?smooth=1..3 returns the engine's smooth_preview of the
 - kind: rationale
 - logged: v0.26.0 · 2026-10-12
 No service code changed for the paint channels: the mesh payload carries whatever the engine's paint bytes are. The test reads opacity 0.5 and emissive 0.25 as the sixth and seventh floats of the first vertex in the FSCM payload, rewrites a saved project's paint to the five floats per vertex projects held before 0.26.0, uploads it, and finds its GLB without alphaMode or emissiveFactor, so old paint opens opaque without glow. 15 service tests.
+
+### routers/engine.py · USD export
+- refers-to: app/routers/engine.py :: export_file (usda); tests/test_service.py :: test_usda_export_route
+- kind: rationale
+- logged: v0.27.0 · 2026-10-12
+The export route takes usda (served as model/vnd.usda); upload import needed no change. The test exports a cone as USD, uploads it back and finds two objects. 16 service tests.
