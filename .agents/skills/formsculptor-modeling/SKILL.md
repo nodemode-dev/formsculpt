@@ -108,11 +108,11 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Workflow 7: paint
 
-1. Colour a whole object with `paint_fill` (`color` as #rrggbb or [r, g, b] from 0 to 1, and optionally `roughness` and `metalness`); mask first to keep areas as they are.
-2. Paint by hand with `sculpt_stroke` and `brush: "paint"` plus `color` (and `roughness` or `metalness` to paint those channels); the radius and points work as for sculpting. `paint_clear` returns to plain clay.
+1. Colour a whole object with `paint_fill` (`color` as #rrggbb or [r, g, b] from 0 to 1, and optionally `roughness`, `metalness`, `opacity` (1 solid; glass, water, ghosts lower) and `emissive` (a glow in the paint colour: lamps, lava, eyes)); only the channels given change, and masking first keeps areas as they are.
+2. Paint by hand with `sculpt_stroke` and `brush: "paint"` plus `color` (and `roughness`, `metalness`, `opacity` or `emissive` to paint those channels); the radius and points work as for sculpting. `paint_clear` returns to plain clay.
 3. Paint stays through subdivision levels, dyntopo, remesh, booleans and saving; export PLY, OBJ or GLB to keep the colours (GLB also gets the average roughness and metalness as its material).
 4. `set_material` gives an object subsurface scattering (skin 0.3 to 0.6, wax or jade 0.8, with a warm `subsurface_color` and a `subsurface_radius` about the thickness of an ear) or transmission (glass and water at 1 with an `ior`); it shows in the window's lit shading and is saved in projects.
-5. For a light game-ready model: sculpt detail on high subdivision levels, `multires_set_level` to 0, `uv_unwrap` (conformal by default; its `stretch` is the angle distortion, 1 is none, and under about 1.05 is clean), `bake_maps` (size 1024 or 2048; `path` also writes PNG and EXR files), then `export_mesh` to .glb, which carries UVs, tangents and the colour, roughness-metal and normal maps. To bake from a separate high-resolution object onto a simpler one, give `source_id`.
+5. For a light game-ready model: sculpt detail on high subdivision levels, `multires_set_level` to 0, `uv_unwrap` (conformal by default; its `stretch` is the angle distortion, 1 is none, and under about 1.05 is clean; to choose the seams, make face groups first with `group_auto` or `group_paint` and give `seams: "groups"`), look with `get_uv_layout`, give a part more texture room with `uv_transform` (`island` or `at`, `scale`, `rotate`, `translate`) and `uv_pack`, then `bake_maps` (size 1024 or 2048; `path` also writes PNG and EXR files), then `export_mesh` to .glb, which carries UVs, tangents and the colour, roughness-metal and normal maps. To bake from a separate high-resolution object onto a simpler one, give `source_id`.
 
 ## Workflow 6: files and printing
 
@@ -122,4 +122,4 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Not yet available
 
-There are no edge loop or polygon bridge tools, `bevel_edges` rounds every convex or concave edge of an object rather than chosen ones and makes no chamfers, UV seams cannot be placed by hand, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no edge loop or polygon bridge tools, `bevel_edges` rounds every convex or concave edge of an object rather than chosen ones and makes no chamfers, UVs are edited by whole islands (seams come from face groups; single UV points cannot be moved), and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.

@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.25.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.26.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.25.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
@@ -295,6 +295,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
+- `emissive`: number; range 0 to 1; Paint brush: paint this glow in the paint colour.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `falloff_curve`: array of number; A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
@@ -302,6 +303,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `lazy`: number; default 0; range 0 to 0.95; Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length.
 - `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
 - `noise_scale`: number; default 0; range 0 to 10000; Noise brush: feature size in world units; a fifth of the radius when 0.
+- `opacity`: number; range 0 to 1; Paint brush: paint this opacity (1 solid, 0 clear).
 - `points`: array of array; required; The stroke path as [x, y, z] or [x, y, z, pressure] points on or near the surface, in object space. Grab moves the vertices around the first point by the offset to the last.
 - `pressure_gamma`: number; default 1; range 0.2 to 5; Pen pressure curve: pressure is raised to this power (above 1 needs a firmer press, below 1 a lighter one). Per-point pressure is the fourth number of a point.
 - `pressure_size`: boolean; default false; Pressure scales the radius (down to a tenth).
@@ -347,8 +349,10 @@ Capture the sculpting on a plane as a named vector displacement map for vdm_stam
 Paint a whole object with a colour, roughness or metalness (only the channels given); masked areas are protected in proportion to the mask. For painting by hand use sculpt_stroke with brush paint. Paint follows subdivision levels, dyntopo, remesh, booleans and export (PLY, OBJ, GLB).
 
 - `color`: ['string', 'array']; #rrggbb or [r, g, b] from 0 to 1.
+- `emissive`: number; range 0 to 1; How much the surface glows in its own colour, unlit (lamps, lava, eyes).
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `metalness`: number; range 0 to 1
+- `opacity`: number; range 0 to 1; 1 is solid; lower lets what is behind show through (drawn dithered in the window, as alpha in GLB and baked colour maps).
 - `roughness`: number; range 0 to 1
 
 ## paint_project
@@ -430,6 +434,35 @@ Give an object UV coordinates: faces are grouped into charts by the direction th
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `method`: string (conformal | project); default "conformal"; conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle).
+- `seams`: string (direction | groups); default "direction"; Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction).
+
+## get_uv_layout
+
+Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there. Use it to look before moving islands with uv_transform.
+
+- `at`: array of number; A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island`: integer; range 0 to inf; An island's number to draw brighter, instead of at.
+- `size`: integer; default 512; range 64 to 2048; Width and height of the picture in pixels.
+
+Note: read-only.
+
+## uv_transform
+
+Move, turn or scale one UV island, chosen by a UV point on it (at) or its number from get_uv_layout: scale and rotate about its centre, then translate. Scale an island up to give its part of the model more texture resolution, then uv_pack. Clears baked maps. One undo step.
+
+- `at`: array of number; A UV point [u, v] on the island to move (get_uv_layout lists island bounds).
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island`: integer; range 0 to inf; The island's number from get_uv_layout, instead of at.
+- `rotate`: number; range -360 to 360; Turn counter-clockwise by degrees about the island's centre.
+- `scale`: number; range -inf to 100; Scale about the island's centre.
+- `translate`: array of number; Move by [du, dv].
+
+## uv_pack
+
+Pack an object's UV islands back into the unit square keeping their shapes, turns and relative sizes, after islands were moved or scaled. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## bake_maps
 
