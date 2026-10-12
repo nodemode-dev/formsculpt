@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.27.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.28.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -818,14 +818,15 @@ String copies of a primitive or another object along a stroke over a surface, as
 
 ## boolean
 
-Union, difference (a minus b) or intersection of two objects through a voxel grid, giving one watertight object; the inputs are replaced unless keep_inputs. Detail finer than a voxel is smoothed, so raise resolution for sharp results. Both inputs should be closed meshes (mesh_check).
+Union, difference (a minus b) or intersection of two objects, giving one watertight object; the inputs are replaced unless keep_inputs. By default the cut is exact: the surfaces are split along their true intersection, so every detail, sharp edge and flat face is kept and paint follows. Both inputs must be closed (mesh_check; repair_mesh if not), or it falls back to the voxel method and says why in fallback. method voxel (and any blend) rebuilds the result through a grid at resolution, which smooths detail finer than a voxel but mends open input. The result reports the method used.
 
 - `a`: integer; required; range 1 to inf; The object to keep or cut from.
 - `b`: integer; required; range 1 to inf; The object to add, cut away or intersect with.
 - `blend`: number; default 0; range 0 to 100; Fillets the seam over this many world units: a union fuses the two with a soft web where they meet (an arm into a shoulder, a horn into a head), a difference leaves a rounded cut edge. 0 is a sharp boolean.
 - `keep_inputs`: boolean; default false; Keep a and b instead of replacing them with the result.
+- `method`: string (exact | voxel); default "exact"; exact cuts the two surfaces along their true intersection, keeping every detail, sharp edges and flat faces (both must be closed; repair_mesh first if not); voxel rebuilds the result through a grid, which also mends open or self-crossing input and is what blend uses. An exact boolean on input that is not closed falls back to voxel and says so.
 - `op`: string (union | difference | intersection); default "union"
-- `resolution`: integer; default 160; range 16 to 320; Voxels along the longest side of both objects together; higher keeps sharper detail.
+- `resolution`: integer; default 160; range 16 to 320; Voxel method: voxels along the longest side of both objects together; higher keeps sharper detail.
 
 ## layer_add
 
