@@ -188,3 +188,9 @@ The export route and the bridge take fbx; upload import needed no change since t
 - kind: rationale
 - logged: v0.25.0 · 2026-10-12
 GET /api/engine/mesh/{id}?smooth=1..3 returns the engine's smooth_preview of the object in the same FSCM layout with only the paint flag (no mask, groups or hidden faces, which belong to the sculpted mesh) and the object's own revision; smooth above 3 is a 422 from the query validation. The test checks 4 to the power of the level times the triangles, the unchanged revision, the plain mesh byte-identical afterwards and a 404 for a missing object. 14 service tests.
+
+### tests/test_service.py · seven-float paint and old projects
+- refers-to: tests/test_service.py :: _glb_json, test_paint_has_seven_floats_and_old_projects_open_opaque
+- kind: rationale
+- logged: v0.26.0 · 2026-10-12
+No service code changed for the paint channels: the mesh payload carries whatever the engine's paint bytes are. The test reads opacity 0.5 and emissive 0.25 as the sixth and seventh floats of the first vertex in the FSCM payload, rewrites a saved project's paint to the five floats per vertex projects held before 0.26.0, uploads it, and finds its GLB without alphaMode or emissiveFactor, so old paint opens opaque without glow. 15 service tests.
