@@ -72,9 +72,16 @@ def dispatch(name: str, args: dict | None) -> dict:
     return reply
 
 
-def mesh_payload(object_id: int) -> bytes:
+def mesh_payload(object_id: int, smooth: int = 0) -> bytes:
     if _engine is None:
         raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+    if smooth > 0:
+        # Dynamic subdivision for display: no mask, groups or hidden faces, which belong to the sculpted mesh.
+        with _lock:
+            positions, normals, indices, revision, paint = _engine.mesh_smooth(object_id, smooth)
+        flags = FLAG_PAINT if paint else 0
+        header = MAGIC + struct.pack("<IIII", len(positions) // 12, len(indices) // 4, revision & 0xFFFFFFFF, flags)
+        return header + positions + normals + indices + paint
     with _lock:
         positions, normals, indices, mask, revision, paint = _engine.mesh(object_id)
         groups, hidden = _engine.faces(object_id)

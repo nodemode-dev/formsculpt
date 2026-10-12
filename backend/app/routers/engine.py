@@ -35,10 +35,10 @@ def dispatch(call: Call) -> dict:
 
 
 @router.get("/mesh/{object_id}")
-def mesh(object_id: int) -> Response:
+def mesh(object_id: int, smooth: int = Query(0, ge=0, le=3)) -> Response:
     _guard()
     try:
-        payload = engine.mesh_payload(object_id)
+        payload = engine.mesh_payload(object_id, smooth)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"no object {object_id}")
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
