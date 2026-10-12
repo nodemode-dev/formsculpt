@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.20.0 · 2026-10-12
+
+### Added
+
+- `vdm_stamp` and `vdm_capture`: vector displacement stamps that can overhang (horn, hook, mushroom built in) and new maps captured from a sculpted plane. Window: the VDM stamp tool, Stamp map and Capture VDM.
+- `text_mesh`: solid 3D text in a rounded stroke font. `extrude_shape`: closed outlines (holes by even-odd) extruded with rounded edges. Window: Text with Build text, and Extrude outline from the front Silhouette outline.
+- `boolean` `blend`: a filleted seam, so a union fuses two parts and a difference leaves a rounded cut. Window: Boolean blend.
+- `cut_shape`: a closed outline extruded through the object along the view, cut away or kept (90 commands in all). Window: Lasso cut and Lasso trim.
+
+### Fixed
+
+- The cube and plane primitives were wound inward since 0.2.0: the cube was inside out and the plane faced down. Both face out now, and every primitive passes the print check.
+
 ## 0.19.0 · 2026-10-12
 
 ### Added

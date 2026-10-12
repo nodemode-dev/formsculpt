@@ -1,19 +1,19 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.19.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.20.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Sculpting: `sculpt_stroke`, `alpha_load`
+- Topology: `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
-- Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 - Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
 
@@ -158,6 +158,38 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 - `side`: array of array; The outline seen from the side (the right view), as [z, y] points.
 - `top`: array of array; The outline seen from above, as [x, z] points.
 
+## text_mesh
+
+Make solid 3D text: the words in a rounded single-stroke font (capitals, digits, common punctuation; newlines for more lines), `size` tall, `weight` thick and `depth` deep, centred on the origin and facing the front. One watertight object, ready to sculpt, boolean into a base (engraved or raised lettering on a plinth) or print.
+
+- `depth`: number; range -inf to 100; How deep the letters are along z; a quarter of the size when omitted.
+- `name`: string; Name for the new object; a default when omitted.
+- `resolution`: integer; range 48 to 512; Voxel cells along the longest side; chosen so each stroke is about six cells wide when omitted.
+- `size`: number; default 1; range -inf to 100; Capital height in world units.
+- `text`: string; required; The words; a newline starts another line. Letters are drawn as capitals; the font has A-Z, 0-9, space and . , : - + ! ? ' /.
+- `weight`: number; default 0.14; range 0.04 to 0.4; Stroke width as a fraction of the size.
+
+## extrude_shape
+
+Make a solid from flat vector outlines: closed [x, y] outlines seen from the front, outlines inside others cut holes, pushed out to `depth` with edges rounded by `round`. Logos, badges, cookie-cutter shapes, panels and plates. One watertight object.
+
+- `depth`: number; range -inf to 100; Thickness along z; a fifth of the shape's width when omitted.
+- `name`: string; Name for the new object; a default when omitted.
+- `outlines`: array of array; required; Closed outlines as lists of [x, y] points in world units, seen from the front; an outline inside another cuts a hole (a ring, a letter O, a window).
+- `resolution`: integer; range 48 to 512; Voxel cells along the longest side; 160 to 512 by the shape's detail when omitted.
+- `round`: number; default 0; range 0 to 50; Rounds the edges by this many world units (at most half the depth).
+
+## cut_shape
+
+Hard-surface cut: extrude a closed outline straight through the object along `direction` (the way it is seen) and take away what it covers, or with keep inside keep only that, as one undo step. Lasso a notch, a vent, a window or a bevelled slot; trim a block to a profile. round softens the cut edges. The object is remeshed watertight at resolution; points from pick or a view's frame give the outline.
+
+- `direction`: array of number; required; The way the outline is seen, from the eye into the scene; the cut goes all the way through the object along it.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `keep`: string (outside | inside); default "outside"; outside removes what the outline covers (a lasso cut, a hole, a notch); inside keeps only what it covers (trimming a block to a profile).
+- `outline`: array of array; required; A closed outline as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count).
+- `resolution`: integer; default 192; range 32 to 320; Voxels along the longest side; the object is remeshed at this resolution.
+- `round`: number; default 0; range 0 to 100; Rounds the cut edges by this many world units; 0 leaves them sharp.
+
 ## curve_tube
 
 Sweep a round tube along a smooth curve through the given points (radius per point or overall), capped or closed into a ring, and make it active: hair strands, horns, tails, cables, straps, piping.
@@ -231,6 +263,25 @@ Load a gray PNG as a named brush alpha: white stamps fully and black not at all.
 - `path`: string; A PNG file on the engine's machine, instead of png_base64.
 - `png_base64`: string; The alpha as a base64 PNG; white stamps fully, black not at all (colour is averaged to gray).
 - `size`: integer; range 16 to 1024; The square resolution the alpha is resampled to (256 by default).
+
+## vdm_stamp
+
+Stamp a vector displacement map onto the surface at a point and normal (from pick), as one undo step. Unlike an alpha, a vector map moves the surface sideways and back over itself, so one stamp makes a curled horn, a hook or a mushroom with an overhanging cap. Built in: horn, hook, mushroom; vdm_capture makes more from a sculpted plane. radius is half the stamp's width, angle turns it about the normal, strength scales it (negative presses it in), and masked vertices are held. The surface needs enough vertices under the stamp for the shape to show: divide or remesh first if it is coarse.
+
+- `angle`: number; default 0; range -360 to 360; Turns the stamp about the normal, in degrees (which way a horn leans).
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `normal`: array of number; required; The surface normal there (pick gives it); the stamp rises along it.
+- `point`: array of number; required; The stamp's centre on the surface (pick gives one).
+- `radius`: number; range -inf to 1000; Half the stamp's width in world units; a tenth of the object's largest side when omitted.
+- `strength`: number; default 1; range -3 to 3; Scales every offset; negative presses the shape in.
+- `vdm`: string; required; A built-in map (horn, hook, mushroom) or one made with vdm_capture.
+
+## vdm_capture
+
+Capture the sculpting on a plane as a named vector displacement map for vdm_stamp. Make the plane with add_primitive (kind plane, detail 64 or more), sculpt a shape in its middle with the edges left flat (strokes without dynamic topology, so its vertices stay a grid), then capture; the plane's up is the map's out and its x the map's across. Maps last for the engine session.
+
+- `id`: integer; range 1 to inf; A plane made with add_primitive (kind plane) and then sculpted; the active object when omitted.
+- `name`: string; required; The name vdm_stamp uses for it; capturing the same name again replaces it.
 
 ## paint_fill
 
@@ -655,6 +706,7 @@ Union, difference (a minus b) or intersection of two objects through a voxel gri
 
 - `a`: integer; required; range 1 to inf; The object to keep or cut from.
 - `b`: integer; required; range 1 to inf; The object to add, cut away or intersect with.
+- `blend`: number; default 0; range 0 to 100; Fillets the seam over this many world units: a union fuses the two with a soft web where they meet (an arm into a shoulder, a horn into a head), a difference leaves a rounded cut edge. 0 is a sharp boolean.
 - `keep_inputs`: boolean; default false; Keep a and b instead of replacing them with the result.
 - `op`: string (union | difference | intersection); default "union"
 - `resolution`: integer; default 160; range 16 to 320; Voxels along the longest side of both objects together; higher keeps sharper detail.
