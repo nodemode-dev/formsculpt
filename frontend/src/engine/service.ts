@@ -20,6 +20,8 @@ export interface ObjectSummary {
   active_paint_layer?: number | null;
   /** The settings a primitive was made with, while it can still be edited (null once anything else changed it). */
   primitive?: Record<string, unknown> | null;
+  /** The source a linked copy follows (null once it is unlinked, or for an ordinary object). */
+  instance_of?: number | null;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

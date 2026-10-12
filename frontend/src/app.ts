@@ -21,6 +21,7 @@ import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
+import { PanelLayout } from './ui/layout';
 import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
 
 interface Shell {
@@ -128,6 +129,7 @@ interface Shell {
   latticeLines: SVGPathElement;
   latticePoints: SVGPathElement;
   referencePlace: HTMLSelectElement;
+  arrayLinked: HTMLInputElement;
   pluginPick: HTMLSelectElement;
   pluginButtons: HTMLButtonElement[];
   projectOpacity: HTMLInputElement;
@@ -189,6 +191,7 @@ const BRUSHES: [string, string][] = [
   ['stamp', 'Drag stamp'],
   ['dragdot', 'Drag dot'],
   ['curve', 'Curve stroke'],
+  ['silhouette', 'Silhouette'],
   ['gizmo', 'Transform'],
   ['lattice', 'Lattice'],
   ['mask_box', 'Box mask'],
@@ -200,7 +203,7 @@ const BRUSHES: [string, string][] = [
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette']);
 
 /** A #rrggbb colour as linear 0..1 light, normalised so its brightest channel is 1 (strength is set apart). */
 function hexToLinear(hex: string): [number, number, number] {
@@ -450,8 +453,9 @@ function buildShell(root: HTMLElement): Shell {
   const insertKind = choices('Insert shape', [['sphere', 'Sphere'], ['cube', 'Cube'], ['cylinder', 'Cylinder'], ['cone', 'Cone'], ['torus', 'Torus'], ['previous', 'Previous object']]);
   const insertSize = input('number', { min: '0.01', max: '10', step: '0.05', value: '0.2', 'aria-label': 'Insert size' });
   const arrayCount = input('number', { min: '2', max: '200', value: '6', 'aria-label': 'Array copies' });
+  const arrayLinked = input('checkbox', { 'aria-label': 'Linked copies' });
   const buildFields = el('div', 'fields');
-  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount));
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Linked copies', arrayLinked));
   panel.append(buildFields);
   const buildGrid = el('div', 'add-grid two');
   const buildButtons = (
@@ -460,6 +464,10 @@ function buildShell(root: HTMLElement): Shell {
       ['lathe', 'Lathe'],
       ['array_line', 'Array in line'],
       ['array_radial', 'Array radial'],
+      ['array_mirror', 'Mirror copy'],
+      ['array_curve', 'Array on curve'],
+      ['shadow_box', 'Build shadow box'],
+      ['clear_outlines', 'Clear outlines'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -722,7 +730,9 @@ function buildShell(root: HTMLElement): Shell {
   matcapInput.hidden = true;
   panel.append(matcapInput);
   const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive));
+  const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
+  const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Panel on the left', panelLeft), field('Interface size', uiSize));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -864,7 +874,14 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons };
+  // Folds, panel side and size are layout only, so the window keeps them here rather than in the engine.
+  const layout = new PanelLayout(root, panel);
+  layout.apply();
+  panelLeft.checked = layout.panelLeft;
+  uiSize.value = layout.size;
+  panelLeft.addEventListener('change', () => layout.setSide(panelLeft.checked));
+  uiSize.addEventListener('change', () => layout.setSize(uiSize.value));
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons, arrayLinked };
 }
 
 class SceneView {
@@ -1166,7 +1183,7 @@ class SceneView {
     shell.canvas.addEventListener('pointermove', trace);
     this.strokes.warm();
     viewport.strokes = {
-      enabled: () => this.brush === 'tube' || (this.brush !== 'orbit' && this.scene.active !== null),
+      enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null),
       begin: (ray, pressure, wpp, inv, tilt) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
@@ -1228,6 +1245,10 @@ class SceneView {
     }
     if (shape?.kind === 'gizmo') {
       await this.gizmoEnd();
+      return;
+    }
+    if (shape?.kind === 'silhouette') {
+      this.silhouetteEnd(shape.pts);
       return;
     }
     if (shape?.kind === 'lattice') {
@@ -1337,6 +1358,33 @@ class SceneView {
     const line = SceneView.spline(shown, 8);
     this.shell.curveLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
     this.shell.curveHandles.setAttribute('d', shown.map((q) => `M${(q[0] - 4).toFixed(1)},${q[1].toFixed(1)}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`).join(''));
+  }
+
+  /** Outlines for the shadow box, in world units: front (x, y), side (z, y), top (x, z). */
+  private silhouettes: { front?: number[][]; side?: number[][]; top?: number[][] } = {};
+
+  /** Stores a drawn outline as the front, side or top silhouette, by the axis the view looks along most. */
+  private silhouetteEnd(pts: [number, number][]): void {
+    if (pts.length < 3) {
+      this.note('Draw around the shape you want seen from this view');
+      return;
+    }
+    const cam = this.viewport.camera;
+    const f = sub(cam.target, cam.eye());
+    const a = [0, 1, 2].reduce((best, i) => (Math.abs(f[i]) > Math.abs(f[best]) ? i : best), 0);
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const step = Math.max(1, Math.floor(pts.length / 256));
+    const world: Vec3[] = [];
+    for (let i = 0; i < pts.length; i += step) {
+      const ray = this.viewport.rayAtClient(rect.left + pts[i][0], rect.top + pts[i][1]);
+      if (!ray || Math.abs(ray.dir[a]) < 1e-6) continue;
+      const t = (cam.target[a] - ray.origin[a]) / ray.dir[a];
+      world.push(add(ray.origin, scale(ray.dir, t)));
+    }
+    const which = a === 2 ? 'front' : a === 0 ? 'side' : 'top';
+    this.silhouettes[which] = world.map((p) => (a === 2 ? [p[0], p[1]] : a === 0 ? [p[2], p[1]] : [p[0], p[2]]));
+    const have = (['front', 'side', 'top'] as const).filter((k) => this.silhouettes[k]);
+    this.note(`${which[0].toUpperCase()}${which.slice(1)} outline kept (${have.join(', ')}); ${have.length < 2 ? 'draw one more from another view' : 'Build shadow box when ready'}`);
   }
 
   /** Projects world points to canvas pixels with the current camera (null behind it). */
@@ -1896,14 +1944,35 @@ class SceneView {
     } else if (action === 'lathe') {
       const preset = LATHES[this.shell.lathe.value] ?? LATHES.vase;
       await this.run('lathe', { profile: preset.profile, segments: 48, name: preset.label });
-    } else if (action === 'array_line' || action === 'array_radial') {
+    } else if (action === 'array_line' || action === 'array_radial' || action === 'array_mirror' || action === 'array_curve') {
       const id = this.scene.active;
       if (id === null) {
         this.note('Select the object to repeat first');
         return;
       }
       const count = Math.max(2, Math.min(200, Math.round(Number(this.shell.arrayCount.value) || 6)));
-      await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y' });
+      const linked = this.shell.arrayLinked.checked;
+      if (action === 'array_curve') {
+        // Along the waiting curve stroke's spline (draw one with the Curve stroke tool).
+        if (!this.curve) {
+          this.note('Draw a path with the Curve stroke tool first');
+          return;
+        }
+        const points = SceneView.spline(this.curve.handles, 8);
+        await this.run('array_object', { id, count, mode: 'curve', points, linked });
+      } else if (action === 'array_mirror') await this.run('array_object', { id, mode: 'mirror', axis: 'x', linked });
+      else await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y', linked });
+    } else if (action === 'shadow_box') {
+      const s = this.silhouettes;
+      const n = [s.front, s.side, s.top].filter(Boolean).length;
+      if (n < 2) {
+        this.note(`Draw ${2 - n} more outline${n === 1 ? '' : 's'} with the Silhouette tool from the front, side or top view`);
+        return;
+      }
+      await this.run('shadow_box', { ...s, resolution: Math.max(32, Math.min(256, Number(this.shell.resolution.value) || 128)) });
+    } else if (action === 'clear_outlines') {
+      this.silhouettes = {};
+      this.note('Outlines cleared');
     }
     if (first) this.frameActive();
   }
