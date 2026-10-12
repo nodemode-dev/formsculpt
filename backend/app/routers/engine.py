@@ -90,11 +90,12 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|
 
 
 @router.get("/view")
-async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048), shading: str = "clay", background: str = "dark") -> Response:
-    """The scene rendered headless (the get_view command) as a PNG, for previews and for anything that wants a picture."""
+async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048), shading: str = "clay", background: str = "dark", render: str = Query("preview", pattern="^(preview|path)$"), samples: int = Query(32, ge=1, le=1024), bounces: int = Query(4, ge=1, le=8)) -> Response:
+    """The scene rendered headless (the get_view command) as a PNG, for previews and for anything that wants a picture;
+    render=path is the path-traced production render."""
     _guard()
     try:
-        data, _ = await run_in_threadpool(engine.view_png, {"view": view, "width": width, "height": height, "shading": shading, "background": background})
+        data, _ = await run_in_threadpool(engine.view_png, {"view": view, "width": width, "height": height, "shading": shading, "background": background, "render": render, "samples": samples, "bounces": bounces})
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return Response(content=data, media_type="image/png", headers={"Cache-Control": "no-store"})
@@ -136,6 +137,24 @@ def bridge(body: BridgeOut) -> dict:
     stem = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in found["name"]).strip("_") or "object"
     path = os.path.join(folder, f"{stem}-{body.id}.{body.format}")
     return engine.dispatch("bridge_send", {"id": body.id, "path": path})
+
+
+class SubstanceOut(BaseModel):
+    id: int = Field(ge=1)
+
+
+@router.post("/substance")
+def substance(body: SubstanceOut) -> dict:
+    """Writes a Substance 3D Painter package for an object to FSC_SUBSTANCE_DIR or ~/.formsculptor/substance/<name>
+    (send_to_substance) and returns its folder and files."""
+    _guard()
+    root = os.environ.get("FSC_SUBSTANCE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculptor", "substance")
+    scene = engine.dispatch("get_scene", {})
+    found = next((o for o in scene.get("result", {}).get("objects", []) if o["id"] == body.id), None)
+    if found is None:
+        raise HTTPException(status_code=404, detail=f"no object {body.id}")
+    stem = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in found["name"]).strip("_") or "object"
+    return engine.dispatch("send_to_substance", {"id": body.id, "folder": os.path.join(root, stem)})
 
 
 @router.get("/animation")
