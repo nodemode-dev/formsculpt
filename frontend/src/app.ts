@@ -127,6 +127,11 @@ interface Shell {
   gizmoUniform: SVGPathElement;
   latticeLines: SVGPathElement;
   latticePoints: SVGPathElement;
+  referencePlace: HTMLSelectElement;
+  pluginPick: HTMLSelectElement;
+  pluginButtons: HTMLButtonElement[];
+  projectOpacity: HTMLInputElement;
+  projectInput: HTMLInputElement;
   lightPick: HTMLSelectElement;
   lightAdd: HTMLButtonElement;
   lightRemove: HTMLButtonElement;
@@ -556,7 +561,11 @@ function buildShell(root: HTMLElement): Shell {
     option.selected = size === '1024';
     bakeSize.append(option);
   }
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Bake size', bakeSize));
+  const projectOpacity = input('range', { min: '5', max: '100', value: '100', 'aria-label': 'Projection opacity' });
+  const projectInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose an image to paint' });
+  projectInput.hidden = true;
+  panel.append(projectInput);
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Paint material too', paintMaterial), field('Shading', shading), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
@@ -566,6 +575,8 @@ function buildShell(root: HTMLElement): Shell {
       ['uv_unwrap', 'Unwrap UVs'],
       ['bake_maps', 'Bake maps'],
       ['maps', 'Download maps'],
+      ['project_view', 'Project image'],
+      ['project_tile', 'Tile image'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -710,7 +721,8 @@ function buildShell(root: HTMLElement): Shell {
   const matcapInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a matcap image' });
   matcapInput.hidden = true;
   panel.append(matcapInput);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Shade active only', shadeActive));
+  const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -794,6 +806,26 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(keyGrid);
 
+  panel.append(el('h2', 'gap', 'Plugins'));
+  const pluginPick = choices('Plugin', [['', 'No plugins found']]);
+  const pluginFields = el('div', 'fields');
+  pluginFields.append(field('Plugin', pluginPick));
+  panel.append(pluginFields);
+  const pluginGrid = el('div', 'add-grid two after-fields');
+  const pluginButtons = (
+    [
+      ['run', 'Run plugin'],
+      ['reload', 'Reload list'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    pluginGrid.append(b);
+    return b;
+  });
+  panel.append(pluginGrid);
+
   const message = el('p', 'panel-note', '');
   panel.append(message);
 
@@ -832,7 +864,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons };
 }
 
 class SceneView {
@@ -863,18 +895,30 @@ class SceneView {
         else void this.run(action);
       }),
     );
-    const applyOpacity = (): void => {
-      shell.reference.style.opacity = String(Number(shell.referenceOpacity.value) / 100);
+    // The reference image sits over the view, or on an image plane in the scene (front, side or top) behind the model.
+    const applyReference = (): void => {
+      const opacity = Number(shell.referenceOpacity.value) / 100;
+      shell.reference.style.opacity = String(opacity);
+      const place = shell.referencePlace.value;
+      const has = shell.reference.src.startsWith('blob:');
+      shell.reference.hidden = !has || place !== 'screen';
+      this.viewport.renderer.setReferencePlane(has && place !== 'screen' ? place : null, opacity);
+      this.viewport.invalidate();
     };
-    applyOpacity();
-    shell.referenceOpacity.addEventListener('input', applyOpacity);
+    applyReference();
+    shell.referenceOpacity.addEventListener('input', applyReference);
+    shell.referencePlace.addEventListener('change', applyReference);
     shell.referenceInput.addEventListener('change', () => {
       const file = shell.referenceInput.files?.[0];
       shell.referenceInput.value = '';
       if (!file) return;
       if (shell.reference.src.startsWith('blob:')) URL.revokeObjectURL(shell.reference.src);
       shell.reference.src = URL.createObjectURL(file);
-      shell.reference.hidden = false;
+      void createImageBitmap(file).then((bitmap) => {
+        this.viewport.renderer.setReferenceImage(bitmap);
+        bitmap.close();
+        applyReference();
+      });
       this.note(`Reference: ${file.name}`);
     });
     shell.viewButtons.forEach((b) =>
@@ -888,6 +932,8 @@ class SceneView {
           if (shell.reference.src.startsWith('blob:')) URL.revokeObjectURL(shell.reference.src);
           shell.reference.hidden = true;
           shell.reference.removeAttribute('src');
+          this.viewport.renderer.setReferenceImage(null);
+          this.viewport.invalidate();
           return;
         }
         if (action === 'matcap') {
@@ -938,6 +984,10 @@ class SceneView {
         if (action === 'paint_clear' || action === 'uv_unwrap') void this.run(action, { id });
         else if (action === 'bake_maps') void this.bake(id);
         else if (action === 'maps') void this.download(`/api/engine/maps/${id}`, 'maps.zip');
+        else if (action === 'project_view' || action === 'project_tile') {
+          this.projectMode = action === 'project_view' ? 'view' : 'triplanar';
+          shell.projectInput.click();
+        }
         else void this.run('paint_fill', { id, ...this.paintArgs(true) });
       }),
     );
@@ -980,6 +1030,9 @@ class SceneView {
     for (const c of [shell.tone, shell.envBackground, shell.postSsao, shell.postBloom, shell.postDof, shell.postVignette, shell.postGrain]) c.addEventListener('change', () => this.applyLighting());
     shell.envLoad.addEventListener('click', () => shell.envInput.click());
     shell.primApply.addEventListener('click', () => void this.applyPrimitive());
+    shell.projectInput.addEventListener('change', () => void this.projectImage());
+    shell.pluginButtons.forEach((b) => b.addEventListener('click', () => void (b.dataset.action === 'run' ? this.runPlugin() : this.loadPlugins())));
+    void this.loadPlugins();
     shell.envInput.addEventListener('change', () => void this.loadEnvironment());
     shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
     shell.paintLayer.addEventListener('change', () => {
@@ -2169,6 +2222,68 @@ class SceneView {
     this.note(reply.ok ? `Opened ${file.name}` : reply.error.message);
     await this.refresh();
     if (reply.ok) this.frameActive();
+  }
+
+  /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
+  private async loadPlugins(): Promise<void> {
+    let list: { name: string; title: string; description: string }[] = [];
+    try {
+      const res = await fetch('/api/plugins');
+      if (res.ok) list = ((await res.json()) as { plugins: typeof list }).plugins;
+    } catch {
+      // the service is down; the list stays empty
+    }
+    const select = this.shell.pluginPick;
+    const entries: [string, string, string][] = list.length ? list.map((p) => [p.name, p.title, p.description]) : [['', 'No plugins found', '']];
+    while (select.options.length > entries.length) select.options[select.options.length - 1].remove();
+    entries.forEach(([value, text, title], i) => {
+      let option = select.options[i];
+      if (!option) {
+        option = el('option', '', '');
+        select.append(option);
+      }
+      option.value = value;
+      option.title = title;
+      setText(option, text);
+    });
+  }
+
+  private async runPlugin(): Promise<void> {
+    const name = this.shell.pluginPick.value;
+    if (!name) return;
+    this.note(`Running ${this.shell.pluginPick.selectedOptions[0]?.textContent ?? name}`);
+    const reply = await postBody<{ ok: boolean; output?: string; error?: { message: string } }>('/api/plugins/run', { name, args: {} });
+    const body = reply.ok ? reply.result : { ok: false, error: reply.error };
+    this.note(body.ok ? (body.output ?? '').trim().split('\n').pop() ?? '' : body.error?.message ?? 'The plugin failed');
+    await this.refresh();
+  }
+
+  private projectMode: 'view' | 'triplanar' = 'view';
+
+  /** Paints the chosen image onto the active object: from the current view (as seen on screen) or tiled. Any image
+   * the browser reads is re-encoded as PNG for the engine. */
+  private async projectImage(): Promise<void> {
+    const file = this.shell.projectInput.files?.[0];
+    this.shell.projectInput.value = '';
+    const id = this.scene.active;
+    if (!file || id === null) return;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scaleDown = Math.min(1, 2048 / Math.max(bitmap.width, bitmap.height));
+      const canvas = new OffscreenCanvas(Math.max(1, Math.round(bitmap.width * scaleDown)), Math.max(1, Math.round(bitmap.height * scaleDown)));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('no 2D canvas');
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const args: Record<string, unknown> = { id, png_base64: btoa(bin), mode: this.projectMode, opacity: Number(this.shell.projectOpacity.value) / 100 };
+      if (this.projectMode === 'view') args.view_proj = Array.from(this.viewport.camera.viewProjection());
+      await this.run('paint_project', args);
+    } catch {
+      this.note('That image could not be read');
+    }
   }
 
   /** The primitive fields follow the active object while it is an editable primitive. */

@@ -680,6 +680,7 @@ export class GlRenderer {
     }
     gl.bindVertexArray(null);
     if (shadowMap && L.ground && this.shadow && this.groundBox) this.drawGround(vp, shadowMap);
+    if (this.reference && this.referencePlace) this.drawReference(vp);
     if (post) {
       const proj = camera.projection();
       const inv = invert(proj);
@@ -691,6 +692,81 @@ export class GlRenderer {
   private postSettings: PostSettings = { ...NO_POST };
   private shadow: { fb: WebGLFramebuffer; tex: WebGLTexture; size: number } | null = null;
   private shadowProgram: WebGLProgram | null = null;
+  private reference: { tex: WebGLTexture; aspect: number } | null = null;
+  private referencePlace: string | null = null;
+  private referenceOpacity = 0.45;
+  private referenceProgram: WebGLProgram | null = null;
+  private referenceVao: WebGLVertexArrayObject | null = null;
+
+  /** The image for the reference plane (null removes it). */
+  setReferenceImage(image: TexImageSource | null): void {
+    const gl = this.gl;
+    if (this.reference) gl.deleteTexture(this.reference.tex);
+    this.reference = null;
+    if (!image) return;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const size = image as { width: number; height: number };
+    this.reference = { tex, aspect: size.width / Math.max(1, size.height) };
+  }
+
+  /** Places the reference image on a plane behind the scene: front, side or top (null: not in the scene). */
+  setReferencePlane(place: string | null, opacity: number): void {
+    this.referencePlace = place;
+    this.referenceOpacity = opacity;
+  }
+
+  /** The image plane: a textured quad just behind the scene's bounds, facing the matching view, sized to the scene. */
+  private drawReference(vp: Float32Array): void {
+    const gl = this.gl;
+    const ref = this.reference;
+    if (!ref) return;
+    if (!this.referenceProgram) {
+      this.referenceProgram = compile(gl, REFERENCE_VS, REFERENCE_FS);
+      this.referenceVao = gl.createVertexArray();
+    }
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const m of this.meshes.values()) for (let c = 0; c < 3; c++) {
+      lo[c] = Math.min(lo[c], m.lo[c]);
+      hi[c] = Math.max(hi[c], m.hi[c]);
+    }
+    if (!Number.isFinite(lo[0])) lo.splice(0, 3, -1, -1, -1), hi.splice(0, 3, 1, 1, 1);
+    const center = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+    const half = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) * 0.65;
+    const gap = half * 0.15;
+    // Origin, then the half-axes along the image's width and height.
+    const [o, u, v] =
+      this.referencePlace === 'side'
+        ? [[lo[0] - gap, center[1], center[2]], [0, 0, -half * ref.aspect], [0, half, 0]]
+        : this.referencePlace === 'top'
+          ? [[center[0], lo[1] - gap, center[2]], [half * ref.aspect, 0, 0], [0, 0, -half]]
+          : [[center[0], center[1], lo[2] - gap], [half * ref.aspect, 0, 0], [0, half, 0]];
+    const prog = this.referenceProgram;
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uViewProj'), false, vp);
+    gl.uniform3fv(gl.getUniformLocation(prog, 'uOrigin'), o);
+    gl.uniform3fv(gl.getUniformLocation(prog, 'uAxisU'), u);
+    gl.uniform3fv(gl.getUniformLocation(prog, 'uAxisV'), v);
+    gl.uniform1f(gl.getUniformLocation(prog, 'uOpacity'), this.referenceOpacity);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, ref.tex);
+    gl.uniform1i(gl.getUniformLocation(prog, 'uImage'), 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.bindVertexArray(this.referenceVao);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.bindVertexArray(null);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+  }
+
   private groundProgram: WebGLProgram | null = null;
   private groundVao: WebGLVertexArrayObject | null = null;
   private groundBox: { y: number; center: [number, number, number]; r: number } | null = null;
@@ -809,6 +885,29 @@ layout(location=0) in vec3 aPos;
 uniform mat4 uLightVP;
 uniform mat4 uModel;
 void main() { gl_Position = uLightVP * uModel * vec4(aPos, 1.0); }`;
+
+const REFERENCE_VS = `#version 300 es
+uniform mat4 uViewProj;
+uniform vec3 uOrigin;
+uniform vec3 uAxisU;
+uniform vec3 uAxisV;
+out vec2 vUv;
+void main() {
+  vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
+  vUv = vec2(c.x, 1.0 - c.y);
+  gl_Position = uViewProj * vec4(uOrigin + uAxisU * (c.x * 2.0 - 1.0) + uAxisV * (c.y * 2.0 - 1.0), 1.0);
+}`;
+
+const REFERENCE_FS = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+uniform sampler2D uImage;
+uniform float uOpacity;
+out vec4 outColor;
+void main() {
+  vec4 c = texture(uImage, vUv);
+  outColor = vec4(c.rgb, c.a * uOpacity);
+}`;
 
 const GROUND_VS = `#version 300 es
 uniform mat4 uViewProj;
