@@ -65,14 +65,14 @@ async def import_file(file: UploadFile) -> dict:
 
 
 @router.get("/export")
-async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf)$"), ids: str | None = None) -> Response:
+async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|fbx)$"), ids: str | None = None) -> Response:
     _guard()
     chosen = [int(x) for x in ids.split(",") if x.strip()] if ids else None
     try:
         data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc).strip("'\""))
-    media = {"glb": "model/gltf-binary", "stl": "model/stl", "obj": "model/obj", "ply": "application/octet-stream", "3mf": "model/3mf"}[format]
+    media = {"glb": "model/gltf-binary", "stl": "model/stl", "obj": "model/obj", "ply": "application/octet-stream", "3mf": "model/3mf", "fbx": "application/octet-stream"}[format]
     return Response(content=data, media_type=media, headers={"Content-Disposition": f'attachment; filename="formsculptor.{format}"', "Cache-Control": "no-store"})
 
 
@@ -106,7 +106,7 @@ async def turntable(frames: int = Query(48, ge=8, le=180), size: int = Query(384
 
 class BridgeOut(BaseModel):
     id: int = Field(ge=1)
-    format: str = Field("obj", pattern="^(obj|glb|ply|stl)$")
+    format: str = Field("obj", pattern="^(obj|glb|fbx|ply|stl)$")
 
 
 @router.post("/bridge")
