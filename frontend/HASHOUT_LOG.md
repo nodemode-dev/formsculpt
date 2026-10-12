@@ -311,3 +311,9 @@ VDM stamp is a click tool: the picked point and normal, the brush radius in worl
 - kind: rationale
 - logged: v0.21.0 · 2026-10-12
 Insert brush and Group brush draw a stroke like the lasso; on release the stroke is sampled every 6 pixels (at most 256 points), each sample picked on the surface, and the whole stroke goes as one insert_along (Insert shape and Insert size, or the previous object) or one group_paint (the brush radius at that depth). Add key stores the camera's turn and height and the active object's layer strengths every 1.5 s, unwinding the turn so the camera goes the short way round; Record animation downloads the render from the service's animation route, and History movie downloads the undo history as a movie turning 90 degrees across it. Verified under 4x throttling: cones strung across a sphere, a group painted across it, six UV groups on a cube, the paint-grouping refusal on an unpainted cube, a two-key animation downloaded as a 36-frame 384 pixel APNG, and the refusal with no keys; layout shift 0, no console errors.
+
+### e2e/smoke.py · the window smoke test
+- refers-to: e2e/smoke.py :: main, check, call, objects
+- kind: rationale
+- logged: v0.22.0 · 2026-10-12
+The per-release scratch checks condensed into one in-tree run: in Chromium on SwiftShader under 4x CPU throttling, with a layout-shift observer from the first paint, it checks that the service answers, a sphere is added, a stroke changes the mesh and undo takes it back, a lasso cut goes through (a ray passes), text builds, a section folds, and the history movie downloads as a PNG, then that layout shift is 0 and the console has no errors. It prints one line per check and exits 1 on any failure. It needs a booted window (./formsculptor test e2e), so CI does not run it yet. All ten checks passed on its first run.

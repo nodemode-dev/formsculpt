@@ -164,3 +164,9 @@ Scripts and plugins are plain Python with one handle, fsc, whose call(command, *
 - kind: rationale
 - logged: v0.21.0 · 2026-10-12
 GET /api/engine/animation takes the keyframes as a JSON query value (at most 20,000 characters, which holds 64 keys), runs record_animation into a temporary file and returns the APNG as a download, like the turntable route; bad JSON is a 400 with the parse error. GET /api/engine/history_movie does the same for record_history (fps, size, turn).
+
+### tests/, requirements_test.txt · the service test suite
+- refers-to: tests/conftest.py :: client, call; tests/test_service.py; requirements_test.txt
+- kind: rationale
+- logged: v0.22.0 · 2026-10-12
+pytest on the FastAPI app through its test client, with the built engine module (the suite skips, saying why, when the module is missing). Each test starts from an empty scene, since the service keeps one engine session. Covered: version and health, the catalogue against the engine, dispatch errors as data, mesh buffers against the summary and a 404 for a missing object, the view PNG, the turntable, animation (and a 400 for bad JSON keys) and history movie routes, export and upload import, MCP initialize, tools/list against the catalogue, a tool call, an image reply for get_view, an unknown tool's error and a 403 for a foreign origin, and the plugins list and run. 10 tests in 0.3 s. On the first run the plugin test was wrong, not the service: it expected the pedestal to refuse after the rock, but the rock leaves an active object to stand it on; the test now runs the pedestal first. pytest 9.1.1 and httpx 0.28.1 are pinned in requirements_test.txt; Starlette warns that httpx is deprecated for its test client, so the runner hides warnings until that moves.
