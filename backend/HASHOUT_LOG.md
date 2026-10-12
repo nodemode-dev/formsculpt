@@ -200,3 +200,9 @@ No service code changed for the paint channels: the mesh payload carries whateve
 - kind: rationale
 - logged: v0.27.0 · 2026-10-12
 The export route takes usda (served as model/vnd.usda); upload import needed no change. The test exports a cone as USD, uploads it back and finds two objects. 16 service tests.
+
+### services/engine.py, routers/engine.py · the live boolean preview route
+- refers-to: app/services/engine.py :: boolean_preview; app/routers/engine.py :: boolean_preview; tests/test_service.py :: test_boolean_preview_draws_without_changing_the_scene
+- kind: rationale
+- logged: v0.28.0 · 2026-10-12
+GET /api/engine/boolean_preview?a=&b=&op= returns the exact result as an FSCM payload (revision 0, a zero mask) without touching the scene or the history: 404 for a missing object, 422 for an unknown op, 400 with the engine's reason when the input is not closed. 17 service tests.
