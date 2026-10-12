@@ -9,11 +9,16 @@ pub struct Baked {
     pub mr: Vec<[u8; 4]>,
     pub normal: Vec<[u8; 4]>,
     pub displacement: Vec<f32>,
+    /// Glow colour (paint colour times emissive); all black when nothing glows.
+    pub emissive: Vec<[u8; 4]>,
+    /// True when some texel glows.
+    pub glows: bool,
     pub covered: usize,
     pub hits: usize,
 }
 
-type Sample = ([u8; 4], [u8; 4], [u8; 4], f32, bool);
+/// Colour (alpha is opacity), roughness-metal, normal, displacement, whether the ray hit, and glow.
+type Sample = ([u8; 4], [u8; 4], [u8; 4], f32, bool, [u8; 4]);
 
 struct Texel {
     tri: u32,
@@ -86,11 +91,12 @@ pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: us
         };
         let local = Vec3::new(hn.dot(tg), hn.dot(bt), hn.dot(n)).normalize_or(Vec3::Z);
         Some((
-            [to8(paint[0]), to8(paint[1]), to8(paint[2]), 255],
+            [to8(paint[0]), to8(paint[1]), to8(paint[2]), to8(paint[5])],
             [0, to8(paint[3]), to8(paint[4]), 255],
             [to8(local.x * 0.5 + 0.5), to8(local.y * 0.5 + 0.5), to8(local.z * 0.5 + 0.5), 255],
             disp,
             hit,
+            [to8(paint[0] * paint[6]), to8(paint[1] * paint[6]), to8(paint[2] * paint[6]), 255],
         ))
     };
     #[cfg(feature = "parallel")]
@@ -106,6 +112,8 @@ pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: us
     let mut mr: Vec<Option<[u8; 4]>> = samples.iter().map(|s| s.as_ref().map(|x| x.1)).collect();
     let mut normal: Vec<Option<[u8; 4]>> = samples.iter().map(|s| s.as_ref().map(|x| x.2)).collect();
     let mut disp: Vec<Option<f32>> = samples.iter().map(|s| s.as_ref().map(|x| x.3)).collect();
+    let mut glow: Vec<Option<[u8; 4]>> = samples.iter().map(|s| s.as_ref().map(|x| x.5)).collect();
+    let glows = glow.iter().flatten().any(|g| g[0] > 0 || g[1] > 0 || g[2] > 0);
     for _ in 0..padding {
         let filled: Vec<bool> = color.iter().map(|c| c.is_some()).collect();
         for j in 0..size {
@@ -120,6 +128,7 @@ pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: us
                     mr[at] = mr[src];
                     normal[at] = normal[src];
                     disp[at] = disp[src];
+                    glow[at] = glow[src];
                 }
             }
         }
@@ -127,7 +136,9 @@ pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: us
     let base = DEFAULT_PAINT;
     Baked {
         size,
-        color: color.into_iter().map(|c| c.unwrap_or([to8(base[0]), to8(base[1]), to8(base[2]), 255])).collect(),
+        color: color.into_iter().map(|c| c.unwrap_or([to8(base[0]), to8(base[1]), to8(base[2]), to8(base[5])])).collect(),
+        emissive: glow.into_iter().map(|g| g.unwrap_or([0, 0, 0, 255])).collect(),
+        glows,
         mr: mr.into_iter().map(|c| c.unwrap_or([0, to8(base[3]), to8(base[4]), 255])).collect(),
         normal: normal.into_iter().map(|c| c.unwrap_or([128, 128, 255, 255])).collect(),
         displacement: disp.into_iter().map(|d| d.unwrap_or(0.0)).collect(),

@@ -56,10 +56,19 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         None | Some(Value::Null) => None,
         Some(_) => Some(f(args, "metalness", 0.0, 0.0, 1.0)?),
     };
+    let opacity = match args.get("opacity") {
+        None | Some(Value::Null) => None,
+        Some(_) => Some(f(args, "opacity", 1.0, 0.0, 1.0)?),
+    };
+    let emissive = match args.get("emissive") {
+        None | Some(Value::Null) => None,
+        Some(_) => Some(f(args, "emissive", 0.0, 0.0, 1.0)?),
+    };
     let base = fsc_core::DEFAULT_PAINT;
     let c = color.unwrap_or([0.8, 0.2, 0.2]);
-    let paint = [c[0], c[1], c[2], rough.unwrap_or(base[3]), metal.unwrap_or(base[4])];
-    let paint_channels = if color.is_none() && rough.is_none() && metal.is_none() { [true, false, false] } else { [color.is_some(), rough.is_some(), metal.is_some()] };
+    let paint = [c[0], c[1], c[2], rough.unwrap_or(base[3]), metal.unwrap_or(base[4]), opacity.unwrap_or(base[5]), emissive.unwrap_or(base[6])];
+    let given = [color.is_some(), rough.is_some(), metal.is_some(), opacity.is_some(), emissive.is_some()];
+    let paint_channels = if given.iter().any(|&g| g) { given } else { [true, false, false, false, false] };
     let dyntopo = match args.get("dyntopo") {
         None | Some(Value::Null) | Some(Value::Bool(false)) => None,
         Some(Value::Bool(true)) => Some(0.25),
@@ -145,7 +154,9 @@ pub(crate) fn paint_fill_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "color": {"type": ["string", "array"], "description": "#rrggbb or [r, g, b] from 0 to 1."},
             "roughness": {"type": "number", "minimum": 0, "maximum": 1},
-            "metalness": {"type": "number", "minimum": 0, "maximum": 1}
+            "metalness": {"type": "number", "minimum": 0, "maximum": 1},
+            "opacity": {"type": "number", "minimum": 0, "maximum": 1, "description": "1 is solid; lower lets what is behind show through (drawn dithered in the window, as alpha in GLB and baked colour maps)."},
+            "emissive": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much the surface glows in its own colour, unlit (lamps, lava, eyes)."}
         },
         "required": [],
         "additionalProperties": false
@@ -155,10 +166,11 @@ pub(crate) fn paint_fill_schema() -> Value {
 pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let color = parse_color(args.get("color"))?;
-    let rough = args.get("roughness").and_then(Value::as_f64).map(|x| x.clamp(0.0, 1.0) as f32);
-    let metal = args.get("metalness").and_then(Value::as_f64).map(|x| x.clamp(0.0, 1.0) as f32);
-    if color.is_none() && rough.is_none() && metal.is_none() {
-        return Err(bad("give color, roughness or metalness"));
+    let unit = |k: &str| args.get(k).and_then(Value::as_f64).map(|x| x.clamp(0.0, 1.0) as f32);
+    let (rough, metal, opacity, emissive) = (unit("roughness"), unit("metalness"), unit("opacity"), unit("emissive"));
+    let channels = [color.is_some(), rough.is_some(), metal.is_some(), opacity.is_some(), emissive.is_some()];
+    if !channels.iter().any(|&c| c) {
+        return Err(bad("give color, roughness, metalness, opacity or emissive"));
     }
     let object = s.scene.get_mut(id).expect("checked");
     let had = object.mesh.has_paint();
@@ -166,8 +178,7 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
     let mut edit = VertexEdit::default();
     let mut layer = object.layered().then(|| (object.paint_layers.active, Vec::new(), Vec::new()));
     let c = color.unwrap_or([0.0; 3]);
-    let fill = [c[0], c[1], c[2], rough.unwrap_or(0.0), metal.unwrap_or(0.0)];
-    let channels = [color.is_some(), rough.is_some(), metal.is_some()];
+    let fill = [c[0], c[1], c[2], rough.unwrap_or(0.0), metal.unwrap_or(0.0), opacity.unwrap_or(1.0), emissive.unwrap_or(0.0)];
     for v in 0..object.mesh.vertex_count() {
         let w = 1.0 - object.mask[v];
         if w <= 0.0 {
@@ -360,7 +371,7 @@ pub(crate) fn paint_project(s: &mut Session, args: &Value) -> Result<Value, Comm
         }
         let before = object.mesh.paint[v];
         let was = object.paint_target(v as u32);
-        object.paint_vertex(v as u32, [rgb[0], rgb[1], rgb[2], 0.5, 0.0], [true, false, false], w.min(1.0), false);
+        object.paint_vertex(v as u32, fsc_core::paint_from5(&[rgb[0], rgb[1], rgb[2], 0.5, 0.0]), [true, false, false, false, false], w.min(1.0), false);
         object.composite_paint(Some(&[v as u32]));
         let after = object.mesh.paint[v];
         let now = object.paint_target(v as u32);
@@ -405,8 +416,8 @@ pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, Comman
         let was = object.paint_target(v as u32);
         // With paint layers: clears the active layer (or resets the base) and recomposites.
         match (&layer, object.paint_layers.active) {
-            (Some(_), Some(_)) => object.paint_vertex(v as u32, fsc_core::DEFAULT_PAINT, [true; 3], 1.0, true),
-            (Some(_), None) => object.set_paint_target(None, v as u32, [0.8, 0.8, 0.8, 0.5, 0.0, 1.0]),
+            (Some(_), Some(_)) => object.paint_vertex(v as u32, fsc_core::DEFAULT_PAINT, [true; fsc_core::PAINT_CHANNELS], 1.0, true),
+            (Some(_), None) => object.set_paint_target(None, v as u32, [0.8, 0.8, 0.8, 0.5, 0.0, 1.0, 0.0, 1.0]),
             _ => object.mesh.paint[v] = fsc_core::DEFAULT_PAINT,
         }
         object.composite_paint(Some(&[v as u32]));
@@ -455,6 +466,8 @@ pub(crate) fn brush_props() -> Value {
         "color": {"type": ["string", "array"], "description": "Paint brush: #rrggbb or [r, g, b] from 0 to 1."},
         "roughness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this roughness (only the channels given are painted)."},
         "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},
+        "opacity": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this opacity (1 solid, 0 clear)."},
+        "emissive": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this glow in the paint colour."},
         "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "default": 0.2, "description": "World units; compare with the object's bounds from get_scene."},
         "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
         "invert": {"type": "boolean", "default": false, "description": "Carve instead of build, deflate, unpinch, erase mask."},

@@ -45,7 +45,71 @@ pub fn unwrap(mesh: &Mesh, padding: f32) -> Unwrap {
     unwrap_with(mesh, padding, Flatten::Project)
 }
 
+/// Where chart borders (seams) go.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Charts {
+    /// Faces grouped by the axis they face most.
+    Direction,
+    /// One chart per connected piece of each face group, so painted groups place the seams; a piece that will not
+    /// lie flat without folding (a closed shell, a tube) is split further by facing direction.
+    Groups,
+}
+
 pub fn unwrap_with(mesh: &Mesh, padding: f32, flatten: Flatten) -> Unwrap {
+    unwrap_charts(mesh, padding, flatten, Charts::Direction)
+}
+
+/// Connected pieces of `faces` (by shared edges) whose faces agree on `key`.
+fn components(faces: &[u32], key: &[u32], neighbors: &dyn Fn(usize) -> Vec<usize>, tris: usize) -> Vec<Vec<u32>> {
+    let mut inside = vec![false; tris];
+    for &t in faces {
+        inside[t as usize] = true;
+    }
+    let mut seen = vec![false; tris];
+    let mut out = Vec::new();
+    for &seed in faces {
+        if seen[seed as usize] {
+            continue;
+        }
+        seen[seed as usize] = true;
+        let mut members = vec![seed];
+        let mut at = 0;
+        while at < members.len() {
+            let t = members[at] as usize;
+            at += 1;
+            for f in neighbors(t) {
+                if inside[f] && !seen[f] && key[f] == key[seed as usize] {
+                    seen[f] = true;
+                    members.push(f as u32);
+                }
+            }
+        }
+        out.push(members);
+    }
+    out
+}
+
+/// The facing label for a whole chart: the axis of its area-weighted normal.
+fn chart_label(mesh: &Mesh, members: &[u32]) -> u8 {
+    let mut sum = Vec3::ZERO;
+    for &t in members {
+        let [a, b, c] = mesh.triangle(t as usize).map(|v| mesh.position(v));
+        sum += (b - a).cross(c - a);
+    }
+    label_of(sum.normalize_or(Vec3::Y))
+}
+
+fn projected(mesh: &Mesh, members: &[u32], label: u8) -> HashMap<u32, Vec2> {
+    let mut at: HashMap<u32, Vec2> = HashMap::new();
+    for &t in members {
+        for v in mesh.triangle(t as usize) {
+            at.entry(v).or_insert_with(|| project(mesh.position(v), label));
+        }
+    }
+    at
+}
+
+pub fn unwrap_charts(mesh: &Mesh, padding: f32, flatten: Flatten, by: Charts) -> Unwrap {
     let tris = mesh.triangle_count();
     let normals: Vec<Vec3> = mesh.face_normals().into_iter().map(|n| n.normalize_or(Vec3::Y)).collect();
     let mut labels: Vec<u8> = normals.iter().map(|&n| label_of(n)).collect();
@@ -82,56 +146,66 @@ pub fn unwrap_with(mesh: &Mesh, padding: f32, flatten: Flatten) -> Unwrap {
             }
         }
     }
-    let mut chart = vec![u32::MAX; tris];
+    let all: Vec<u32> = (0..tris as u32).collect();
+    let label_key: Vec<u32> = labels.iter().map(|&l| u32::from(l)).collect();
+    let by_groups = by == Charts::Groups && mesh.has_groups();
+    // A projected group still has to face one way, so projection splits groups by direction from the start.
+    let start_key: Vec<u32> = match (by_groups, flatten) {
+        (false, _) => label_key.clone(),
+        (true, Flatten::Conformal) => mesh.groups.clone(),
+        (true, Flatten::Project) => mesh.groups.iter().zip(&labels).map(|(&g, &l)| g.wrapping_mul(6).wrapping_add(u32::from(l))).collect(),
+    };
+    // Each chart's faces and flat coordinates per mesh vertex (a seam vertex has one in each chart it borders).
     let mut charts: Vec<Vec<u32>> = Vec::new();
-    for seed in 0..tris {
-        if chart[seed] != u32::MAX {
-            continue;
-        }
-        let id = charts.len() as u32;
-        let mut members = vec![seed as u32];
-        chart[seed] = id;
-        let mut at = 0;
-        while at < members.len() {
-            let t = members[at] as usize;
-            at += 1;
-            for f in neighbors(t) {
-                if chart[f] == u32::MAX && labels[f] == labels[seed] {
-                    chart[f] = id;
-                    members.push(f as u32);
+    let mut flat: Vec<HashMap<u32, Vec2>> = Vec::new();
+    for members in components(&all, &start_key, &neighbors, tris) {
+        let label = if by_groups { chart_label(mesh, &members) } else { labels[members[0] as usize] };
+        let mut at = projected(mesh, &members, label);
+        if flatten == Flatten::Conformal && !conformal(mesh, &members, &mut at) && by_groups {
+            let pieces = components(&members, &label_key, &neighbors, tris);
+            if pieces.len() > 1 {
+                for piece in pieces {
+                    let mut at = projected(mesh, &piece, labels[piece[0] as usize]);
+                    conformal(mesh, &piece, &mut at);
+                    charts.push(piece);
+                    flat.push(at);
                 }
+                continue;
             }
         }
         charts.push(members);
+        flat.push(at);
     }
-    // Each chart's flat coordinates per mesh vertex (a seam vertex has one in each chart it borders).
-    let flat: Vec<HashMap<u32, Vec2>> = charts
-        .iter()
-        .map(|members| {
-            let label = labels[members[0] as usize];
-            let mut at: HashMap<u32, Vec2> = HashMap::new();
-            for &t in members {
-                for v in mesh.triangle(t as usize) {
-                    at.entry(v).or_insert_with(|| project(mesh.position(v), label));
-                }
+    let corners: Vec<Vec<usize>> = charts.iter().map(|members| members.iter().flat_map(|&t| (0..3).map(move |k| 3 * t as usize + k)).collect()).collect();
+    let mut coords = vec![Vec2::ZERO; mesh.indices.len()];
+    for (c, members) in charts.iter().enumerate() {
+        for &t in members {
+            for k in 0..3 {
+                coords[3 * t as usize + k] = flat[c][&mesh.indices[3 * t as usize + k]];
             }
-            if flatten == Flatten::Conformal {
-                conformal(mesh, members, &mut at);
-            }
-            at
-        })
-        .collect();
+        }
+    }
+    let coverage = pack(&corners, &mut coords, padding);
+    Unwrap { uvs: coords.iter().map(|q| q.to_array()).collect(), charts: charts.len(), coverage }
+}
+
+/// Packs charts (each a list of corner indices into `coords`) into the unit square by rows, tallest first, keeping
+/// their relative sizes, and rewrites `coords` in place; returns the share of the square their boxes cover.
+pub fn pack(charts: &[Vec<usize>], coords: &mut [Vec2], padding: f32) -> f32 {
     let mut boxes: Vec<(Vec2, Vec2)> = Vec::with_capacity(charts.len());
     let mut area = 0.0;
-    for at in &flat {
+    for corners in charts {
         let (mut lo, mut hi) = (Vec2::splat(f32::INFINITY), Vec2::splat(f32::NEG_INFINITY));
-        for &q in at.values() {
-            lo = lo.min(q);
-            hi = hi.max(q);
+        for &c in corners {
+            lo = lo.min(coords[c]);
+            hi = hi.max(coords[c]);
         }
         let size = (hi - lo).max(Vec2::splat(1e-6));
         area += size.x * size.y;
         boxes.push((lo, size));
+    }
+    if charts.is_empty() {
+        return 0.0;
     }
     let mut order: Vec<usize> = (0..charts.len()).collect();
     order.sort_by(|&a, &b| boxes[b].1.y.total_cmp(&boxes[a].1.y));
@@ -161,17 +235,141 @@ pub fn unwrap_with(mesh: &Mesh, padding: f32, flatten: Flatten) -> Unwrap {
         }
         side *= 1.05;
     };
-    let mut uvs = vec![[0.0f32; 2]; mesh.indices.len()];
-    for (c, members) in charts.iter().enumerate() {
-        for &t in members {
-            for k in 0..3 {
-                let v = mesh.indices[3 * t as usize + k];
-                let q = (flat[c][&v] - boxes[c].0 + offsets[c]) / side;
-                uvs[3 * t as usize + k] = q.to_array();
+    for (c, corners) in charts.iter().enumerate() {
+        for &k in corners {
+            coords[k] = (coords[k] - boxes[c].0 + offsets[c]) / side;
+        }
+    }
+    area / (side * side)
+}
+
+/// A picture of a UV layout, `size` pixels square with v up: each island filled in its own muted hue with its
+/// triangle edges drawn over it, the `highlight` island brighter, on the window's dark background. `island` is
+/// [`islands`]'s result for the mesh.
+pub fn layout_image(mesh: &Mesh, island: &[u32], size: usize, highlight: Option<u32>) -> Vec<[u8; 4]> {
+    let mut px = vec![[28u8, 27, 29, 255]; size * size];
+    if island.len() != mesh.triangle_count() {
+        return px;
+    }
+    let s = size as f32;
+    let to_px = |uv: [f32; 2]| Vec2::new(uv[0] * s, (1.0 - uv[1]) * s);
+    let hue = |i: u32| -> [f32; 3] {
+        let h = (i as f32 * 0.618_034).fract() * 6.0;
+        let x = 1.0 - ((h % 2.0) - 1.0).abs();
+        match h as u32 {
+            0 => [1.0, x, 0.0],
+            1 => [x, 1.0, 0.0],
+            2 => [0.0, 1.0, x],
+            3 => [0.0, x, 1.0],
+            4 => [x, 0.0, 1.0],
+            _ => [1.0, 0.0, x],
+        }
+    };
+    let mix = |c: [f32; 3], k: f32, base: f32| -> [u8; 4] {
+        let f = |v: f32| ((base + v * k) * 255.0).clamp(0.0, 255.0) as u8;
+        [f(c[0]), f(c[1]), f(c[2]), 255]
+    };
+    for (t, &own) in island.iter().enumerate() {
+        let q = [0, 1, 2].map(|k| to_px(mesh.uvs[3 * t + k]));
+        let lit = highlight == Some(own);
+        let fill = mix(hue(own), if lit { 0.55 } else { 0.28 }, if lit { 0.25 } else { 0.12 });
+        let (lo, hi) = (q[0].min(q[1]).min(q[2]), q[0].max(q[1]).max(q[2]));
+        let area = (q[1] - q[0]).perp_dot(q[2] - q[0]);
+        if area.abs() > 1e-9 {
+            for y in (lo.y.floor().max(0.0) as usize)..(hi.y.ceil().min(s) as usize) {
+                for x in (lo.x.floor().max(0.0) as usize)..(hi.x.ceil().min(s) as usize) {
+                    let p = Vec2::new(x as f32 + 0.5, y as f32 + 0.5);
+                    let w0 = (q[1] - p).perp_dot(q[2] - p) / area;
+                    let w1 = (q[2] - p).perp_dot(q[0] - p) / area;
+                    if w0 >= -1e-4 && w1 >= -1e-4 && w0 + w1 <= 1.0 + 1e-4 {
+                        px[y * size + x] = fill;
+                    }
+                }
             }
         }
     }
-    Unwrap { uvs, charts: charts.len(), coverage: area / (side * side) }
+    // Edges after every fill, so a neighbour's fill does not cover them.
+    for (t, &own) in island.iter().enumerate() {
+        let q = [0, 1, 2].map(|k| to_px(mesh.uvs[3 * t + k]));
+        let line = mix(hue(own), 0.6, if highlight == Some(own) { 0.4 } else { 0.25 });
+        for k in 0..3 {
+            let (a, b) = (q[k], q[(k + 1) % 3]);
+            let steps = (b - a).abs().max_element().ceil().max(1.0) as usize;
+            for i in 0..=steps {
+                let p = a + (b - a) * (i as f32 / steps as f32);
+                let (x, y) = (p.x.floor() as isize, p.y.floor() as isize);
+                if x >= 0 && y >= 0 && (x as usize) < size && (y as usize) < size {
+                    px[y as usize * size + x as usize] = line;
+                }
+            }
+        }
+    }
+    px
+}
+
+/// The island under a UV point: the first triangle containing it, or None over empty space.
+pub fn island_at(mesh: &Mesh, island: &[u32], uv: [f32; 2]) -> Option<u32> {
+    if island.len() != mesh.triangle_count() {
+        return None;
+    }
+    let p = Vec2::from_array(uv);
+    (0..mesh.triangle_count()).find_map(|t| {
+        let q = [0, 1, 2].map(|k| Vec2::from_array(mesh.uvs[3 * t + k]));
+        let area = (q[1] - q[0]).perp_dot(q[2] - q[0]);
+        if area.abs() < 1e-14 {
+            return None;
+        }
+        let w0 = (q[1] - p).perp_dot(q[2] - p) / area;
+        let w1 = (q[2] - p).perp_dot(q[0] - p) / area;
+        (w0 >= 0.0 && w1 >= 0.0 && w0 + w1 <= 1.0).then_some(island[t])
+    })
+}
+
+/// A triangle on an edge with its UVs at the edge's lower and higher vertex.
+type EdgeUv = (u32, [f32; 2], [f32; 2]);
+
+/// UV islands: faces joined across an edge whose two ends have the same UVs on both sides. One id per triangle,
+/// numbered in order of first appearance; empty when the mesh has no UVs.
+pub fn islands(mesh: &Mesh) -> Vec<u32> {
+    let tris = mesh.triangle_count();
+    if mesh.uvs.len() != mesh.indices.len() {
+        return Vec::new();
+    }
+    let same = |a: [f32; 2], b: [f32; 2]| (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6;
+    // Each directed corner pair keyed by its vertices, so the face across an edge can be found with its UVs.
+    let mut edges: HashMap<(u32, u32), Vec<EdgeUv>> = HashMap::with_capacity(tris * 2);
+    for t in 0..tris {
+        for k in 0..3 {
+            let (i, j) = (3 * t + k, 3 * t + (k + 1) % 3);
+            let (a, b) = (mesh.indices[i], mesh.indices[j]);
+            let (ua, ub) = if a < b { (mesh.uvs[i], mesh.uvs[j]) } else { (mesh.uvs[j], mesh.uvs[i]) };
+            edges.entry((a.min(b), a.max(b))).or_default().push((t as u32, ua, ub));
+        }
+    }
+    let mut id = vec![u32::MAX; tris];
+    let mut next = 0;
+    for seed in 0..tris {
+        if id[seed] != u32::MAX {
+            continue;
+        }
+        id[seed] = next;
+        let mut stack = vec![seed];
+        while let Some(t) = stack.pop() {
+            for k in 0..3 {
+                let (a, b) = (mesh.indices[3 * t + k], mesh.indices[3 * t + (k + 1) % 3]);
+                let Some(list) = edges.get(&(a.min(b), a.max(b))) else { continue };
+                let Some(&(_, ua, ub)) = list.iter().find(|e| e.0 as usize == t) else { continue };
+                for &(f, fa, fb) in list {
+                    if id[f as usize] == u32::MAX && same(ua, fa) && same(ub, fb) {
+                        id[f as usize] = next;
+                        stack.push(f as usize);
+                    }
+                }
+            }
+        }
+        next += 1;
+    }
+    id
 }
 
 /// A triangle in its own plane: corners at q[0] = origin and q[1] on +x, counter-clockwise about the normal, and twice
@@ -200,13 +398,14 @@ fn opposite_edges(q: &[[f64; 2]; 3]) -> [[f64; 2]; 3] {
 /// Lays one chart flat by least-squares conformal maps: for every triangle, the residual of the Cauchy-Riemann
 /// condition (grad v = rot90 grad u), area-weighted, minimised by conjugate gradients with two vertices pinned.
 /// `at` holds the projection on entry (the start and the pins) and the result on return; a chart whose solution
-/// folds over itself keeps its projection.
-fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
+/// folds over itself keeps its projection and returns false (a closed shell or a tube cannot lie flat in one piece);
+/// true otherwise, including charts too small to need solving.
+fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) -> bool {
     let mut verts: Vec<u32> = at.keys().copied().collect();
     verts.sort_unstable();
     let n = verts.len();
     if n < 4 {
-        return;
+        return true;
     }
     let index: HashMap<u32, usize> = verts.iter().enumerate().map(|(i, &v)| (v, i)).collect();
     // The projection may be mirrored relative to the faces' winding; start from its orientation-preserving twin.
@@ -236,7 +435,7 @@ fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
         rows.push(std::array::from_fn(|k| if k < 3 { (id[k], e[k][1] * w) } else { (n + id[k - 3], e[k - 3][0] * w) }));
     }
     if rows.is_empty() {
-        return;
+        return true;
     }
     // Pins: the two vertices furthest apart along the projection's longer side.
     let wide = {
@@ -253,7 +452,7 @@ fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
     let pin_a = (0..n).min_by(|&i, &j| key(i).total_cmp(&key(j))).unwrap_or(0);
     let pin_b = (0..n).max_by(|&i, &j| key(i).total_cmp(&key(j))).unwrap_or(n - 1);
     if pin_a == pin_b {
-        return;
+        return true;
     }
     let free = |c: usize| c % n != pin_a && c % n != pin_b;
     // H d = M^T (M d), restricted to the free unknowns.
@@ -323,7 +522,7 @@ fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
         let [a, b, c] = id.map(|i| [x[i], x[n + i]]);
         let s = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
         if !s.is_finite() {
-            return;
+            return false;
         }
         if s <= 0.0 {
             folds += 1;
@@ -331,12 +530,13 @@ fn conformal(mesh: &Mesh, members: &[u32], at: &mut HashMap<u32, Vec2>) {
         flat_area += s * 0.5;
     }
     if folds * 200 > members.len() || flat_area <= 0.0 {
-        return;
+        return false;
     }
     let scale = (area3 / flat_area).sqrt();
     for (i, v) in verts.iter().enumerate() {
         at.insert(*v, Vec2::new((x[i] * scale) as f32, (x[n + i] * scale) as f32));
     }
+    true
 }
 
 /// Angle distortion of a UV layout: per triangle the ratio of the larger to the smaller singular value of the map

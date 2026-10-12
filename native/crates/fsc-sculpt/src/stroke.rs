@@ -419,10 +419,11 @@ impl Stroke {
             }
             let here = if total > 0.0 { here / total } else { Vec3::splat(0.8) };
             if let Some(carried) = self.smudge {
-                let target = [carried.x, carried.y, carried.z, 0.5, 0.0];
+                let mut target = fsc_core::DEFAULT_PAINT;
+                target[..3].copy_from_slice(&carried.to_array());
                 for (k, &v) in found.iter().enumerate() {
                     let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
-                    object.paint_vertex(v, target, [true, false, false], w, false);
+                    object.paint_vertex(v, target, [true, false, false, false, false], w, false);
                 }
                 object.composite_paint(Some(&found));
                 self.smudge = Some(carried.lerp(here, 0.35));

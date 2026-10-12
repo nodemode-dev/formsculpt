@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 
+use base64::Engine as _;
 use fsc_core::Maps;
 use serde_json::{json, Value};
 
@@ -18,7 +19,8 @@ pub(crate) fn unwrap_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "method": {"type": "string", "enum": ["conformal", "project"], "default": "conformal", "description": "conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle)."}
+            "method": {"type": "string", "enum": ["conformal", "project"], "default": "conformal", "description": "conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle)."},
+            "seams": {"type": "string", "enum": ["direction", "groups"], "default": "direction", "description": "Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction)."}
         },
         "required": [],
         "additionalProperties": false
@@ -31,10 +33,18 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         "project" => fsc_paint::Flatten::Project,
         other => return Err(bad(format!("unknown method {other}; conformal or project"))),
     };
+    let charts = match args.get("seams").and_then(Value::as_str).unwrap_or("direction") {
+        "direction" => fsc_paint::Charts::Direction,
+        "groups" => fsc_paint::Charts::Groups,
+        other => return Err(bad(format!("unknown seams {other}; direction or groups"))),
+    };
     let id = target(s, args)?;
     let started = Instant::now();
     let object = s.scene.get_mut(id).expect("checked");
-    let result = fsc_paint::unwrap_with(&object.mesh, 4.0 / 1024.0, flatten);
+    if charts == fsc_paint::Charts::Groups && !object.mesh.has_groups() {
+        return Err(CommandError::new("no_groups", "the object has no face groups; paint some with the Group brush or run group_auto, or use seams direction"));
+    }
+    let result = fsc_paint::unwrap_charts(&object.mesh, 4.0 / 1024.0, flatten, charts);
     let (mean, worst) = fsc_paint::stretch(&object.mesh, &result.uvs);
     let mut mesh = object.mesh.clone();
     mesh.uvs = result.uvs;
@@ -45,6 +55,165 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
     Ok(json!({"object": after, "charts": result.charts, "coverage": result.coverage, "stretch": {"mean": round(mean), "max": round(worst)}, "ms": started.elapsed().as_millis()}))
+}
+
+fn uv_point(args: &Value, key: &str) -> Result<Option<[f32; 2]>, CommandError> {
+    match args.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Array(a)) if a.len() == 2 => {
+            let f = |v: &Value| v.as_f64().map(|x| x as f32).ok_or_else(|| bad(format!("{key} is two numbers")));
+            Ok(Some([f(&a[0])?, f(&a[1])?]))
+        }
+        Some(_) => Err(bad(format!("{key} is two numbers"))),
+    }
+}
+
+fn need_uvs(mesh: &fsc_core::Mesh) -> Result<(), CommandError> {
+    if mesh.uvs.len() != mesh.indices.len() {
+        return Err(CommandError::new("no_uvs", "the object has no UVs; run uv_unwrap first (UVs are cleared by topology changes)"));
+    }
+    Ok(())
+}
+
+pub(crate) fn uv_layout_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "size": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 512, "description": "Width and height of the picture in pixels."},
+            "at": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected."},
+            "island": {"type": "integer", "minimum": 0, "description": "An island's number to draw brighter, instead of at."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// The UV layout as a picture with its islands' bounds, for looking at and for picking islands to move.
+pub(crate) fn uv_layout(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let size = args.get("size").and_then(Value::as_u64).unwrap_or(512);
+    if !(64..=2048).contains(&size) {
+        return Err(bad("size must be 64 to 2048"));
+    }
+    let at = uv_point(args, "at")?;
+    let mesh = &s.scene.get(id).expect("checked").mesh;
+    need_uvs(mesh)?;
+    let island = fsc_paint::islands(mesh);
+    let count = island.iter().copied().max().map_or(0, |m| m as usize + 1);
+    let selected = match args.get("island").and_then(Value::as_u64) {
+        Some(i) => Some(i as u32).filter(|&i| (i as usize) < count),
+        None => at.and_then(|p| fsc_paint::island_at(mesh, &island, p)),
+    };
+    let pixels = fsc_paint::layout_image(mesh, &island, size as usize, selected);
+    let png = fsc_paint::png_rgba_rect(size as usize, size as usize, &pixels).map_err(|e| CommandError::new("render_failed", e))?;
+    let mut bounds = vec![[f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY]; count];
+    let mut used = 0.0f64;
+    for t in 0..mesh.triangle_count() {
+        let q = [0, 1, 2].map(|k| mesh.uvs[3 * t + k]);
+        let b = &mut bounds[island[t] as usize];
+        for p in q {
+            b[0] = b[0].min(p[0]);
+            b[1] = b[1].min(p[1]);
+            b[2] = b[2].max(p[0]);
+            b[3] = b[3].max(p[1]);
+        }
+        used += f64::from(((q[1][0] - q[0][0]) * (q[2][1] - q[0][1]) - (q[2][0] - q[0][0]) * (q[1][1] - q[0][1])).abs()) * 0.5;
+    }
+    let (mean, worst) = fsc_paint::stretch(mesh, &mesh.uvs);
+    let round = |v: f64| (v * 1000.0).round() / 1000.0;
+    let listed: Vec<Value> = bounds.iter().take(64).enumerate().map(|(i, b)| json!({"island": i, "min": [round(f64::from(b[0])), round(f64::from(b[1]))], "max": [round(f64::from(b[2])), round(f64::from(b[3]))]})).collect();
+    Ok(json!({
+        "width": size, "height": size, "mime": "image/png",
+        "png_base64": base64::engine::general_purpose::STANDARD.encode(&png),
+        "islands": count, "listed": listed, "selected": selected,
+        "used": round(used), "stretch": {"mean": round(f64::from(mean)), "max": round(f64::from(worst))}
+    }))
+}
+
+pub(crate) fn uv_transform_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "at": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "A UV point [u, v] on the island to move (get_uv_layout lists island bounds)."},
+            "island": {"type": "integer", "minimum": 0, "description": "The island's number from get_uv_layout, instead of at."},
+            "translate": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "Move by [du, dv]."},
+            "rotate": {"type": "number", "minimum": -360, "maximum": 360, "description": "Turn counter-clockwise by degrees about the island's centre."},
+            "scale": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "Scale about the island's centre."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Moves, turns or scales one UV island (scale and turn about its box centre, then the move). One undo step.
+pub(crate) fn uv_transform(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let at = uv_point(args, "at")?;
+    let translate = uv_point(args, "translate")?.unwrap_or([0.0, 0.0]);
+    let degrees = args.get("rotate").and_then(Value::as_f64).unwrap_or(0.0);
+    let scale = args.get("scale").and_then(Value::as_f64).unwrap_or(1.0);
+    if !(scale > 0.0 && scale <= 100.0) || !(-360.0..=360.0).contains(&degrees) {
+        return Err(bad("scale is above 0 up to 100 and rotate -360 to 360"));
+    }
+    let object = s.scene.get_mut(id).expect("checked");
+    need_uvs(&object.mesh)?;
+    let island = fsc_paint::islands(&object.mesh);
+    let chosen = match (args.get("island").and_then(Value::as_u64), at) {
+        (Some(i), _) => i as u32,
+        (None, Some(p)) => fsc_paint::island_at(&object.mesh, &island, p).ok_or_else(|| CommandError::new("no_island", "no UV island under that point; get_uv_layout shows where they are"))?,
+        (None, None) => return Err(bad("give at or island")),
+    };
+    let corners: Vec<usize> = (0..object.mesh.indices.len()).filter(|&c| island[c / 3] == chosen).collect();
+    if corners.is_empty() {
+        return Err(CommandError::new("no_island", format!("no island {chosen}; get_uv_layout counts them")));
+    }
+    let (mut lo, mut hi) = ([f32::INFINITY; 2], [f32::NEG_INFINITY; 2]);
+    for &c in &corners {
+        let p = object.mesh.uvs[c];
+        lo = [lo[0].min(p[0]), lo[1].min(p[1])];
+        hi = [hi[0].max(p[0]), hi[1].max(p[1])];
+    }
+    let centre = [(lo[0] + hi[0]) * 0.5, (lo[1] + hi[1]) * 0.5];
+    let (sin, cos) = (degrees.to_radians() as f32).sin_cos();
+    let k = scale as f32;
+    let mut mesh = object.mesh.clone();
+    for &c in &corners {
+        let p = mesh.uvs[c];
+        let (x, y) = ((p[0] - centre[0]) * k, (p[1] - centre[1]) * k);
+        mesh.uvs[c] = [centre[0] + x * cos - y * sin + translate[0], centre[1] + x * sin + y * cos + translate[1]];
+    }
+    let mask = object.mask.clone();
+    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    object.maps = None;
+    let after = summary(object);
+    s.history.push(Edit::Topology { label: "Move UV island".into(), object: id, mesh: old_mesh, mask: old_mask });
+    Ok(json!({"object": after, "island": chosen, "corners": corners.len()}))
+}
+
+/// Packs the UV islands back into the unit square, keeping their shapes and turns and their sizes relative to each
+/// other (after islands were moved or scaled by hand). One undo step.
+pub(crate) fn uv_pack(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let object = s.scene.get_mut(id).expect("checked");
+    need_uvs(&object.mesh)?;
+    let island = fsc_paint::islands(&object.mesh);
+    let count = island.iter().copied().max().map_or(0, |m| m as usize + 1);
+    let mut charts: Vec<Vec<usize>> = vec![Vec::new(); count];
+    for c in 0..object.mesh.indices.len() {
+        charts[island[c / 3] as usize].push(c);
+    }
+    let mut coords: Vec<glam::Vec2> = object.mesh.uvs.iter().map(|&p| glam::Vec2::from_array(p)).collect();
+    let coverage = fsc_paint::pack(&charts, &mut coords, 4.0 / 1024.0);
+    let mut mesh = object.mesh.clone();
+    mesh.uvs = coords.iter().map(|q| q.to_array()).collect();
+    let mask = object.mask.clone();
+    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    object.maps = None;
+    let after = summary(object);
+    s.history.push(Edit::Topology { label: "Pack UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
+    Ok(json!({"object": after, "islands": count, "coverage": coverage}))
 }
 
 pub(crate) fn bake_schema() -> Value {
@@ -99,13 +268,17 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
         mr_png: png(&baked.mr)?,
         normal_png: png(&baked.normal)?,
         displacement_exr: fsc_paint::exr_float(size, &baked.displacement),
+        emissive_png: if baked.glows { png(&baked.emissive)? } else { Vec::new() },
         source: source_name.clone(),
     };
     let (lo, hi) = baked.displacement.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(a, b), &d| (a.min(d), b.max(d)));
     let mut written = Vec::new();
     if let Some(dir) = args.get("path").and_then(Value::as_str) {
         let stem: String = object.name.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
-        for (suffix, bytes) in [("color.png", &maps.color_png), ("roughness_metal.png", &maps.mr_png), ("normal.png", &maps.normal_png), ("displacement.exr", &maps.displacement_exr)] {
+        for (suffix, bytes) in [("color.png", &maps.color_png), ("roughness_metal.png", &maps.mr_png), ("normal.png", &maps.normal_png), ("displacement.exr", &maps.displacement_exr), ("emissive.png", &maps.emissive_png)] {
+            if bytes.is_empty() {
+                continue;
+            }
             let file = Path::new(dir).join(format!("{stem}_{suffix}"));
             std::fs::write(&file, bytes).map_err(|e| CommandError::new("io_failed", format!("could not write {}: {e}", file.display())))?;
             written.push(file.display().to_string());

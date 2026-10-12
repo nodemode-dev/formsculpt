@@ -105,9 +105,15 @@ fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
                 add(&mut bin, &d, 3, true)
             })
             .collect();
+        // Vertex colours carry opacity as alpha when any of it is see-through.
         let color = (o.mesh.has_paint() && o.maps.is_none()).then(|| {
-            let rgb: Vec<f32> = src.iter().flat_map(|&v| [o.mesh.paint[v][0], o.mesh.paint[v][1], o.mesh.paint[v][2]]).collect();
-            add(&mut bin, &rgb, 3, false)
+            if o.mesh.paint.iter().any(|p| p[5] < 0.999) {
+                let rgba: Vec<f32> = src.iter().flat_map(|&v| [o.mesh.paint[v][0], o.mesh.paint[v][1], o.mesh.paint[v][2], o.mesh.paint[v][5]]).collect();
+                add(&mut bin, &rgba, 4, false)
+            } else {
+                let rgb: Vec<f32> = src.iter().flat_map(|&v| [o.mesh.paint[v][0], o.mesh.paint[v][1], o.mesh.paint[v][2]]).collect();
+                add(&mut bin, &rgb, 3, false)
+            }
         });
         let uv = ex.as_ref().map(|e| {
             let flat: Vec<f32> = e.uv.iter().flatten().copied().collect();
@@ -161,6 +167,19 @@ fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
             };
             let (c, mr, nm) = (texture(&maps.color_png), texture(&maps.mr_png), texture(&maps.normal_png));
             material = json!({"name": o.name, "pbrMetallicRoughness": {"baseColorTexture": {"index": c}, "metallicRoughnessTexture": {"index": mr}, "metallicFactor": 1.0, "roughnessFactor": 1.0}, "normalTexture": {"index": nm}});
+            if !maps.emissive_png.is_empty() {
+                material["emissiveTexture"] = json!({"index": texture(&maps.emissive_png)});
+                material["emissiveFactor"] = json!([1.0, 1.0, 1.0]);
+            }
+        } else if o.mesh.has_paint() {
+            // Without baked maps glow cannot vary across the surface in glTF: the mean glow colour is the factor.
+            let glow = o.mesh.paint.iter().fold([0.0f32; 3], |a, p| [a[0] + p[0] * p[6], a[1] + p[1] * p[6], a[2] + p[2] * p[6]]).map(|x| x / n);
+            if glow.iter().any(|&g| g > 1e-3) {
+                material["emissiveFactor"] = json!(glow);
+            }
+        }
+        if o.mesh.has_paint() && o.mesh.paint.iter().any(|p| p[5] < 0.999) {
+            material["alphaMode"] = json!("BLEND");
         }
         materials.push(material);
         if let Some(c) = color {
@@ -299,7 +318,8 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
         let mesh = &doc["meshes"][mi as usize];
         let mut positions: Vec<[f32; 3]> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
-        let mut colors: Vec<[f32; 3]> = Vec::new();
+        // Colour and alpha (opacity) per vertex.
+        let mut colors: Vec<[f32; 4]> = Vec::new();
         let mut any_color = false;
         for prim in mesh["primitives"].as_array().cloned().unwrap_or_default() {
             if prim["mode"].as_u64().unwrap_or(4) != 4 {
@@ -321,10 +341,10 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
                         _ => 1.0,
                     };
                     let vals = accessor(&doc, &buffers, ca as usize)?;
-                    colors.extend(vals.chunks_exact(comps).map(|c| [(c[0] / scale) as f32, (c[1] / scale) as f32, (c[2] / scale) as f32]));
+                    colors.extend(vals.chunks_exact(comps).map(|c| [(c[0] / scale) as f32, (c[1] / scale) as f32, (c[2] / scale) as f32, if comps == 4 { (c[3] / scale) as f32 } else { 1.0 }]));
                     any_color = true;
                 }
-                None => colors.extend(std::iter::repeat([0.8f32; 3]).take(p.len() / 3)),
+                None => colors.extend(std::iter::repeat([0.8f32, 0.8, 0.8, 1.0]).take(p.len() / 3)),
             }
             let count = (p.len() / 3) as u32;
             match prim["indices"].as_u64() {
@@ -344,7 +364,14 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
             let name = node["name"].as_str().or(mesh["name"].as_str()).unwrap_or("Imported").to_string();
             let mut mesh = Mesh::new(positions, indices);
             if any_color && colors.len() == mesh.vertex_count() {
-                mesh.paint = colors.into_iter().map(crate::bin::with_color).collect();
+                mesh.paint = colors
+                    .into_iter()
+                    .map(|c| {
+                        let mut p = crate::bin::with_color([c[0], c[1], c[2]]);
+                        p[5] = c[3].clamp(0.0, 1.0);
+                        p
+                    })
+                    .collect();
             }
             out.push((name, mesh));
         }

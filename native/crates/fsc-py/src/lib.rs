@@ -66,12 +66,15 @@ impl Engine {
         let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let object = session.scene.get(id).ok_or_else(|| PyKeyError::new_err(format!("no object {id}")))?;
         Ok(object.maps.as_ref().map(|m| {
-            let files = vec![
+            let mut files = vec![
                 ("color.png".to_string(), PyBytes::new(py, &m.color_png)),
                 ("roughness_metal.png".to_string(), PyBytes::new(py, &m.mr_png)),
                 ("normal.png".to_string(), PyBytes::new(py, &m.normal_png)),
                 ("displacement.exr".to_string(), PyBytes::new(py, &m.displacement_exr)),
             ];
+            if !m.emissive_png.is_empty() {
+                files.push(("emissive.png".to_string(), PyBytes::new(py, &m.emissive_png)));
+            }
             (object.name.clone(), files)
         }))
     }

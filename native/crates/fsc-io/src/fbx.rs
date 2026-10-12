@@ -567,7 +567,7 @@ pub fn read_fbx(bytes: &[u8]) -> Result<Vec<Named>, String> {
                 }
             }
             if sum.iter().any(|s| s[3] > 0.0) {
-                mesh.paint = sum.iter().map(|s| if s[3] > 0.0 { [s[0] / s[3], s[1] / s[3], s[2] / s[3], 0.5, 0.0] } else { fsc_core::DEFAULT_PAINT }).collect();
+                mesh.paint = sum.iter().map(|s| if s[3] > 0.0 { fsc_core::paint_from5(&[s[0] / s[3], s[1] / s[3], s[2] / s[3], 0.5, 0.0]) } else { fsc_core::DEFAULT_PAINT }).collect();
             }
         }
         let mesh = weld(mesh);

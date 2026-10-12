@@ -4,11 +4,13 @@
 //! below. The stack counts only while every array matches the vertex count; a topology change flattens it, and the
 //! composite already in `Mesh.paint` carries on.
 
-use crate::mesh::{Paint, DEFAULT_PAINT};
+use crate::mesh::{paint_channel, Paint, DEFAULT_PAINT, PAINT_CHANNELS, PAINT_LEN};
 use crate::scene::Object;
 
-/// Colour, roughness, metalness and coverage.
-pub type LayerPaint = [f32; 6];
+/// The paint floats (colour, roughness, metalness, opacity, emissive) and then the coverage.
+pub type LayerPaint = [f32; PAINT_LEN + 1];
+/// Where a layer's coverage sits in its [`LayerPaint`].
+pub const COVER: usize = PAINT_LEN;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Blend {
@@ -92,15 +94,17 @@ impl PaintLayers {
                 continue;
             }
             let d = layer.data[v];
-            let a = (d[5] * layer.opacity).clamp(0.0, 1.0);
+            let a = (d[COVER] * layer.opacity).clamp(0.0, 1.0);
             if a <= 0.0 {
                 continue;
             }
             for c in 0..3 {
                 out[c] += (layer.blend.apply(out[c], d[c]) - out[c]) * a;
             }
-            out[3] += (d[3] - out[3]) * a;
-            out[4] += (d[4] - out[4]) * a;
+            // Roughness, metalness, opacity and emissive mix normally whatever the blend mode.
+            for c in 3..PAINT_LEN {
+                out[c] += (d[c] - out[c]) * a;
+            }
         }
         out
     }
@@ -141,15 +145,15 @@ impl Object {
     }
 
     /// Paints toward `target` by `w` in the active paint target (the active layer, or the base), for the channels
-    /// chosen (colour, roughness, metalness); `erase` lowers a layer's coverage instead. Without layers it paints
-    /// `Mesh.paint` directly. The caller recomposites (or not, without layers).
-    pub fn paint_vertex(&mut self, v: u32, target: Paint, channels: [bool; 3], w: f32, erase: bool) {
+    /// chosen (colour, roughness, metalness, opacity, emissive); `erase` lowers a layer's coverage instead. Without
+    /// layers it paints `Mesh.paint` directly. The caller recomposites (or not, without layers).
+    pub fn paint_vertex(&mut self, v: u32, target: Paint, channels: [bool; PAINT_CHANNELS], w: f32, erase: bool) {
         let i = v as usize;
         if !self.layered() {
             self.mesh.ensure_paint();
             let cur = &mut self.mesh.paint[i];
             for (c, value) in cur.iter_mut().enumerate() {
-                if channels[if c < 3 { 0 } else { c - 2 }] {
+                if channels[paint_channel(c)] {
                     *value += (target[c] - *value) * w;
                 }
             }
@@ -159,7 +163,7 @@ impl Object {
             None => {
                 let cur = &mut self.paint_layers.base[i];
                 for (c, value) in cur.iter_mut().enumerate() {
-                    if channels[if c < 3 { 0 } else { c - 2 }] {
+                    if channels[paint_channel(c)] {
                         *value += (target[c] - *value) * w;
                     }
                 }
@@ -168,19 +172,19 @@ impl Object {
                 let start = self.paint_layers.below(i, Some(at));
                 let d = &mut self.paint_layers.list[at].data[i];
                 if erase {
-                    d[5] = (d[5] - w).max(0.0);
+                    d[COVER] = (d[COVER] - w).max(0.0);
                     return;
                 }
-                if d[5] <= 1e-6 {
+                if d[COVER] <= 1e-6 {
                     // An untouched vertex starts from what shows through, so painting one channel keeps the others.
-                    d[..5].copy_from_slice(&start);
+                    d[..PAINT_LEN].copy_from_slice(&start);
                 }
-                for c in 0..5 {
-                    if channels[if c < 3 { 0 } else { c - 2 }] {
+                for c in 0..PAINT_LEN {
+                    if channels[paint_channel(c)] {
                         d[c] += (target[c] - d[c]) * w;
                     }
                 }
-                d[5] += (1.0 - d[5]) * w;
+                d[COVER] += (1.0 - d[COVER]) * w;
             }
         }
     }
@@ -193,8 +197,9 @@ impl Object {
         }
         Some(match self.paint_layers.active {
             None => {
-                let b = self.paint_layers.base[i];
-                [b[0], b[1], b[2], b[3], b[4], 1.0]
+                let mut out = [1.0; PAINT_LEN + 1];
+                out[..PAINT_LEN].copy_from_slice(&self.paint_layers.base[i]);
+                out
             }
             Some(at) => self.paint_layers.list[at].data[i],
         })
@@ -205,7 +210,7 @@ impl Object {
         match target {
             None => {
                 if let Some(b) = self.paint_layers.base.get_mut(i) {
-                    b.copy_from_slice(&value[..5]);
+                    b.copy_from_slice(&value[..PAINT_LEN]);
                 }
             }
             Some(at) => {

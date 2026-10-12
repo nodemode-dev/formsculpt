@@ -71,6 +71,8 @@ pub struct Maps {
     pub mr_png: Vec<u8>,
     pub normal_png: Vec<u8>,
     pub displacement_exr: Vec<u8>,
+    /// The glow map (paint colour times emissive), empty when nothing glows.
+    pub emissive_png: Vec<u8>,
     pub source: String,
 }
 

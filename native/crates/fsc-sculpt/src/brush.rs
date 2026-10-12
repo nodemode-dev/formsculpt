@@ -120,8 +120,9 @@ pub struct BrushSettings {
     pub symmetry: Symmetry,
     pub dyntopo: Option<f32>,
     pub dyntopo_size: Option<f32>,
-    pub paint: [f32; 5],
-    pub paint_channels: [bool; 3],
+    pub paint: fsc_core::Paint,
+    /// Which channels the paint brush paints: colour, roughness, metalness, opacity, emissive.
+    pub paint_channels: [bool; fsc_core::PAINT_CHANNELS],
     /// Noise brush: feature size in world units (0 means a fifth of the radius).
     pub noise_scale: f32,
     /// Alpha orientation: the world direction the alpha's top points toward (the view's up in the window), turned by
@@ -151,8 +152,8 @@ impl Default for BrushSettings {
             symmetry: Symmetry::default(),
             dyntopo: None,
             dyntopo_size: None,
-            paint: [0.8, 0.2, 0.2, 0.5, 0.0],
-            paint_channels: [true, false, false],
+            paint: [0.8, 0.2, 0.2, 0.5, 0.0, 1.0, 0.0],
+            paint_channels: [true, false, false, false, false],
             noise_scale: 0.0,
             alpha_up: [0.0, 1.0, 0.0],
             alpha_angle: 0.0,

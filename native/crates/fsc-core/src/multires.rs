@@ -55,9 +55,9 @@ impl Stencil {
     pub fn apply_paint(&self, src: &[Paint]) -> Vec<Paint> {
         (0..self.len())
             .map(|i| {
-                let mut out = [0.0f32; 5];
+                let mut out = [0.0f32; crate::mesh::PAINT_LEN];
                 for (s, w) in self.row(i) {
-                    for k in 0..5 {
+                    for k in 0..crate::mesh::PAINT_LEN {
                         out[k] += src[s][k] * w;
                     }
                 }

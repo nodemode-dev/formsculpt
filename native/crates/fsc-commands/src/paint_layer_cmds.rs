@@ -1,7 +1,7 @@
 //! Paint layer commands: add, change (name, blend, opacity, visibility, order), select, delete, merge down and
 //! flatten. Each is one undo step that swaps the object's whole paint stack and composite.
 
-use fsc_core::{Blend, ObjectId, PaintLayer};
+use fsc_core::{Blend, ObjectId, PaintLayer, COVER, PAINT_LEN};
 use serde_json::{json, Value};
 
 use crate::history::Edit;
@@ -80,7 +80,7 @@ pub(crate) fn add(s: &mut Session, args: &Value) -> Result<Value, CommandError> 
         let name = name.unwrap_or_else(|| format!("Paint {}", n + 1));
         // New layers go above the active one (on top when the base is active).
         let at = o.paint_layers.active.map_or(n, |a| a + 1);
-        o.paint_layers.list.insert(at, PaintLayer { name, blend, opacity, visible: true, data: vec![[0.0; 6]; vc] });
+        o.paint_layers.list.insert(at, PaintLayer { name, blend, opacity, visible: true, data: vec![[0.0; PAINT_LEN + 1]; vc] });
         o.paint_layers.active = Some(at);
         Ok(())
     })
@@ -176,8 +176,8 @@ pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError
             // where either covered.
             let under = i - 1;
             for v in 0..vc {
-                let a_below = o.paint_layers.list[under].data[v][5] * o.paint_layers.list[under].opacity;
-                let a_this = o.paint_layers.list[i].data[v][5] * o.paint_layers.list[i].opacity;
+                let a_below = o.paint_layers.list[under].data[v][COVER] * o.paint_layers.list[under].opacity;
+                let a_this = o.paint_layers.list[i].data[v][COVER] * o.paint_layers.list[i].opacity;
                 if a_below <= 0.0 && a_this <= 0.0 {
                     continue;
                 }
@@ -185,11 +185,11 @@ pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError
                 let end = o.paint_layers.below(v, Some(i + 1));
                 let cover = 1.0 - (1.0 - a_below.min(1.0)) * (1.0 - a_this.min(1.0));
                 // Coverage `cover` over `start` must give `end`: solve for the layer's value.
-                let mut d = [0.0; 6];
-                for c in 0..5 {
+                let mut d = [0.0; PAINT_LEN + 1];
+                for c in 0..PAINT_LEN {
                     d[c] = if cover > 1e-4 { (start[c] + (end[c] - start[c]) / cover).clamp(0.0, 1.0) } else { end[c] };
                 }
-                d[5] = cover;
+                d[COVER] = cover;
                 o.paint_layers.list[under].data[v] = d;
             }
             let l = &mut o.paint_layers.list[under];

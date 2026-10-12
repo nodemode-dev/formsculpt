@@ -80,6 +80,7 @@ pub fn compacted(positions: &[[f32; 3]], colors: &[[f32; 3]], faces: &[u32]) -> 
 }
 
 pub fn with_color(c: [f32; 3]) -> Paint {
-    let d = fsc_core::DEFAULT_PAINT;
-    [c[0], c[1], c[2], d[3], d[4]]
+    let mut d = fsc_core::DEFAULT_PAINT;
+    d[..3].copy_from_slice(&c);
+    d
 }

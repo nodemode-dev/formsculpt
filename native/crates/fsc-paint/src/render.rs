@@ -186,7 +186,7 @@ fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading_in: Shading
     let t = &o.mesh.indices[s.triangle as usize * 3..s.triangle as usize * 3 + 3];
     let mut n = Vec3::ZERO;
     let mut p = Vec3::ZERO;
-    let mut paint = [0.0f32; 5];
+    let mut paint = [0.0f32; fsc_core::PAINT_LEN];
     let mut mask = 0.0;
     for (k, &v) in t.iter().enumerate() {
         let v = v as usize;
@@ -247,6 +247,10 @@ fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading_in: Shading
             (c / (c + Vec3::ONE)).powf(1.0 / 2.2)
         }
     };
+    // Emissive paint glows in its own colour whatever the light.
+    if painted && paint[6] > 0.0 {
+        col = col.lerp(albedo.powf(1.0 / 2.2) * 1.15, paint[6].clamp(0.0, 1.0));
+    }
     col = col.lerp(col * Vec3::new(0.32, 0.34, 0.4), mask.clamp(0.0, 1.0) * 0.85);
     Some(col)
 }

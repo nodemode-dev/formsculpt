@@ -19,6 +19,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "triangles": o.mesh.triangle_count(),
         "masked_vertices": o.mask.iter().filter(|&&m| m > 0.5).count(),
         "groups": crate::group_cmds::group_count(&o.mesh),
+        "uvs": o.mesh.uvs.len() == o.mesh.indices.len() && !o.mesh.indices.is_empty(),
         "hidden_faces": if o.mesh.has_hidden() { o.mesh.hidden.iter().filter(|&&h| h).count() } else { 0 },
         "revision": o.revision,
         "level": o.levels().0,

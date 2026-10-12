@@ -64,13 +64,34 @@ pub struct Mesh {
     pub hidden: Vec<bool>,
 }
 
-pub type Paint = [f32; 5];
+/// Floats per painted vertex: red, green, blue, roughness, metalness, opacity, emissive.
+pub const PAINT_LEN: usize = 7;
+/// Paint channels as painted: colour (the three colour floats together), roughness, metalness, opacity, emissive.
+pub const PAINT_CHANNELS: usize = 5;
+/// Paint per vertex in that order; projects from before 0.26.0 hold five floats and open opaque without glow.
+pub type Paint = [f32; PAINT_LEN];
 
-pub const DEFAULT_PAINT: Paint = [0.8, 0.8, 0.8, 0.5, 0.0];
+pub const DEFAULT_PAINT: Paint = [0.8, 0.8, 0.8, 0.5, 0.0, 1.0, 0.0];
+
+/// The channel a paint float belongs to (0 colour, then roughness, metalness, opacity, emissive).
+pub fn paint_channel(float: usize) -> usize {
+    if float < 3 {
+        0
+    } else {
+        float - 2
+    }
+}
+
+/// Paint from its first five floats (colour, roughness, metalness), opaque and without glow.
+pub fn paint_from5(p: &[f32]) -> Paint {
+    let mut out = DEFAULT_PAINT;
+    out[..5].copy_from_slice(&p[..5]);
+    out
+}
 
 pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
     let mut out = a;
-    for k in 0..5 {
+    for k in 0..PAINT_LEN {
         out[k] = a[k] + (b[k] - a[k]) * t;
     }
     out

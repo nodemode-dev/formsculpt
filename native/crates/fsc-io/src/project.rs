@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read, Write};
 
-use fsc_core::{Blend, Layer, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, Stencil};
+use fsc_core::{Blend, Layer, LayerPaint, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, Stencil, COVER, PAINT_LEN};
 use serde_json::{json, Value};
 
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
@@ -57,6 +57,9 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
                 "normal": w.put(&format!("{dir}/maps/normal.png"), &m.normal_png)?,
                 "displacement": w.put(&format!("{dir}/maps/displacement.exr"), &m.displacement_exr)?,
             });
+            if !m.emissive_png.is_empty() {
+                entry["maps"]["emissive"] = json!(w.put(&format!("{dir}/maps/emissive.png"), &m.emissive_png)?);
+            }
         }
         if let Some(m) = &o.multires {
             let mut levels = Vec::new();
@@ -137,12 +140,34 @@ impl Reader {
         if !v.is_string() {
             return Ok(Vec::new());
         }
-        let flat = self.f32(v)?;
-        if flat.len() != n * 5 {
-            return Err("a paint buffer does not match its mesh".into());
-        }
-        Ok(flat.chunks_exact(5).map(|c| [c[0], c[1], c[2], c[3], c[4]]).collect())
+        paint_floats(&self.f32(v)?, n).ok_or_else(|| "a paint buffer does not match its mesh".into())
     }
+}
+
+/// Paint from a flat buffer of `n` vertices: seven floats each, or five from projects before 0.26.0 (opaque, no glow).
+fn paint_floats(flat: &[f32], n: usize) -> Option<Vec<Paint>> {
+    if flat.len() == n * PAINT_LEN {
+        Some(flat.chunks_exact(PAINT_LEN).map(|c| std::array::from_fn(|k| c[k])).collect())
+    } else if flat.len() == n * 5 {
+        Some(flat.chunks_exact(5).map(fsc_core::paint_from5).collect())
+    } else {
+        None
+    }
+}
+
+/// A paint layer's data: the paint floats and a coverage per vertex, in either layout `paint_floats` reads.
+fn layer_floats(flat: &[f32], n: usize) -> Option<Vec<LayerPaint>> {
+    let stride = if flat.len() == n * (PAINT_LEN + 1) { PAINT_LEN } else if flat.len() == n * 6 { 5 } else { return None };
+    Some(
+        flat.chunks_exact(stride + 1)
+            .map(|c| {
+                let mut out = [0.0; PAINT_LEN + 1];
+                out[..PAINT_LEN].copy_from_slice(&if stride == PAINT_LEN { std::array::from_fn(|k| c[k]) } else { fsc_core::paint_from5(c) });
+                out[COVER] = c[stride];
+                out
+            })
+            .collect(),
+    )
 }
 
 fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> {
@@ -196,6 +221,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 mr_png: r.raw(&m["roughness_metal"])?,
                 normal_png: r.raw(&m["normal"])?,
                 displacement_exr: r.raw(&m["displacement"])?,
+                emissive_png: if m["emissive"].is_string() { r.raw(&m["emissive"])? } else { Vec::new() },
             }),
             None => None,
         };
@@ -258,27 +284,21 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         }
         if let Some(pl) = e.get("paint_layers").filter(|l| l.is_object()) {
             let vc = o.mesh.vertex_count();
-            let base = r.f32(&pl["base"])?;
-            if base.len() != vc * 5 {
-                return Err("the paint base does not match its object".into());
-            }
+            let base = paint_floats(&r.f32(&pl["base"])?, vc).ok_or("the paint base does not match its object")?;
             let mut list = Vec::new();
             for le in pl["list"].as_array().cloned().unwrap_or_default() {
-                let data = r.f32(&le["data"])?;
-                if data.len() != vc * 6 {
-                    return Err("a paint layer does not match its object".into());
-                }
+                let data = layer_floats(&r.f32(&le["data"])?, vc).ok_or("a paint layer does not match its object")?;
                 list.push(PaintLayer {
                     name: le["name"].as_str().unwrap_or("Paint").chars().take(64).collect(),
                     blend: le["blend"].as_str().and_then(Blend::parse).unwrap_or(Blend::Normal),
                     opacity: le["opacity"].as_f64().unwrap_or(1.0).clamp(0.0, 1.0) as f32,
                     visible: le["visible"].as_bool().unwrap_or(true),
-                    data: data.chunks_exact(6).map(|c| [c[0], c[1], c[2], c[3], c[4], c[5]]).collect(),
+                    data,
                 });
             }
             if !list.is_empty() {
                 let active = pl["active"].as_u64().map(|a| a as usize).filter(|&a| a < list.len());
-                o.paint_layers = PaintLayers { list, active, base: base.chunks_exact(5).map(|c| [c[0], c[1], c[2], c[3], c[4]]).collect() };
+                o.paint_layers = PaintLayers { list, active, base };
                 o.composite_paint(None);
             }
         }
