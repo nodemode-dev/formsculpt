@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core import config
 from app.core.isolation import CrossOriginIsolation
-from app.routers import engine, mcp, nodemode, system
+from app.routers import engine, mcp, nodemode, plugins, system
 from app.services import autosave
 
 
@@ -25,6 +25,7 @@ app.include_router(system.router, prefix="/api")
 app.include_router(engine.router, prefix="/api/engine")
 app.include_router(nodemode.router)
 app.include_router(mcp.router)
+app.include_router(plugins.router, prefix="/api")
 
 dist = config.dist_dir()
 if dist is not None:
