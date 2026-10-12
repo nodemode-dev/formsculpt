@@ -133,12 +133,20 @@ def test_path_render_and_substance_routes(client, tmp_path, monkeypatch):
     r = client.get("/api/engine/view", params={"render": "path", "samples": 4, "width": 64, "height": 64})
     assert r.status_code == 200 and r.content[:8] == b"\x89PNG\r\n\x1a\n"
     assert client.get("/api/engine/view", params={"render": "raytrace"}).status_code == 422
+    ao = client.get("/api/engine/view", params={"render": "path", "samples": 2, "width": 64, "height": 64, "pass": "ao", "aperture": 0.05})
+    assert ao.status_code == 200 and ao.content != r.content
+    assert client.get("/api/engine/view", params={"render": "path", "pass": "albedo"}).status_code == 422
     monkeypatch.setenv("FSC_SUBSTANCE_DIR", str(tmp_path))
     assert client.post("/api/engine/substance", json={"id": s}).json()["error"]["code"] == "no_uvs"
     call(client, "uv_unwrap", id=s)
     out = client.post("/api/engine/substance", json={"id": s}).json()
     assert out["ok"] and (tmp_path / "Sphere" / "Sphere_low.obj").exists()
     assert client.post("/api/engine/substance", json={"id": 999}).status_code == 404
+    # Painter exports back into the package folder; sync reads it onto the paint.
+    assert client.post("/api/engine/substance/sync", json={"id": s}).json()["error"]["code"] == "io_failed"
+    (tmp_path / "Sphere" / "Sphere_BaseColor.png").write_bytes(r.content)
+    synced = client.post("/api/engine/substance/sync", json={"id": s}).json()
+    assert synced["ok"] and synced["result"]["vertices_painted"] > 100
 
 
 def test_usda_export_route(client):
