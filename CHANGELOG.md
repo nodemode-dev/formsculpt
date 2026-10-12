@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.27.0 · 2026-10-12
+
+### Added
+
+- The browser engine: the whole engine (all 102 commands, live strokes, files) built to WebAssembly as `fsc-wasm` (`./formsculptor engine wasm`, 2.4 MB). The window uses it when no engine service answers, or at `?engine=wasm`, and then needs no service at all; agents, plugins, autosave, the bridge and NodeMode still need the service.
+- USD as text: `.usda` export (a Mesh prim per object with colour, opacity and UVs) and import, checked against Pixar's own library.
+- Tests: the browser engine in Node (`frontend/e2e/wasm_smoke.mjs`, run by `./formsculptor test engine`), its C surface natively, USD (engine 33 and the browser engine's 12 checks, service 16). CI builds the browser engine.
+
+### Changed
+
+- Engine threads are the `parallel` feature of fsc-commands (on for the service and tests, off in the browser).
+- Live strokes, the mesh payload and the maps zip moved from the Python module into `fsc_commands::live`, shared by both engines.
+
 ## 0.26.0 · 2026-10-12
 
 ### Added
