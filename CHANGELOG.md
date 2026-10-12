@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.22.0 · 2026-10-12
+
+### Added
+
+- Tests, now that the build is stable: 21 engine tests through the command registry (`native/crates/fsc-commands/tests`), 10 service tests on the FastAPI app (`backend/tests`), and a window smoke test (`frontend/e2e/smoke.py`). `./formsculptor test [all|engine|service|e2e]` runs them; CI runs the engine and service suites.
+- Linux desktop bundles (AppImage, deb, rpm) rebuilt at this version and launched on their own bundled engine.
+
+### Fixed
+
+- CI's shell syntax check ran `bash -n` over the Python files in `setup/` and failed; it now skips them.
+
 ## 0.21.0 · 2026-10-12
 
 ### Added

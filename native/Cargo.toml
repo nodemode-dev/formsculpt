@@ -11,7 +11,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.21.0"
+version = "0.22.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["nodemode-ai"]
@@ -36,3 +36,7 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 1
+
+# The suites remesh and render; optimised dependencies keep them to seconds.
+[profile.test]
+opt-level = 2
