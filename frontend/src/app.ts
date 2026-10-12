@@ -130,6 +130,9 @@ interface Shell {
   latticePoints: SVGPathElement;
   referencePlace: HTMLSelectElement;
   arrayLinked: HTMLInputElement;
+  vdmPick: HTMLSelectElement;
+  textInput: HTMLInputElement;
+  fuseBlend: HTMLInputElement;
   pluginPick: HTMLSelectElement;
   pluginButtons: HTMLButtonElement[];
   projectOpacity: HTMLInputElement;
@@ -200,10 +203,13 @@ const BRUSHES: [string, string][] = [
   ['mask_group', 'Mask group'],
   ['hide_group', 'Hide group'],
   ['insert', 'Insert'],
+  ['vdm', 'VDM stamp'],
+  ['cut', 'Lasso cut'],
+  ['trim_shape', 'Lasso trim'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette', 'cut', 'trim_shape']);
 
 /** A #rrggbb colour as linear 0..1 light, normalised so its brightest channel is 1 (strength is set apart). */
 function hexToLinear(hex: string): [number, number, number] {
@@ -235,7 +241,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -454,8 +460,10 @@ function buildShell(root: HTMLElement): Shell {
   const insertSize = input('number', { min: '0.01', max: '10', step: '0.05', value: '0.2', 'aria-label': 'Insert size' });
   const arrayCount = input('number', { min: '2', max: '200', value: '6', 'aria-label': 'Array copies' });
   const arrayLinked = input('checkbox', { 'aria-label': 'Linked copies' });
+  const vdmPick = choices('Stamp map', [['horn', 'Horn'], ['hook', 'Hook'], ['mushroom', 'Mushroom']]);
+  const textInput = input('text', { maxlength: '160', value: 'FORM', 'aria-label': 'Text', spellcheck: 'false' });
   const buildFields = el('div', 'fields');
-  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Linked copies', arrayLinked));
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Linked copies', arrayLinked), field('Stamp map', vdmPick), field('Text', textInput));
   panel.append(buildFields);
   const buildGrid = el('div', 'add-grid two');
   const buildButtons = (
@@ -468,6 +476,9 @@ function buildShell(root: HTMLElement): Shell {
       ['array_curve', 'Array on curve'],
       ['shadow_box', 'Build shadow box'],
       ['clear_outlines', 'Clear outlines'],
+      ['extrude_outline', 'Extrude outline'],
+      ['vdm_capture', 'Capture VDM'],
+      ['text', 'Build text'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -684,7 +695,8 @@ function buildShell(root: HTMLElement): Shell {
   const deformAngle = input('number', { min: '-720', max: '720', value: '45', 'aria-label': 'Deform angle' });
   const objectFields = el('div', 'fields');
   const folderName = input('text', { maxlength: '80', value: 'Folder 1', 'aria-label': 'Folder name', spellcheck: 'false' });
-  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName));
+  const fuseBlend = input('number', { min: '0', max: '10', step: '0.02', value: '0', 'aria-label': 'Boolean blend' });
+  objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName), field('Boolean blend', fuseBlend));
   panel.append(objectFields);
 
   panel.append(el('h2', 'gap', 'Layers'));
@@ -891,7 +903,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons, arrayLinked };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
 }
 
 class SceneView {
@@ -1257,6 +1269,10 @@ class SceneView {
       await this.gizmoEnd();
       return;
     }
+    if (shape?.kind === 'cut' || shape?.kind === 'trim_shape') {
+      await this.cutEnd(shape.pts, shape.kind === 'trim_shape');
+      return;
+    }
     if (shape?.kind === 'silhouette') {
       this.silhouetteEnd(shape.pts);
       return;
@@ -1372,6 +1388,29 @@ class SceneView {
 
   /** Outlines for the shadow box, in world units: front (x, y), side (z, y), top (x, z). */
   private silhouettes: { front?: number[][]; side?: number[][]; top?: number[][] } = {};
+
+  /** Lasso cut or trim: the outline, taken onto the plane through the orbit centre facing the view, cut straight through the active object along the view. */
+  private async cutEnd(pts: [number, number][], keepInside: boolean): Promise<void> {
+    const id = this.scene.active;
+    if (id === null || pts.length < 3) {
+      this.note(keepInside ? 'Draw around the part to keep' : 'Draw around the part to cut away');
+      return;
+    }
+    const cam = this.viewport.camera;
+    const forward = normalize(sub(cam.target, cam.eye()));
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const step = Math.max(1, Math.floor(pts.length / 512));
+    const outline: Vec3[] = [];
+    for (let i = 0; i < pts.length; i += step) {
+      const ray = this.viewport.rayAtClient(rect.left + pts[i][0], rect.top + pts[i][1]);
+      if (!ray) continue;
+      const along = dot(ray.dir, forward);
+      if (Math.abs(along) < 1e-6) continue;
+      outline.push(add(ray.origin, scale(ray.dir, dot(sub(cam.target, ray.origin), forward) / along)));
+    }
+    const resolution = Math.max(32, Math.min(320, Number(this.shell.resolution.value) || 128));
+    await this.run('cut_shape', { id, outline, direction: forward, keep: keepInside ? 'inside' : 'outside', resolution });
+  }
 
   /** Stores a drawn outline as the front, side or top silhouette, by the axis the view looks along most. */
   private silhouetteEnd(pts: [number, number][]): void {
@@ -1886,7 +1925,11 @@ class SceneView {
     if (tool === 'mask_topo') await this.run('mask_topology', { id, point, distance: Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2), op });
     else if (tool === 'mask_group') await this.run('mask_by_group', { id, point, op });
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
-    else {
+    else if (tool === 'vdm') {
+      // As wide as the brush on screen; the alpha angle turns it, Ctrl presses it in.
+      const radius = Math.max(1e-4, Number(this.shell.radius.value) * wpp);
+      await this.run('vdm_stamp', { id, vdm: this.shell.vdmPick.value, point, normal: hit.result.normal, radius, angle: Number(this.shell.alphaAngle.value) || 0, strength: ctrl ? -1 : 1 });
+    } else {
       const kind = this.shell.insertKind.value;
       const size = Math.max(0.01, Math.min(10, Number(this.shell.insertSize.value) || 0.2));
       const args: Record<string, unknown> = { point, normal: hit.result.normal, size };
@@ -1983,6 +2026,38 @@ class SceneView {
     } else if (action === 'clear_outlines') {
       this.silhouettes = {};
       this.note('Outlines cleared');
+    } else if (action === 'extrude_outline') {
+      // The front outline drawn with the Silhouette tool, as a flat shape.
+      if (!this.silhouettes.front) {
+        this.note('Draw an outline with the Silhouette tool in the front view first');
+        return;
+      }
+      await this.run('extrude_shape', { outlines: [this.silhouettes.front], round: 0.02 });
+    } else if (action === 'text') {
+      const text = this.shell.textInput.value.trim();
+      if (!text) {
+        this.note('Type the text to build first');
+        return;
+      }
+      await this.run('text_mesh', { text });
+    } else if (action === 'vdm_capture') {
+      const id = this.scene.active;
+      if (id === null) {
+        this.note('Select a sculpted plane to capture first');
+        return;
+      }
+      const name = `Map ${this.shell.vdmPick.options.length - 2}`;
+      const reply = await dispatch<{ name: string }>('vdm_capture', { id, name });
+      if (!reply.ok) {
+        this.note(reply.error.message);
+        return;
+      }
+      const option = el('option', '', name);
+      option.value = name;
+      this.shell.vdmPick.append(option);
+      this.shell.vdmPick.value = name;
+      this.note(`${name} captured; stamp it with the VDM stamp tool`);
+      return;
     }
     if (first) this.frameActive();
   }
@@ -2184,7 +2259,7 @@ class SceneView {
       const others = this.scene.objects.map((o) => o.id).filter((x) => x !== id);
       const b = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
       if (b === null) this.note('Select the object to combine with first, then the one to keep');
-      else void this.run('boolean', { a: id, b, op: action, resolution: res });
+      else void this.run('boolean', { a: id, b, op: action, resolution: res, blend: Math.max(0, Math.min(10, Number(this.shell.fuseBlend.value) || 0)) });
     } else if (action === 'project') {
       const others = this.scene.objects.map((o) => o.id).filter((x) => x !== id);
       const source = this.previous !== null && others.includes(this.previous) ? this.previous : others.length === 1 ? others[0] : null;
