@@ -163,8 +163,9 @@ export async function postBody<T>(path: string, body: unknown): Promise<Reply<T>
   }
 }
 
-export async function fetchMesh(id: number): Promise<MeshBuffers | null> {
-  const response = await fetch(`/api/engine/mesh/${id}`, { cache: 'no-store' });
+/** An object's mesh; with `smooth` 1 to 3, a dynamic-subdivision preview of it for display (the sculpted mesh unchanged). */
+export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | null> {
+  const response = await fetch(`/api/engine/mesh/${id}${smooth > 0 ? `?smooth=${smooth}` : ''}`, { cache: 'no-store' });
   if (!response.ok) return null;
   const buffer = await response.arrayBuffer();
   const head = new DataView(buffer, 0, 20);

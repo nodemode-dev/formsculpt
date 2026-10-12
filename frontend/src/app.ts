@@ -102,6 +102,7 @@ interface Shell {
   alphaLoad: HTMLButtonElement;
   matcapInput: HTMLInputElement;
   shadeActive: HTMLInputElement;
+  smoothPick: HTMLSelectElement;
   keyAction: HTMLSelectElement;
   keyCombo: HTMLInputElement;
   keyButtons: HTMLButtonElement[];
@@ -768,7 +769,8 @@ function buildShell(root: HTMLElement): Shell {
   const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
   const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
   const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Panel on the left', panelLeft), field('Interface size', uiSize));
+  const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -935,7 +937,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
 }
 
 class SceneView {
@@ -979,6 +981,7 @@ class SceneView {
     applyReference();
     shell.referenceOpacity.addEventListener('input', applyReference);
     shell.referencePlace.addEventListener('change', applyReference);
+    shell.smoothPick.addEventListener('change', () => this.setSmoothPreview(Number(shell.smoothPick.value)));
     shell.referenceInput.addEventListener('change', () => {
       const file = shell.referenceInput.files?.[0];
       shell.referenceInput.value = '';
@@ -1045,9 +1048,13 @@ class SceneView {
       const row = (e.target as HTMLElement).closest('li');
       if (row?.dataset.done !== undefined) void this.run('history_go_to', { done: Number(row.dataset.done) });
     });
-    this.strokes.onUpdate = (u) => this.viewport.patchMesh(u);
+    // Under the smooth preview the drawn vertices are not the sculpted ones, so the stroke shows when it ends.
+    this.strokes.onUpdate = (u) => {
+      if (!this.smoothPreview) this.viewport.patchMesh(u);
+    };
     this.strokes.onEnd = (r) => {
-      if (r) this.viewport.renderer.setRevision(r.id, r.revision);
+      // Under the preview the revision stays behind, so the refresh fetches the smoothed result.
+      if (r && !this.smoothPreview) this.viewport.renderer.setRevision(r.id, r.revision);
       void this.refresh();
     };
     this.strokes.onError = (m) => this.note(m);
@@ -1065,7 +1072,8 @@ class SceneView {
         const id = this.scene.active;
         if (id === null) return;
         const action = b.dataset.action;
-        if (action === 'paint_clear' || action === 'uv_unwrap') void this.run(action, { id });
+        if (action === 'paint_clear') void this.run(action, { id });
+        else if (action === 'uv_unwrap') void this.unwrapUvs(id);
         else if (action === 'bake_maps') void this.bake(id);
         else if (action === 'maps') void this.download(`/api/engine/maps/${id}`, 'maps.zip');
         else if (action === 'project_view' || action === 'project_tile') {
@@ -2220,7 +2228,7 @@ class SceneView {
       return;
     }
     this.fetching.add(id);
-    void fetchMesh(id).then((mesh) => {
+    void fetchMesh(id, this.smoothPreview).then((mesh) => {
       if (mesh) this.viewport.setMesh(mesh);
       this.fetching.delete(id);
       if (this.again.delete(id)) this.refetch(id);
@@ -2299,7 +2307,7 @@ class SceneView {
   private async apply(next: SceneSummary): Promise<void> {
     for (const o of next.objects) {
       if (o.visible && !this.viewport.renderer.has(o.id, o.revision)) {
-        const mesh = await fetchMesh(o.id);
+        const mesh = await fetchMesh(o.id, this.smoothPreview);
         if (mesh) this.viewport.setMesh(mesh);
       }
     }
@@ -2549,7 +2557,15 @@ class SceneView {
     if (reply.ok) this.frameActive();
   }
 
-  /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
+  /** Dynamic subdivision levels for display (0 off); the sculpted meshes are not changed. */
+  private smoothPreview = 0;
+
+  private setSmoothPreview(levels: number): void {
+    this.smoothPreview = levels;
+    for (const o of this.scene.objects) if (o.visible) this.refetch(o.id);
+    this.note(levels ? `Showing ${levels} level${levels > 1 ? 's' : ''} of smooth subdivision; the mesh you sculpt is unchanged` : '');
+  }
+
   private spaceMouse: SpaceMouse | null = null;
 
   /** Connects a 3Dconnexion device over WebHID; its cap then pans, zooms and turns the view. */
@@ -2642,6 +2658,7 @@ class SceneView {
     return args;
   }
 
+  /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
   private async loadPlugins(): Promise<void> {
     let list: PluginInfo[] = [];
     try {
@@ -2803,6 +2820,13 @@ class SceneView {
   private async run(name: string, args: Record<string, unknown> = {}): Promise<void> {
     const reply = await dispatch<unknown>(name, args);
     this.note(reply.ok ? '' : reply.error.message);
+    await this.refresh();
+  }
+
+  /** Conformal unwrap, then says how many charts it made and how much it bends angles (1 is none). */
+  private async unwrapUvs(id: number): Promise<void> {
+    const reply = await dispatch<{ charts: number; stretch: { mean: number; max: number } }>('uv_unwrap', { id });
+    this.note(reply.ok ? `Unwrapped into ${reply.result.charts} charts; angle distortion ${reply.result.stretch.mean.toFixed(2)} on average, ${reply.result.stretch.max.toFixed(2)} at worst` : reply.error.message);
     await this.refresh();
   }
 
