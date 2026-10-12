@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.26.0 · 2026-10-12
+
+### Added
+
+- Opacity and emissive paint channels: paint is seven floats per vertex. `paint_fill` and the paint brush take `opacity` and `emissive`; the viewport draws see-through paint as a screen-door and glow in the paint colour; GLB carries colour alpha with blending and the glow, bakes put opacity in the colour map's alpha and write a glow map (`emissive.png`, `emissiveTexture`). Window: Opacity and Emissive in the Paint section.
+- UV editing: `uv_unwrap` takes `seams: "groups"` to cut along face groups; `get_uv_layout` pictures the layout and lists its islands; `uv_transform` moves, turns or scales an island; `uv_pack` packs islands back (102 commands in all). Window: a UV section with the layout, click to choose and drag to move islands, Turn 90, Scale up and down, Pack. The scene summary says whether an object has UVs.
+- Tests for each of these (engine 32, service 15).
+
+### Changed
+
+- Projects save seven floats of paint; projects from before 0.26.0 open opaque without glow.
+
 ## 0.25.0 · 2026-10-12
 
 ### Added
