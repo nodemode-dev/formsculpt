@@ -2,6 +2,7 @@
 
 import io
 import json
+import struct
 
 import pytest
 
@@ -35,6 +36,21 @@ def test_mesh_buffers_match_the_summary(client):
     assert r.status_code == 200
     assert len(r.content) > o["vertices"] * 24
     assert client.get("/api/engine/mesh/9999").status_code == 404
+
+
+def test_smooth_preview_subdivides_for_display_only(client):
+    o = call(client, "add_primitive", kind="cube")["object"]
+    plain = client.get(f"/api/engine/mesh/{o['id']}").content
+    for level in (1, 2):
+        r = client.get(f"/api/engine/mesh/{o['id']}", params={"smooth": level})
+        assert r.status_code == 200 and r.content[:4] == b"FSCM"
+        _, indices, revision, flags = struct.unpack("<IIII", r.content[4:20])
+        assert indices == o["triangles"] * 3 * 4**level
+        assert revision == o["revision"] and flags & 1 == 0
+    # The sculpted mesh is unchanged, and the level is bounded.
+    assert client.get(f"/api/engine/mesh/{o['id']}").content == plain
+    assert client.get(f"/api/engine/mesh/{o['id']}", params={"smooth": 4}).status_code == 422
+    assert client.get("/api/engine/mesh/9999", params={"smooth": 1}).status_code == 404
 
 
 def test_view_png(client):

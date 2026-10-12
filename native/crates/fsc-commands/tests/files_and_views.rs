@@ -132,6 +132,54 @@ fn get_view_renders_the_scene() {
 }
 
 #[test]
+fn get_view_smooth_draws_subdivided_copies_only() {
+    let mut s = Session::default();
+    let id = add(&mut s, "cube", json!({}));
+    let before = object(&mut s, id);
+    let flat = call(&mut s, "get_view", json!({"width": 96, "height": 96}));
+    let smooth = call(&mut s, "get_view", json!({"width": 96, "height": 96, "smooth": 2}));
+    assert_eq!(smooth["triangles"].as_u64().unwrap(), flat["triangles"].as_u64().unwrap() * 16);
+    // A Loop-smoothed cube shrinks toward a rounded blob, but it is still drawn.
+    assert!(smooth["coverage"].as_f64().unwrap() > 0.05);
+    let after = object(&mut s, id);
+    assert_eq!(before["triangles"], after["triangles"]);
+    assert_eq!(before["revision"], after["revision"]);
+    assert_eq!(fails(&mut s, "get_view", json!({"smooth": 4})), "bad_arguments");
+}
+
+#[test]
+fn conformal_unwrap_keeps_angles_better_than_projection() {
+    for (kind, extra) in [("sphere", json!({"detail": 4})), ("torus", json!({})), ("cylinder", json!({})), ("cone", json!({}))] {
+        let mut s = Session::default();
+        let id = add(&mut s, kind, extra);
+        let boxed = call(&mut s, "uv_unwrap", json!({"id": id, "method": "project"}));
+        let conformal = call(&mut s, "uv_unwrap", json!({"id": id}));
+        let (b, c) = (boxed["stretch"]["mean"].as_f64().unwrap(), conformal["stretch"]["mean"].as_f64().unwrap());
+        eprintln!("{kind}: project mean {b} max {}, conformal mean {c} max {} in {} ms", boxed["stretch"]["max"], conformal["stretch"]["max"], conformal["ms"]);
+        assert!(c <= b + 1e-3 && c < 1.08, "{kind}: conformal {c} against projection {b}");
+        // Every UV is inside the unit square and the result bakes.
+        let o = object(&mut s, id);
+        assert_eq!(o["triangles"], boxed["object"]["triangles"]);
+        call(&mut s, "bake_maps", json!({"id": id, "size": 512}));
+    }
+    let mut s = Session::default();
+    add(&mut s, "cube", json!({}));
+    assert_eq!(fails(&mut s, "uv_unwrap", json!({"method": "cylindrical"})), "bad_arguments");
+}
+
+#[test]
+fn smooth_preview_carries_paint_to_new_vertices() {
+    let mut mesh = fsc_core::Mesh::new(vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], vec![0, 1, 2]);
+    mesh.paint = vec![[1.0, 0.0, 0.0, 0.5, 0.0], [0.0, 1.0, 0.0, 0.5, 0.0], [0.0, 0.0, 1.0, 0.5, 0.0]];
+    let out = fsc_topo::smooth_preview(&mesh, 1);
+    assert_eq!(out.triangle_count(), 4);
+    assert_eq!(out.paint.len(), out.vertex_count());
+    // Each edge midpoint is the average of its two corners' colours.
+    assert!(out.paint[3..].iter().all(|p| (p[0] + p[1] + p[2] - 1.0).abs() < 1e-5 && p.iter().take(3).filter(|c| **c > 0.25).count() == 2));
+    assert_eq!(mesh.vertex_count(), 3);
+}
+
+#[test]
 fn animations_leave_the_scene_and_history_as_they_were() {
     let mut s = Session::default();
     let id = add(&mut s, "sphere", json!({"detail": 4}));
