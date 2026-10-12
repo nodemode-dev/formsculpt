@@ -69,7 +69,7 @@ pub(crate) fn record_turntable(s: &mut Session, args: &Value) -> Result<Value, C
     let fps = int(args, "fps", 24, 1, 60)? as u16;
     let size = int(args, "size", 384, 64, 1024)?;
     let pitch = args.get("pitch").and_then(Value::as_f64).unwrap_or(15.0).clamp(-89.0, 89.0) as f32;
-    let started = std::time::Instant::now();
+    let started = fsc_core::time::Instant::now();
     let mut shots = Vec::with_capacity(frames);
     for k in 0..frames {
         let mut frame_args = args.clone();
@@ -174,7 +174,7 @@ pub(crate) fn record_animation(s: &mut Session, args: &Value) -> Result<Value, C
         }
     }
     let originals: Vec<((u32, usize), f32)> = layer_tracks.keys().map(|&(id, at)| ((id, at), s.scene.get(id).expect("checked").layers.list[at].strength)).collect();
-    let started = std::time::Instant::now();
+    let started = fsc_core::time::Instant::now();
     let mut shots = Vec::with_capacity(frames);
     let mut failure = None;
     for f in 0..frames {
@@ -245,7 +245,7 @@ pub(crate) fn record_history(s: &mut Session, args: &Value) -> Result<Value, Com
     if done > 600 {
         return Err(bad("the history has more than 600 steps; that is too long for one movie"));
     }
-    let started = std::time::Instant::now();
+    let started = fsc_core::time::Instant::now();
     let mut shots = Vec::with_capacity(done + 1);
     let mut failure = None;
     for k in 0..=done {

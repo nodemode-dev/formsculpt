@@ -5,6 +5,7 @@ pub mod multires;
 pub mod paint_layers;
 pub mod primitives;
 pub mod scene;
+pub mod time;
 pub mod topology;
 
 pub use bvh::{Bvh, Hit};

@@ -79,7 +79,7 @@ fn chosen(s: &Session, args: &Value) -> Result<Vec<ObjectId>, CommandError> {
 }
 
 pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec<u8>, CommandError> {
-    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb, gltf, fbx and 3mf, not {file_name}")))?;
+    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb, gltf, fbx, usda and 3mf, not {file_name}")))?;
     if ids.is_empty() {
         return Err(bad("there is nothing to export"));
     }

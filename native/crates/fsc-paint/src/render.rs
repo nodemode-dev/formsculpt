@@ -1,4 +1,4 @@
-use std::time::Instant;
+use fsc_core::time::Instant;
 
 use fsc_core::{Aabb, Mesh};
 use glam::Vec3;

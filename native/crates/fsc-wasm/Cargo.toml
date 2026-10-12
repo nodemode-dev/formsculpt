@@ -1,0 +1,19 @@
+[package]
+name = "fsc-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# The engine for the browser: the same command registry and live strokes as the Python module, as a WebAssembly
+# module with a plain C ABI (no bindings generator), loaded by frontend/src/engine/wasm.ts. Built without threads.
+[lib]
+name = "fsc_wasm"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+fsc-commands.workspace = true
+fsc-core.workspace = true
+serde_json.workspace = true

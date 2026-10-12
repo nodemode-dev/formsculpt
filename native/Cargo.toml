@@ -8,10 +8,11 @@ members = [
     "crates/fsc-io",
     "crates/fsc-commands",
     "crates/fsc-py",
+    "crates/fsc-wasm",
 ]
 
 [workspace.package]
-version = "0.26.0"
+version = "0.27.0"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["nodemode-ai"]
@@ -19,12 +20,14 @@ rust-version = "1.80"
 publish = false
 
 [workspace.dependencies]
-fsc-core = { path = "crates/fsc-core" }
+# Threads (rayon) are each crate's "parallel" feature; fsc-commands turns them on by default, and the browser build
+# (fsc-wasm), which has no threads, depends on it without them.
+fsc-core = { path = "crates/fsc-core", default-features = false }
 fsc-sculpt = { path = "crates/fsc-sculpt" }
-fsc-topo = { path = "crates/fsc-topo" }
-fsc-paint = { path = "crates/fsc-paint" }
+fsc-topo = { path = "crates/fsc-topo", default-features = false }
+fsc-paint = { path = "crates/fsc-paint", default-features = false }
 fsc-io = { path = "crates/fsc-io" }
-fsc-commands = { path = "crates/fsc-commands" }
+fsc-commands = { path = "crates/fsc-commands", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

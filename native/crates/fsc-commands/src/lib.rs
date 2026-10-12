@@ -5,6 +5,7 @@ mod file_cmds;
 mod group_cmds;
 mod history;
 mod layer_cmds;
+pub mod live;
 mod mask_cmds;
 mod model_cmds;
 mod multires_cmds;
@@ -1141,7 +1142,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "import_mesh",
         group: Group::File,
         label: "Import Mesh",
-        description: "Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x) or 3MF file as new objects (one per OBJ object, glTF node, FBX model or 3MF object), placed by their transforms with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.",
+        description: "Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x), USD (text .usda) or 3MF file as new objects (one per OBJ object, glTF node, FBX model, USD Mesh prim or 3MF object), placed by their transforms (USD prim transforms are not applied) with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: file_cmds::import_schema,
@@ -1152,7 +1153,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "export_mesh",
         group: Group::File,
         label: "Export Mesh",
-        description: "Write objects to OBJ, STL, PLY, GLB, glTF, FBX or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.",
+        description: "Write objects to OBJ, STL, PLY, GLB, glTF, FBX, USD (.usda: one Mesh prim per object with displayColor, displayOpacity and st) or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.",
         keys: &["Mod+E"],
         hints: DESTROY,
         schema: file_cmds::export_schema,

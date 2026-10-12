@@ -1,4 +1,4 @@
-use std::time::Instant;
+use fsc_core::time::Instant;
 
 use serde_json::{json, Value};
 

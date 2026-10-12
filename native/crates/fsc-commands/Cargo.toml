@@ -18,6 +18,11 @@ glam = "0.34"
 serde.workspace = true
 serde_json.workspace = true
 
+[features]
+default = ["parallel"]
+# Threads in the engine crates that use them; the browser build turns this off.
+parallel = ["fsc-core/parallel", "fsc-topo/parallel", "fsc-paint/parallel"]
+
 [[bin]]
 name = "fsc-catalogue"
 path = "src/bin/catalogue.rs"

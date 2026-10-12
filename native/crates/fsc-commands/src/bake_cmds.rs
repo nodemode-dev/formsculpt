@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::time::Instant;
+use fsc_core::time::Instant;
 
 use base64::Engine as _;
 use fsc_core::Maps;

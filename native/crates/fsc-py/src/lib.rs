@@ -1,8 +1,6 @@
 use std::sync::Mutex;
 
 use fsc_commands::Session;
-use fsc_sculpt::{BrushKind, Stroke};
-use glam::Vec3;
 use pyo3::exceptions::{PyKeyError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
@@ -108,88 +106,24 @@ impl Engine {
         Ok((PyBytes::new(py, &mesh.positions_bytes()), PyBytes::new(py, &mesh.normals_bytes()), PyBytes::new(py, &mesh.indices_bytes()), object.revision, PyBytes::new(py, &mesh.paint_bytes())))
     }
 
+    // Live strokes go through fsc_commands::live, which the browser build (fsc-wasm) shares.
     fn stroke_begin(&self, id: u32, settings: &str) -> PyResult<()> {
         let parsed: Value = serde_json::from_str(settings).map_err(|e| PyValueError::new_err(format!("settings are not JSON: {e}")))?;
-        let mut brush = fsc_commands::parse_brush(&parsed).map_err(|e| PyValueError::new_err(e.message))?;
         let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
-        let Some(object) = session.scene.get(id) else {
-            return Err(PyKeyError::new_err(format!("no object {id}")));
-        };
-        if object.multires.is_some() || !object.layers.list.is_empty() {
-            brush.dyntopo = None;
-            brush.dyntopo_size = None;
-        }
-        let alpha = fsc_commands::stroke_alpha(&session, &parsed).map_err(|e| PyValueError::new_err(e.message))?;
-        let mut stroke = Stroke::new(brush);
-        stroke.set_alpha(alpha);
-        session.stroke = Some((id, stroke));
-        Ok(())
+        fsc_commands::live::stroke_begin(&mut session, id, &parsed).map_err(|e| if e.code == "not_found" { PyKeyError::new_err(e.message) } else { PyValueError::new_err(e.message) })
     }
 
     #[pyo3(signature = (origin, dir, pressure, tilt=0.0))]
     fn stroke_sample<'py>(&self, py: Python<'py>, origin: [f32; 3], dir: [f32; 3], pressure: f32, tilt: f32) -> PyResult<(bool, Bound<'py, PyBytes>, bool)> {
-        let mut guard = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
-        let session = &mut *guard;
-        let (id, stroke) = session.stroke.as_mut().ok_or_else(|| PyValueError::new_err("no stroke in progress"))?;
-        stroke.set_tilt(tilt);
-        let object = session.scene.get_mut(*id).ok_or_else(|| PyKeyError::new_err("the stroke's object is gone"))?;
-        let hit = stroke.sample_ray(object, Vec3::from_array(origin), Vec3::from_array(dir), pressure);
-        let changed = stroke.drain_changed();
-        if stroke.take_topology_dirty() {
-            object.revision += 1;
-            return Ok((hit, PyBytes::new(py, &[]), true));
-        }
-        Ok((hit, PyBytes::new(py, &update_bytes(object, &changed)), false))
+        let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let (hit, update, topology) = fsc_commands::live::stroke_sample(&mut session, origin, dir, pressure, tilt).map_err(|e| PyValueError::new_err(e.message))?;
+        Ok((hit, PyBytes::new(py, &update), topology))
     }
 
     fn stroke_end(&self) -> PyResult<String> {
-        let mut guard = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
-        let session = &mut *guard;
-        let Some((id, stroke)) = session.stroke.take() else { return Ok(json!({"ok": true, "result": null}).to_string()) };
-        let kind = stroke.settings.kind;
-        let dabs = stroke.dabs;
-        let Some(object) = session.scene.get_mut(id) else { return Ok(json!({"ok": false, "error": {"code": "not_found", "message": "the stroke's object is gone"}}).to_string()) };
-        let result = stroke.finish(object);
-        let revision = object.revision;
-        let topology = matches!(result, fsc_sculpt::StrokeEdit::Topology { .. });
-        let name = BrushKind::NAMES[kind as usize];
-        let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), name[1..].replace('_', " "));
-        let changed = fsc_commands::push_stroke(session, id, label, result);
-        fsc_commands::sync_instances(session);
-        Ok(json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology}}).to_string())
+        let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        Ok(fsc_commands::live::stroke_end(&mut session).to_string())
     }
-}
-
-fn update_bytes(object: &fsc_core::Object, changed: &[u32]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(16 + changed.len() * 32);
-    out.extend_from_slice(b"FSCU");
-    out.extend_from_slice(&(changed.len() as u32).to_le_bytes());
-    out.extend_from_slice(&(object.revision as u32).to_le_bytes());
-    out.extend_from_slice(&object.id.to_le_bytes());
-    for &v in changed {
-        out.extend_from_slice(&v.to_le_bytes());
-    }
-    for &v in changed {
-        for c in object.mesh.positions[v as usize] {
-            out.extend_from_slice(&c.to_le_bytes());
-        }
-    }
-    for &v in changed {
-        for c in object.mesh.normals[v as usize] {
-            out.extend_from_slice(&c.to_le_bytes());
-        }
-    }
-    for &v in changed {
-        out.extend_from_slice(&object.mask[v as usize].to_le_bytes());
-    }
-    if object.mesh.has_paint() {
-        for &v in changed {
-            for c in object.mesh.paint[v as usize] {
-                out.extend_from_slice(&c.to_le_bytes());
-            }
-        }
-    }
-    out
 }
 
 fn reply(result: Result<Value, fsc_commands::CommandError>) -> String {
