@@ -11,6 +11,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "name": o.name,
         "visible": o.visible,
         "folder": o.folder,
+        "instance_of": o.instance.as_ref().map(|i| i.source),
         "primitive": o.primitive.as_ref().filter(|(_, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty()).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()),
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),

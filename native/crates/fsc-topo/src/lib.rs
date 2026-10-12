@@ -13,7 +13,7 @@ mod subdivide;
 mod transfer;
 mod voxel;
 
-pub use build::{lathe, skeleton_mesh, tube, Ball};
+pub use build::{lathe, silhouette_mesh, skeleton_mesh, tube, Ball};
 pub use decimate::decimate;
 pub use deform::{deform, lattice_box, lattice_deform, merge, split_parts, Deformer};
 pub use dyntopo::{collapse_sphere, compact, refine_sphere};

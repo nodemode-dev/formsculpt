@@ -252,6 +252,17 @@ pub static COMMANDS: &[Command] = &[
         run: build_cmds::skeleton,
     },
     Command {
+        id: "build.shadow_box",
+        mcp: "shadow_box",
+        group: Group::Object,
+        label: "Shadow Box",
+        description: "Build a base mesh from two or three outlines: the solid whose silhouette from the front is `front` (x, y), from the side `side` (z, y) and from above `top` (x, z), each extruded and intersected, with rounded edges. Fast blocking for props, heads in profile, vehicles, furniture: draw the side profile and the front shape and sculpt from there. A new watertight object.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::shadow_box_schema,
+        run: build_cmds::shadow_box,
+    },
+    Command {
         id: "build.tube",
         mcp: "curve_tube",
         group: Group::Object,
@@ -1033,7 +1044,17 @@ pub fn dispatch(session: &mut Session, name: &str, args: &Value) -> Result<Value
     if !args.is_object() {
         return Err(CommandError::new("bad_arguments", "arguments must be a JSON object"));
     }
-    (command.run)(session, &args)
+    let result = (command.run)(session, &args);
+    // Linked copies follow any change the command made to their originals (undo and redo included).
+    if result.is_ok() {
+        place_cmds::sync_instances(session);
+    }
+    result
+}
+
+/// Brings linked copies up to date; the window's live strokes call it when a stroke ends.
+pub fn sync_instances(session: &mut Session) {
+    place_cmds::sync_instances(session);
 }
 
 pub fn catalogue() -> Value {

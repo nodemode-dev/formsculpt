@@ -26,6 +26,18 @@ pub struct Object {
     /// A primitive still open to edit: the arguments it was made with (JSON) and the revision it had then; any other
     /// change raises the revision and so fixes the shape.
     pub primitive: Option<(String, u64)>,
+    /// A linked copy: rebuilt from its source whenever the source changes, until it is changed itself.
+    pub instance: Option<Instance>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Instance {
+    pub source: ObjectId,
+    /// The copy's transform from the source, column-major.
+    pub matrix: [f32; 16],
+    /// The source's revision when this copy was last rebuilt, and this copy's revision then.
+    pub source_revision: u64,
+    pub own_revision: u64,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -43,7 +55,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None }
     }
 
     pub fn rebuild(&mut self) {

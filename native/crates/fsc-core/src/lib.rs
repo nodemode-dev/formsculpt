@@ -14,7 +14,7 @@ pub use mesh::{mix_paint, Aabb, Mesh, Paint, DEFAULT_PAINT};
 pub use multires::{Level, Multires, Stencil};
 pub use paint_layers::{Blend, LayerPaint, PaintLayer, PaintLayers};
 pub use primitives::Primitive;
-pub use scene::{Maps, Object, ObjectId, Scene};
+pub use scene::{Instance, Maps, Object, ObjectId, Scene};
 
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 

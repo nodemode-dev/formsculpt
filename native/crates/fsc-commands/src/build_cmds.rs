@@ -88,6 +88,40 @@ pub(crate) fn skeleton(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     Ok(add(s, args, "Skeleton", mesh, started))
 }
 
+pub(crate) fn shadow_box_schema() -> Value {
+    let outline = |what: &str| json!({"type": "array", "minItems": 3, "maxItems": 2048, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": what});
+    json!({
+        "type": "object",
+        "properties": {
+            "front": outline("The outline seen from the front, as [x, y] points in world units (a closed polygon)."),
+            "side": outline("The outline seen from the side (the right view), as [z, y] points."),
+            "top": outline("The outline seen from above, as [x, z] points."),
+            "blend": {"type": "number", "minimum": 0, "maximum": 0.5, "default": 0.05, "description": "Rounds the edges where the outlines meet, as a fraction of the solid's size."},
+            "resolution": {"type": "integer", "minimum": 32, "maximum": 256, "default": 128, "description": "Voxel cells along the longest side."},
+            "name": {"type": "string", "description": NAME}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Shadow box: a base mesh from two or three outlines, the solid that casts those silhouettes.
+pub(crate) fn shadow_box(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let started = Instant::now();
+    let outline = |key: &str| -> Result<Option<Vec<glam::Vec2>>, CommandError> {
+        match args.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::Array(a)) => a.iter().map(|v| floats(v, key, &[2]).map(|f| glam::Vec2::new(f[0], f[1]))).collect::<Result<Vec<_>, _>>().map(Some),
+            Some(_) => Err(bad(format!("{key} is a list of [a, b] points"))),
+        }
+    };
+    let (front, side, top) = (outline("front")?, outline("side")?, outline("top")?);
+    let blend = number(args, "blend", 0.05, 0.0, 0.5)? as f32;
+    let resolution = number(args, "resolution", 128.0, 32.0, 256.0)? as u32;
+    let mesh = fsc_topo::silhouette_mesh(front.as_deref(), side.as_deref(), top.as_deref(), blend, resolution).map_err(|e| CommandError::new("build_failed", e))?;
+    Ok(add(s, args, "Shadow Box", mesh, started))
+}
+
 pub(crate) fn tube_schema() -> Value {
     json!({
         "type": "object",

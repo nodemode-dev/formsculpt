@@ -142,6 +142,7 @@ impl Engine {
         let name = BrushKind::NAMES[kind as usize];
         let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), name[1..].replace('_', " "));
         let changed = fsc_commands::push_stroke(session, id, label, result);
+        fsc_commands::sync_instances(session);
         Ok(json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology}}).to_string())
     }
 }

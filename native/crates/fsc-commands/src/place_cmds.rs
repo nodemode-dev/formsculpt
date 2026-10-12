@@ -1,5 +1,5 @@
 use fsc_core::{Mesh, Primitive};
-use glam::{Mat3, Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use serde_json::{json, Value};
 
 use crate::history::Edit;
@@ -25,15 +25,46 @@ fn vec3(args: &Value, key: &str) -> Result<Option<Vec3>, CommandError> {
     }
 }
 
-/// A copy of `mesh` turned by `m` about `pivot`, then moved by `by`. Paint and face groups ride along.
-fn moved(mesh: &Mesh, pivot: Vec3, m: Mat3, by: Vec3) -> Mesh {
-    let positions = mesh.positions.iter().map(|&p| (m * (Vec3::from(p) - pivot) + pivot + by).to_array()).collect();
-    let mut out = Mesh::new(positions, mesh.indices.clone());
+/// A copy of `mesh` under an affine transform; a mirroring transform reverses the triangles so they still face out.
+fn transformed(mesh: &Mesh, m: Mat4) -> Mesh {
+    let positions = mesh.positions.iter().map(|&p| m.transform_point3(Vec3::from(p)).to_array()).collect();
+    let mut indices = mesh.indices.clone();
+    if m.determinant() < 0.0 {
+        for t in indices.chunks_mut(3) {
+            t.swap(1, 2);
+        }
+    }
+    let mut out = Mesh::new(positions, indices);
     out.paint = mesh.paint.clone();
     if mesh.has_groups() {
         out.groups = mesh.groups.clone();
     }
     out
+}
+
+/// Linked copies follow their original: after any change to the original they are rebuilt from it under their own
+/// transform. A copy changed directly (a stroke on it, a transform) leaves the link, keeping its own shape.
+pub fn sync_instances(s: &mut Session) {
+    let links: Vec<(u32, fsc_core::Instance)> = s.scene.objects.iter().filter_map(|o| o.instance.clone().map(|i| (o.id, i))).collect();
+    for (id, link) in links {
+        let source = s.scene.get(link.source).map(|o| (o.revision, o.mesh.clone()));
+        let copy = s.scene.get_mut(id).expect("listed");
+        let Some((source_revision, mesh)) = source else {
+            copy.instance = None;
+            continue;
+        };
+        if copy.revision != link.own_revision {
+            copy.instance = None;
+            continue;
+        }
+        if source_revision == link.source_revision {
+            continue;
+        }
+        let mesh = transformed(&mesh, Mat4::from_cols_array(&link.matrix));
+        let mask = vec![0.0; mesh.vertex_count()];
+        copy.replace_mesh(mesh, mask);
+        copy.instance = Some(fsc_core::Instance { source_revision, own_revision: copy.revision, ..link });
+    }
 }
 
 /// Adds an object; with `record` it is its own undo step (an array records one scene step for all its copies).
@@ -53,7 +84,10 @@ pub(crate) fn array_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "The object to repeat; the active object when omitted."},
             "count": {"type": "integer", "minimum": 2, "maximum": 200, "default": 4, "description": "Copies in all, the original included."},
-            "mode": {"type": "string", "enum": ["linear", "radial"], "default": "linear"},
+            "mode": {"type": "string", "enum": ["linear", "radial", "mirror", "curve"], "default": "linear", "description": "linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points."},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "Curve: the path, as [x, y, z] points; each copy's bounds centre sits on it."},
+            "align": {"type": "boolean", "default": true, "description": "Curve: turn each copy so the original's +x follows the path."},
+            "linked": {"type": "boolean", "default": false, "description": "Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it."},
             "offset": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Linear: the step from one copy to the next, in world units; one bounds width along x when omitted."},
             "axis": {"type": "string", "enum": ["x", "y", "z"], "default": "y", "description": "Radial: the axis the copies turn around (through center)."},
             "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Radial: the point the axis passes through; the world origin when omitted."},
@@ -77,31 +111,91 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
         return Err(CommandError::new("has_levels", "merging copies would change the vertex count under the subdivision levels; delete the levels first or leave merge off"));
     }
     let b = o.mesh.bounds();
-    let mut copies = Vec::new();
+    let axis_of = |key: &str, default: &str| -> Result<usize, CommandError> {
+        match args.get(key).and_then(Value::as_str).unwrap_or(default) {
+            "x" => Ok(0),
+            "y" => Ok(1),
+            "z" => Ok(2),
+            other => Err(bad(format!("{key} must be x, y or z, not {other}"))),
+        }
+    };
+    // Each copy is the original under one transform (kept for linked copies, which follow the original).
+    let mut transforms: Vec<Mat4> = Vec::new();
     match args.get("mode").and_then(Value::as_str).unwrap_or("linear") {
         "linear" => {
             let step = vec3(args, "offset")?.unwrap_or(Vec3::new(b.extent().x * 1.2, 0.0, 0.0));
             for k in 1..count {
-                copies.push(moved(&o.mesh, Vec3::ZERO, Mat3::IDENTITY, step * k as f32));
+                transforms.push(Mat4::from_translation(step * k as f32));
             }
         }
         "radial" => {
-            let axis = match args.get("axis").and_then(Value::as_str).unwrap_or("y") {
-                "x" => Vec3::X,
-                "y" => Vec3::Y,
-                "z" => Vec3::Z,
-                other => return Err(bad(format!("axis must be x, y or z, not {other}"))),
-            };
+            let axis = [Vec3::X, Vec3::Y, Vec3::Z][axis_of("axis", "y")?];
             let center = vec3(args, "center")?.unwrap_or(Vec3::ZERO);
             let total = args.get("angle").and_then(Value::as_f64).unwrap_or(360.0) as f32;
             let full = (total.abs() - 360.0).abs() < 1e-3;
             let step = total.to_radians() / if full { count as f32 } else { (count - 1) as f32 };
             for k in 1..count {
-                copies.push(moved(&o.mesh, center, Mat3::from_axis_angle(axis, step * k as f32), Vec3::ZERO));
+                transforms.push(Mat4::from_translation(center) * Mat4::from_axis_angle(axis, step * k as f32) * Mat4::from_translation(-center));
             }
         }
-        other => return Err(bad(format!("unknown mode {other}; use linear or radial"))),
+        "mirror" => {
+            // One mirrored copy across the plane square to `axis` through center (the world origin by default).
+            let a = axis_of("axis", "x")?;
+            let center = vec3(args, "center")?.unwrap_or(Vec3::ZERO);
+            let mut flip = Vec3::ONE;
+            flip[a] = -1.0;
+            transforms.push(Mat4::from_translation(center) * Mat4::from_scale(flip) * Mat4::from_translation(-center));
+        }
+        "curve" => {
+            // count copies spaced evenly along a polyline, the original's bounds centre on the curve, turned so the
+            // original's +x follows the curve's direction when align is on.
+            let points: Vec<Vec3> = args
+                .get("points")
+                .and_then(Value::as_array)
+                .ok_or_else(|| bad("curve mode needs points: [[x, y, z], ...]"))?
+                .iter()
+                .map(|p| {
+                    let a = p.as_array().filter(|a| a.len() == 3).ok_or_else(|| bad("each point is [x, y, z]"))?;
+                    let v: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+                    if v.iter().any(|x| !x.is_finite()) {
+                        return Err(bad("points are numbers"));
+                    }
+                    Ok(Vec3::new(v[0], v[1], v[2]))
+                })
+                .collect::<Result<_, _>>()?;
+            if points.len() < 2 {
+                return Err(bad("a curve needs at least two points"));
+            }
+            let align = args.get("align").and_then(Value::as_bool).unwrap_or(true);
+            let lengths: Vec<f32> = points.windows(2).map(|w| w[0].distance(w[1])).collect();
+            let total: f32 = lengths.iter().sum();
+            if total <= 1e-9 {
+                return Err(bad("the curve has no length"));
+            }
+            let c = b.center();
+            for k in 0..count {
+                let want = total * k as f32 / (count - 1) as f32;
+                let mut walked = 0.0;
+                let mut seg = 0;
+                while seg + 1 < lengths.len() && walked + lengths[seg] < want {
+                    walked += lengths[seg];
+                    seg += 1;
+                }
+                let t = ((want - walked) / lengths[seg].max(1e-9)).clamp(0.0, 1.0);
+                let at = points[seg].lerp(points[seg + 1], t);
+                let dir = (points[seg + 1] - points[seg]).normalize_or(Vec3::X);
+                let turn = if align { Quat::from_rotation_arc(Vec3::X, dir) } else { Quat::IDENTITY };
+                transforms.push(Mat4::from_translation(at) * Mat4::from_quat(turn) * Mat4::from_translation(-c));
+            }
+        }
+        other => return Err(bad(format!("unknown mode {other}; use linear, radial, mirror or curve"))),
     }
+    let copies: Vec<Mesh> = transforms.iter().map(|m| transformed(&o.mesh, *m)).collect();
+    let linked = args.get("linked").and_then(Value::as_bool).unwrap_or(false);
+    if linked && merge {
+        return Err(bad("linked copies stay separate objects; leave merge off"));
+    }
+    let source_revision = o.revision;
     let name = o.name.clone();
     if merge {
         let mut parts: Vec<&Mesh> = vec![&o.mesh];
@@ -115,8 +209,14 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
     }
     s.history.push(Edit::Scene { label: "Array".into(), objects: s.scene.objects.clone(), active: s.scene.active });
     let ids: Vec<u32> = copies.into_iter().enumerate().map(|(k, m)| add_object(s, &format!("{name} {}", k + 2), m, false)).collect();
+    if linked {
+        for (&cid, m) in ids.iter().zip(&transforms) {
+            let copy = s.scene.get_mut(cid).expect("just added");
+            copy.instance = Some(fsc_core::Instance { source: id, matrix: m.to_cols_array(), source_revision, own_revision: copy.revision });
+        }
+    }
     s.scene.active = Some(id);
-    Ok(json!({"original": id, "added": ids, "copies": count}))
+    Ok(json!({"original": id, "added": ids, "copies": ids.len() + 1, "linked": linked}))
 }
 
 pub(crate) fn insert_schema() -> Value {

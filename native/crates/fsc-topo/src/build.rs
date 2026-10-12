@@ -45,6 +45,77 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
     a.min(b) - h * h * k * 0.25
 }
 
+/// Signed distance from `p` to a closed polygon (negative inside), for silhouettes.
+fn polygon_sd(poly: &[glam::Vec2], p: glam::Vec2) -> f32 {
+    let mut d = f32::INFINITY;
+    let mut inside = false;
+    let n = poly.len();
+    for i in 0..n {
+        let (a, b) = (poly[i], poly[(i + 1) % n]);
+        let e = b - a;
+        let t = ((p - a).dot(e) / e.length_squared().max(1e-12)).clamp(0.0, 1.0);
+        d = d.min((p - (a + e * t)).length());
+        if (a.y > p.y) != (b.y > p.y) && p.x < a.x + (p.y - a.y) / (b.y - a.y) * (b.x - a.x) {
+            inside = !inside;
+        }
+    }
+    if inside {
+        -d
+    } else {
+        d
+    }
+}
+
+/// A shadow box: the solid whose outlines seen from the front (x, y), the side (z, y) and the top (x, z) are the given
+/// silhouettes, each extruded through the box and intersected (two or three of them; a missing one leaves that view
+/// open). `blend` rounds the edges where the extrusions meet, as a fraction of the solid's size.
+pub fn silhouette_mesh(front: Option<&[glam::Vec2]>, side: Option<&[glam::Vec2]>, top: Option<&[glam::Vec2]>, blend: f32, resolution: u32) -> Result<Mesh, String> {
+    let given = [front, side, top].iter().filter(|s| s.is_some()).count();
+    if given < 2 {
+        return Err("draw at least two silhouettes (front, side or top) so the solid is closed".into());
+    }
+    for s in [front, side, top].into_iter().flatten() {
+        if s.len() < 3 {
+            return Err("each silhouette needs at least three points".into());
+        }
+    }
+    // Each axis spans the silhouettes that show it.
+    let range = |vals: Vec<f32>| -> (f32, f32) { (vals.iter().cloned().fold(f32::INFINITY, f32::min), vals.iter().cloned().fold(f32::NEG_INFINITY, f32::max)) };
+    let pick = |s: Option<&[glam::Vec2]>, f: fn(&glam::Vec2) -> f32| s.map(|s| s.iter().map(f).collect::<Vec<_>>()).unwrap_or_default();
+    let xs = [pick(front, |p| p.x), pick(top, |p| p.x)].concat();
+    let ys = [pick(front, |p| p.y), pick(side, |p| p.y)].concat();
+    let zs = [pick(side, |p| p.x), pick(top, |p| p.y)].concat();
+    let (x0, x1) = range(xs);
+    let (y0, y1) = range(ys);
+    let (z0, z1) = range(zs);
+    let size = (x1 - x0).max(y1 - y0).max(z1 - z0).max(1e-4);
+    let pad = Vec3::splat(size * 0.06);
+    let mut bounds = Aabb::EMPTY;
+    bounds.grow(Vec3::new(x0, y0, z0) - pad);
+    bounds.grow(Vec3::new(x1, y1, z1) + pad);
+    let k = blend.clamp(0.0, 0.5) * size;
+    let field = |p: Vec3| -> f32 {
+        let mut ds = Vec::with_capacity(3);
+        if let Some(s) = front {
+            ds.push(polygon_sd(s, glam::Vec2::new(p.x, p.y)));
+        }
+        if let Some(s) = side {
+            ds.push(polygon_sd(s, glam::Vec2::new(p.z, p.y)));
+        }
+        if let Some(s) = top {
+            ds.push(polygon_sd(s, glam::Vec2::new(p.x, p.z)));
+        }
+        // A smooth maximum (intersection) so the extrusions meet in rounded edges.
+        ds.into_iter().reduce(|a, b| -smin(-a, -b, k)).unwrap_or(f32::INFINITY)
+    };
+    let (mut mesh, _) = crate::manifold::split_nonmanifold(&implicit_mesh(bounds, resolution, field)?);
+    if mesh.indices.is_empty() {
+        return Err("the silhouettes do not overlap anywhere".into());
+    }
+    mesh.quads = true;
+    Ok(mesh)
+}
+
 pub fn skeleton_mesh(balls: &[Ball], links: &[(usize, usize)], blend: f32, resolution: u32) -> Result<Mesh, String> {
     if balls.is_empty() {
         return Err("give at least one sphere".into());
