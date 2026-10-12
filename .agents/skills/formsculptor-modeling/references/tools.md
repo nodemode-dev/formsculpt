@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.29.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.30.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,10 +9,10 @@ Generated from the engine's command registry (formsculptor 0.29.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
-- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
+- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
-- Files: `send_to_substance`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
+- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
@@ -37,16 +37,21 @@ Note: read-only.
 
 Render the scene to a PNG and return it, so you can see the model: drawn on the CPU with the window's shading (clay matcap by default, paint shown, masked areas darkened), framed to fit, with or without the window open. Check your work with it after each step that changes shape, from more than one view (front, right and top read proportions; three_quarter reads form).
 
+- `aperture`: number; default 0; range 0 to 1; Path render: depth of field lens size as a fraction of the framed size; 0 keeps everything sharp, 0.05 is a gentle blur.
 - `background`: string (dark | light | transparent); default "dark"
 - `bounces`: integer; default 4; range 1 to 8; Path render: how many times light may bounce.
+- `focus`: number; range 0 to inf; Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted.
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
 - `height`: integer; default 640; range 64 to 2048
 - `ids`: array of integer; Only these objects; every visible object when omitted.
+- `lights`: array of object; Path render: directional lights added to the key light (a rim or fill).
+- `pass`: string (beauty | depth | normal | ao); default "beauty"; Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion).
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
 - `render`: string (preview | path); default "preview"; preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise).
 - `samples`: integer; default 32; range 1 to 1024; Path render: paths per pixel; 32 is a quick look, 256 a clean final image.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
+- `sun`: boolean; default true; Path render: keep the window's key light.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
 - `width`: integer; default 640; range 64 to 2048
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
@@ -200,16 +205,22 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 
 ## edit_build
 
-Remake a tube (curve_tube) or lathe from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. get_scene shows editable_build on objects that can still be edited. One undo step.
+Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.
 
+- `add`: object; Skeleton: add a sphere at point, linked to the nearest sphere (ZSphere style: click beside a joint to grow a limb).; fields point, radius
+- `blend`: number; range 0 to 1; Skeleton: how softly limbs merge.
 - `closed`: boolean; Tube: close the curve into a ring.
-- `id`: integer; range 1 to inf; A tube or lathe; the active object when omitted.
-- `move`: array of object; Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]).
+- `drag`: object; Skeleton: move the sphere nearest from to to.; fields from, to
+- `id`: integer; range 1 to inf; A tube, lathe or skeleton; the active object when omitted.
+- `links`: array of array; Skeleton: new links.
+- `move`: array of object; Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]); skeleton: replace spheres (to [x, y, z, radius]).
 - `points`: array of array; Tube: a new curve, as [x, y, z] or [x, y, z, radius].
 - `profile`: array of array; Lathe: a new profile, as [radius, y].
 - `radius`: number; range -inf to 1000000; Tube: the radius for points without their own.
+- `resolution`: integer; range 32 to 256; Skeleton: voxel cells along the longest side.
 - `segments`: integer; range 3 to 256; Steps around the tube or the lathe's axis.
 - `smooth`: integer; range 1 to 32; Tube: curve steps between points.
+- `spheres`: array of array; Skeleton: new joints as [x, y, z, radius].
 
 ## text_mesh
 
@@ -514,6 +525,44 @@ Write a Substance 3D Painter package to a folder: the mesh to texture as OBJ wit
 - `folder`: string; required; Where to write the package (created if missing).
 - `id`: integer; range 1 to inf; The object to texture; the active object when omitted. It needs UVs (uv_unwrap).
 
+## substance_sync
+
+Bring textures exported from Substance 3D Painter back: <name>_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.
+
+- `color`: string; The base colour PNG; <name>_BaseColor.png in folder when omitted.
+- `folder`: string; required; The folder send_to_substance wrote and Painter exported back into.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## clip_plane
+
+Cut an object flat along a plane with an exact boolean: keep removes the side the normal points to (ZBrush ClipCurve, a planar cut for hard-surface parts), slice keeps both halves as two capped objects. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `mode`: string (keep | slice); default "keep"; keep removes the far side (ZBrush ClipCurve); slice keeps both halves as two capped objects.
+- `normal`: array of number; required; The plane's normal: the side it points to is cut away.
+- `point`: array of number; A point on the cutting plane; the object's centre when omitted.
+
+## bevel_edge
+
+Bevel the straight run of sharp edges nearest a point: chamfer cuts a flat face and round cuts a fillet of the given width into both faces, exactly (the cut is a boolean with a prism, so the rest of the mesh is untouched). Use round_edges for every edge at once. One undo step.
+
+- `angle`: number; default 30; range 5 to 170; Faces meeting at more than this many degrees count as a sharp edge.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `mode`: string (chamfer | round); default "chamfer"; chamfer cuts one flat face; round cuts a fillet.
+- `point`: array of number; required; A point on or near the edge to bevel (a click on the model); the straight run of sharp edges through it is beveled.
+- `segments`: integer; default 6; range 2 to 32; Round: steps across the fillet.
+- `width`: number; range 0 to inf; How far the bevel reaches into each face, in world units; 4 percent of the object's size when omitted.
+
+## uv_move_point
+
+Drag UV vertices by hand: the UV point nearest at goes to to, or with radius every corner within it follows with a smooth falloff (kept to the island under at). For fixing stretch that uv_transform's whole-island moves cannot. Clears baked maps. One undo step.
+
+- `at`: array of number; required; The UV point [u, v] to grab.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island`: boolean; default true; Keep the grab to the island under at.
+- `radius`: number; default 0; range 0 to 1; UV corners within this distance follow with a smooth falloff; 0 moves only the corners at the nearest point (one UV vertex).
+- `to`: array of number; required; Where it goes.
+
 ## get_uv_layout
 
 Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there. Use it to look before moving islands with uv_transform.
@@ -724,6 +773,7 @@ Note: read-only.
 Rebuild an object as an even, quad-dominant mesh near a target face count: quads from a voxel grid, relaxed along the original surface. OBJ export writes them as quads. The grid makes edge flow follow the axes rather than the form (no guide curves). One undo step; the mask is cleared, paint is carried over.
 
 - `faces`: integer; default 4000; range 100 to 400000; Target number of quads.
+- `guides`: array of array; Guide curves as lists of [x, y, z] points (drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `relax`: integer; default 6; range 0 to 30; Smoothing passes that even out the quads while staying on the original surface.
 

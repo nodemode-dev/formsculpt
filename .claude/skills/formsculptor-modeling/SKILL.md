@@ -126,8 +126,16 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. Cloth: `add_primitive` plane with detail 48 to 96 above the model, then `cloth_drape` on it (`floor` for a ground; mask an edge first to hang a curtain from it).
 3. Hair, fur and grass: mask the scalp or the patch, `grow_fibers` with `length`, `droop` (0.5 to 0.8 for hair), `clump` (0.3 for locks) and a `color`; the fibers are a new object.
 4. Manual retopology: `retopo_face` with `target` and four `points` per quad in order around it (pass `into` from the first call's id); then `insert_edge_loop` where joints need more loops, `delete_faces` and `bridge` to open and join borders, `multires_divide` and `project_detail` from the sculpt.
-5. Final images: `get_view` with `render: "path"` (`samples` 32 for a look, 256 for a final; `bounces` 4); painted `emissive` parts light the scene. For texturing elsewhere, `send_to_substance` writes a Painter package (UVs first).
+5. Final images: `get_view` with `render: "path"` (`samples` 32 for a look, 256 for a final; `bounces` 4); painted `emissive` parts light the scene. Add a rim or fill with `lights` ([{from, color, intensity}]), blur what is off the focal plane with `aperture` (0.03 to 0.08) and `focus`, and write compositing passes with `pass` (depth, normal, ao). For texturing elsewhere, `send_to_substance` writes a Painter package (UVs first); after the person exports textures from Painter into that folder, `substance_sync` reads BaseColor, Roughness and Metallic back onto the paint.
+
+## Workflow 12: hard surface, guided topology and joints
+
+1. Planar cuts: `clip_plane` with a `point` and `normal` removes the side the normal points to; `mode: "slice"` keeps both halves as two objects (split a helmet, cut a base flat for printing).
+2. One edge: `bevel_edge` with a `point` on the edge, a `width`, and `mode` chamfer or round (`segments` for a smooth fillet). It takes the straight run of sharp edges through the point; use `bevel_edges` to round every edge at once.
+3. Guided quads: give `quad_remesh` `guides` (point lists along a limb, a jaw line or a cylinder's axis) and its edge loops run along their mean direction.
+4. ZSphere-style base meshes: after `skeleton_mesh`, `edit_build` with `add` ({point, radius}) grows a joint linked to the nearest one and `drag` ({from, to}) moves the joint nearest from; the base mesh is remade each time until it is sculpted.
+5. UV fixes: `uv_move_point` drags the UV vertex nearest `at` to `to` (with `radius`, its neighbours follow with falloff); bake again after.
 
 ## Not yet available
 
-There is no chamfer bevel on chosen edges (`bevel_edges` rounds every convex or concave edge of an object rather than chosen ones), no skeleton rig (pose turns one masked part at a time), no cloth or groom brushes, UVs are edited by whole islands (seams come from face groups; single UV points cannot be moved), and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There is no skeleton rig (pose turns one masked part at a time), no cloth or groom brushes, guides set one direction for a whole quad remesh rather than a field that bends with each curve, there are no panel lines along face-group borders, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
