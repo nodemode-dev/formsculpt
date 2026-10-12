@@ -16,7 +16,7 @@ interface PrintReport {
 import { Viewport, type Ray } from './viewport/viewport';
 import type { LightSpec } from './viewport/gl-renderer';
 import type { ViewName } from './viewport/camera';
-import { add, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
+import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
@@ -237,6 +237,9 @@ const BRUSHES: [string, string][] = [
   ['bevel_edge', 'Bevel edge'],
   ['clip', 'Clip'],
   ['zsphere', 'Add joint'],
+  ['pose_joint', 'Pose joint'],
+  ['groom_comb', 'Comb fibers'],
+  ['groom_cut', 'Cut fibers'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
@@ -272,7 +275,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -2153,6 +2156,20 @@ class SceneView {
       const n = hit.result.normal ?? [0, 0, 0];
       const at = [0, 1, 2].map((k) => point[k] + n[k] * size * 0.12);
       await this.run('edit_build', { id, add: { point: at } });
+    } else if (tool === 'pose_joint') {
+      // Turns the clicked joint by the Angle field about the Deform axis (Ctrl the other way); the limb beyond follows.
+      const axis = this.shell.deformAxis.value;
+      const axisVec = axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+      const angle = (Number(this.shell.deformAngle.value) || 30) * (ctrl ? -1 : 1);
+      await this.run('pose_joint', { id, point, axis: axisVec, angle });
+    } else if (tool === 'groom_comb' || tool === 'groom_cut') {
+      // A short stroke through the click: comb sweeps toward the screen's right (Ctrl left), cut trims there.
+      const reach = Math.max(1e-4, Number(this.shell.radius.value) * wpp);
+      const cam = this.viewport.camera;
+      const right = normalize(cross(sub(cam.target, cam.eye()), cam.screenUp()));
+      const side = scale(right, reach * (ctrl ? -1 : 1));
+      const points = [sub(point, side), point, add(point, side)];
+      await this.run('groom_fibers', { id, mode: tool === 'groom_comb' ? 'comb' : 'cut', points, radius: reach });
     }
     else if (tool === 'retopo') {
       // Four clicks around a face, in order; each quad joins the corners it shares with earlier ones.
