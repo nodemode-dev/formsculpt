@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.24.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.25.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -43,6 +43,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `ids`: array of integer; Only these objects; every visible object when omitted.
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
+- `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
 - `width`: integer; default 640; range 64 to 2048
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
@@ -425,9 +426,10 @@ Reset an object's paint to the default clay colour, roughness 0.5 and metalness 
 
 ## uv_unwrap
 
-Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is projected flat and the charts are packed into the unit square keeping their relative sizes. Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.
+Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `method`: string (conformal | project); default "conformal"; conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle).
 
 ## bake_maps
 

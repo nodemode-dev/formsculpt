@@ -26,7 +26,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 1. `add_primitive` sphere, detail 6.
 2. `sculpt_stroke` with `brush: "grab"`, two points (where to grab, where to move it to), a large radius (0.3 to 0.5) to pull out a large shape such as a snout, a limb or a jaw.
 3. `inflate` or `draw` with a large radius and strength 0.3 to 0.5 to add volume; `invert: true` carves instead.
-4. `get_scene` to check the bounds moved as intended, then look: `get_view` returns a picture of the scene (clay shading, masks darkened). Take `front` and `right` for proportions and `three_quarter` for form; `frame: "active"` to look closely at one object.
+4. `get_scene` to check the bounds moved as intended, then look: `get_view` returns a picture of the scene (clay shading, masks darkened). Take `front` and `right` for proportions and `three_quarter` for form; `frame: "active"` to look closely at one object; `smooth: 1` or `2` shows a low-polygon object as its subdivided surface (as the window's Smooth preview does) without changing it.
 
 ## Workflow 2: refine and detail
 
@@ -112,7 +112,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 2. Paint by hand with `sculpt_stroke` and `brush: "paint"` plus `color` (and `roughness` or `metalness` to paint those channels); the radius and points work as for sculpting. `paint_clear` returns to plain clay.
 3. Paint stays through subdivision levels, dyntopo, remesh, booleans and saving; export PLY, OBJ or GLB to keep the colours (GLB also gets the average roughness and metalness as its material).
 4. `set_material` gives an object subsurface scattering (skin 0.3 to 0.6, wax or jade 0.8, with a warm `subsurface_color` and a `subsurface_radius` about the thickness of an ear) or transmission (glass and water at 1 with an `ior`); it shows in the window's lit shading and is saved in projects.
-4. For a light game-ready model: sculpt detail on high subdivision levels, `multires_set_level` to 0, `uv_unwrap`, `bake_maps` (size 1024 or 2048; `path` also writes PNG and EXR files), then `export_mesh` to .glb, which carries UVs, tangents and the colour, roughness-metal and normal maps. To bake from a separate high-resolution object onto a simpler one, give `source_id`.
+5. For a light game-ready model: sculpt detail on high subdivision levels, `multires_set_level` to 0, `uv_unwrap` (conformal by default; its `stretch` is the angle distortion, 1 is none, and under about 1.05 is clean), `bake_maps` (size 1024 or 2048; `path` also writes PNG and EXR files), then `export_mesh` to .glb, which carries UVs, tangents and the colour, roughness-metal and normal maps. To bake from a separate high-resolution object onto a simpler one, give `source_id`.
 
 ## Workflow 6: files and printing
 
@@ -122,4 +122,4 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 
 ## Not yet available
 
-There are no bevel, edge loop or bridge tools, `get_view` has no turntable or orbit beyond its named views and `yaw` and `pitch`, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
+There are no edge loop or polygon bridge tools, `bevel_edges` rounds every convex or concave edge of an object rather than chosen ones and makes no chamfers, UV seams cannot be placed by hand, and lower levels cannot be rebuilt for a remeshed, decimated or dyntopo mesh. Say so plainly if the person asks for them, rather than approximating with strokes.
