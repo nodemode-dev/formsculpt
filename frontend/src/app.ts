@@ -206,10 +206,12 @@ const BRUSHES: [string, string][] = [
   ['vdm', 'VDM stamp'],
   ['cut', 'Lasso cut'],
   ['trim_shape', 'Lasso trim'],
+  ['insert_brush', 'Insert brush'],
+  ['group_brush', 'Group brush'],
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette', 'cut', 'trim_shape']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette', 'cut', 'trim_shape', 'insert_brush', 'group_brush']);
 
 /** A #rrggbb colour as linear 0..1 light, normalised so its brightest channel is 1 (strength is set apart). */
 function hexToLinear(hex: string): [number, number, number] {
@@ -297,6 +299,8 @@ const ACTION_CALLS: Record<string, [string, Record<string, unknown>]> = {
   mask_peaks: ['mask_cavity', { mode: 'peaks' }],
   group_mask: ['group_from_mask', {}],
   group_auto: ['group_auto', { by: 'angle', angle: 30 }],
+  group_by_paint: ['group_auto', { by: 'paint' }],
+  group_by_uv: ['group_auto', { by: 'uv' }],
   hide_masked: ['hide_faces', { action: 'hide', by: 'mask' }],
   invert_hidden: ['hide_faces', { action: 'invert' }],
   show_faces: ['hide_faces', { action: 'show_all' }],
@@ -322,6 +326,8 @@ const ACTIONS: [string, string][] = [
   ['mask_color', 'Mask colour'],
   ['group_mask', 'Group from mask'],
   ['group_auto', 'Auto groups'],
+  ['group_by_paint', 'Groups by paint'],
+  ['group_by_uv', 'Groups by UV'],
   ['hide_masked', 'Hide masked'],
   ['invert_hidden', 'Invert hidden'],
   ['show_faces', 'Show faces'],
@@ -755,6 +761,9 @@ function buildShell(root: HTMLElement): Shell {
       ['reference', 'Reference'],
       ['clear_reference', 'Clear ref'],
       ['turntable', 'Turntable'],
+      ['anim_key', 'Add key'],
+      ['anim_record', 'Record animation'],
+      ['anim_clear', 'Clear keys'],
       ['matcap', 'Load matcap'],
     ] as const
   ).map(([action, label]) => {
@@ -982,6 +991,10 @@ class SceneView {
         if (action === 'turntable') {
           this.note('Recording a turntable');
           void this.download(`/api/engine/turntable?frames=48&size=384&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'turntable.png');
+          return;
+        }
+        if (action === 'anim_key' || action === 'anim_record' || action === 'anim_clear') {
+          this.animationAction(action);
           return;
         }
         const id = this.scene.active;
@@ -1269,6 +1282,10 @@ class SceneView {
       await this.gizmoEnd();
       return;
     }
+    if (shape?.kind === 'insert_brush' || shape?.kind === 'group_brush') {
+      await this.strokeTool(shape.pts, shape.wpp, shape.kind);
+      return;
+    }
     if (shape?.kind === 'cut' || shape?.kind === 'trim_shape') {
       await this.cutEnd(shape.pts, shape.kind === 'trim_shape');
       return;
@@ -1388,6 +1405,78 @@ class SceneView {
 
   /** Outlines for the shadow box, in world units: front (x, y), side (z, y), top (x, z). */
   private silhouettes: { front?: number[][]; side?: number[][]; top?: number[][] } = {};
+
+  /** Timeline keys: the camera's turn and height and the active object's layer strengths, one key every 1.5 seconds. */
+  private animKeys: Record<string, unknown>[] = [];
+
+  private animationAction(action: string): void {
+    if (action === 'anim_clear') {
+      this.animKeys = [];
+      this.note('Animation keys cleared');
+      return;
+    }
+    if (action === 'anim_key') {
+      const cam = this.viewport.camera;
+      const key: Record<string, unknown> = { time: this.animKeys.length * 1.5, yaw: (cam.yaw * 180) / Math.PI, pitch: (cam.pitch * 180) / Math.PI };
+      const active = this.scene.objects.find((o) => o.id === this.scene.active);
+      if (active && active.layers.length > 0) key.layers = active.layers.map((l, layer) => ({ id: active.id, layer, strength: l.strength }));
+      // Unwind the turn so the camera goes the short way round from the last key.
+      const last = this.animKeys[this.animKeys.length - 1];
+      if (last && typeof last.yaw === 'number') {
+        let y = key.yaw as number;
+        while (y - last.yaw > 180) y -= 360;
+        while (y - last.yaw < -180) y += 360;
+        key.yaw = y;
+      }
+      this.animKeys.push(key);
+      this.note(`Key ${this.animKeys.length} at ${key.time as number} s; turn the view or change layer strengths, then add another`);
+      return;
+    }
+    if (this.animKeys.length < 2) {
+      this.note('Add at least two keys first');
+      return;
+    }
+    this.note('Recording the animation');
+    const shading = this.shell.shading.value === 'pbr' ? 'pbr' : 'clay';
+    void this.download(`/api/engine/animation?fps=24&size=384&shading=${shading}&keys=${encodeURIComponent(JSON.stringify(this.animKeys))}`, 'animation.png');
+  }
+
+  /** Insert brush or group brush: the stroke's points picked on the surface, then one command for the whole stroke. */
+  private async strokeTool(pts: [number, number][], wpp: number, kind: string): Promise<void> {
+    const id = this.scene.active;
+    if (pts.length < 2) return;
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const hits: { point: Vec3; normal: Vec3 }[] = [];
+    let lastAt: [number, number] | null = null;
+    for (const p of pts) {
+      if (lastAt && Math.hypot(p[0] - lastAt[0], p[1] - lastAt[1]) < 6) continue;
+      lastAt = p;
+      const ray = this.viewport.rayAtClient(rect.left + p[0], rect.top + p[1]);
+      if (!ray) continue;
+      const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+      if (hit.ok && hit.result.hit && hit.result.point && hit.result.normal && (kind === 'insert_brush' || hit.result.id === id)) hits.push({ point: hit.result.point, normal: hit.result.normal });
+      if (hits.length >= 256) break;
+    }
+    if (hits.length === 0) {
+      this.note(kind === 'insert_brush' ? 'Draw the stroke over a surface' : 'Draw over the active object');
+      return;
+    }
+    if (kind === 'group_brush') {
+      if (id === null) return;
+      await this.run('group_paint', { id, points: hits.map((h) => h.point), radius: Math.max(1e-4, Number(this.shell.radius.value) * wpp) });
+      return;
+    }
+    const size = Math.max(0.01, Math.min(10, Number(this.shell.insertSize.value) || 0.2));
+    const args: Record<string, unknown> = { path: hits.map((h) => [...h.point, ...h.normal]), size };
+    if (this.shell.insertKind.value === 'previous') {
+      if (this.previous === null) {
+        this.note('Select the object to insert first, then the one to insert onto');
+        return;
+      }
+      args.source_id = this.previous;
+    } else args.kind = this.shell.insertKind.value;
+    await this.run('insert_along', args);
+  }
 
   /** Lasso cut or trim: the outline, taken onto the plane through the orbit centre facing the view, cut straight through the active object along the view. */
   private async cutEnd(pts: [number, number][], keepInside: boolean): Promise<void> {
