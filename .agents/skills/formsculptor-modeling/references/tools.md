@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.26.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.27.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -898,14 +898,14 @@ Note: removes or replaces (undoable); in the window: Mod+O.
 
 ## import_mesh
 
-Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x) or 3MF file as new objects (one per OBJ object, glTF node, FBX model or 3MF object), placed by their transforms with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.
+Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x), USD (text .usda) or 3MF file as new objects (one per OBJ object, glTF node, FBX model, USD Mesh prim or 3MF object), placed by their transforms (USD prim transforms are not applied) with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.
 
 - `name`: string; Name for the new object; the file name when omitted.
 - `path`: string; required; A file path on this computer.
 
 ## export_mesh
 
-Write objects to OBJ, STL, PLY, GLB, glTF, FBX or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
+Write objects to OBJ, STL, PLY, GLB, glTF, FBX, USD (.usda: one Mesh prim per object with displayColor, displayOpacity and st) or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
 
 - `ids`: array of integer; Objects to write; every visible object when omitted. STL and PLY join them into one mesh.
 - `path`: string; required; A file path on this computer.

@@ -38,7 +38,7 @@ Sub-skill paths resolve as `sub-skills/[skill-name]/SUB-SKILL.md` from this fold
 | fsc-paint | `native/crates/fsc-paint` | vertex PBR paint, auto UV, bakes |
 | fsc-io | `native/crates/fsc-io` | OBJ, STL, PLY, glTF/GLB, 3MF, FBX import, the `.fsc` project zip |
 | fsc-commands | `native/crates/fsc-commands` | the single command registry and `dispatch(id, json)` |
-| fsc-wasm | `native/crates/fsc-wasm` (planned; blocked until the wasm32 target can be installed) | wasm-bindgen binding, runs in a Web Worker |
+| fsc-wasm | `native/crates/fsc-wasm` (built at 0.27.0; `./formsculptor engine wasm`) | plain C ABI over fsc-commands and fsc_commands::live, no threads, loaded on the page's main thread by `frontend/src/engine/wasm.ts` when no engine service answers |
 | fsc-py | `native/crates/fsc-py` | PyO3 module `fsc_engine` built with maturin; the backend's engine, which the window and MCP both drive |
 | Frontend | `frontend/` (vanilla TypeScript, Vite, port 5196) | `src/engine/` worker client, `src/viewport/` renderer, `src/ui/` shell, `src/styles/tokens.css` |
 | Backend | `backend/app/` (FastAPI, 127.0.0.1:8196) | routers system, io, projects, jobs, assets, mcp, nodemode; serves the built frontend |
@@ -52,7 +52,7 @@ Sub-skill paths resolve as `sub-skills/[skill-name]/SUB-SKILL.md` from this fold
 fsc-core  <-  fsc-sculpt, fsc-topo, fsc-paint, fsc-io
 fsc-commands  ->  fsc-core, fsc-sculpt, fsc-topo, fsc-paint, fsc-io
 fsc-wasm, fsc-py  ->  fsc-commands
-Web Worker (frontend/src/engine)  ->  fsc-wasm
+frontend/src/engine (service.ts, wasm.ts)  ->  fsc-wasm (no service) or the engine service (fsc-py)
 viewport (frontend/src/viewport)  <-  WASM buffers by dirty range
 backend/app (mcp router, engine router, stroke socket)  ->  fsc-py (one shared engine session)
 window  ->  /api/engine (dispatch, mesh, stroke socket) and /api/mcp/window (change epoch, consent)
