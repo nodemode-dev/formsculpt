@@ -12,7 +12,7 @@ The full tool reference, generated from the engine's command registry, is `refer
 ## Before anything
 
 1. Call `get_scene`. It lists every object with its id, vertex and triangle counts and bounds, and which object is active.
-2. If the scene is empty, `add_primitive` first. For sculpting use `kind: "sphere"` with `detail` 6 (81,920 triangles) or 7 (327,680); a low detail gives blocky strokes.
+2. If the scene is empty, `add_primitive` first. For sculpting use `kind: "sphere"` with `detail` 6 (81,920 triangles) or 7 (327,680); a low detail gives blocky strokes. Until anything else changes it, `edit_primitive` resizes or re-details it in place, so settle proportions and resolution there before the first stroke.
 3. Read the bounds. Brush radius is in object units: about a tenth of the object's largest extent is a good default (0.1 to 0.2 on a unit sphere).
 
 ## Building a stroke
@@ -34,7 +34,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
    - `relax` evens stretched triangles without shrinking the form (prefer it to `smooth` after grab or snake hook).
    - `planar` flattens to the plane under the stroke's first point (hard-surface faces); `trim` shaves down only what stands above (chiselled planes on rock or armour).
    - `snake_hook` pulls the area under the first point along the path: give points that leave the surface (horns, tentacles, spikes); add `dyntopo` to keep the pulled part detailed, then `relax`.
-   - `noise` roughens along a stroke (`noise_scale` sets the feature size); `surface_noise` covers the whole object in a new layer whose strength you can change later.
+   - `noise` roughens along a stroke (`noise_scale` sets the feature size); `surface_noise` covers the whole object in a new layer whose strength you can change later, with a `pattern` (value for skin and stone, ridged for rock and bark, turbulence for wrinkles, cells for scales or, with a negative amount, craters, alpha to tile an alpha such as a fabric weave), `octaves`, `gain` and `stretch` (for example [1, 4, 1] for vertical grain).
    - `lazy` (0 to 0.95) steadies a line: the brush trails on a rope and stops short of the path's end by the rope length.
    - `alpha` shapes every dab with a gray stamp: built-ins `square`, `noise`, `cracks`, `rings`, `star`, `stripes`, `dots`, or a PNG loaded with `alpha_load` (white stamps, black does not). One point stamps once (scales, rivets, emblems); a path repeats it. `alpha_angle` turns it in degrees, `alpha_up` sets which way is up (default world +y), and `stroke: "roll"` turns it along the path (stripes along a seam). Check the result with `get_view`; stamps read best at strength 0.3 to 0.6 on a subdivided surface.
    - `stroke: "spray"` scatters dabs up to `spray` radii off the path with random turns and strengths (pores, gravel, speckle; pair it with an alpha); it is seeded, so a repeat gives the same result.

@@ -1,11 +1,11 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.16.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.17.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
-- Scene: `get_scene`, `new_scene`
+- Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
@@ -124,6 +124,16 @@ Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an
 - `height`: number; default 2; range -inf to 1000; Cylinder and cone height.
 - `kind`: string (sphere | uv_sphere | cube | cylinder | cone | torus | plane); required
 - `name`: string
+- `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
+- `thickness`: number; default 0.3; range -inf to 1000; Torus tube radius.
+
+## edit_primitive
+
+Change a primitive's size, detail, height or thickness after making it, as long as nothing else has changed it since (no stroke, transform, remesh or level): get_scene shows primitive with its settings while it is still editable. Use it to settle proportions and resolution before sculpting. One undo step.
+
+- `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5), divisions for cube and plane (default 16), segments for the round kinds (default 64).
+- `height`: number; default 2; range -inf to 1000; Cylinder and cone height.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
 - `thickness`: number; default 0.3; range -inf to 1000; Torus tube radius.
 
@@ -627,13 +637,18 @@ Add a sculpt layer to an object and make it the one strokes record into. A layer
 
 ## surface_noise
 
-Cover the object with fractal noise along its normals (skin pores, stone, bark, hammered metal), held by the mask, in a new sculpt layer: change its strength with layer_set_strength to fade or invert it, layer_apply to bake it, layer_delete to remove it. One undo step.
+Cover the object with noise along its normals (skin pores, stone, bark, hammered metal): a pattern (value, ridged, turbulence, cells, or an alpha tiled from three sides), octaves, gain and a stretch per axis, held by the mask, in a new sculpt layer: change its strength with layer_set_strength to fade or invert it, layer_apply to bake it, layer_delete to remove it. One undo step.
 
+- `alpha`: string; The alpha pattern's alpha: a built-in name or one loaded with alpha_load.
 - `amount`: number; range -10000 to 10000; Height of the bumps along the normals in world units (negative sinks them); 0.4 percent of the object's size when omitted.
+- `gain`: number; default 0.5; range 0.1 to 0.9; How strongly each finer layer shows.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `name`: string; default "Noise"
+- `octaves`: integer; default 3; range 1 to 8; Layers of finer detail on top of the base size.
+- `pattern`: string (value | ridged | turbulence | cells | alpha); default "value"; value: soft fractal bumps (skin, stone); ridged: sharp crests (rock, bark, veins); turbulence: creased troughs (wrinkles, erosion); cells: rounded cells (scales, hammered metal, craters with a negative amount); alpha: an alpha tiled over the surface from three sides (fabric, tiles, a pattern loaded with alpha_load).
 - `scale`: number; range -inf to 10000; Feature size in world units; 2 percent of the object's size when omitted.
 - `seed`: integer; default 0; range 0 to 1000000; Another seed gives another pattern.
+- `stretch`: array of number; Feature size multipliers along x, y and z (stretch wood grain or strata along one axis).
 
 ## layer_select
 
