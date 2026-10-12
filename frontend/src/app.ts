@@ -24,6 +24,15 @@ import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { PanelLayout } from './ui/layout';
 import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
 
+/** A plugin as the service lists it: its fields come from the PARAMS it declares, and CLICK makes it a surface tool. */
+interface PluginInfo {
+  name: string;
+  title: string;
+  description: string;
+  click?: boolean;
+  params?: Record<string, { type: string; label?: string; default?: number | string | boolean; min?: number; max?: number; step?: number; options?: string[] }>;
+}
+
 interface Shell {
   engineDot: HTMLElement;
   engineText: HTMLElement;
@@ -134,6 +143,7 @@ interface Shell {
   textInput: HTMLInputElement;
   fuseBlend: HTMLInputElement;
   pluginPick: HTMLSelectElement;
+  pluginParams: HTMLElement;
   pluginButtons: HTMLButtonElement[];
   projectOpacity: HTMLInputElement;
   projectInput: HTMLInputElement;
@@ -203,6 +213,7 @@ const BRUSHES: [string, string][] = [
   ['mask_group', 'Mask group'],
   ['hide_group', 'Hide group'],
   ['insert', 'Insert'],
+  ['plugin', 'Plugin tool'],
   ['vdm', 'VDM stamp'],
   ['cut', 'Lasso cut'],
   ['trim_shape', 'Lasso trim'],
@@ -243,7 +254,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm']);
+const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -289,6 +300,8 @@ const OBJECT_ACTIONS: [string, string][] = [
   ['distribute', 'Distribute'],
   ['folder', 'Put in folder'],
   ['isolate_folder', 'Isolate folder'],
+  ['bevel', 'Bevel edges'],
+  ['bridge', 'Bridge to app'],
 ];
 
 /** Edit buttons whose engine call differs from their name. */
@@ -848,6 +861,9 @@ function buildShell(root: HTMLElement): Shell {
   const pluginFields = el('div', 'fields');
   pluginFields.append(field('Plugin', pluginPick));
   panel.append(pluginFields);
+  // The chosen plugin's own fields, drawn from the PARAMS it declares.
+  const pluginParams = el('div', 'fields after-fields');
+  panel.append(pluginParams);
   const pluginGrid = el('div', 'add-grid two after-fields');
   const pluginButtons = (
     [
@@ -913,7 +929,7 @@ function buildShell(root: HTMLElement): Shell {
     layout.clearRail();
     setText(message, 'Rail cleared');
   });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend };
 }
 
 class SceneView {
@@ -1090,6 +1106,21 @@ class SceneView {
     shell.primApply.addEventListener('click', () => void this.applyPrimitive());
     shell.projectInput.addEventListener('change', () => void this.projectImage());
     shell.pluginButtons.forEach((b) => b.addEventListener('click', () => void (b.dataset.action === 'run' ? this.runPlugin() : this.loadPlugins())));
+    shell.pluginPick.addEventListener('change', () => this.drawPluginParams());
+    // A tube or lathe that has not been changed since it was made follows these fields.
+    const editable = (kind: string): number | null => {
+      const o = this.scene.objects.find((x) => x.id === this.scene.active);
+      return o && o.editable_build === kind ? o.id : null;
+    };
+    shell.tubeRadius.addEventListener('change', () => {
+      const id = editable('tube');
+      if (id !== null) void this.run('edit_build', { id, radius: Math.max(0.005, Math.min(1, Number(shell.tubeRadius.value) || 0.05)) });
+    });
+    shell.lathe.addEventListener('change', () => {
+      const id = editable('lathe');
+      const preset = LATHES[shell.lathe.value];
+      if (id !== null && preset) void this.run('edit_build', { id, profile: preset.profile });
+    });
     void this.loadPlugins();
     shell.envInput.addEventListener('change', () => void this.loadEnvironment());
     shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
@@ -2010,7 +2041,7 @@ class SceneView {
     if (id === null) return;
     const tool = this.brush;
     const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
-    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || hit.result.id === id);
+    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || hit.result.id === id);
     if (!hit.ok || !onActive || !hit.result.point) {
       this.note(tool === 'insert' ? 'Click on a surface to insert there' : 'Click on the active object');
       return;
@@ -2020,6 +2051,7 @@ class SceneView {
     if (tool === 'mask_topo') await this.run('mask_topology', { id, point, distance: Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2), op });
     else if (tool === 'mask_group') await this.run('mask_by_group', { id, point, op });
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
+    else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
     else if (tool === 'vdm') {
       // As wide as the brush on screen; the alpha angle turns it, Ctrl presses it in.
       const radius = Math.max(1e-4, Number(this.shell.radius.value) * wpp);
@@ -2344,6 +2376,18 @@ class SceneView {
     const axis = this.shell.deformAxis.value;
     const angle = Number(this.shell.deformAngle.value) || 0;
     const res = Math.max(16, Math.min(320, Number(this.shell.resolution.value) || 128));
+    if (action === 'bevel') {
+      // The Angle or taper % field doubles as the bevel radius, as a percentage of the object's size.
+      const o = this.scene.objects.find((x) => x.id === id);
+      const size = o ? Math.max(...[0, 1, 2].map((k) => o.bounds.max[k] - o.bounds.min[k])) : 1;
+      const pct = Math.max(1, Math.min(25, Math.abs(Number(this.shell.deformAngle.value)) || 5));
+      void this.run('bevel_edges', { id, radius: (size * pct) / 100, edges: 'both', resolution: res });
+      return;
+    }
+    if (action === 'bridge') {
+      void this.bridgeOut(id);
+      return;
+    }
     if (action === 'duplicate') void this.run('duplicate_object', { id });
     else if (action === 'split') void this.run('split_parts', { id });
     else if (action === 'merge') {
@@ -2474,14 +2518,85 @@ class SceneView {
   }
 
   /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
+  private bridgeTimer = 0;
+
+  /** Sends the object to the bridge folder for another app, then checks every few seconds for that app's saves. */
+  private async bridgeOut(id: number): Promise<void> {
+    const reply = await postBody<{ ok: boolean; result?: { path: string }; error?: { message: string } }>('/api/engine/bridge', { id, format: 'obj' });
+    const body = reply.ok ? reply.result : null;
+    if (!body?.ok || !body.result) {
+      this.note(body?.error?.message ?? (reply.ok ? 'The bridge failed' : reply.error.message));
+      return;
+    }
+    this.note(`Open ${body.result.path} in the other app; saving there brings it back here`);
+    if (this.bridgeTimer) return;
+    this.bridgeTimer = window.setInterval(() => void this.bridgeSync(), 3000);
+  }
+
+  private async bridgeSync(): Promise<void> {
+    const reply = await dispatch<{ updated: { name: string }[]; problems: { message: string }[]; bridges: unknown[] }>('bridge_sync', {});
+    if (!reply.ok) return;
+    if (reply.result.updated.length) {
+      this.note(`${reply.result.updated.map((o) => o.name).join(', ')} came back from the other app`);
+      await this.refresh();
+    }
+    if (reply.result.bridges.length === 0) {
+      window.clearInterval(this.bridgeTimer);
+      this.bridgeTimer = 0;
+    }
+  }
+
+  private plugins: PluginInfo[] = [];
+
+  /** Draws the chosen plugin's PARAMS as fields; values typed there go to the plugin as its args. */
+  private drawPluginParams(): void {
+    const box = this.shell.pluginParams;
+    const plugin = this.plugins.find((p) => p.name === this.shell.pluginPick.value);
+    const fields: HTMLLabelElement[] = [];
+    for (const [key, spec] of Object.entries(plugin?.params ?? {})) {
+      const label = spec.label || key;
+      let control: HTMLInputElement | HTMLSelectElement;
+      if (spec.type === 'choice') {
+        control = choices(label, (spec.options ?? []).map((o) => [o, o]));
+        if (spec.default !== undefined) control.value = String(spec.default);
+      } else if (spec.type === 'boolean') {
+        control = input('checkbox', { 'aria-label': label });
+        control.checked = spec.default === true;
+      } else if (spec.type === 'text') {
+        control = input('text', { 'aria-label': label, value: String(spec.default ?? ''), spellcheck: 'false' });
+      } else {
+        const attrs: Record<string, string> = { 'aria-label': label, value: String(spec.default ?? 0), step: String(spec.step ?? (spec.type === 'integer' ? 1 : 'any')) };
+        if (spec.min !== undefined) attrs.min = String(spec.min);
+        if (spec.max !== undefined) attrs.max = String(spec.max);
+        control = input('number', attrs);
+      }
+      control.dataset.param = key;
+      control.dataset.kind = spec.type;
+      fields.push(field(label, control));
+    }
+    box.replaceChildren(...fields);
+  }
+
+  private pluginArgs(): Record<string, unknown> {
+    const args: Record<string, unknown> = {};
+    for (const c of this.shell.pluginParams.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-param]')) {
+      const key = c.dataset.param as string;
+      if (c.dataset.kind === 'boolean') args[key] = (c as HTMLInputElement).checked;
+      else if (c.dataset.kind === 'number' || c.dataset.kind === 'integer') args[key] = c.dataset.kind === 'integer' ? Math.round(Number(c.value) || 0) : Number(c.value) || 0;
+      else args[key] = c.value;
+    }
+    return args;
+  }
+
   private async loadPlugins(): Promise<void> {
-    let list: { name: string; title: string; description: string }[] = [];
+    let list: PluginInfo[] = [];
     try {
       const res = await fetch('/api/plugins');
       if (res.ok) list = ((await res.json()) as { plugins: typeof list }).plugins;
     } catch {
       // the service is down; the list stays empty
     }
+    this.plugins = list;
     const select = this.shell.pluginPick;
     const entries: [string, string, string][] = list.length ? list.map((p) => [p.name, p.title, p.description]) : [['', 'No plugins found', '']];
     while (select.options.length > entries.length) select.options[select.options.length - 1].remove();
@@ -2495,13 +2610,21 @@ class SceneView {
       option.title = title;
       setText(option, text);
     });
+    this.drawPluginParams();
   }
 
-  private async runPlugin(): Promise<void> {
+  /** Runs the chosen plugin with its fields as args; a click plugin first arms the Plugin tool and runs on the click. */
+  private async runPlugin(at?: Record<string, unknown>): Promise<void> {
     const name = this.shell.pluginPick.value;
     if (!name) return;
+    const plugin = this.plugins.find((p) => p.name === name);
+    if (plugin?.click && !at) {
+      this.shell.brushButtons.find((b) => b.dataset.brush === 'plugin')?.click();
+      this.note(`Click a surface to run ${plugin.title}`);
+      return;
+    }
     this.note(`Running ${this.shell.pluginPick.selectedOptions[0]?.textContent ?? name}`);
-    const reply = await postBody<{ ok: boolean; output?: string; error?: { message: string } }>('/api/plugins/run', { name, args: {} });
+    const reply = await postBody<{ ok: boolean; output?: string; error?: { message: string } }>('/api/plugins/run', { name, args: { ...this.pluginArgs(), ...(at ?? {}) } });
     const body = reply.ok ? reply.result : { ok: false, error: reply.error };
     this.note(body.ok ? (body.output ?? '').trim().split('\n').pop() ?? '' : body.error?.message ?? 'The plugin failed');
     await this.refresh();

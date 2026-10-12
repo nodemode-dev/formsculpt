@@ -22,6 +22,8 @@ export interface ObjectSummary {
   primitive?: Record<string, unknown> | null;
   /** The source a linked copy follows (null once it is unlinked, or for an ordinary object). */
   instance_of?: number | null;
+  /** "tube" or "lathe" while edit_build can still remake the object (null once anything else changed it). */
+  editable_build?: string | null;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 
