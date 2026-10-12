@@ -18,6 +18,8 @@ export interface ObjectSummary {
   /** Paint layers, bottom first, and the one painted into (null: the base). */
   paint_layers?: { name: string; blend: string; opacity: number; visible: boolean }[];
   active_paint_layer?: number | null;
+  /** The settings a primitive was made with, while it can still be edited (null once anything else changed it). */
+  primitive?: Record<string, unknown> | null;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

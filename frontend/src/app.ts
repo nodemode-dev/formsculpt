@@ -13,6 +13,7 @@ interface PrintReport {
   problems: string[];
 }
 import { Viewport, type Ray } from './viewport/viewport';
+import type { LightSpec } from './viewport/gl-renderer';
 import type { ViewName } from './viewport/camera';
 import { add, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
@@ -126,6 +127,26 @@ interface Shell {
   gizmoUniform: SVGPathElement;
   latticeLines: SVGPathElement;
   latticePoints: SVGPathElement;
+  lightPick: HTMLSelectElement;
+  lightAdd: HTMLButtonElement;
+  lightRemove: HTMLButtonElement;
+  keyAzimuth: HTMLInputElement;
+  keyElevation: HTMLInputElement;
+  keyIntensity: HTMLInputElement;
+  keyColor: HTMLInputElement;
+  keyFollows: HTMLInputElement;
+  shadows: HTMLInputElement;
+  groundShadow: HTMLInputElement;
+  primSize: HTMLInputElement;
+  primDetail: HTMLInputElement;
+  primHeight: HTMLInputElement;
+  primApply: HTMLButtonElement;
+  noisePattern: HTMLSelectElement;
+  noiseSize: HTMLInputElement;
+  noiseHeight: HTMLInputElement;
+  noiseOctaves: HTMLInputElement;
+  noiseGain: HTMLInputElement;
+  noiseStretch: HTMLSelectElement;
 }
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -175,6 +196,14 @@ const BRUSHES: [string, string][] = [
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
 const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice']);
+
+/** A #rrggbb colour as linear 0..1 light, normalised so its brightest channel is 1 (strength is set apart). */
+function hexToLinear(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', ''), 16) || 0xffffff;
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.pow(v / 255, 2.2));
+  const m = Math.max(1e-3, ...c);
+  return [c[0] / m, c[1] / m, c[2] / m];
+}
 
 /** Control points per axis of the window's lattice tool. */
 const LATTICE_DIV = 3;
@@ -393,6 +422,21 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(grid);
+  // A new primitive stays editable until something else changes it: these fields show its settings and Apply
+  // remakes it; they are disabled for any other object.
+  const primSize = input('number', { min: '0.01', max: '1000', step: '0.1', value: '1', 'aria-label': 'Primitive size' });
+  const primDetail = input('number', { min: '0', max: '2048', step: '1', value: '5', 'aria-label': 'Primitive detail' });
+  const primHeight = input('number', { min: '0.01', max: '1000', step: '0.1', value: '2', 'aria-label': 'Primitive height' });
+  for (const c of [primSize, primDetail, primHeight]) c.disabled = true;
+  const primFields = el('div', 'fields after-fields');
+  primFields.append(field('Primitive size', primSize), field('Primitive detail', primDetail), field('Primitive height', primHeight));
+  panel.append(primFields);
+  const primGrid = el('div', 'add-grid two after-fields');
+  const primApply = el('button', 'btn', 'Apply to primitive');
+  primApply.type = 'button';
+  primApply.disabled = true;
+  primGrid.append(primApply);
+  panel.append(primGrid);
 
   panel.append(el('h2', 'gap', 'Build'));
   const skeleton = choices('Skeleton', Object.entries(SKELETONS).map(([k, v]) => [k, v.label]));
@@ -633,9 +677,17 @@ function buildShell(root: HTMLElement): Shell {
   const layerStrength = input('range', { min: '-100', max: '200', value: '100', 'aria-label': 'Layer strength' });
   layerStrength.disabled = true;
   const layerFields = el('div', 'fields');
-  layerFields.append(field('Record into', layerSelect), field('Strength', layerStrength));
+  // The noise editor for the Noise layer button: pattern, feature size and height as percentages of the object's
+  // size, octaves, gain and a stretch; the alpha pattern uses the Brush section's alpha.
+  const noisePattern = choices('Noise pattern', [['value', 'Value'], ['ridged', 'Ridged'], ['turbulence', 'Turbulence'], ['cells', 'Cells'], ['alpha', 'Alpha (Brush alpha)']]);
+  const noiseSize = input('number', { min: '0.2', max: '50', step: '0.2', value: '2', 'aria-label': 'Noise size' });
+  const noiseHeight = input('number', { min: '-10', max: '10', step: '0.1', value: '0.4', 'aria-label': 'Noise height' });
+  const noiseOctaves = input('number', { min: '1', max: '8', value: '3', 'aria-label': 'Noise octaves' });
+  const noiseGain = input('range', { min: '10', max: '90', value: '50', 'aria-label': 'Noise gain' });
+  const noiseStretch = choices('Noise stretch', [['none', 'None'], ['x', 'Along x'], ['y', 'Along y'], ['z', 'Along z']]);
+  layerFields.append(field('Record into', layerSelect), field('Strength', layerStrength), field('Noise pattern', noisePattern), field('Noise size %', noiseSize), field('Noise height %', noiseHeight), field('Octaves', noiseOctaves), field('Gain', noiseGain), field('Stretch', noiseStretch));
   panel.append(layerFields);
-  const layerGrid = el('div', 'add-grid three');
+  const layerGrid = el('div', 'add-grid three after-fields');
   const layerButtons = LAYER_ACTIONS.map(([action, label]) => {
     const b = el('button', 'btn', label);
     b.type = 'button';
@@ -691,18 +743,33 @@ function buildShell(root: HTMLElement): Shell {
   const envInput = input('file', { accept: '.hdr,image/png,image/jpeg,image/webp', 'aria-label': 'Choose an environment image' });
   envInput.hidden = true;
   panel.append(envInput);
+  const keyAzimuth = input('range', { min: '-180', max: '180', value: '-37', 'aria-label': 'Key light direction' });
+  const keyElevation = input('range', { min: '-10', max: '90', value: '41', 'aria-label': 'Key light height' });
+  const keyIntensity = input('range', { min: '0', max: '300', value: '100', 'aria-label': 'Key light strength' });
+  const keyColor = input('color', { value: '#fff8ef', 'aria-label': 'Key light colour' });
+  const keyFollows = input('checkbox', { 'aria-label': 'Key light follows the view' });
+  keyFollows.checked = true;
+  const lightPick = choices('Light', [['0', 'Key light (casts shadows)']]);
+  const shadows = input('checkbox', { 'aria-label': 'Shadows' });
+  const groundShadow = input('checkbox', { 'aria-label': 'Ground shadow' });
   const postSsao = input('checkbox', { 'aria-label': 'Ambient occlusion' });
   const postBloom = input('checkbox', { 'aria-label': 'Bloom' });
   const postDof = input('checkbox', { 'aria-label': 'Depth of field' });
   const postVignette = input('checkbox', { 'aria-label': 'Vignette' });
   const postGrain = input('checkbox', { 'aria-label': 'Film grain' });
   const lightFields = el('div', 'fields');
-  lightFields.append(field('Environment', envSelect), field('Rotate', envRotate), field('Exposure', exposure), field('Fixed lights', fixedLights), field('Tone mapping', tone), field('Show environment', envBackground), field('Background blur', envBlur), field('Ambient occlusion', postSsao), field('Bloom', postBloom), field('Depth of field', postDof), field('Vignette', postVignette), field('Film grain', postGrain));
+  lightFields.append(field('Environment', envSelect), field('Rotate', envRotate), field('Exposure', exposure), field('Fixed lights', fixedLights), field('Tone mapping', tone), field('Show environment', envBackground), field('Background blur', envBlur), field('Light', lightPick), field('Light direction', keyAzimuth), field('Light height', keyElevation), field('Light strength', keyIntensity), field('Light colour', keyColor), field('Follows the view', keyFollows), field('Shadows', shadows), field('Ground shadow', groundShadow), field('Ambient occlusion', postSsao), field('Bloom', postBloom), field('Depth of field', postDof), field('Vignette', postVignette), field('Film grain', postGrain));
   panel.append(lightFields);
   const lightGrid = el('div', 'add-grid two after-fields');
   const envLoad = el('button', 'btn', 'Load HDRI');
   envLoad.type = 'button';
-  lightGrid.append(envLoad);
+  const lightAdd = el('button', 'btn', 'Add light');
+  lightAdd.type = 'button';
+  const lightRemove = el('button', 'btn', 'Remove light');
+  lightRemove.type = 'button';
+  lightRemove.disabled = true;
+  lightGrid.classList.remove('two');
+  lightGrid.append(envLoad, lightAdd, lightRemove);
   panel.append(lightGrid);
 
   panel.append(el('h2', 'gap', 'Keys'));
@@ -765,7 +832,7 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove };
 }
 
 class SceneView {
@@ -877,8 +944,42 @@ class SceneView {
     shell.shading.addEventListener('change', () => this.applyShading());
     shell.envSelect.addEventListener('change', () => void this.chooseEnvironment());
     for (const c of [shell.envRotate, shell.exposure, shell.fixedLights, shell.envBlur]) c.addEventListener('input', () => this.applyLighting());
+    for (const c of [shell.shadows, shell.groundShadow]) c.addEventListener('change', () => this.applyLighting());
+    // The light fields edit the light chosen under Light: the key, or an added one.
+    const editLight = (): void => {
+      const spec = this.lightSpecs[Number(shell.lightPick.value)] ?? this.lightSpecs[0];
+      spec.azimuth = Number(shell.keyAzimuth.value);
+      spec.elevation = Number(shell.keyElevation.value);
+      spec.intensity = Number(shell.keyIntensity.value) / 100;
+      spec.color = hexToLinear(shell.keyColor.value);
+      spec.hex = shell.keyColor.value;
+      spec.followsView = shell.keyFollows.checked;
+      this.applyLighting();
+    };
+    for (const c of [shell.keyAzimuth, shell.keyElevation, shell.keyIntensity, shell.keyColor]) c.addEventListener('input', editLight);
+    shell.keyFollows.addEventListener('change', editLight);
+    shell.lightPick.addEventListener('change', () => this.showLight());
+    shell.lightAdd.addEventListener('click', () => {
+      if (this.lightSpecs.length >= 4) {
+        this.note('Up to four lights: the key and three more');
+        return;
+      }
+      // A new light starts opposite the key, dimmer and cool, so it reads as a fill or rim.
+      const key = this.lightSpecs[0];
+      this.lightSpecs.push({ azimuth: key.azimuth > 0 ? key.azimuth - 180 : key.azimuth + 180, elevation: 25, intensity: 0.4, color: hexToLinear('#dfe8ff'), hex: '#dfe8ff', followsView: key.followsView });
+      this.patchLightList(this.lightSpecs.length - 1);
+      this.applyLighting();
+    });
+    shell.lightRemove.addEventListener('click', () => {
+      const i = Number(shell.lightPick.value);
+      if (i <= 0) return;
+      this.lightSpecs.splice(i, 1);
+      this.patchLightList(Math.min(i, this.lightSpecs.length - 1));
+      this.applyLighting();
+    });
     for (const c of [shell.tone, shell.envBackground, shell.postSsao, shell.postBloom, shell.postDof, shell.postVignette, shell.postGrain]) c.addEventListener('change', () => this.applyLighting());
     shell.envLoad.addEventListener('click', () => shell.envInput.click());
+    shell.primApply.addEventListener('click', () => void this.applyPrimitive());
     shell.envInput.addEventListener('change', () => void this.loadEnvironment());
     shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
     shell.paintLayer.addEventListener('change', () => {
@@ -1445,6 +1546,36 @@ class SceneView {
   private falloffDrag: number | null = null;
   private falloffWeights: number[] = Array.from({ length: FALLOFF_POINTS }, (_, i) => FALLOFFS.smooth(i / (FALLOFF_POINTS - 1)));
 
+  /** The key light (first) and up to three added lights, as the Light fields edit them. */
+  private lightSpecs: (LightSpec & { hex: string })[] = [{ azimuth: -37, elevation: 41, intensity: 1, color: hexToLinear('#fff8ef'), hex: '#fff8ef', followsView: true }];
+
+  /** Rebuilds the Light choices (reusing options) and selects `pick`. */
+  private patchLightList(pick: number): void {
+    const select = this.shell.lightPick;
+    while (select.options.length > this.lightSpecs.length) select.options[select.options.length - 1].remove();
+    for (let i = select.options.length; i < this.lightSpecs.length; i++) {
+      const option = el('option', '', `Light ${i + 1}`);
+      option.value = String(i);
+      select.append(option);
+    }
+    select.value = String(pick);
+    this.showLight();
+  }
+
+  /** Shows the chosen light's settings in the Light fields. */
+  private showLight(): void {
+    const s = this.shell;
+    const i = Number(s.lightPick.value);
+    const spec = this.lightSpecs[i] ?? this.lightSpecs[0];
+    s.keyAzimuth.value = String(Math.round(spec.azimuth));
+    s.keyElevation.value = String(Math.round(spec.elevation));
+    s.keyIntensity.value = String(Math.round(spec.intensity * 100));
+    s.keyColor.value = spec.hex;
+    s.keyFollows.checked = spec.followsView;
+    const removable = i > 0;
+    if (s.lightRemove.disabled === removable) s.lightRemove.disabled = !removable;
+  }
+
   /** Environments loaded from files this session, by their select value. */
   private environments = new Map<string, EnvImage>();
 
@@ -1474,6 +1605,14 @@ class SceneView {
       lights: Number(s.fixedLights.value) / 100,
       tone: s.tone.value,
       blur: Number(s.envBlur.value) / 100,
+      keyAzimuth: this.lightSpecs[0].azimuth,
+      keyElevation: this.lightSpecs[0].elevation,
+      keyIntensity: this.lightSpecs[0].intensity,
+      keyColor: this.lightSpecs[0].color,
+      keyFollowsView: this.lightSpecs[0].followsView,
+      shadows: s.shadows.checked,
+      ground: s.groundShadow.checked,
+      extra: this.lightSpecs.slice(1),
     };
     r.setPost({ ssao: s.postSsao.checked, bloom: s.postBloom.checked, dof: s.postDof.checked, vignette: s.postVignette.checked, grain: s.postGrain.checked });
     this.viewport.invalidate();
@@ -1821,6 +1960,7 @@ class SceneView {
     if (this.shell.dyntopo.disabled !== fixed) this.shell.dyntopo.disabled = fixed;
     this.patchLayers(active);
     this.patchPaintLayers(active);
+    this.patchPrimitive(active);
     if (next.active !== this.scene.active && this.scene.active !== null) this.previous = this.scene.active;
     this.scene = next;
   }
@@ -2031,10 +2171,62 @@ class SceneView {
     if (reply.ok) this.frameActive();
   }
 
+  /** The primitive fields follow the active object while it is an editable primitive. */
+  private patchPrimitive(active: ObjectSummary | undefined): void {
+    const s = this.shell;
+    const p = active?.primitive ?? null;
+    const off = p === null;
+    for (const c of [s.primSize, s.primDetail, s.primHeight, s.primApply]) if (c.disabled !== off) c.disabled = off;
+    if (!p) return;
+    const set = (c: HTMLInputElement, v: unknown, d: number): void => {
+      const text = String(typeof v === 'number' ? v : d);
+      if (document.activeElement !== c && c.value !== text) c.value = text;
+    };
+    const kind = String(p.kind);
+    set(s.primSize, p.size, 1);
+    set(s.primDetail, p.detail, kind === 'sphere' ? 5 : kind === 'cube' || kind === 'plane' ? 16 : 64);
+    set(s.primHeight, p.height, 2);
+    const tall = kind === 'cylinder' || kind === 'cone';
+    if (s.primHeight.disabled === tall) s.primHeight.disabled = !tall;
+  }
+
+  private async applyPrimitive(): Promise<void> {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (!o?.primitive) return;
+    const s = this.shell;
+    const args: Record<string, unknown> = { id: o.id, size: Number(s.primSize.value) || 1, detail: Math.round(Number(s.primDetail.value) || 0) };
+    if (!s.primHeight.disabled) args.height = Number(s.primHeight.value) || 2;
+    await this.run('edit_primitive', args);
+  }
+
+  /** The noise editor's settings as surface_noise arguments, sizes taken from the object's own size. */
+  private noiseArgs(o: ObjectSummary): Record<string, unknown> {
+    const s = this.shell;
+    const { min, max } = o.bounds;
+    const size = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
+    const pct = (el2: HTMLInputElement, d: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, Number(el2.value) || d)) / 100;
+    const args: Record<string, unknown> = {
+      pattern: s.noisePattern.value,
+      scale: size * pct(s.noiseSize, 2, 0.2, 50),
+      amount: size * (Math.max(-10, Math.min(10, Number(s.noiseHeight.value) || 0)) / 100),
+      octaves: Math.max(1, Math.min(8, Math.round(Number(s.noiseOctaves.value) || 3))),
+      gain: Number(s.noiseGain.value) / 100,
+    };
+    const axis = { x: 0, y: 1, z: 2 }[s.noiseStretch.value as 'x' | 'y' | 'z'];
+    if (axis !== undefined) {
+      const stretch = [1, 1, 1];
+      stretch[axis] = 4;
+      args.stretch = stretch;
+    }
+    if (s.noisePattern.value === 'alpha') args.alpha = s.alpha.value === 'none' ? 'dots' : s.alpha.value;
+    return args;
+  }
+
   private layerAction(action: string): void {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     if (!o) return;
-    if (action === 'layer_add' || action === 'surface_noise') void this.run(action, { id: o.id });
+    if (action === 'layer_add') void this.run(action, { id: o.id });
+    else if (action === 'surface_noise') void this.run(action, { id: o.id, ...this.noiseArgs(o) });
     else if (o.active_layer === null) this.note('Pick a layer under Record into first');
     else void this.run(action, { id: o.id, index: o.active_layer });
   }

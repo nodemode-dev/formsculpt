@@ -1,7 +1,7 @@
 import type { MeshBuffers, VertexUpdate } from '../engine/service';
 import type { OrbitCamera } from './camera';
 import { mipChain, type EnvImage } from './environment';
-import { invert } from './math';
+import { invert, lookAt, multiply, ortho } from './math';
 import { NO_POST, PostFx, type PostSettings } from './post';
 
 const MESH_VS = `#version 300 es
@@ -15,6 +15,7 @@ uniform mat4 uView;
 uniform mat4 uModel;
 out vec3 vNrm;
 out vec3 vViewPos;
+out vec3 vWorld;
 out float vMask;
 out vec3 vCol;
 out vec2 vMat;
@@ -26,6 +27,7 @@ void main() {
   vec4 world = uModel * vec4(aPos, 1.0);
   vNrm = mat3(uView) * (transpose(inverse(mat3(uModel))) * aNrm);
   vViewPos = (uView * world).xyz;
+  vWorld = world.xyz;
   gl_Position = uViewProj * world;
 }`;
 
@@ -33,6 +35,29 @@ const MESH_FS = `#version 300 es
 precision highp float;
 in vec3 vNrm;
 in vec3 vViewPos;
+in vec3 vWorld;
+uniform vec3 uKeyDir;
+uniform vec3 uKeyColor;
+uniform float uShadowOn;
+uniform mat4 uShadowVP;
+uniform sampler2D uShadowMap;
+uniform float uShadowBias;
+// Added lights beyond the key (view-space directions, linear colours times strength); they cast no shadows.
+uniform int uExtraCount;
+uniform vec3 uExtraDir[3];
+uniform vec3 uExtraColor[3];
+// The key light's visibility from its shadow map: a 3 by 3 percentage-closer filter for a soft edge.
+float keyShadow() {
+  if (uShadowOn < 0.5) return 1.0;
+  vec4 c = uShadowVP * vec4(vWorld, 1.0);
+  vec3 q = c.xyz / c.w * 0.5 + 0.5;
+  if (q.x < 0.0 || q.y < 0.0 || q.x > 1.0 || q.y > 1.0 || q.z > 1.0) return 1.0;
+  vec2 texel = 1.0 / vec2(textureSize(uShadowMap, 0));
+  float lit = 0.0;
+  for (int x = -1; x <= 1; x++)
+    for (int y = -1; y <= 1; y++) lit += q.z - uShadowBias <= texture(uShadowMap, q.xy + vec2(x, y) * texel).r ? 1.0 : 0.0;
+  return mix(0.25, 1.0, lit / 9.0);
+}
 in float vMask;
 in vec3 vCol;
 in vec2 vMat;
@@ -96,7 +121,8 @@ void main() {
   if (uLit > 0.5) {
     float rough = clamp(vMat.x, 0.05, 1.0);
     float metal = clamp(vMat.y, 0.0, 1.0);
-    col = light(n, v, normalize(vec3(-0.45, 0.65, 0.6)), vec3(2.6, 2.45, 2.25), albedo, rough, metal);
+    col = light(n, v, uKeyDir, uKeyColor, albedo, rough, metal) * keyShadow();
+    for (int i = 0; i < 3; i++) if (i < uExtraCount) col += light(n, v, uExtraDir[i], uExtraColor[i], albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.6, 0.1, 0.5)), vec3(0.55, 0.62, 0.75), albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.0, 0.35, -1.0)), vec3(0.9), albedo, rough, metal);
     col *= uLightScale;
@@ -129,8 +155,9 @@ void main() {
   } else {
     vec3 r = reflect(-v, n);
     vec2 m = r.xy / (2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0))) + 0.5;
-    float key = clamp(dot(n, normalize(vec3(-0.45, 0.65, 0.6))), 0.0, 1.0);
+    float key = clamp(dot(n, uKeyDir), 0.0, 1.0) * keyShadow() * dot(uKeyColor, vec3(0.1282));
     float fill = clamp(dot(n, normalize(vec3(0.6, 0.1, 0.5))), 0.0, 1.0) * 0.25;
+    for (int i = 0; i < 3; i++) if (i < uExtraCount) fill += clamp(dot(n, uExtraDir[i]), 0.0, 1.0) * dot(uExtraColor[i], vec3(0.1282)) * uCap.x;
     float rim = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 3.0) * uCap.w;
     float spec = pow(clamp(1.0 - distance(m, vec2(0.34, 0.68)) * 2.2, 0.0, 1.0), uCap.z) * uCap.y;
     float cavity = mix(0.55, 1.0, smoothstep(-0.2, 0.9, n.y * 0.5 + 0.5));
@@ -178,6 +205,9 @@ interface GpuMesh {
   drawnTris: Uint32Array;
   /** De-indexed copy for showing face groups: an indexed mesh cannot give each triangle its own colour. */
   expanded: Expanded | null;
+  /** Bounds at upload, for fitting the shadow map (strokes move vertices only a little). */
+  lo: [number, number, number];
+  hi: [number, number, number];
 }
 
 interface Expanded {
@@ -327,7 +357,16 @@ export class GlRenderer {
     gl.bindVertexArray(null);
     const groups = mesh.groups && mesh.groups.length === tris ? new Uint32Array(mesh.groups) : null;
     const cpu: MeshBuffers = { ...mesh, positions: new Float32Array(mesh.positions), normals: new Float32Array(mesh.normals), mask: new Float32Array(mesh.mask), paint, groups, hidden: null };
-    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null };
+    const lo: [number, number, number] = [Infinity, Infinity, Infinity];
+    const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < cpu.positions.length; i += 3) {
+      for (let c = 0; c < 3; c++) {
+        const x = cpu.positions[i + c];
+        if (x < lo[c]) lo[c] = x;
+        if (x > hi[c]) hi[c] = x;
+      }
+    }
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, lo, hi };
     this.meshes.set(mesh.id, gpu);
     if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
   }
@@ -521,6 +560,19 @@ export class GlRenderer {
     const gl = this.gl;
     const p = this.postSettings;
     const post = this.post && (p.ssao || p.bloom || p.dof || p.vignette || p.grain) ? this.post : null;
+    // The key light: its world direction (from azimuth and elevation, about the view when it follows the camera).
+    const L = this.lighting;
+    const az = (L.keyAzimuth * Math.PI) / 180;
+    const el = (L.keyElevation * Math.PI) / 180;
+    const dir: [number, number, number] = [Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)];
+    const view = camera.view();
+    // view is column-major: world to view rotates by its upper 3 by 3; its transpose takes view back to world.
+    const toView = (d: [number, number, number]): [number, number, number] => [view[0] * d[0] + view[4] * d[1] + view[8] * d[2], view[1] * d[0] + view[5] * d[1] + view[9] * d[2], view[2] * d[0] + view[6] * d[1] + view[10] * d[2]];
+    const toWorld = (d: [number, number, number]): [number, number, number] => [view[0] * d[0] + view[1] * d[1] + view[2] * d[2], view[4] * d[0] + view[5] * d[1] + view[6] * d[2], view[8] * d[0] + view[9] * d[1] + view[10] * d[2]];
+    const keyView = L.keyFollowsView ? dir : toView(dir);
+    const keyWorld = L.keyFollowsView ? toWorld(dir) : dir;
+    const shadowMap = (L.shadows || L.ground) && this.meshes.size > 0 ? this.renderShadow(keyWorld) : null;
+    const shadowVP = L.shadows ? shadowMap : null;
     if (post) post.begin(width, height);
     else gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, width, height);
@@ -575,6 +627,28 @@ export class GlRenderer {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, env ? env.tex : this.blankEnv);
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uEnv'), 1);
+    const k = L.keyIntensity;
+    gl.uniform3f(gl.getUniformLocation(this.meshProgram, 'uKeyDir'), ...keyView);
+    gl.uniform3f(gl.getUniformLocation(this.meshProgram, 'uKeyColor'), 2.6 * k * L.keyColor[0], 2.6 * k * L.keyColor[1], 2.6 * k * L.keyColor[2]);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uShadowOn'), shadowVP ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uShadowBias'), 0.003);
+    const extra = L.extra.slice(0, 3);
+    const dirs = new Float32Array(9);
+    const cols = new Float32Array(9);
+    extra.forEach((x, i) => {
+      const a = (x.azimuth * Math.PI) / 180;
+      const e = (x.elevation * Math.PI) / 180;
+      const d: [number, number, number] = [Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a)];
+      dirs.set(x.followsView ? d : toView(d), i * 3);
+      cols.set([2.6 * x.intensity * x.color[0], 2.6 * x.intensity * x.color[1], 2.6 * x.intensity * x.color[2]], i * 3);
+    });
+    gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uExtraCount'), extra.length);
+    gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraDir'), dirs);
+    gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraColor'), cols);
+    if (shadowVP) gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uShadowVP'), false, shadowVP);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, shadowVP && this.shadow ? this.shadow.tex : this.blankEnv);
+    gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uShadowMap'), 2);
     gl.activeTexture(gl.TEXTURE0);
     const model = gl.getUniformLocation(this.meshProgram, 'uModel');
     for (const [id, m] of this.meshes) {
@@ -605,6 +679,7 @@ export class GlRenderer {
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
     }
     gl.bindVertexArray(null);
+    if (shadowMap && L.ground && this.shadow && this.groundBox) this.drawGround(vp, shadowMap);
     if (post) {
       const proj = camera.projection();
       const inv = invert(proj);
@@ -614,6 +689,87 @@ export class GlRenderer {
 
   private post: PostFx | null = null;
   private postSettings: PostSettings = { ...NO_POST };
+  private shadow: { fb: WebGLFramebuffer; tex: WebGLTexture; size: number } | null = null;
+  private shadowProgram: WebGLProgram | null = null;
+  private groundProgram: WebGLProgram | null = null;
+  private groundVao: WebGLVertexArrayObject | null = null;
+  private groundBox: { y: number; center: [number, number, number]; r: number } | null = null;
+
+  /** The shadow catcher: a floor quad just under the scene, drawn as shadow only (blended, no colour of its own). */
+  private drawGround(vp: Float32Array, shadowVP: Float32Array): void {
+    const gl = this.gl;
+    const g = this.groundBox;
+    if (!g || !this.shadow) return;
+    if (!this.groundProgram) {
+      this.groundProgram = compile(gl, GROUND_VS, GROUND_FS);
+      this.groundVao = gl.createVertexArray();
+    }
+    const prog = this.groundProgram;
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uViewProj'), false, vp);
+    gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uShadowVP'), false, shadowVP);
+    gl.uniform3f(gl.getUniformLocation(prog, 'uCenter'), g.center[0], g.y - g.r * 0.002, g.center[2]);
+    gl.uniform1f(gl.getUniformLocation(prog, 'uHalf'), g.r * 0.9);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.shadow.tex);
+    gl.uniform1i(gl.getUniformLocation(prog, 'uShadowMap'), 2);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.bindVertexArray(this.groundVao);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.bindVertexArray(null);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+  }
+
+  /** Draws every mesh's depth from the key light into a 2048 square map; returns the light's view-projection. */
+  private renderShadow(keyWorld: [number, number, number]): Float32Array | null {
+    const gl = this.gl;
+    const size = 2048;
+    if (!this.shadow) {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, size, size, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
+      for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const fb = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0);
+      this.shadow = { fb, tex, size };
+      this.shadowProgram = compile(gl, SHADOW_VS, SHADOW_FS);
+    }
+    // Fit an orthographic light camera around every mesh's bounds.
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const m of this.meshes.values()) for (let c = 0; c < 3; c++) {
+      lo[c] = Math.min(lo[c], m.lo[c]);
+      hi[c] = Math.max(hi[c], m.hi[c]);
+    }
+    const center: [number, number, number] = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+    // The radius covers the ground shadow's floor too (twice the scene's footprint), so its shadow is not cut off.
+    const r = Math.max(1e-3, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) * 1.1);
+    this.groundBox = { y: lo[1], center, r };
+    const eye: [number, number, number] = [center[0] + keyWorld[0] * r * 2, center[1] + keyWorld[1] * r * 2, center[2] + keyWorld[2] * r * 2];
+    const up: [number, number, number] = Math.abs(keyWorld[1]) > 0.99 ? [0, 0, 1] : [0, 1, 0];
+    const vp = multiply(ortho(r, 1, r * 0.5, r * 3.5), lookAt(eye, center, up));
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.shadow.fb);
+    gl.viewport(0, 0, size, size);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    const prog = this.shadowProgram as WebGLProgram;
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uLightVP'), false, vp);
+    const model = gl.getUniformLocation(prog, 'uModel');
+    for (const [id, m] of this.meshes) {
+      gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
+      gl.bindVertexArray(m.vao);
+      gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
+    }
+    gl.bindVertexArray(null);
+    return vp;
+  }
 
   /** Turns post effects on or off; the offscreen pipeline is built on first use. */
   setPost(settings: PostSettings): void {
@@ -622,7 +778,7 @@ export class GlRenderer {
   }
 
   private env: { tex: WebGLTexture; levels: number } | null = null;
-  lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', blur: 0.35 };
+  lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', blur: 0.35, keyAzimuth: -36.9, keyElevation: 40.9, keyIntensity: 1, keyColor: [1, 0.94, 0.87], keyFollowsView: true, shadows: false, ground: false, extra: [] };
 
   /** Uploads an environment as a float texture with its own mip chain (null removes it). */
   setEnvironment(img: EnvImage | null): void {
@@ -648,6 +804,48 @@ export const TONES = ['reinhard', 'aces', 'none'];
 
 const IDENTITY = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
+const SHADOW_VS = `#version 300 es
+layout(location=0) in vec3 aPos;
+uniform mat4 uLightVP;
+uniform mat4 uModel;
+void main() { gl_Position = uLightVP * uModel * vec4(aPos, 1.0); }`;
+
+const GROUND_VS = `#version 300 es
+uniform mat4 uViewProj;
+uniform vec3 uCenter;
+uniform float uHalf;
+out vec3 vWorld;
+out vec2 vLocal;
+void main() {
+  vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1)) * 2.0 - 1.0;
+  vLocal = c;
+  vWorld = uCenter + vec3(c.x, 0.0, c.y) * uHalf;
+  gl_Position = uViewProj * vec4(vWorld, 1.0);
+}`;
+
+const GROUND_FS = `#version 300 es
+precision highp float;
+in vec3 vWorld;
+in vec2 vLocal;
+uniform mat4 uShadowVP;
+uniform sampler2D uShadowMap;
+out vec4 outColor;
+void main() {
+  vec4 c = uShadowVP * vec4(vWorld, 1.0);
+  vec3 q = c.xyz / c.w * 0.5 + 0.5;
+  vec2 texel = 1.0 / vec2(textureSize(uShadowMap, 0));
+  float shade = 0.0;
+  for (int x = -2; x <= 2; x++)
+    for (int y = -2; y <= 2; y++) shade += q.z - 0.004 > texture(uShadowMap, q.xy + vec2(x, y) * texel * 1.5).r ? 1.0 : 0.0;
+  float fade = 1.0 - smoothstep(0.6, 1.0, length(vLocal));
+  outColor = vec4(0.0, 0.0, 0.0, shade / 25.0 * 0.55 * fade);
+}`;
+
+const SHADOW_FS = `#version 300 es
+precision mediump float;
+out vec4 outColor;
+void main() { outColor = vec4(1.0); }`;
+
 export interface Lighting {
   /** Light lit (PBR) shading with the environment image. */
   environment: boolean;
@@ -661,6 +859,28 @@ export interface Lighting {
   tone: string;
   /** How blurred the background is, 0 sharp to 1 fully blurred. */
   blur: number;
+  /** The key light, in degrees: azimuth from straight ahead (or world +z), elevation above the horizon. */
+  keyAzimuth: number;
+  keyElevation: number;
+  keyIntensity: number;
+  /** Linear 0..1 colour. */
+  keyColor: [number, number, number];
+  /** The key light turns with the view (a headlight) or stays put in the world. */
+  keyFollowsView: boolean;
+  /** The key light casts shadows. */
+  shadows: boolean;
+  /** A shadow catcher: an invisible floor under the scene that shows only the shadow cast on it. */
+  ground: boolean;
+  /** Up to three added lights. */
+  extra: LightSpec[];
+}
+
+export interface LightSpec {
+  azimuth: number;
+  elevation: number;
+  intensity: number;
+  color: [number, number, number];
+  followsView: boolean;
 }
 
 const BG_VS = `#version 300 es
