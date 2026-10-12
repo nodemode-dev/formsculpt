@@ -3,6 +3,7 @@ mod fbx;
 mod formats;
 mod gltf;
 mod project;
+mod usd;
 
 use fsc_core::Mesh;
 
@@ -19,10 +20,12 @@ pub enum Format {
     Gltf,
     ThreeMf,
     Fbx,
+    /// USD as text (.usda; a .usd that is text reads too).
+    Usda,
 }
 
 impl Format {
-    pub const NAMES: [&'static str; 7] = ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx"];
+    pub const NAMES: [&'static str; 8] = ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx", "usda"];
 
     pub fn parse(name: &str) -> Option<Format> {
         let ext = name.rsplit('.').next().unwrap_or(name).to_ascii_lowercase();
@@ -34,6 +37,7 @@ impl Format {
             "gltf" => Format::Gltf,
             "3mf" => Format::ThreeMf,
             "fbx" => Format::Fbx,
+            "usda" | "usd" => Format::Usda,
             _ => return None,
         })
     }
@@ -52,6 +56,7 @@ pub fn import_with(format: Format, bytes: &[u8], resolve: gltf::Resolve) -> Resu
         Format::Glb | Format::Gltf => gltf::read_gltf_with(bytes, resolve)?,
         Format::ThreeMf => formats::read_3mf(bytes)?,
         Format::Fbx => fbx::read_fbx(bytes)?,
+        Format::Usda => usd::read_usda(bytes)?,
     };
     for (name, mesh) in &meshes {
         mesh.validate().map_err(|e| format!("{name}: {e}"))?;
@@ -90,12 +95,25 @@ pub fn export(format: Format, objects: &[GltfObject]) -> Result<Vec<u8>, String>
         Format::Gltf => return Err("a .gltf is written as two files; export it to a path (export_mesh) or as glb".into()),
         Format::ThreeMf => formats::write_3mf(&plain)?,
         Format::Fbx => fbx::write_fbx(objects),
+        Format::Usda => usd::write_usda(objects),
     })
 }
 
 /// The separate glTF form: the .gltf document pointing at `bin_name`, and the .bin's bytes.
 pub fn export_gltf(objects: &[GltfObject], bin_name: &str) -> (Vec<u8>, Vec<u8>) {
     gltf::write_gltf(objects, bin_name)
+}
+
+/// A deflated zip of named files (the baked maps download, where no other archiver is at hand, as in the browser).
+pub fn zip_files(files: &[(String, &[u8])]) -> Result<Vec<u8>, String> {
+    use std::io::Write;
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    for (name, data) in files {
+        zip.start_file(name.as_str(), opts).map_err(|e| e.to_string())?;
+        zip.write_all(data).map_err(|e| e.to_string())?;
+    }
+    Ok(zip.finish().map_err(|e| e.to_string())?.into_inner())
 }
 
 pub fn engine_version() -> &'static str {
