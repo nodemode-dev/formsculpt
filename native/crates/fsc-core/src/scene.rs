@@ -23,6 +23,9 @@ pub struct Object {
     pub folder: String,
     /// Paint layers composited into `mesh.paint` (empty: the paint is plain).
     pub paint_layers: crate::PaintLayers,
+    /// A primitive still open to edit: the arguments it was made with (JSON) and the revision it had then; any other
+    /// change raises the revision and so fixes the shape.
+    pub primitive: Option<(String, u64)>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -40,7 +43,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None }
     }
 
     pub fn rebuild(&mut self) {

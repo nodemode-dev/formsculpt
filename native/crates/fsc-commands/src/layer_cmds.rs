@@ -77,6 +77,11 @@ pub(crate) fn noise_schema() -> Value {
             "scale": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Feature size in world units; 2 percent of the object's size when omitted."},
             "amount": {"type": "number", "minimum": -10000, "maximum": 10000, "description": "Height of the bumps along the normals in world units (negative sinks them); 0.4 percent of the object's size when omitted."},
             "seed": {"type": "integer", "minimum": 0, "maximum": 1000000, "default": 0, "description": "Another seed gives another pattern."},
+            "pattern": {"type": "string", "enum": fsc_sculpt::NoisePattern::NAMES, "default": "value", "description": "value: soft fractal bumps (skin, stone); ridged: sharp crests (rock, bark, veins); turbulence: creased troughs (wrinkles, erosion); cells: rounded cells (scales, hammered metal, craters with a negative amount); alpha: an alpha tiled over the surface from three sides (fabric, tiles, a pattern loaded with alpha_load)."},
+            "octaves": {"type": "integer", "minimum": 1, "maximum": 8, "default": 3, "description": "Layers of finer detail on top of the base size."},
+            "gain": {"type": "number", "minimum": 0.1, "maximum": 0.9, "default": 0.5, "description": "How strongly each finer layer shows."},
+            "stretch": {"type": "array", "items": {"type": "number", "minimum": 0.05, "maximum": 20}, "minItems": 3, "maxItems": 3, "description": "Feature size multipliers along x, y and z (stretch wood grain or strata along one axis)."},
+            "alpha": {"type": "string", "description": "The alpha pattern's alpha: a built-in name or one loaded with alpha_load."},
             "name": {"type": "string", "minLength": 1, "maxLength": 80, "default": "Noise"}
         },
         "required": [],
@@ -98,6 +103,29 @@ pub(crate) fn surface_noise(s: &mut Session, args: &Value) -> Result<Value, Comm
     let seed = args.get("seed").and_then(Value::as_u64).unwrap_or(0) as f32;
     let offset = glam::Vec3::new(seed * 12.9898, seed * 78.233, seed * 37.719);
     let name = args.get("name").and_then(Value::as_str).unwrap_or("Noise").to_string();
+    // The noise editor: a pattern, its octaves and gain, a stretch per axis, and for the alpha pattern the alpha.
+    let pattern_name = args.get("pattern").and_then(Value::as_str).unwrap_or("value");
+    let pattern = fsc_sculpt::NoisePattern::parse(pattern_name).ok_or_else(|| bad(format!("pattern must be one of {}", fsc_sculpt::NoisePattern::NAMES.join(", "))))?;
+    let octaves = args.get("octaves").and_then(Value::as_u64).unwrap_or(3);
+    if !(1..=8).contains(&octaves) {
+        return Err(bad("octaves must be from 1 to 8"));
+    }
+    let gain = args.get("gain").and_then(Value::as_f64).unwrap_or(0.5) as f32;
+    if !(0.1..=0.9).contains(&gain) {
+        return Err(bad("gain must be from 0.1 to 0.9"));
+    }
+    let stretch = match args.get("stretch").and_then(Value::as_array) {
+        None => glam::Vec3::ONE,
+        Some(a) if a.len() == 3 && a.iter().all(|x| x.as_f64().is_some_and(|v| (0.05..=20.0).contains(&v))) => glam::Vec3::new(a[0].as_f64().unwrap() as f32, a[1].as_f64().unwrap() as f32, a[2].as_f64().unwrap() as f32),
+        Some(_) => return Err(bad("stretch is [x, y, z], each from 0.05 to 20")),
+    };
+    let alpha = if pattern == fsc_sculpt::NoisePattern::Alpha {
+        let a = crate::stroke_alpha(s, args)?.ok_or_else(|| bad("the alpha pattern needs alpha: a built-in name or one loaded with alpha_load"))?;
+        Some(a)
+    } else {
+        None
+    };
+    let settings = fsc_sculpt::NoiseSettings { pattern, octaves: octaves as u32, gain };
     remember(s, id, "Surface Noise");
     let object = s.scene.get_mut(id).expect("checked");
     let at = object.add_layer(name);
@@ -105,7 +133,8 @@ pub(crate) fn surface_noise(s: &mut Session, args: &Value) -> Result<Value, Comm
         .map(|v| {
             let p = glam::Vec3::from(object.mesh.positions[v]);
             let n = glam::Vec3::from(object.mesh.normals[v]);
-            (n * fsc_sculpt::fbm(p / scale + offset) * amount * (1.0 - object.mask[v])).to_array()
+            let value = fsc_sculpt::noise_at(p / (stretch * scale) + offset, n, &settings, alpha.as_deref());
+            (n * value * amount * (1.0 - object.mask[v])).to_array()
         })
         .collect();
     object.layers.list[at].delta = delta.clone();

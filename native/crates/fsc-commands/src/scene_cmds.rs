@@ -11,6 +11,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "name": o.name,
         "visible": o.visible,
         "folder": o.folder,
+        "primitive": o.primitive.as_ref().filter(|(_, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty()).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()),
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),
         "masked_vertices": o.mask.iter().filter(|&&m| m > 0.5).count(),
@@ -97,6 +98,61 @@ fn int(args: &Value, key: &str, default: u32, hi: u32) -> Result<u32, CommandErr
 }
 
 pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let (mesh, kind) = primitive_mesh(args)?;
+    let base = args.get("name").and_then(Value::as_str).filter(|n| !n.trim().is_empty()).map(str::to_string).unwrap_or_else(|| {
+        let mut c = kind.replace('_', " ");
+        if let Some(f) = c.get_mut(0..1) {
+            f.make_ascii_uppercase();
+        }
+        c
+    });
+    let name = s.scene.unique_name(&base);
+    let id = s.scene.add(name, mesh);
+    let index = s.scene.index_of(id).expect("just added");
+    s.history.push(Edit::Add { id, index, parked: None });
+    let object = s.scene.get_mut(id).expect("just added");
+    // Open to edit with edit_primitive until anything else changes it.
+    object.primitive = Some((args.to_string(), object.revision));
+    Ok(json!({"object": summary(s.scene.get(id).expect("just added")), "active": id}))
+}
+
+pub(crate) fn edit_primitive_schema() -> Value {
+    let mut schema = add_primitive_schema();
+    let props = schema["properties"].as_object_mut().expect("object");
+    props.remove("kind");
+    props.remove("name");
+    props.insert("id".into(), json!({"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."}));
+    schema["required"] = json!([]);
+    schema
+}
+
+/// Rebuilds a primitive with new settings while nothing else has changed it since it was made or last edited.
+pub(crate) fn edit_primitive(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = crate::sculpt_cmds::target(s, args)?;
+    let object = s.scene.get(id).expect("checked");
+    let Some((made, revision)) = object.primitive.clone() else {
+        return Err(CommandError::new("not_editable", "this object was not made by add_primitive in this session"));
+    };
+    if revision != object.revision || object.multires.is_some() || !object.layers.list.is_empty() {
+        return Err(CommandError::new("not_editable", "the primitive has been changed since it was made, so its shape is fixed"));
+    }
+    let mut merged: Value = serde_json::from_str(&made).unwrap_or_else(|_| json!({}));
+    for key in ["size", "detail", "height", "thickness"] {
+        if let Some(v) = args.get(key) {
+            merged[key] = v.clone();
+        }
+    }
+    let (mesh, _) = primitive_mesh(&merged)?;
+    let object = s.scene.get_mut(id).expect("checked");
+    let mask = vec![0.0; mesh.vertex_count()];
+    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    object.revision += 1;
+    object.primitive = Some((merged.to_string(), object.revision));
+    s.history.push(Edit::Topology { label: "Edit Primitive".into(), object: id, mesh: old_mesh, mask: old_mask });
+    Ok(json!({"object": summary(s.scene.get(id).expect("checked"))}))
+}
+
+fn primitive_mesh(args: &Value) -> Result<(fsc_core::Mesh, String), CommandError> {
     let kind = args.get("kind").and_then(Value::as_str).ok_or_else(|| CommandError::new("bad_arguments", "kind is required"))?;
     let size = num(args, "size", 1.0, 0.0, 1000.0)?;
     let height = num(args, "height", 2.0, 0.0, 1000.0)?;
@@ -120,19 +176,7 @@ pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, Comm
         "plane" => Primitive::Plane { size, divisions: int(args, "detail", 16, 2048)?.max(1) },
         other => return Err(CommandError::new("bad_arguments", format!("unknown kind {other}; use one of {}", Primitive::KINDS.join(", ")))),
     };
-    let mesh = primitive.build();
-    let base = args.get("name").and_then(Value::as_str).filter(|n| !n.trim().is_empty()).map(str::to_string).unwrap_or_else(|| {
-        let mut c = kind.replace('_', " ");
-        if let Some(f) = c.get_mut(0..1) {
-            f.make_ascii_uppercase();
-        }
-        c
-    });
-    let name = s.scene.unique_name(&base);
-    let id = s.scene.add(name, mesh);
-    let index = s.scene.index_of(id).expect("just added");
-    s.history.push(Edit::Add { id, index, parked: None });
-    Ok(json!({"object": summary(s.scene.get(id).expect("just added")), "active": id}))
+    Ok((primitive.build(), kind.to_string()))
 }
 
 fn object_id(args: &Value) -> Result<u32, CommandError> {
