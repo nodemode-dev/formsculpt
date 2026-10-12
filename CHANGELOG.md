@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.24.0 · 2026-10-12
+
+### Added
+
+- FBX: binary FBX 7.4 export (meshes, normals, vertex colours, sculpt layers as blend shapes) and 7.x import (placement, colours, compressed arrays, welded vertices), checked both ways against assimp. Window: FBX in Export format and the file picker.
+- `set_material`: subsurface scattering and transmission per object, saved in projects (99 commands in all). The viewport's lit shading draws subsurface with real thickness from the key light's depth map and refracts the environment through transmissive objects. Window: Subsurface and Transmission in the Paint section.
+- 3D mouse: 3Dconnexion devices over WebHID pan, zoom and turn the view (Chrome and Edge). Window: 3D mouse in the View section.
+- Tests for FBX and materials (engine 26, service 13).
+
 ## 0.23.0 · 2026-10-12
 
 ### Added

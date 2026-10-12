@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.23.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.24.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,9 +9,9 @@ Generated from the engine's command registry (formsculptor 0.23.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
-- Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
@@ -151,6 +151,17 @@ Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an
 - `name`: string
 - `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
 - `thickness`: number; default 0.3; range -inf to 1000; Torus tube radius.
+
+## set_material
+
+Set how light passes into and through an object in lit shading: subsurface scattering (skin, wax, jade, marble: light enters, picks up subsurface_color and glows through thin parts within subsurface_radius) and transmission with refraction (glass, water, resin, at an ior). Given values change; the rest stay. Saved in projects; one undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `ior`: number; range 1 to 2.5; Index of refraction: water 1.33, glass 1.5, diamond 2.4.
+- `subsurface`: number; range 0 to 1; How much light enters and comes back out tinted: skin 0.3 to 0.6, wax and jade 0.8.
+- `subsurface_color`: array of number; The tint light picks up inside, linear RGB (skin is a warm red).
+- `subsurface_radius`: number; range -inf to 1000; How far light travels inside, in world units; thin parts such as ears glow when lit from behind.
+- `transmission`: number; range 0 to 1; How much light passes through, refracted: 1 for clear glass or water.
 
 ## edit_primitive
 
@@ -852,14 +863,14 @@ Note: removes or replaces (undoable); in the window: Mod+O.
 
 ## import_mesh
 
-Add the meshes in an OBJ, STL, PLY, glTF/GLB or 3MF file as new objects (one per OBJ object, glTF node or 3MF object). glTF must be a GLB or carry its buffers inside. One undo step.
+Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x) or 3MF file as new objects (one per OBJ object, glTF node, FBX model or 3MF object), placed by their transforms with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.
 
 - `name`: string; Name for the new object; the file name when omitted.
 - `path`: string; required; A file path on this computer.
 
 ## export_mesh
 
-Write objects to OBJ, STL, PLY, GLB, glTF or 3MF, chosen by the path's extension, overwriting it. GLB and glTF keep sculpt layers as morph targets at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
+Write objects to OBJ, STL, PLY, GLB, glTF, FBX or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
 
 - `ids`: array of integer; Objects to write; every visible object when omitted. STL and PLY join them into one mesh.
 - `path`: string; required; A file path on this computer.
@@ -871,7 +882,7 @@ Note: removes or replaces (undoable); in the window: Mod+E.
 Hand an object to another app through a file (OBJ, GLB, PLY, STL or 3MF): it is written to path and remembered, so when the other app (Blender, Maya, a retopology or UV tool) saves over the file, bridge_sync brings the edit back into the same object. A two-way bridge with any app that opens and saves the format.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
-- `path`: string; required; The file to hand over, by extension: .obj, .glb, .ply, .stl or .3mf (OBJ is the most widely read).
+- `path`: string; required; The file to hand over, by extension: .obj, .glb, .fbx, .ply, .stl or .3mf (OBJ is the most widely read; FBX for Maya and 3ds Max).
 
 Note: removes or replaces (undoable).
 
