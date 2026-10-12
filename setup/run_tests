@@ -8,6 +8,12 @@ which="${1:-all}"
 engine_tests() {
   command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
   (cd "$FSC_ROOT/native" && cargo test --workspace)
+  local wasm="$FSC_ROOT/frontend/public/engine/fsc_engine.wasm"
+  if [ -f "$wasm" ] && command -v node >/dev/null 2>&1; then
+    node "$FSC_ROOT/frontend/e2e/wasm_smoke.mjs" "$wasm"
+  else
+    fs_say "the browser engine is not built (./formsculptor engine wasm); its smoke test was skipped"
+  fi
 }
 service_tests() {
   fs_venv

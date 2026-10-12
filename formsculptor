@@ -14,6 +14,7 @@ usage: ./formsculptor [command] [options]
   frontend            boot the frontend only
   engine build        build the Rust engine workspace (native, wasm, python targets as available)
   engine check        cargo check and clippy over the engine workspace
+  engine wasm         build the browser engine to frontend/public/engine (the window's engine with no service)
   build               production build of the frontend into frontend/dist
   serve               serve the built frontend from the backend on 127.0.0.1:8196
   freeze              freeze the backend into the Tauri sidecar binary
@@ -42,6 +43,7 @@ case "$cmd" in
     case "$sub" in
       build) exec setup/engine_build "$@" ;;
       check) exec setup/engine_check "$@" ;;
+      wasm) exec setup/engine_wasm "$@" ;;
       *) usage; exit 2 ;;
     esac ;;
   build) exec setup/build_frontend "$@" ;;

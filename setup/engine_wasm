@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Builds the browser engine (native/crates/fsc-wasm) to frontend/public/engine/fsc_engine.wasm, which the window loads
+# when it runs with no engine service (a static web build, or ?engine=wasm).
+#
+# With the wasm32-unknown-unknown target installed (rustup target add wasm32-unknown-unknown) this is a plain cargo
+# build. Without it, the standard library is built from source for the target (cargo -Zbuild-std, allowed on a stable
+# toolchain through RUSTC_BOOTSTRAP), which needs the library sources at <sysroot>/lib/rustlib/src/rust/library: the
+# rust-src component, or a checkout of rust-lang/rust's library/ at the toolchain's commit (rustc -vV names it).
+set -e
+source "$(dirname "$0")/lib.sh"
+command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
+cd "$FSC_ROOT/native"
+target=wasm32-unknown-unknown
+sysroot="$(rustc --print sysroot)"
+out="$FSC_ROOT/native/target"
+if [ -d "$sysroot/lib/rustlib/$target/lib" ]; then
+  cargo build -p fsc-wasm --lib --release --target "$target"
+elif [ -d "$sysroot/lib/rustlib/src/rust/library/std" ]; then
+  fs_say "no prebuilt $target standard library; building it from source"
+  RUSTC_BOOTSTRAP=1 cargo build -p fsc-wasm --lib --release --target "$target" -Zbuild-std=std,panic_abort
+else
+  fs_die "the $target target is missing: run rustup target add $target (or rustup component add rust-src)"
+fi
+mkdir -p "$FSC_ROOT/frontend/public/engine"
+cp "$out/$target/release/fsc_wasm.wasm" "$FSC_ROOT/frontend/public/engine/fsc_engine.wasm"
+fs_say "browser engine $(du -h "$FSC_ROOT/frontend/public/engine/fsc_engine.wasm" | cut -f1) at frontend/public/engine/fsc_engine.wasm"

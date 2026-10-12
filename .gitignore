@@ -1,5 +1,7 @@
 node_modules/
 frontend/dist/
+# The browser engine is built by ./formsculptor engine wasm.
+frontend/public/engine/
 backend/venv/
 backend/build/
 backend/dist-engine/

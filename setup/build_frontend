@@ -3,5 +3,9 @@ set -e
 source "$(dirname "$0")/lib.sh"
 cd "$FSC_ROOT/frontend"
 [ -d node_modules ] || npm install
+# The browser engine rides along in the build (public/engine), so the built window also runs with no service.
+if [ ! -f public/engine/fsc_engine.wasm ] && command -v cargo >/dev/null 2>&1; then
+  "$FSC_ROOT/setup/engine_wasm" || fs_say "the browser engine was not built; the window will need the engine service"
+fi
 npm run build
 fs_say "built frontend/dist"

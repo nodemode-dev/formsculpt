@@ -31,10 +31,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+          targets: wasm32-unknown-unknown
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: native
       - run: ./formsculptor engine check
+      - name: Browser engine
+        run: ./formsculptor engine wasm
       - name: Engine tests
         run: ./formsculptor test engine
       - name: Catalogue
