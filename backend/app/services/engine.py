@@ -90,6 +90,14 @@ def mesh_payload(object_id: int, smooth: int = 0) -> bytes:
     return header + positions + normals + indices + mask + paint + groups + hidden
 
 
+def boolean_preview(a: int, b: int, op: str) -> bytes:
+    """The exact boolean of two objects as an FSCM payload, the scene unchanged; KeyError for a missing object,
+    ValueError for a refusal (an open surface, nothing left)."""
+    _require()
+    with _lock:
+        return _engine.boolean_preview(a, b, op)
+
+
 def stroke_begin(object_id: int, settings: dict) -> None:
     if _engine is None:
         raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")

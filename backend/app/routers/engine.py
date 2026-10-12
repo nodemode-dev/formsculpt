@@ -44,6 +44,19 @@ def mesh(object_id: int, smooth: int = Query(0, ge=0, le=3)) -> Response:
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
 
 
+@router.get("/boolean_preview")
+def boolean_preview(a: int, b: int, op: str = Query("union", pattern="^(union|difference|intersection)$")) -> Response:
+    """Live Boolean: the exact result of a op b for the window to draw in their place, without changing the scene."""
+    _guard()
+    try:
+        payload = engine.boolean_preview(a, b, op)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc).strip("'\""))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
+
+
 MAX_UPLOAD = 1 << 30
 
 
