@@ -161,6 +161,47 @@ pub(crate) fn mesh_check(s: &mut Session, args: &Value) -> Result<Value, Command
     }))
 }
 
+pub(crate) fn bevel_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "The round's radius in world units; a twentieth of the object's largest side when omitted."},
+            "edges": {"type": "string", "enum": ["convex", "concave", "both"], "default": "convex", "description": "convex rounds outer edges (a box's corners), concave fills inner ones (where a handle meets a cup), both does each."},
+            "resolution": {"type": "integer", "minimum": 32, "maximum": 320, "default": 192, "description": "Voxels along the longest side; the object is remeshed at this resolution."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Rounds every edge sharper than the radius, convex, concave or both, as one undo step.
+pub(crate) fn bevel_edges(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    guard(s, id, "Bevel")?;
+    let object = s.scene.get(id).expect("checked");
+    let b = object.mesh.bounds();
+    let radius = match args.get("radius") {
+        None | Some(Value::Null) => (b.max - b.min).max_element() * 0.05,
+        Some(v) => v.as_f64().filter(|r| *r > 0.0 && *r <= 1000.0).ok_or_else(|| bad("radius must be above 0 and at most 1000"))? as f32,
+    };
+    let which = match args.get("edges").and_then(Value::as_str).unwrap_or("convex") {
+        "convex" => fsc_topo::RoundEdges::Convex,
+        "concave" => fsc_topo::RoundEdges::Concave,
+        "both" => fsc_topo::RoundEdges::Both,
+        other => return Err(bad(format!("edges must be convex, concave or both, not {other}"))),
+    };
+    let resolution = args.get("resolution").and_then(Value::as_u64).unwrap_or(192);
+    if !(32..=320).contains(&resolution) {
+        return Err(bad("resolution must be 32 to 320"));
+    }
+    let mesh = fsc_topo::round_edges(&object.mesh, &object.bvh, radius, which, resolution as u32).map_err(|e| CommandError::new("bevel_failed", e))?;
+    let mask = vec![0.0; mesh.vertex_count()];
+    let mut reply = apply(s, id, "Bevel", mesh, mask)?;
+    reply["radius"] = json!(radius);
+    Ok(reply)
+}
+
 pub(crate) fn cut_schema() -> Value {
     json!({
         "type": "object",

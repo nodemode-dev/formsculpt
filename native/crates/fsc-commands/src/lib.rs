@@ -73,6 +73,8 @@ pub struct Session {
     pub alphas: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Alpha>>,
     /// Vector displacement maps captured by name with vdm_capture (the built-in ones are generated on demand).
     pub vdms: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Vdm>>,
+    /// Objects sent out through bridge_send: the object, the file, and the file's modification time when last seen.
+    pub bridges: Vec<(fsc_core::ObjectId, String, std::time::SystemTime)>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -288,6 +290,17 @@ pub static COMMANDS: &[Command] = &[
         run: build_cmds::shadow_box,
     },
     Command {
+        id: "build.edit",
+        mcp: "edit_build",
+        group: Group::Object,
+        label: "Edit Tube or Lathe",
+        description: "Remake a tube (curve_tube) or lathe from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. get_scene shows editable_build on objects that can still be edited. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: build_cmds::edit_build_schema,
+        run: build_cmds::edit_build,
+    },
+    Command {
         id: "build.text",
         mcp: "text_mesh",
         group: Group::Object,
@@ -308,6 +321,17 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: build_cmds::extrude_shape_schema,
         run: build_cmds::extrude_shape,
+    },
+    Command {
+        id: "topo.bevel",
+        mcp: "bevel_edges",
+        group: Group::Topo,
+        label: "Bevel Edges",
+        description: "Round every edge sharper than `radius`: convex edges (a box's corners and rims), concave ones (where parts meet) or both, while flat faces stay in place, as one undo step. A volumetric bevel for hard-surface pieces, booleans and shadow boxes; the object is remeshed watertight at resolution. The radius must span at least a voxel and a half.",
+        keys: &[],
+        hints: WRITE,
+        schema: topo_cmds::bevel_schema,
+        run: topo_cmds::bevel_edges,
     },
     Command {
         id: "topo.cut_shape",
@@ -1089,6 +1113,28 @@ pub static COMMANDS: &[Command] = &[
         hints: DESTROY,
         schema: file_cmds::export_schema,
         run: file_cmds::export,
+    },
+    Command {
+        id: "file.bridge_send",
+        mcp: "bridge_send",
+        group: Group::File,
+        label: "Bridge to App",
+        description: "Hand an object to another app through a file (OBJ, GLB, PLY, STL or 3MF): it is written to path and remembered, so when the other app (Blender, Maya, a retopology or UV tool) saves over the file, bridge_sync brings the edit back into the same object. A two-way bridge with any app that opens and saves the format.",
+        keys: &[],
+        hints: DESTROY,
+        schema: file_cmds::bridge_send_schema,
+        run: file_cmds::bridge_send,
+    },
+    Command {
+        id: "file.bridge_sync",
+        mcp: "bridge_sync",
+        group: Group::File,
+        label: "Bridge Sync",
+        description: "Bring back every bridged file another app has saved since it was sent or last synced, replacing its object's mesh (same object and name, one undo step each). The window syncs on its own every few seconds while bridges are open; agents call this after the other app saves. Lists the open bridges.",
+        keys: &[],
+        hints: WRITE,
+        schema: file_cmds::id_free_schema,
+        run: file_cmds::bridge_sync,
     },
     Command {
         id: "file.print_check",

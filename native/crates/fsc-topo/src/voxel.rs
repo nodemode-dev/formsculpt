@@ -155,6 +155,66 @@ pub fn voxel_boolean_blend(a: &Mesh, a_bvh: &Bvh, b: &Mesh, b_bvh: &Bvh, op: Boo
     Ok(crate::manifold::split_nonmanifold(&mesh).0)
 }
 
+/// Which edges round_edges softens: convex edges (an opening: shrink by the radius, then grow back), concave ones (a
+/// closing: grow, then shrink) or both (opening, then closing).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoundEdges {
+    Convex,
+    Concave,
+    Both,
+}
+
+/// Volumetric bevel: every edge sharper than `radius` allows becomes a round of that radius, flat faces stay where they
+/// were. Each pass offsets the true signed distance field and re-measures the distance from the offset surface, so the
+/// faces return to their place and only the edges change. The result is remeshed watertight at `resolution`.
+pub fn round_edges(mesh: &Mesh, bvh: &Bvh, radius: f32, which: RoundEdges, resolution: u32) -> Result<Mesh, String> {
+    if mesh.triangle_count() == 0 {
+        return Err("the mesh is empty".into());
+    }
+    let mut bounds = mesh.bounds();
+    bounds.grow(bounds.min - Vec3::splat(radius * 1.5));
+    bounds.grow(bounds.max + Vec3::splat(radius * 1.5));
+    let grid = Grid::around(bounds, resolution)?;
+    if radius < grid.cell * 1.5 {
+        return Err(format!("the radius is under a voxel and a half ({:.4}); raise it or the resolution", grid.cell * 1.5));
+    }
+    let band = (grid.cell * 2.0).max(radius * 1.3);
+    // Signed distance to `m`, true within the band.
+    let field_of = |m: &Mesh| -> Vec<f32> {
+        let b = Bvh::build(m);
+        let mut f = narrow_band(m, &b, &grid, band);
+        fill_signs(&mut f, &grid, band);
+        f
+    };
+    let offset = |f: &[f32], by: f32| -> Result<Mesh, String> {
+        let shifted: Vec<f32> = f.iter().map(|d| d + by).collect();
+        Ok(crate::manifold::split_nonmanifold(&surface_nets(&shifted, &grid)?).0)
+    };
+    let mut current = {
+        let mut f = narrow_band(mesh, bvh, &grid, band);
+        fill_signs(&mut f, &grid, band);
+        f
+    };
+    let passes: &[f32] = match which {
+        RoundEdges::Convex => &[1.0, -1.0],
+        RoundEdges::Concave => &[-1.0, 1.0],
+        RoundEdges::Both => &[1.0, -1.0, -1.0, 1.0],
+    };
+    let mut out = None;
+    for (k, sign) in passes.iter().enumerate() {
+        let m = offset(&current, sign * radius)?;
+        if m.triangle_count() == 0 {
+            return Err("the radius swallows the whole object; use a smaller radius".into());
+        }
+        if k + 1 < passes.len() {
+            current = field_of(&m);
+        } else {
+            out = Some(m);
+        }
+    }
+    out.ok_or_else(|| "nothing was made".into())
+}
+
 fn fill_signs(field: &mut [f32], g: &Grid, band: f32) {
     let dims = g.dims;
     let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;

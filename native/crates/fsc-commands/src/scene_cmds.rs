@@ -12,7 +12,9 @@ pub(crate) fn summary(o: &Object) -> Value {
         "visible": o.visible,
         "folder": o.folder,
         "instance_of": o.instance.as_ref().map(|i| i.source),
-        "primitive": o.primitive.as_ref().filter(|(_, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty()).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()),
+        "primitive": o.primitive.as_ref().filter(|(a, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty() && !a.contains("\"build\":")).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()),
+        // A tube or lathe that edit_build can still remake ("tube" or "lathe"), without its whole curve.
+        "editable_build": o.primitive.as_ref().filter(|(_, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty()).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()).and_then(|v| v.get("build").cloned()),
         "vertices": o.mesh.vertex_count(),
         "triangles": o.mesh.triangle_count(),
         "masked_vertices": o.mask.iter().filter(|&&m| m > 0.5).count(),

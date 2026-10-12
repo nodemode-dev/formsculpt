@@ -212,6 +212,30 @@ pub(crate) fn tube_schema() -> Value {
 
 pub(crate) fn tube(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let started = Instant::now();
+    let mesh = tube_mesh(args)?;
+    let reply = add(s, args, "Tube", mesh, started);
+    Ok(remember(s, reply, "tube", args))
+}
+
+/// Keeps what a tube or lathe was made from, so edit_build can remake it until anything else changes it.
+fn remember(s: &mut Session, reply: Value, kind: &str, args: &Value) -> Value {
+    let Some(id) = reply["object"]["id"].as_u64() else { return reply };
+    let mut made = args.clone();
+    if let Some(m) = made.as_object_mut() {
+        m.remove("name");
+        m.insert("build".into(), json!(kind));
+    }
+    if let Some(o) = s.scene.get_mut(id as u32) {
+        o.primitive = Some((made.to_string(), o.revision));
+    }
+    let mut reply = reply;
+    if let Some(o) = s.scene.get(id as u32) {
+        reply["object"] = summary(o);
+    }
+    reply
+}
+
+fn tube_mesh(args: &Value) -> Result<Mesh, CommandError> {
     let radius = number(args, "radius", 0.1, 1e-6, 1e6)? as f32;
     let mut points = Vec::new();
     for v in list(args, "points")? {
@@ -225,8 +249,7 @@ pub(crate) fn tube(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     let segments = number(args, "segments", 16.0, 3.0, 128.0)? as usize;
     let smooth = number(args, "smooth", 4.0, 1.0, 32.0)? as usize;
     let closed = args.get("closed").and_then(Value::as_bool).unwrap_or(false);
-    let mesh = fsc_topo::tube(&points, segments, smooth, closed).map_err(|e| CommandError::new("build_failed", e))?;
-    Ok(add(s, args, "Tube", mesh, started))
+    fsc_topo::tube(&points, segments, smooth, closed).map_err(|e| CommandError::new("build_failed", e))
 }
 
 pub(crate) fn lathe_schema() -> Value {
@@ -244,6 +267,12 @@ pub(crate) fn lathe_schema() -> Value {
 
 pub(crate) fn lathe(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let started = Instant::now();
+    let mesh = lathe_mesh(args)?;
+    let reply = add(s, args, "Lathe", mesh, started);
+    Ok(remember(s, reply, "lathe", args))
+}
+
+fn lathe_mesh(args: &Value) -> Result<Mesh, CommandError> {
     let mut profile = Vec::new();
     for v in list(args, "profile")? {
         let f = floats(v, "profile point", &[2])?;
@@ -253,6 +282,61 @@ pub(crate) fn lathe(s: &mut Session, args: &Value) -> Result<Value, CommandError
         profile.push([f[0], f[1]]);
     }
     let segments = number(args, "segments", 48.0, 3.0, 256.0)? as usize;
-    let mesh = fsc_topo::lathe(&profile, segments).map_err(|e| CommandError::new("build_failed", e))?;
-    Ok(add(s, args, "Lathe", mesh, started))
+    fsc_topo::lathe(&profile, segments).map_err(|e| CommandError::new("build_failed", e))
+}
+
+pub(crate) fn edit_build_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "A tube or lathe; the active object when omitted."},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}, "description": "Tube: a new curve, as [x, y, z] or [x, y, z, radius]."},
+            "move": {"type": "array", "maxItems": 4096, "items": {"type": "object", "properties": {"index": {"type": "integer", "minimum": 0}, "to": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}}, "required": ["index", "to"], "additionalProperties": false}, "description": "Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y])."},
+            "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000, "description": "Tube: the radius for points without their own."},
+            "segments": {"type": "integer", "minimum": 3, "maximum": 256, "description": "Steps around the tube or the lathe's axis."},
+            "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "description": "Tube: curve steps between points."},
+            "closed": {"type": "boolean", "description": "Tube: close the curve into a ring."},
+            "profile": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "Lathe: a new profile, as [radius, y]."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Remakes a tube or lathe from changed arguments while nothing else has changed it since it was made or last edited.
+pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = crate::sculpt_cmds::target(s, args)?;
+    let object = s.scene.get(id).expect("checked");
+    let made: Value = object.primitive.as_ref().and_then(|(a, _)| serde_json::from_str(a).ok()).unwrap_or(Value::Null);
+    let Some(kind) = made.get("build").and_then(Value::as_str).map(str::to_string) else {
+        return Err(CommandError::new("not_editable", "this object was not made by curve_tube or lathe in this session"));
+    };
+    if object.primitive.as_ref().map(|(_, r)| *r) != Some(object.revision) || object.multires.is_some() || !object.layers.list.is_empty() {
+        return Err(CommandError::new("not_editable", format!("the {kind} has been changed since it was made, so its shape is fixed")));
+    }
+    let mut merged = made.clone();
+    for key in ["points", "radius", "segments", "smooth", "closed", "profile"] {
+        if let Some(v) = args.get(key) {
+            merged[key] = v.clone();
+        }
+    }
+    if let Some(moves) = args.get("move").and_then(Value::as_array) {
+        let list_key = if kind == "tube" { "points" } else { "profile" };
+        let len = merged[list_key].as_array().map(Vec::len).unwrap_or(0);
+        for m in moves {
+            let i = m["index"].as_u64().unwrap_or(u64::MAX) as usize;
+            if i >= len {
+                return Err(bad(format!("move index {i} is past the {len} {list_key}")));
+            }
+            merged[list_key][i] = m["to"].clone();
+        }
+    }
+    let mesh = if kind == "tube" { tube_mesh(&merged)? } else { lathe_mesh(&merged)? };
+    let object = s.scene.get_mut(id).expect("checked");
+    let mask = vec![0.0; mesh.vertex_count()];
+    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    object.revision += 1;
+    object.primitive = Some((merged.to_string(), object.revision));
+    s.history.push(Edit::Topology { label: format!("Edit {}", if kind == "tube" { "Tube" } else { "Lathe" }), object: id, mesh: old_mesh, mask: old_mask });
+    Ok(json!({"object": summary(s.scene.get(id).expect("checked"))}))
 }

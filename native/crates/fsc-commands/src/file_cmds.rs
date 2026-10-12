@@ -146,6 +146,80 @@ pub(crate) fn export_schema() -> Value {
     path_schema(json!({"ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Objects to write; every visible object when omitted. STL and PLY join them into one mesh."}}))
 }
 
+pub(crate) fn bridge_send_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "path": {"type": "string", "minLength": 1, "description": "The file to hand over, by extension: .obj, .glb, .ply, .stl or .3mf (OBJ is the most widely read)."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn id_free_schema() -> Value {
+    json!({"type": "object", "properties": {}, "required": [], "additionalProperties": false})
+}
+
+fn modified(path: &str) -> Option<std::time::SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+/// Bridge out: writes the object to a file another app opens and remembers it, so bridge_sync can bring the edits back.
+pub(crate) fn bridge_send(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let path = path_arg(args)?.to_string();
+    let format = Format::parse(&path).ok_or_else(|| bad("the bridge file must end in .obj, .glb, .ply, .stl or .3mf"))?;
+    if matches!(format, Format::Gltf) {
+        return Err(bad("use .glb for the bridge; a .gltf is two files"));
+    }
+    let bytes = export_data(s, &path, &[id])?;
+    std::fs::write(&path, &bytes).map_err(|e| io(format!("could not write {path}: {e}")))?;
+    let seen = modified(&path).ok_or_else(|| io(format!("could not read back {path}")))?;
+    s.bridges.retain(|(i, p, _)| *i != id && *p != path);
+    s.bridges.push((id, path.clone(), seen));
+    Ok(json!({"id": id, "path": path, "bytes": bytes.len(), "bridges": s.bridges.len()}))
+}
+
+/// Bridge back: every bridged file changed since it was sent or last synced replaces its object's mesh (same object,
+/// same name, one undo step each). A file that is gone, or an object that is gone, ends that bridge.
+pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
+    let mut updated = Vec::new();
+    let mut problems = Vec::new();
+    let mut keep = Vec::new();
+    for (id, path, seen) in std::mem::take(&mut s.bridges) {
+        let (Some(now), true) = (modified(&path), s.scene.get(id).is_some()) else { continue };
+        if now <= seen {
+            keep.push((id, path, seen));
+            continue;
+        }
+        let read = std::fs::read(&path).map_err(|e| e.to_string()).and_then(|bytes| {
+            let format = Format::parse(&path).ok_or("unknown file type")?;
+            fsc_io::import(format, &bytes)
+        });
+        match read {
+            Ok(meshes) if !meshes.is_empty() => {
+                let parts: Vec<&fsc_core::Mesh> = meshes.iter().map(|(_, m)| m).collect();
+                let mesh = if parts.len() == 1 { parts[0].clone() } else { fsc_topo::merge(&parts) };
+                let object = s.scene.get_mut(id).expect("checked");
+                let mask = vec![0.0; mesh.vertex_count()];
+                let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+                object.revision += 1;
+                s.history.push(Edit::Topology { label: "Bridge Update".into(), object: id, mesh: old_mesh, mask: old_mask });
+                updated.push(summary(s.scene.get(id).expect("checked")));
+            }
+            // A file caught half written reads as broken; it is tried again on the next sync.
+            Ok(_) => problems.push(json!({"path": path, "message": "the file has no mesh"})),
+            Err(e) => problems.push(json!({"path": path, "message": e})),
+        }
+        let seen = if updated.last().map(|o| o["id"] == id).unwrap_or(false) { now } else { seen };
+        keep.push((id, path, seen));
+    }
+    s.bridges = keep;
+    Ok(json!({"updated": updated, "problems": problems, "bridges": s.bridges.iter().map(|(id, path, _)| json!({"id": id, "path": path})).collect::<Vec<_>>()}))
+}
+
 pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let path = path_arg(args)?;
     let ids = chosen(s, args)?;

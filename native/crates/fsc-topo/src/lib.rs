@@ -28,7 +28,7 @@ pub use region::{extract_shell, extrude_region, project_onto, region_faces};
 pub use subdivide::{loop_subdivide, loop_subdivide_with, Subdivided};
 pub use text::{extrude_shape, text_mesh, TEXT_CHARACTERS};
 pub use transfer::transfer_paint;
-pub use voxel::{voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp};
+pub use voxel::{round_edges, voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp, RoundEdges};
 
 pub fn engine_version() -> &'static str {
     fsc_core::engine_version()
