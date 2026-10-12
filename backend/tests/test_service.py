@@ -111,6 +111,15 @@ def test_paint_has_seven_floats_and_old_projects_open_opaque(client):
     assert "alphaMode" not in doc["materials"][0] and "emissiveFactor" not in doc["materials"][0]
 
 
+def test_usda_export_route(client):
+    call(client, "add_primitive", kind="cone")
+    r = client.get("/api/engine/export", params={"format": "usda"})
+    assert r.status_code == 200 and r.content.startswith(b"#usda 1.0")
+    up = client.post("/api/engine/import", files={"file": ("cone.usda", io.BytesIO(r.content), "application/octet-stream")})
+    assert up.status_code == 200 and up.json()["ok"]
+    assert len(call(client, "get_scene")["objects"]) == 2
+
+
 def test_fbx_export_route(client):
     call(client, "add_primitive", kind="torus")
     r = client.get("/api/engine/export", params={"format": "fbx"})

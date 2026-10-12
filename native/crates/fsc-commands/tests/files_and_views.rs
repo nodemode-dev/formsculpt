@@ -30,12 +30,33 @@ fn every_format_round_trips_the_triangles() {
     let mut s = Session::default();
     let id = add(&mut s, "cube", json!({"detail": 4}));
     let tris = object(&mut s, id)["triangles"].clone();
-    for ext in ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx"] {
+    for ext in ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx", "usda"] {
         let path = temp(&format!("cube.{ext}"));
         call(&mut s, "export_mesh", json!({"path": path, "ids": [id]}));
         let r = call(&mut s, "import_mesh", json!({"path": path}));
         assert_eq!(r["objects"][0]["triangles"], tris, "{ext} changed the triangle count");
     }
+}
+
+#[test]
+fn usda_keeps_objects_paint_and_opacity_and_refuses_binary_usd() {
+    let mut s = Session::default();
+    let a = add(&mut s, "torus", json!({}));
+    call(&mut s, "paint_fill", json!({"id": a, "color": "#20c040", "opacity": 0.4}));
+    add(&mut s, "cone", json!({}));
+    call(&mut s, "uv_unwrap", json!({}));
+    let path = temp("scene.usda");
+    call(&mut s, "export_mesh", json!({"path": path}));
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.starts_with("#usda 1.0") && text.contains("def Mesh \"Torus\"") && text.contains("primvars:st"));
+    let r = call(&mut s, "import_mesh", json!({"path": path}));
+    assert_eq!(r["objects"].as_array().unwrap().len(), 2);
+    let back = r["objects"][0]["id"].as_u64().unwrap() as u32;
+    let p = s.scene.get(back).unwrap().mesh.paint[0];
+    assert!((p[1] - 0.753).abs() < 0.01 && (p[5] - 0.4).abs() < 1e-4, "{p:?}");
+    let bin = temp("binary.usd");
+    std::fs::write(&bin, b"PXR-USDC\0\0\0\0").unwrap();
+    assert_eq!(fails(&mut s, "import_mesh", json!({"path": bin})), "bad_file");
 }
 
 #[test]
