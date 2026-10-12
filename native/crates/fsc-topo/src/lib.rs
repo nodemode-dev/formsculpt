@@ -5,6 +5,7 @@ mod dyntopo;
 mod edges;
 mod exact;
 mod holes;
+mod loops;
 mod manifold;
 mod nearest;
 mod quad;
@@ -30,6 +31,7 @@ pub use subdivide::{loop_subdivide, loop_subdivide_with, smooth_preview, Subdivi
 pub use text::{extrude_shape, text_mesh, TEXT_CHARACTERS};
 pub use transfer::transfer_paint;
 pub use exact::exact_boolean;
+pub use loops::{border_loops, bridge_borders, insert_edge_loop};
 pub use voxel::{round_edges, voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp, RoundEdges};
 
 pub fn engine_version() -> &'static str {

@@ -25,6 +25,9 @@ pub(crate) fn view_schema() -> Value {
             "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Only these objects; every visible object when omitted."},
             "frame": {"type": "string", "enum": ["all", "active"], "default": "all", "description": "Fit the camera to all drawn objects or to the active one (others still drawn)."},
             "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"},
+            "render": {"type": "string", "enum": ["preview", "path"], "default": "preview", "description": "preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise)."},
+            "samples": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 32, "description": "Path render: paths per pixel; 32 is a quick look, 256 a clean final image."},
+            "bounces": {"type": "integer", "minimum": 1, "maximum": 8, "default": 4, "description": "Path render: how many times light may bounce."},
             "smooth": {"type": "integer", "minimum": 0, "maximum": 3, "default": 0, "description": "Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed."}
         },
         "required": [],
@@ -373,7 +376,12 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
         drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active }).collect()
     };
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
-    let out = fsc_paint::render(&objects, &view).map_err(|e| CommandError::new("render_failed", e))?;
+    let out = match args.get("render").and_then(Value::as_str).unwrap_or("preview") {
+        "preview" => fsc_paint::render(&objects, &view),
+        "path" => fsc_paint::path_trace(&objects, &view, int(args, "samples", 32, 1, 1024)? as u32, int(args, "bounces", 4, 1, 8)? as u32),
+        other => return Err(bad(format!("render must be preview or path, not {other}"))),
+    }
+    .map_err(|e| CommandError::new("render_failed", e))?;
     let facts = json!({
         "width": out.width,
         "height": out.height,

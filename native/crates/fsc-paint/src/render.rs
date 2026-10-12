@@ -356,3 +356,169 @@ pub fn render(objects: &[RenderObject], view: &View) -> Result<Rendered, String>
     let triangles = objects.iter().map(|o| o.mesh.triangle_count()).sum();
     Ok(Rendered { width: view.width, height: view.height, pixels, triangles, covered, ms: started.elapsed().as_millis() })
 }
+
+/// A small, fast random stream (xorshift32) per pixel, so a path-traced picture is the same every time.
+struct Rng(u32);
+
+impl Rng {
+    fn next(&mut self) -> f32 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 17;
+        self.0 ^= self.0 << 5;
+        (self.0 >> 8) as f32 / (1u32 << 24) as f32
+    }
+}
+
+/// A direction about `n` with cosine-weighted density.
+fn cosine_dir(n: Vec3, rng: &mut Rng) -> Vec3 {
+    let (u, v) = (rng.next(), rng.next());
+    let r = u.sqrt();
+    let phi = std::f32::consts::TAU * v;
+    let t = n.any_orthonormal_vector();
+    let b = n.cross(t);
+    (t * (r * phi.cos()) + b * (r * phi.sin()) + n * (1.0 - u).max(0.0).sqrt()).normalize()
+}
+
+/// The surface at a hit: position, shading normal, and paint (colour, roughness, metalness, opacity, emissive).
+fn surface(o: &RenderObject, h: &fsc_core::Hit) -> (Vec3, Vec3, [f32; fsc_core::PAINT_LEN]) {
+    let [a, b, c] = o.mesh.triangle(h.triangle as usize);
+    let w = [1.0 - h.u - h.v, h.u, h.v];
+    let n: Vec3 = [a, b, c].iter().zip(w).map(|(&v, w)| Vec3::from(o.mesh.normals[v as usize]) * w).sum();
+    let paint = if o.mesh.has_paint() {
+        std::array::from_fn(|k| o.mesh.paint[a as usize][k] * w[0] + o.mesh.paint[b as usize][k] * w[1] + o.mesh.paint[c as usize][k] * w[2])
+    } else {
+        let mut p = fsc_core::DEFAULT_PAINT;
+        p[..3].copy_from_slice(&if o.active { [0.86, 0.74, 0.66] } else { [0.72, 0.7, 0.68] });
+        p
+    };
+    (h.point, n.normalize_or(Vec3::Y), paint)
+}
+
+/// A path-traced picture of the objects from the same camera as [`render`]: global illumination from a sky and a sun
+/// (the window's key light) with soft shadows, diffuse and glossy bounces by paint roughness and metalness, painted
+/// glow as a light, and painted opacity letting light through. `samples` paths per pixel, `bounces` deep.
+pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: u32) -> Result<Rendered, String> {
+    let started = Instant::now();
+    if view.width == 0 || view.height == 0 || view.width > 2048 || view.height > 2048 {
+        return Err("width and height must be 1 to 2048".into());
+    }
+    let mut bounds = Aabb::EMPTY;
+    if let Some(f) = view.frame {
+        bounds = f;
+    } else {
+        for o in objects {
+            for &p in &o.mesh.positions {
+                bounds.grow(Vec3::from(p));
+            }
+        }
+    }
+    if bounds.min.x > bounds.max.x {
+        bounds = Aabb { min: Vec3::splat(-1.0), max: Vec3::splat(1.0) };
+    }
+    let cam = Camera::new(bounds, view.yaw, view.pitch, view.width as f32 / view.height as f32);
+    let bvhs: Vec<fsc_core::Bvh> = objects.iter().map(|o| fsc_core::Bvh::build(o.mesh)).collect();
+    let eps = bounds.extent().length().max(1e-3) * 1e-4;
+    let hit = |p: Vec3, d: Vec3| -> Option<(usize, fsc_core::Hit)> {
+        let mut best: Option<(usize, fsc_core::Hit)> = None;
+        for (i, (o, b)) in objects.iter().zip(&bvhs).enumerate() {
+            if let Some(h) = b.raycast(o.mesh, p, d) {
+                if h.t > eps && best.as_ref().is_none_or(|(_, x)| h.t < x.t) {
+                    best = Some((i, h));
+                }
+            }
+        }
+        best
+    };
+    // The window's key light as a sun of small angular size, in world space (the key follows the camera there).
+    let sun_dir = (cam.right * KEY.x + cam.up * KEY.y - cam.fwd * KEY.z).normalize();
+    let sun = Vec3::new(2.6, 2.45, 2.25);
+    let sky = |d: Vec3| Vec3::new(0.16, 0.15, 0.14).lerp(Vec3::new(0.42, 0.45, 0.5), d.y * 0.5 + 0.5) * 1.2;
+    let (samples, bounces) = (samples.clamp(1, 1024), bounces.clamp(1, 8));
+    let trace = |i: usize| -> [u8; 4] {
+        let (x, y) = (i % view.width, i / view.width);
+        let mut rng = Rng((i as u32).wrapping_mul(2_654_435_761) ^ 0x9e37_79b9 | 1);
+        let mut total = Vec3::ZERO;
+        let mut alpha = 0.0f32;
+        for _ in 0..samples {
+            let sx = ((x as f32 + rng.next()) / view.width as f32) * 2.0 - 1.0;
+            let sy = 1.0 - ((y as f32 + rng.next()) / view.height as f32) * 2.0;
+            let mut d = (cam.fwd + cam.right * (sx * cam.tan * cam.aspect) + cam.up * (sy * cam.tan)).normalize();
+            let mut p = cam.eye;
+            let mut through = Vec3::ONE;
+            let mut light = Vec3::ZERO;
+            let mut first = true;
+            for _ in 0..bounces {
+                let Some((oi, h)) = hit(p, d) else {
+                    if first {
+                        light += match view.background {
+                            Some(bg) => Vec3::from(bg).powf(2.2),
+                            None => Vec3::ZERO,
+                        };
+                    } else {
+                        light += through * sky(d);
+                    }
+                    break;
+                };
+                if first {
+                    alpha += 1.0;
+                    first = false;
+                }
+                let (q, mut n, paint) = surface(&objects[oi], &h);
+                if n.dot(d) > 0.0 {
+                    n = -n;
+                }
+                let albedo = Vec3::new(paint[0], paint[1], paint[2]).clamp(Vec3::ZERO, Vec3::ONE);
+                let (rough, metal, opacity, glow) = (paint[3].clamp(0.05, 1.0), paint[4].clamp(0.0, 1.0), paint[5].clamp(0.0, 1.0), paint[6].clamp(0.0, 1.0));
+                if glow > 0.0 {
+                    light += through * albedo * glow * 4.0;
+                }
+                // See-through paint: the path continues straight on with the chance it is not opaque.
+                if rng.next() > opacity {
+                    p = q + d * eps * 4.0;
+                    continue;
+                }
+                let origin = q + n * eps * 4.0;
+                // The sun, sampled directly with a soft shadow ray.
+                let s = (sun_dir + Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * 0.06).normalize();
+                let ndl = n.dot(s);
+                if ndl > 0.0 && hit(origin, s).is_none() {
+                    let half = (s - d).normalize();
+                    let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
+                    let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
+                    let f0 = Vec3::splat(0.04).lerp(albedo, metal);
+                    light += through * sun * ndl * (diffuse + f0 * spec);
+                }
+                // Next bounce: glossy reflection by metalness (and smoothness), otherwise diffuse.
+                let glossy = metal.max((1.0 - rough) * 0.25);
+                if rng.next() < glossy {
+                    let r = d - n * 2.0 * d.dot(n);
+                    d = (r + cosine_dir(n, &mut rng) * rough * rough).normalize();
+                    if d.dot(n) <= 0.0 {
+                        break;
+                    }
+                    through *= Vec3::splat(0.04).lerp(albedo, metal).max(Vec3::splat(0.04)) / glossy.max(0.04) * glossy;
+                } else {
+                    d = cosine_dir(n, &mut rng);
+                    through *= albedo * (1.0 - metal);
+                }
+                p = origin;
+                if through.max_element() < 0.01 {
+                    break;
+                }
+            }
+            total += light;
+        }
+        let c = total / samples as f32;
+        let c = (c / (c + Vec3::ONE)).powf(1.0 / 2.2);
+        let a = if view.background.is_some() { 1.0 } else { alpha / samples as f32 };
+        let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+        [q(c.x), q(c.y), q(c.z), q(a)]
+    };
+    #[cfg(feature = "parallel")]
+    let pixels: Vec<[u8; 4]> = (0..view.width * view.height).into_par_iter().map(trace).collect();
+    #[cfg(not(feature = "parallel"))]
+    let pixels: Vec<[u8; 4]> = (0..view.width * view.height).map(trace).collect();
+    let covered = pixels.iter().filter(|p| p[3] > 0).count() as f32 / pixels.len() as f32;
+    let triangles = objects.iter().map(|o| o.mesh.triangle_count()).sum();
+    Ok(Rendered { width: view.width, height: view.height, pixels, triangles, covered, ms: started.elapsed().as_millis() })
+}

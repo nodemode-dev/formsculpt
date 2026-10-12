@@ -66,7 +66,7 @@ pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
 
 pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
     let mut s = String::from("# formsculptor\n");
-    let mut base = 1;
+    let (mut base, mut uv_base) = (1, 1);
     for (name, mesh) in objects {
         s.push_str(&format!("o {name}\n"));
         for (v, p) in mesh.positions.iter().enumerate() {
@@ -74,6 +74,19 @@ pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
                 Some(c) => s.push_str(&format!("v {} {} {} {} {} {}\n", p[0], p[1], p[2], c[0], c[1], c[2])),
                 None => s.push_str(&format!("v {} {} {}\n", p[0], p[1], p[2])),
             }
+        }
+        // UVs are per triangle corner: one vt per corner, faces as v/vt (texturing apps read them).
+        if mesh.uvs.len() == mesh.indices.len() && !mesh.uvs.is_empty() {
+            for t in &mesh.uvs {
+                s.push_str(&format!("vt {} {}\n", t[0], t[1]));
+            }
+            for (k, t) in mesh.indices.chunks_exact(3).enumerate() {
+                let c = uv_base + 3 * k as u32;
+                s.push_str(&format!("f {}/{} {}/{} {}/{}\n", t[0] + base, c, t[1] + base, c + 1, t[2] + base, c + 2));
+            }
+            uv_base += mesh.uvs.len() as u32;
+            base += mesh.vertex_count() as u32;
+            continue;
         }
         match mesh.quad_faces() {
             Some(quads) => {
