@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.25.0 · 2026-10-12
+
+### Added
+
+- Dynamic subdivision: a smooth preview that draws objects Loop-subdivided 1 to 3 levels for display while every command and stroke works on the sculpted mesh. Window: Smooth preview in the View section; service: `/api/engine/mesh/{id}?smooth=N`; agents: `get_view` takes `smooth`.
+- `uv_unwrap` lays each chart flat by least-squares conformal maps by default (`method: "project"` keeps the box projection) and reports `stretch`, the mean and worst angle distortion. Window: Unwrap UVs reports both.
+- Tests for each of these (engine 29, service 14).
+
+### Changed
+
+- The modeling skill's "not yet available" list no longer says there is no bevel or turntable; it names edge loops, chosen-edge chamfers and hand-placed seams instead.
+
 ## 0.24.0 · 2026-10-12
 
 ### Added
