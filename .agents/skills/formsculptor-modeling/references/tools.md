@@ -1,21 +1,21 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.22.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.23.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Topology: `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Topology: `bevel_edges`, `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
-- Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
+- Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 
 ## get_engine_info
 
@@ -183,6 +183,19 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 - `side`: array of array; The outline seen from the side (the right view), as [z, y] points.
 - `top`: array of array; The outline seen from above, as [x, z] points.
 
+## edit_build
+
+Remake a tube (curve_tube) or lathe from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. get_scene shows editable_build on objects that can still be edited. One undo step.
+
+- `closed`: boolean; Tube: close the curve into a ring.
+- `id`: integer; range 1 to inf; A tube or lathe; the active object when omitted.
+- `move`: array of object; Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]).
+- `points`: array of array; Tube: a new curve, as [x, y, z] or [x, y, z, radius].
+- `profile`: array of array; Lathe: a new profile, as [radius, y].
+- `radius`: number; range -inf to 1000000; Tube: the radius for points without their own.
+- `segments`: integer; range 3 to 256; Steps around the tube or the lathe's axis.
+- `smooth`: integer; range 1 to 32; Tube: curve steps between points.
+
 ## text_mesh
 
 Make solid 3D text: the words in a rounded single-stroke font (capitals, digits, common punctuation; newlines for more lines), `size` tall, `weight` thick and `depth` deep, centred on the origin and facing the front. One watertight object, ready to sculpt, boolean into a base (engraved or raised lettering on a plinth) or print.
@@ -203,6 +216,15 @@ Make a solid from flat vector outlines: closed [x, y] outlines seen from the fro
 - `outlines`: array of array; required; Closed outlines as lists of [x, y] points in world units, seen from the front; an outline inside another cuts a hole (a ring, a letter O, a window).
 - `resolution`: integer; range 48 to 512; Voxel cells along the longest side; 160 to 512 by the shape's detail when omitted.
 - `round`: number; default 0; range 0 to 50; Rounds the edges by this many world units (at most half the depth).
+
+## bevel_edges
+
+Round every edge sharper than `radius`: convex edges (a box's corners and rims), concave ones (where parts meet) or both, while flat faces stay in place, as one undo step. A volumetric bevel for hard-surface pieces, booleans and shadow boxes; the object is remeshed watertight at resolution. The radius must span at least a voxel and a half.
+
+- `edges`: string (convex | concave | both); default "convex"; convex rounds outer edges (a box's corners), concave fills inner ones (where a handle meets a cup), both does each.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `radius`: number; range -inf to 1000; The round's radius in world units; a twentieth of the object's largest side when omitted.
+- `resolution`: integer; default 192; range 32 to 320; Voxels along the longest side; the object is remeshed at this resolution.
 
 ## cut_shape
 
@@ -843,6 +865,21 @@ Write objects to OBJ, STL, PLY, GLB, glTF or 3MF, chosen by the path's extension
 - `path`: string; required; A file path on this computer.
 
 Note: removes or replaces (undoable); in the window: Mod+E.
+
+## bridge_send
+
+Hand an object to another app through a file (OBJ, GLB, PLY, STL or 3MF): it is written to path and remembered, so when the other app (Blender, Maya, a retopology or UV tool) saves over the file, bridge_sync brings the edit back into the same object. A two-way bridge with any app that opens and saves the format.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `path`: string; required; The file to hand over, by extension: .obj, .glb, .ply, .stl or .3mf (OBJ is the most widely read).
+
+Note: removes or replaces (undoable).
+
+## bridge_sync
+
+Bring back every bridged file another app has saved since it was sent or last synced, replacing its object's mesh (same object and name, one undo step each). The window syncs on its own every few seconds while bridges are open; agents call this after the other app saves. Lists the open bridges.
+
+- no parameters
 
 ## print_check
 

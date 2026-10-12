@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.23.0 · 2026-10-12
+
+### Added
+
+- `bevel_edges`: a volumetric bevel that rounds convex edges, fills concave ones, or both, faces staying in place. Window: Bevel edges in the Object section.
+- `edit_build`: tubes and lathes stay editable (new curve or profile, points moved by index, radius, segments) until sculpted; `get_scene` shows `editable_build`. Window: Tube radius and Lathe profile remake the active one.
+- `bridge_send` and `bridge_sync`: a two-way file bridge to any app (98 commands in all). Window: Bridge to app, with a sync every 3 seconds; service route `/api/engine/bridge`.
+- Plugins declare `PARAMS` (fields drawn in the Plugins section) and `CLICK` (a surface tool, the Plugin tool); a new example, `rivets`.
+- Tests for each of these (engine 24, service 12).
+
+### Changed
+
+- Compiled desktop apps wait until parity reaches 95 percent, by the owner's direction; the Linux build scripts stay in the tree.
+
 ## 0.22.0 · 2026-10-12
 
 ### Added
