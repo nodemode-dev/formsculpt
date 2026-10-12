@@ -65,7 +65,7 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 ## Workflow 10: repeat, insert and present
 
 1. `insert_mesh` places a primitive or a copy of another object (`source_id`) at a `point` with its `normal` (from `pick`), standing on the surface: eyes, horns, rivets.
-2. `array_object` repeats an object in a line (`offset`) or radially around an axis (`mode: "radial"`, `center`, `count`): teeth, petals, bolts; `merge` joins them into one object.
+2. `array_object` repeats an object in a line (`offset`) or radially around an axis (`mode: "radial"`, `center`, `count`): teeth, petals, bolts; `merge` joins them into one object. `mode: "mirror"` makes one reflected copy across `axis` through the object's centre; `mode: "curve"` spaces `count` copies along `points` (`align` turns them to follow it): vertebrae, chain links, studs on a strap. `linked: true` keeps the copies following the original, so sculpt the original and every copy updates; a copy you edit yourself stops following (`instance_of` in `get_scene` shows which are still linked). Linked copies cannot be merged.
 3. `subdivide` with `sharp_border` keeps open borders in place (planes, cut shells).
 4. `record_turntable` writes a looping animated PNG of the model turning once, for showing the result.
 
@@ -100,7 +100,8 @@ A point on a sphere of radius r centred at the origin at height y and angle t is
 1. To block out a figure, animal or hand, give `skeleton_mesh` the joints as `spheres` ([x, y, z, radius], y up, about 2 units tall for a figure) and the bones as `links` (index pairs). It returns one watertight, even mesh; raise `resolution` (up to 256) when limbs are thinner than about a fiftieth of the whole, lower `blend` (0 to 1) for sharper joints. Then sculpt it, or `multires_divide` it for detail.
 2. `curve_tube` sweeps a tube along `points` ([x, y, z] or [x, y, z, radius] to taper) for horns, tails, hair strands, cables or straps; `closed` makes a ring. Union it into the body with `boolean` when it should be one piece.
 3. `lathe` spins a `profile` of [radius, y] points around the y axis for vases, bottles, columns and turned parts; start and end at radius 0 for a closed top and bottom, or leave them open and they are capped flat.
-4. Each makes a new active object named by `name`; `transform_object` places it.
+4. `shadow_box` builds a closed solid from two or three outlines: `front` as [x, y] points, `side` as [z, y], `top` as [x, z]; the solid is what all of them agree on, like a shadow box. A boot, a chair, a gun stock, a head block from a profile and a front view. The outlines must overlap; `blend` (0 to 0.5) rounds the meeting edges.
+5. Each makes a new active object named by `name`; `transform_object` places it.
 
 ## Workflow 7: paint
 
