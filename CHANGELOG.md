@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.18.0 · 2026-10-11
+
+### Added
+
+- `paint_project`: paint an image onto the surface from a view (only what that view sees, fading at grazing angles) or tiled triplanar, into the active paint layer (84 commands in all). Window: Project image and Tile image with Image opacity.
+- Reference images on a plane in the scene (front, side or top) as well as over the view.
+- Python scripting: `./formsculptor script FILE [JSON]` runs a script with `fsc.call(command, **args)` on the running engine or its own.
+- Plugins: Python files in `plugins/` or `~/.formsculptor/plugins` with a `run(fsc, args)`, listed and run from the window's Plugins section (`/api/plugins`); two examples, a rock and a display pedestal.
+
 ## 0.17.0 · 2026-10-11
 
 ### Added
