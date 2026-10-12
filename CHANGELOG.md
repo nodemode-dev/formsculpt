@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.17.0 · 2026-10-11
+
+### Added
+
+- `edit_primitive`: change a primitive's size, detail, height or thickness until anything else changes it; `get_scene` shows `primitive` while it is editable (83 commands in all). Window: Primitive size, detail and height with Apply to primitive.
+- `surface_noise` noise editor: `pattern` (value, ridged, turbulence, cells, alpha), `octaves`, `gain`, `stretch`, and `alpha` for the tiled alpha pattern. Window: the noise editor fields in the Layers section.
+- Lighting: the key light's direction, height, strength and colour, in the view or fixed in the world; shadows from the key light; up to three added lights; a ground shadow catcher.
+
 ## 0.16.0 · 2026-10-11
 
 ### Added
