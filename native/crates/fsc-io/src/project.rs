@@ -30,6 +30,7 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             "name": o.name,
             "visible": o.visible,
             "folder": o.folder,
+            "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior},
             "positions": w.put(&format!("{dir}/positions.f32"), &vec3s(&o.mesh.positions))?,
             "indices": w.put(&format!("{dir}/indices.u32"), &u32s(&o.mesh.indices))?,
             "mask": w.put(&format!("{dir}/mask.f32"), &f32s(&o.mask))?,
@@ -201,6 +202,18 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         let mut o = Object::new(id, e["name"].as_str().unwrap_or("Object").to_string(), mesh);
         o.visible = e["visible"].as_bool().unwrap_or(true);
         o.folder = e["folder"].as_str().unwrap_or("").chars().take(80).collect();
+        // Projects from before 0.24.0 have no material; they open opaque.
+        let m = &e["material"];
+        let f = |k: &str, d: f32, lo: f32, hi: f32| m[k].as_f64().map(|v| (v as f32).clamp(lo, hi)).unwrap_or(d);
+        let base = fsc_core::Material::default();
+        let color: Vec<f32> = m["subsurface_color"].as_array().map(|a| a.iter().filter_map(|x| x.as_f64()).map(|x| (x as f32).clamp(0.0, 1.0)).collect()).unwrap_or_default();
+        o.material = fsc_core::Material {
+            subsurface: f("subsurface", base.subsurface, 0.0, 1.0),
+            subsurface_color: if color.len() == 3 { [color[0], color[1], color[2]] } else { base.subsurface_color },
+            subsurface_radius: f("subsurface_radius", base.subsurface_radius, 1e-4, 1000.0),
+            transmission: f("transmission", base.transmission, 0.0, 1.0),
+            ior: f("ior", base.ior, 1.0, 2.5),
+        };
         o.maps = maps;
         let mask = r.f32(&e["mask"])?;
         if mask.len() == o.mesh.vertex_count() {

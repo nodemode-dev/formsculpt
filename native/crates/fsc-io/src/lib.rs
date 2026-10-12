@@ -1,4 +1,5 @@
 mod bin;
+mod fbx;
 mod formats;
 mod gltf;
 mod project;
@@ -17,10 +18,11 @@ pub enum Format {
     Glb,
     Gltf,
     ThreeMf,
+    Fbx,
 }
 
 impl Format {
-    pub const NAMES: [&'static str; 6] = ["obj", "stl", "ply", "glb", "gltf", "3mf"];
+    pub const NAMES: [&'static str; 7] = ["obj", "stl", "ply", "glb", "gltf", "3mf", "fbx"];
 
     pub fn parse(name: &str) -> Option<Format> {
         let ext = name.rsplit('.').next().unwrap_or(name).to_ascii_lowercase();
@@ -31,6 +33,7 @@ impl Format {
             "glb" => Format::Glb,
             "gltf" => Format::Gltf,
             "3mf" => Format::ThreeMf,
+            "fbx" => Format::Fbx,
             _ => return None,
         })
     }
@@ -48,6 +51,7 @@ pub fn import_with(format: Format, bytes: &[u8], resolve: gltf::Resolve) -> Resu
         Format::Ply => formats::read_ply(bytes)?,
         Format::Glb | Format::Gltf => gltf::read_gltf_with(bytes, resolve)?,
         Format::ThreeMf => formats::read_3mf(bytes)?,
+        Format::Fbx => fbx::read_fbx(bytes)?,
     };
     for (name, mesh) in &meshes {
         mesh.validate().map_err(|e| format!("{name}: {e}"))?;
@@ -85,6 +89,7 @@ pub fn export(format: Format, objects: &[GltfObject]) -> Result<Vec<u8>, String>
         Format::Glb => gltf::write_glb(objects),
         Format::Gltf => return Err("a .gltf is written as two files; export it to a path (export_mesh) or as glb".into()),
         Format::ThreeMf => formats::write_3mf(&plain)?,
+        Format::Fbx => fbx::write_fbx(objects),
     })
 }
 

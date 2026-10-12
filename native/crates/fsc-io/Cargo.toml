@@ -14,3 +14,5 @@ glam = "0.34"
 serde_json.workspace = true
 base64 = "0.22"
 zip = { version = "2", default-features = false, features = ["deflate"] }
+# FBX stores large arrays zlib-compressed; already in the tree through zip.
+miniz_oxide = "0.8"
