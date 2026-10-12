@@ -125,6 +125,23 @@ async def animation(keys: str = Query(..., max_length=20000), fps: int = Query(2
     return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="animation.png"', "Cache-Control": "no-store"})
 
 
+@router.get("/history_movie")
+async def history_movie(fps: int = Query(4, ge=1, le=30), size: int = Query(384, ge=64, le=1024), turn: float = Query(0, ge=-720, le=720), shading: str = "clay", background: str = "dark") -> Response:
+    """A looping animated PNG of the model at every undo step from the start (record_history)."""
+    _guard()
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    try:
+        reply = await run_in_threadpool(engine.dispatch, "record_history", {"path": path, "fps": fps, "size": size, "turn": turn, "shading": shading, "background": background})
+        if not reply.get("ok"):
+            raise HTTPException(status_code=400, detail=(reply.get("error") or {}).get("message", "render failed"))
+        with open(path, "rb") as f:
+            data = f.read()
+    finally:
+        os.unlink(path)
+    return Response(content=data, media_type="image/png", headers={"Content-Disposition": 'attachment; filename="history.png"', "Cache-Control": "no-store"})
+
+
 @router.get("/maps/{object_id}")
 async def maps_file(object_id: int) -> Response:
     _guard()
