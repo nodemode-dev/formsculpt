@@ -152,3 +152,9 @@ The mesh payload gains flag 4 (a u32 face group per triangle after the paint) an
 - kind: rationale
 - logged: v0.16.0 · 2026-10-11
 Sample messages may carry tilt (radians, the pen's lean from the screen's up); it defaults to 0, so older clients and agents are unaffected, and is passed to the engine's stroke_sample, which turns the brush alpha by it.
+
+### app/services/scripting.py, app/routers/plugins.py, setup/run_script.py, plugins/ · Python scripting and plugins
+- refers-to: app/services/scripting.py :: Fsc (call, scene, active), ScriptError, plugin_dirs, list_plugins, run_file; app/routers/plugins.py :: plugins, run; app/main.py :: plugins router; setup/run_script.py :: main, http_dispatch, engine_running; formsculptor :: script; plugins/rock.py, plugins/pedestal.py
+- kind: rationale
+- logged: v0.18.0 · 2026-10-11
+Scripts and plugins are plain Python with one handle, fsc, whose call(command, **args) runs any registry command by its MCP name and raises on refusal; the command is positional-only because several commands take a name argument (the first version broke on add_primitive's). ./formsculptor script FILE [JSON] runs a file against the running engine over HTTP, so the window follows along, or against an engine in its own process when none runs; paths are taken from where the command was typed (OLDPWD, as the launcher changes directory). Plugins are files in plugins/ or ~/.formsculptor/plugins (FSC_PLUGIN_DIR overrides) that define run(fsc, args); their docstring's first line is the title. The service lists them and runs one in its own process through the same dispatch the window uses, reporting a plugin's own exception as a message instead of failing the request. The service listens on the loopback address only and runs only the person's own files. Two examples ship: a rock built from a sphere with a lattice and two noise layers, and a display pedestal under the active object. No Windows launcher entry yet.
