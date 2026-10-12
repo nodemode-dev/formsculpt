@@ -10,16 +10,26 @@ interface LayoutPrefs {
   collapsed: string[];
   panelLeft: boolean;
   size: string;
+  /** Panel buttons pinned to the tool rail, as "Section/Label". */
+  rail: string[];
 }
 
 function load(): LayoutPrefs {
   try {
     const raw = localStorage.getItem(STORE);
     const p = raw ? (JSON.parse(raw) as Partial<LayoutPrefs>) : {};
-    return { collapsed: Array.isArray(p.collapsed) ? p.collapsed : [], panelLeft: p.panelLeft === true, size: typeof p.size === 'string' ? p.size : 'normal' };
+    const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+    return { collapsed: strings(p.collapsed), panelLeft: p.panelLeft === true, size: typeof p.size === 'string' ? p.size : 'normal', rail: strings(p.rail) };
   } catch {
-    return { collapsed: [], panelLeft: false, size: 'normal' };
+    return { collapsed: [], panelLeft: false, size: 'normal', rail: [] };
   }
+}
+
+/** Two letters for a rail button: the first two of one word, or the first of each of two. */
+function short(label: string): string {
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length > 1) return words[0][0].toUpperCase() + words[1][0].toLowerCase();
+  return label.slice(0, 2);
 }
 
 function save(p: LayoutPrefs): void {
@@ -96,5 +106,86 @@ export class PanelLayout {
     for (const s of ['small', 'large']) this.panel.classList.toggle(`panel-${s}`, s === size);
     this.prefs.size = size;
     if (keep) save(this.prefs);
+  }
+
+  private sources = new Map<string, HTMLButtonElement>();
+  private watchers: MutationObserver[] = [];
+  private railEl: HTMLElement | null = null;
+
+  /**
+   * Makes the tool rail a toolbar the person builds: the context menu (right button, or the keyboard's menu key) on any
+   * panel button pins it to the rail or takes it off, and a rail button presses the panel button it stands for, so it
+   * does exactly what that button does and shows the same pressed and disabled state.
+   */
+  attachRail(rail: HTMLElement, told: (text: string) => void): void {
+    this.railEl = rail;
+    let section = '';
+    for (const n of this.panel.children) {
+      if (n.tagName === 'H2') {
+        section = n.textContent ?? '';
+        continue;
+      }
+      for (const b of n.tagName === 'BUTTON' ? [n as HTMLButtonElement] : [...n.querySelectorAll('button')]) {
+        const key = `${section}/${b.textContent ?? ''}`;
+        if (this.sources.has(key)) continue;
+        this.sources.set(key, b);
+        b.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const pinned = this.prefs.rail.includes(key);
+          this.prefs.rail = pinned ? this.prefs.rail.filter((k) => k !== key) : [...this.prefs.rail, key];
+          save(this.prefs);
+          this.drawRail();
+          told(pinned ? `${b.textContent} taken off the rail` : `${b.textContent} pinned to the rail`);
+        });
+      }
+    }
+    this.drawRail();
+  }
+
+  get pinned(): number {
+    return this.prefs.rail.filter((k) => this.sources.has(k)).length;
+  }
+
+  clearRail(): void {
+    this.prefs.rail = [];
+    save(this.prefs);
+    this.drawRail();
+  }
+
+  private drawRail(): void {
+    const rail = this.railEl;
+    if (!rail) return;
+    for (const w of this.watchers) w.disconnect();
+    this.watchers = [];
+    rail.replaceChildren();
+    for (const key of this.prefs.rail) {
+      const source = this.sources.get(key);
+      if (!source) continue;
+      const label = source.textContent ?? '';
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rail-btn';
+      b.textContent = short(label);
+      b.title = `${label} (${key.split('/')[0]})`;
+      b.setAttribute('aria-label', label);
+      const mirror = (): void => {
+        b.disabled = source.disabled;
+        const pressed = source.getAttribute('aria-pressed');
+        if (pressed === null) b.removeAttribute('aria-pressed');
+        else b.setAttribute('aria-pressed', pressed);
+      };
+      mirror();
+      const watch = new MutationObserver(mirror);
+      watch.observe(source, { attributes: true, attributeFilter: ['aria-pressed', 'disabled'] });
+      this.watchers.push(watch);
+      b.addEventListener('click', () => source.click());
+      b.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.prefs.rail = this.prefs.rail.filter((k) => k !== key);
+        save(this.prefs);
+        this.drawRail();
+      });
+      rail.append(b);
+    }
   }
 }

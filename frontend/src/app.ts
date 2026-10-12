@@ -752,7 +752,12 @@ function buildShell(root: HTMLElement): Shell {
     viewGrid.append(b);
     return b;
   });
+  // Layout only, so it is wired at the end of buildShell rather than through the view actions.
+  const clearRail = el('button', 'btn', 'Clear rail');
+  clearRail.type = 'button';
+  viewGrid.append(clearRail);
   panel.append(viewGrid);
+  panel.append(el('p', 'panel-hint', 'Right-click any button to pin it to the tool rail.'));
 
   panel.append(el('h2', 'gap', 'Lighting'));
   const envSelect = choices('Environment', [['off', 'Off (fixed lights)'], ...ENV_PRESETS]);
@@ -881,6 +886,11 @@ function buildShell(root: HTMLElement): Shell {
   uiSize.value = layout.size;
   panelLeft.addEventListener('change', () => layout.setSide(panelLeft.checked));
   uiSize.addEventListener('change', () => layout.setSize(uiSize.value));
+  layout.attachRail(rail, (text) => setText(message, text));
+  clearRail.addEventListener('click', () => {
+    layout.clearRail();
+    setText(message, 'Rail cleared');
+  });
   return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginButtons, arrayLinked };
 }
 
