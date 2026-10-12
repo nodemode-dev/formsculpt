@@ -397,7 +397,51 @@ fn surface(o: &RenderObject, h: &fsc_core::Hit) -> (Vec3, Vec3, [f32; fsc_core::
 /// A path-traced picture of the objects from the same camera as [`render`]: global illumination from a sky and a sun
 /// (the window's key light) with soft shadows, diffuse and glossy bounces by paint roughness and metalness, painted
 /// glow as a light, and painted opacity letting light through. `samples` paths per pixel, `bounces` deep.
+/// What a path render writes: the lit image, or one of the compositing passes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Pass {
+    Beauty,
+    /// Camera distance, near white to far black across the framed bounds.
+    Depth,
+    /// World normal as colour (n * 0.5 + 0.5).
+    Normal,
+    /// Ambient occlusion: the share of the hemisphere open within a fifth of the bounds.
+    Occlusion,
+}
+
+/// A directional light added to the sun: the direction it shines from (world space) and its colour times intensity.
+#[derive(Clone, Copy, Debug)]
+pub struct Light {
+    pub from: Vec3,
+    pub color: Vec3,
+}
+
+#[derive(Clone, Debug)]
+pub struct PathOptions {
+    pub samples: u32,
+    pub bounces: u32,
+    pub lights: Vec<Light>,
+    /// Keep the window's key light as the sun.
+    pub sun: bool,
+    /// Lens radius as a fraction of the framed size; 0 is a pinhole (everything sharp).
+    pub aperture: f32,
+    /// Distance from the camera that is sharp; the framed centre when None.
+    pub focus: Option<f32>,
+    pub pass: Pass,
+}
+
+impl PathOptions {
+    pub fn new(samples: u32, bounces: u32) -> Self {
+        PathOptions { samples, bounces, lights: Vec::new(), sun: true, aperture: 0.0, focus: None, pass: Pass::Beauty }
+    }
+}
+
 pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: u32) -> Result<Rendered, String> {
+    path_trace_with(objects, view, &PathOptions::new(samples, bounces))
+}
+
+pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOptions) -> Result<Rendered, String> {
+    let (samples, bounces) = (options.samples, options.bounces);
     let started = Instant::now();
     if view.width == 0 || view.height == 0 || view.width > 2048 || view.height > 2048 {
         return Err("width and height must be 1 to 2048".into());
@@ -434,6 +478,15 @@ pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: 
     let sun = Vec3::new(2.6, 2.45, 2.25);
     let sky = |d: Vec3| Vec3::new(0.16, 0.15, 0.14).lerp(Vec3::new(0.42, 0.45, 0.5), d.y * 0.5 + 0.5) * 1.2;
     let (samples, bounces) = (samples.clamp(1, 1024), bounces.clamp(1, 8));
+    let size = bounds.extent().length().max(1e-3);
+    let lens = options.aperture.clamp(0.0, 1.0) * size * 0.5;
+    let focus = options.focus.unwrap_or_else(|| (bounds.center() - cam.eye).dot(cam.fwd)).max(1e-4);
+    let mut lights: Vec<(Vec3, Vec3)> = options.lights.iter().filter_map(|l| Some((l.from.try_normalize()?, l.color.max(Vec3::ZERO)))).collect();
+    if options.sun {
+        lights.push((sun_dir, sun));
+    }
+    let near = (bounds.center() - cam.eye).length() - size * 0.5;
+    let reach = size * 0.2;
     let trace = |i: usize| -> [u8; 4] {
         let (x, y) = (i % view.width, i / view.width);
         let mut rng = Rng((i as u32).wrapping_mul(2_654_435_761) ^ 0x9e37_79b9 | 1);
@@ -444,6 +497,35 @@ pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: 
             let sy = 1.0 - ((y as f32 + rng.next()) / view.height as f32) * 2.0;
             let mut d = (cam.fwd + cam.right * (sx * cam.tan * cam.aspect) + cam.up * (sy * cam.tan)).normalize();
             let mut p = cam.eye;
+            if lens > 0.0 {
+                // Thin lens: start from a point on the aperture disc, aimed at where the pinhole ray meets the focal plane.
+                let focal = cam.eye + d * (focus / d.dot(cam.fwd));
+                let (r, a) = (rng.next().sqrt() * lens, rng.next() * std::f32::consts::TAU);
+                p = cam.eye + cam.right * (r * a.cos()) + cam.up * (r * a.sin());
+                d = (focal - p).normalize();
+            }
+            if options.pass != Pass::Beauty {
+                if let Some((oi, h)) = hit(p, d) {
+                    alpha += 1.0;
+                    let (q, mut n, _) = surface(&objects[oi], &h);
+                    total += match options.pass {
+                        Pass::Depth => Vec3::splat(1.0 - ((q - cam.eye).length() - near) / size),
+                        Pass::Normal => n * 0.5 + Vec3::splat(0.5),
+                        _ => {
+                            if n.dot(d) > 0.0 {
+                                n = -n;
+                            }
+                            let ray = cosine_dir(n, &mut rng);
+                            let open = hit(q + n * eps * 4.0, ray).is_none_or(|(_, o)| o.t > reach);
+                            Vec3::splat(if open { 1.0 } else { 0.0 })
+                        }
+                    }
+                    .clamp(Vec3::ZERO, Vec3::ONE);
+                } else if let Some(bg) = view.background {
+                    total += Vec3::from(bg);
+                }
+                continue;
+            }
             let mut through = Vec3::ONE;
             let mut light = Vec3::ZERO;
             let mut first = true;
@@ -478,15 +560,17 @@ pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: 
                     continue;
                 }
                 let origin = q + n * eps * 4.0;
-                // The sun, sampled directly with a soft shadow ray.
-                let s = (sun_dir + Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * 0.06).normalize();
-                let ndl = n.dot(s);
-                if ndl > 0.0 && hit(origin, s).is_none() {
-                    let half = (s - d).normalize();
-                    let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
-                    let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
-                    let f0 = Vec3::splat(0.04).lerp(albedo, metal);
-                    light += through * sun * ndl * (diffuse + f0 * spec);
+                // The sun and any added lights, each sampled directly with a soft shadow ray.
+                for &(from, color) in &lights {
+                    let s = (from + Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * 0.06).normalize();
+                    let ndl = n.dot(s);
+                    if ndl > 0.0 && hit(origin, s).is_none() {
+                        let half = (s - d).normalize();
+                        let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
+                        let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
+                        let f0 = Vec3::splat(0.04).lerp(albedo, metal);
+                        light += through * color * ndl * (diffuse + f0 * spec);
+                    }
                 }
                 // Next bounce: glossy reflection by metalness (and smoothness), otherwise diffuse.
                 let glossy = metal.max((1.0 - rough) * 0.25);
@@ -509,7 +593,7 @@ pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: 
             total += light;
         }
         let c = total / samples as f32;
-        let c = (c / (c + Vec3::ONE)).powf(1.0 / 2.2);
+        let c = if options.pass == Pass::Beauty { (c / (c + Vec3::ONE)).powf(1.0 / 2.2) } else { c };
         let a = if view.background.is_some() { 1.0 } else { alpha / samples as f32 };
         let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
         [q(c.x), q(c.y), q(c.z), q(a)]

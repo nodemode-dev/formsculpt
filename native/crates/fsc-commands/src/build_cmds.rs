@@ -63,6 +63,12 @@ pub(crate) fn skeleton_schema() -> Value {
 
 pub(crate) fn skeleton(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let started = Instant::now();
+    let mesh = skeleton_mesh(args)?;
+    let reply = add(s, args, "Skeleton", mesh, started);
+    Ok(remember(s, reply, "skeleton", args))
+}
+
+fn skeleton_mesh(args: &Value) -> Result<Mesh, CommandError> {
     let mut balls = Vec::new();
     for v in list(args, "spheres")? {
         let f = floats(v, "sphere", &[4])?;
@@ -84,8 +90,58 @@ pub(crate) fn skeleton(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     }
     let blend = number(args, "blend", 0.3, 0.0, 1.0)? as f32;
     let resolution = number(args, "resolution", 96.0, 32.0, 256.0)? as u32;
-    let mesh = fsc_topo::skeleton_mesh(&balls, &links, blend, resolution).map_err(|e| CommandError::new("build_failed", e))?;
-    Ok(add(s, args, "Skeleton", mesh, started))
+    fsc_topo::skeleton_mesh(&balls, &links, blend, resolution).map_err(|e| CommandError::new("build_failed", e))
+}
+
+/// The sphere of a remembered skeleton nearest a world point.
+fn nearest_sphere(spheres: &[Value], p: Vec3) -> Option<usize> {
+    spheres
+        .iter()
+        .enumerate()
+        .filter_map(|(i, v)| {
+            let a = v.as_array()?;
+            let c = Vec3::new(a.first()?.as_f64()? as f32, a.get(1)?.as_f64()? as f32, a.get(2)?.as_f64()? as f32);
+            Some((i, c.distance(p) - a.get(3)?.as_f64()? as f32))
+        })
+        .min_by(|x, y| x.1.total_cmp(&y.1))
+        .map(|(i, _)| i)
+}
+
+/// Skeleton editing: add a sphere linked to the nearest one, or drag the sphere nearest a point, then remake.
+fn edit_skeleton(merged: &mut Value, args: &Value) -> Result<Value, CommandError> {
+    let mut changes = json!({});
+    if let Some(add) = args.get("add") {
+        let p = floats(add.get("point").unwrap_or(&Value::Null), "add point", &[3])?;
+        let p = Vec3::new(p[0], p[1], p[2]);
+        let spheres = merged["spheres"].as_array().cloned().unwrap_or_default();
+        let near = nearest_sphere(&spheres, p).ok_or_else(|| bad("the skeleton has no spheres"))?;
+        let near_r = spheres[near][3].as_f64().unwrap_or(0.1) as f32;
+        let r = add.get("radius").and_then(Value::as_f64).map(|r| r as f32).unwrap_or(near_r * 0.8);
+        if r <= 0.0 {
+            return Err(bad("add radius must be above 0"));
+        }
+        let index = spheres.len();
+        if index >= 512 {
+            return Err(bad("a skeleton holds at most 512 spheres"));
+        }
+        merged["spheres"].as_array_mut().expect("listed").push(json!([p.x, p.y, p.z, r]));
+        if !merged["links"].is_array() {
+            merged["links"] = json!([]);
+        }
+        merged["links"].as_array_mut().expect("listed").push(json!([near, index]));
+        changes["added"] = json!(index);
+        changes["linked_to"] = json!(near);
+    }
+    if let Some(drag) = args.get("drag") {
+        let from = floats(drag.get("from").unwrap_or(&Value::Null), "drag from", &[3])?;
+        let to = floats(drag.get("to").unwrap_or(&Value::Null), "drag to", &[3])?;
+        let spheres = merged["spheres"].as_array().cloned().unwrap_or_default();
+        let i = nearest_sphere(&spheres, Vec3::new(from[0], from[1], from[2])).ok_or_else(|| bad("the skeleton has no spheres"))?;
+        let r = spheres[i][3].clone();
+        merged["spheres"][i] = json!([to[0], to[1], to[2], r]);
+        changes["moved"] = json!(i);
+    }
+    Ok(changes)
 }
 
 pub(crate) fn shadow_box_schema() -> Value {
@@ -289,9 +345,15 @@ pub(crate) fn edit_build_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "id": {"type": "integer", "minimum": 1, "description": "A tube or lathe; the active object when omitted."},
+            "id": {"type": "integer", "minimum": 1, "description": "A tube, lathe or skeleton; the active object when omitted."},
+            "add": {"type": "object", "properties": {"point": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "radius": {"type": "number", "exclusiveMinimum": 0, "description": "Four fifths of the nearest sphere's when omitted."}}, "required": ["point"], "additionalProperties": false, "description": "Skeleton: add a sphere at point, linked to the nearest sphere (ZSphere style: click beside a joint to grow a limb)."},
+            "drag": {"type": "object", "properties": {"from": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "to": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "required": ["from", "to"], "additionalProperties": false, "description": "Skeleton: move the sphere nearest from to to."},
+            "spheres": {"type": "array", "minItems": 1, "maxItems": 512, "items": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}, "description": "Skeleton: new joints as [x, y, z, radius]."},
+            "links": {"type": "array", "maxItems": 1024, "items": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 2, "maxItems": 2}, "description": "Skeleton: new links."},
+            "blend": {"type": "number", "minimum": 0, "maximum": 1, "description": "Skeleton: how softly limbs merge."},
+            "resolution": {"type": "integer", "minimum": 32, "maximum": 256, "description": "Skeleton: voxel cells along the longest side."},
             "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}, "description": "Tube: a new curve, as [x, y, z] or [x, y, z, radius]."},
-            "move": {"type": "array", "maxItems": 4096, "items": {"type": "object", "properties": {"index": {"type": "integer", "minimum": 0}, "to": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}}, "required": ["index", "to"], "additionalProperties": false}, "description": "Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y])."},
+            "move": {"type": "array", "maxItems": 4096, "items": {"type": "object", "properties": {"index": {"type": "integer", "minimum": 0}, "to": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}}, "required": ["index", "to"], "additionalProperties": false}, "description": "Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]); skeleton: replace spheres (to [x, y, z, radius])."},
             "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000, "description": "Tube: the radius for points without their own."},
             "segments": {"type": "integer", "minimum": 3, "maximum": 256, "description": "Steps around the tube or the lathe's axis."},
             "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "description": "Tube: curve steps between points."},
@@ -309,19 +371,29 @@ pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, Command
     let object = s.scene.get(id).expect("checked");
     let made: Value = object.primitive.as_ref().and_then(|(a, _)| serde_json::from_str(a).ok()).unwrap_or(Value::Null);
     let Some(kind) = made.get("build").and_then(Value::as_str).map(str::to_string) else {
-        return Err(CommandError::new("not_editable", "this object was not made by curve_tube or lathe in this session"));
+        return Err(CommandError::new("not_editable", "this object was not made by curve_tube, lathe or skeleton_mesh in this session"));
     };
     if object.primitive.as_ref().map(|(_, r)| *r) != Some(object.revision) || object.multires.is_some() || !object.layers.list.is_empty() {
         return Err(CommandError::new("not_editable", format!("the {kind} has been changed since it was made, so its shape is fixed")));
     }
     let mut merged = made.clone();
-    for key in ["points", "radius", "segments", "smooth", "closed", "profile"] {
+    for key in ["points", "radius", "segments", "smooth", "closed", "profile", "spheres", "links", "blend", "resolution"] {
         if let Some(v) = args.get(key) {
             merged[key] = v.clone();
         }
     }
+    let mut changes = json!({});
+    if kind == "skeleton" {
+        changes = edit_skeleton(&mut merged, args)?;
+    } else if args.get("add").is_some() || args.get("drag").is_some() {
+        return Err(bad("add and drag edit a skeleton"));
+    }
     if let Some(moves) = args.get("move").and_then(Value::as_array) {
-        let list_key = if kind == "tube" { "points" } else { "profile" };
+        let list_key = match kind.as_str() {
+            "tube" => "points",
+            "skeleton" => "spheres",
+            _ => "profile",
+        };
         let len = merged[list_key].as_array().map(Vec::len).unwrap_or(0);
         for m in moves {
             let i = m["index"].as_u64().unwrap_or(u64::MAX) as usize;
@@ -331,12 +403,22 @@ pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, Command
             merged[list_key][i] = m["to"].clone();
         }
     }
-    let mesh = if kind == "tube" { tube_mesh(&merged)? } else { lathe_mesh(&merged)? };
+    let (mesh, label) = match kind.as_str() {
+        "tube" => (tube_mesh(&merged)?, "Tube"),
+        "skeleton" => (skeleton_mesh(&merged)?, "Skeleton"),
+        _ => (lathe_mesh(&merged)?, "Lathe"),
+    };
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     object.revision += 1;
     object.primitive = Some((merged.to_string(), object.revision));
-    s.history.push(Edit::Topology { label: format!("Edit {}", if kind == "tube" { "Tube" } else { "Lathe" }), object: id, mesh: old_mesh, mask: old_mask });
-    Ok(json!({"object": summary(s.scene.get(id).expect("checked"))}))
+    s.history.push(Edit::Topology { label: format!("Edit {label}"), object: id, mesh: old_mesh, mask: old_mask });
+    let mut reply = json!({"object": summary(s.scene.get(id).expect("checked"))});
+    if kind == "skeleton" {
+        reply["spheres"] = merged["spheres"].clone();
+        reply["links"] = merged["links"].clone();
+        reply["changes"] = changes;
+    }
+    Ok(reply)
 }

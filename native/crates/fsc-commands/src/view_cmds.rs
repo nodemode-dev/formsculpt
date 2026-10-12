@@ -28,6 +28,11 @@ pub(crate) fn view_schema() -> Value {
             "render": {"type": "string", "enum": ["preview", "path"], "default": "preview", "description": "preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise)."},
             "samples": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 32, "description": "Path render: paths per pixel; 32 is a quick look, 256 a clean final image."},
             "bounces": {"type": "integer", "minimum": 1, "maximum": 8, "default": 4, "description": "Path render: how many times light may bounce."},
+            "pass": {"type": "string", "enum": ["beauty", "depth", "normal", "ao"], "default": "beauty", "description": "Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion)."},
+            "lights": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {"from": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "World direction the light shines from."}, "color": {"type": "array", "items": {"type": "number", "minimum": 0}, "minItems": 3, "maxItems": 3, "default": [1, 1, 1]}, "intensity": {"type": "number", "minimum": 0, "maximum": 100, "default": 2.5}}, "required": ["from"], "additionalProperties": false}, "description": "Path render: directional lights added to the key light (a rim or fill)."},
+            "sun": {"type": "boolean", "default": true, "description": "Path render: keep the window's key light."},
+            "aperture": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Path render: depth of field lens size as a fraction of the framed size; 0 keeps everything sharp, 0.05 is a gentle blur."},
+            "focus": {"type": "number", "exclusiveMinimum": 0, "description": "Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted."},
             "smooth": {"type": "integer", "minimum": 0, "maximum": 3, "default": 0, "description": "Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed."}
         },
         "required": [],
@@ -378,7 +383,31 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
     let out = match args.get("render").and_then(Value::as_str).unwrap_or("preview") {
         "preview" => fsc_paint::render(&objects, &view),
-        "path" => fsc_paint::path_trace(&objects, &view, int(args, "samples", 32, 1, 1024)? as u32, int(args, "bounces", 4, 1, 8)? as u32),
+        "path" => {
+            let mut options = fsc_paint::PathOptions::new(int(args, "samples", 32, 1, 1024)? as u32, int(args, "bounces", 4, 1, 8)? as u32);
+            options.pass = match args.get("pass").and_then(Value::as_str).unwrap_or("beauty") {
+                "beauty" => fsc_paint::Pass::Beauty,
+                "depth" => fsc_paint::Pass::Depth,
+                "normal" => fsc_paint::Pass::Normal,
+                "ao" => fsc_paint::Pass::Occlusion,
+                other => return Err(bad(format!("pass must be beauty, depth, normal or ao, not {other}"))),
+            };
+            options.sun = args.get("sun").and_then(Value::as_bool).unwrap_or(true);
+            options.aperture = args.get("aperture").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 1.0) as f32;
+            options.focus = args.get("focus").and_then(Value::as_f64).filter(|f| *f > 0.0).map(|f| f as f32);
+            let three = |v: Option<&Value>, d: [f32; 3]| -> [f32; 3] {
+                match v.and_then(Value::as_array) {
+                    Some(a) if a.len() == 3 => [0, 1, 2].map(|i| a[i].as_f64().unwrap_or(d[i] as f64) as f32),
+                    _ => d,
+                }
+            };
+            for l in args.get("lights").and_then(Value::as_array).into_iter().flatten().take(8) {
+                let intensity = l.get("intensity").and_then(Value::as_f64).unwrap_or(2.5).clamp(0.0, 100.0) as f32;
+                let from = glam::Vec3::from(three(l.get("from"), [0.0, 1.0, 0.0]));
+                options.lights.push(fsc_paint::Light { from, color: glam::Vec3::from(three(l.get("color"), [1.0; 3])) * intensity });
+            }
+            fsc_paint::path_trace_with(&objects, &view, &options)
+        }
         other => return Err(bad(format!("render must be preview or path, not {other}"))),
     }
     .map_err(|e| CommandError::new("render_failed", e))?;

@@ -9,6 +9,47 @@ pub struct QuadRemesh {
     pub resolution: u32,
 }
 
+/// The frame quads should line up with: the guide curves' mean direction as the first axis (each tangent's sign
+/// matched to the first), and the world axis least along it (made square) as the third. None without usable guides.
+pub fn guide_frame(guides: &[Vec<Vec3>]) -> Option<glam::Mat3> {
+    let mut sum = Vec3::ZERO;
+    let mut first: Option<Vec3> = None;
+    for g in guides {
+        for w in g.windows(2) {
+            let t = w[1] - w[0];
+            if t.length_squared() < 1e-20 {
+                continue;
+            }
+            let f = *first.get_or_insert(t.normalize());
+            sum += if t.dot(f) < 0.0 { -t } else { t };
+        }
+    }
+    let u = sum.try_normalize()?;
+    // The third axis is the world axis least along u, made square to it, so flat sides square to the world (a box's
+    // front stays a face of the grid) while the loops turn to the guides.
+    let axis = [Vec3::X, Vec3::Y, Vec3::Z].into_iter().min_by(|a, b| a.dot(u).abs().total_cmp(&b.dot(u).abs())).unwrap_or(Vec3::Z);
+    let w = (axis - u * axis.dot(u)).try_normalize()?;
+    let v = w.cross(u);
+    Some(glam::Mat3::from_cols(u, v, w))
+}
+
+/// Quad remesh with the grid turned to a frame (from guide_frame), so edge loops run along the guides' direction.
+pub fn quad_remesh_aligned(mesh: &Mesh, frame: glam::Mat3, target_faces: usize, relax: u32) -> Result<QuadRemesh, String> {
+    let inverse = frame.transpose();
+    let mut local = mesh.clone();
+    for p in local.positions.iter_mut() {
+        *p = (inverse * Vec3::from(*p)).to_array();
+    }
+    local.recompute_normals();
+    let local_bvh = Bvh::build(&local);
+    let mut out = quad_remesh(&local, &local_bvh, target_faces, relax)?;
+    for p in out.mesh.positions.iter_mut() {
+        *p = (frame * Vec3::from(*p)).to_array();
+    }
+    out.mesh.recompute_normals();
+    Ok(out)
+}
+
 pub fn quad_remesh(mesh: &Mesh, bvh: &Bvh, target_faces: usize, relax: u32) -> Result<QuadRemesh, String> {
     let area: f32 = mesh
         .face_normals()

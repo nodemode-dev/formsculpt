@@ -24,7 +24,7 @@ pub use edges::{boundary_edges, edge_faces, Edge};
 pub use holes::fill_holes;
 pub use manifold::split_nonmanifold;
 pub use nearest::{closest_on_triangle, nearest_feature, nearest_point};
-pub use quad::{quad_remesh, QuadRemesh};
+pub use quad::{guide_frame, quad_remesh, quad_remesh_aligned, QuadRemesh};
 pub use reconstruct::{reconstruct_lower, Reconstructed};
 pub use region::{extract_shell, extrude_region, project_onto, region_faces};
 pub use subdivide::{loop_subdivide, loop_subdivide_with, smooth_preview, Subdivided};

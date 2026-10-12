@@ -1,6 +1,7 @@
 mod arrange_cmds;
 mod bake_cmds;
 mod build_cmds;
+mod cut_cmds;
 mod file_cmds;
 mod group_cmds;
 mod history;
@@ -306,8 +307,8 @@ pub static COMMANDS: &[Command] = &[
         id: "build.edit",
         mcp: "edit_build",
         group: Group::Object,
-        label: "Edit Tube or Lathe",
-        description: "Remake a tube (curve_tube) or lathe from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. get_scene shows editable_build on objects that can still be edited. One undo step.",
+        label: "Edit Tube, Lathe or Skeleton",
+        description: "Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: build_cmds::edit_build_schema,
@@ -642,6 +643,50 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sim_cmds::substance_schema,
         run: sim_cmds::substance_send,
+    },
+    Command {
+        id: "file.substance_sync",
+        mcp: "substance_sync",
+        group: Group::File,
+        label: "Sync from Substance Painter",
+        description: "Bring textures exported from Substance 3D Painter back: <name>_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: cut_cmds::substance_sync_schema,
+        run: cut_cmds::substance_sync,
+    },
+    Command {
+        id: "topo.clip",
+        mcp: "clip_plane",
+        group: Group::Topo,
+        label: "Clip",
+        description: "Cut an object flat along a plane with an exact boolean: keep removes the side the normal points to (ZBrush ClipCurve, a planar cut for hard-surface parts), slice keeps both halves as two capped objects. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: cut_cmds::clip_schema,
+        run: cut_cmds::clip_plane,
+    },
+    Command {
+        id: "topo.bevel_edge",
+        mcp: "bevel_edge",
+        group: Group::Topo,
+        label: "Bevel Edge",
+        description: "Bevel the straight run of sharp edges nearest a point: chamfer cuts a flat face and round cuts a fillet of the given width into both faces, exactly (the cut is a boolean with a prism, so the rest of the mesh is untouched). Use round_edges for every edge at once. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: cut_cmds::bevel_schema,
+        run: cut_cmds::bevel_edge,
+    },
+    Command {
+        id: "paint.uv_move_point",
+        mcp: "uv_move_point",
+        group: Group::Paint,
+        label: "Move UV Point",
+        description: "Drag UV vertices by hand: the UV point nearest at goes to to, or with radius every corner within it follows with a smooth falloff (kept to the island under at). For fixing stretch that uv_transform's whole-island moves cannot. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: cut_cmds::uv_point_schema,
+        run: cut_cmds::uv_move_point,
     },
     Command {
         id: "paint.uv_layout",
