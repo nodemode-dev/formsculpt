@@ -19,6 +19,7 @@ usage: ./formsculptor [command] [options]
   freeze              freeze the backend into the Tauri sidecar binary
   desktop dev|build   run or bundle the desktop app
   doctor              check the toolchain, installs and ports
+  test [all|engine|service|e2e]  run the engine and service tests (all), one suite, or the window smoke test (e2e, needs boot)
   bench [level]       time mesh build, normals, BVH, raycasts and brush-radius queries (icosphere level, default 8)
   mcp                 formsculptor over MCP's stdio transport (starts the engine if it is not running)
   script FILE [JSON]  run a Python script with fsc.call(command, **args), on the running engine or its own
@@ -56,6 +57,7 @@ case "$cmd" in
     esac ;;
   doctor) exec setup/doctor "$@" ;;
   bench) exec setup/bench "$@" ;;
+  test) exec setup/run_tests "$@" ;;
   mcp) exec python3 setup/mcp_stdio.py "$@" ;;
   script)
     # Scripts are named relative to where the command was typed, before the cd above.

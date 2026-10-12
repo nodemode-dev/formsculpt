@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# The test pass: engine (cargo test over the command registry), service (pytest on the FastAPI app with the built
+# engine module) and window (a Playwright smoke run against a booted window). `all` runs engine and service; the window
+# run needs ./formsculptor boot in another terminal, so it runs only when asked for.
+set -e
+source "$(dirname "$0")/lib.sh"
+which="${1:-all}"
+engine_tests() {
+  command -v cargo >/dev/null 2>&1 || fs_die "cargo not found; install Rust from https://rustup.rs"
+  (cd "$FSC_ROOT/native" && cargo test --workspace)
+}
+service_tests() {
+  fs_venv
+  python -c 'import pytest, httpx' 2>/dev/null || pip install -r "$FSC_ROOT/backend/requirements_test.txt"
+  python -c 'import fsc_engine' 2>/dev/null || fs_die "the engine module is not built; run ./formsculptor engine build"
+  (cd "$FSC_ROOT/backend" && python -m pytest -q -p no:warnings tests)
+}
+window_tests() {
+  local py
+  py="$(fs_python)" || fs_die "Python 3.12 or newer not found"
+  "$py" -c 'import playwright' 2>/dev/null || fs_die "Python Playwright not found; pip install playwright and run playwright install chromium"
+  "$py" "$FSC_ROOT/frontend/e2e/smoke.py" "${FSC_WINDOW_URL:-http://localhost:5196/}" "${FSC_SERVICE_URL:-http://127.0.0.1:8196}"
+}
+case "$which" in
+  engine) engine_tests ;;
+  service) service_tests ;;
+  e2e|window) window_tests ;;
+  all) engine_tests; service_tests; fs_say "engine and service tests passed; ./formsculptor test e2e runs the window smoke test against a booted window" ;;
+  *) fs_die "use: ./formsculptor test [all|engine|service|e2e]" ;;
+esac

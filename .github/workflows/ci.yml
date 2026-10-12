@@ -35,6 +35,8 @@ jobs:
         with:
           workspaces: native
       - run: ./formsculptor engine check
+      - name: Engine tests
+        run: ./formsculptor test engine
       - name: Catalogue
         run: cargo run -q --manifest-path native/Cargo.toml -p fsc-commands --bin fsc-catalogue
 
@@ -59,6 +61,26 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8196/api/health && break; sleep 1; done
           curl -sf http://127.0.0.1:8196/api/capabilities
 
+  service-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: native
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements_test.txt
+      - name: Service venv with the engine module
+        run: |
+          python -m venv backend/venv
+          backend/venv/bin/pip install -r backend/requirements_test.txt maturin
+          ./formsculptor engine build
+      - run: ./formsculptor test service
+
   scripts:
     runs-on: ubuntu-latest
     steps:
@@ -66,7 +88,8 @@ jobs:
       - name: Shell syntax
         run: |
           for f in formsculptor formsculptor_oc_install backend/oc_install backend/boot_backend frontend/oc_install frontend/boot_frontend setup/*; do
-            case "$f" in *.bat) continue ;; esac
+            case "$f" in *.bat|*.py) continue ;; esac
+            [ -d "$f" ] && continue
             bash -n "$f"
           done
       - name: No em dash or emoji in tracked text
