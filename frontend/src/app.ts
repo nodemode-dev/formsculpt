@@ -764,6 +764,7 @@ function buildShell(root: HTMLElement): Shell {
       ['anim_key', 'Add key'],
       ['anim_record', 'Record animation'],
       ['anim_clear', 'Clear keys'],
+      ['history_movie', 'History movie'],
       ['matcap', 'Load matcap'],
     ] as const
   ).map(([action, label]) => {
@@ -991,6 +992,11 @@ class SceneView {
         if (action === 'turntable') {
           this.note('Recording a turntable');
           void this.download(`/api/engine/turntable?frames=48&size=384&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'turntable.png');
+          return;
+        }
+        if (action === 'history_movie') {
+          this.note('Recording the undo history');
+          void this.download(`/api/engine/history_movie?fps=4&size=384&turn=90&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'history.png');
           return;
         }
         if (action === 'anim_key' || action === 'anim_record' || action === 'anim_clear') {
