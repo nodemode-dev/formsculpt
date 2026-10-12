@@ -1,19 +1,19 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.20.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.21.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
-- Viewing: `get_view`, `record_turntable`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
+- Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Topology: `cut_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
-- Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
+- Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 - Files: `save_project`, `open_project`, `import_mesh`, `export_mesh`, `print_check`
 
@@ -61,6 +61,31 @@ Render the scene turning once around the vertical axis and write it as a looping
 - `pitch`: number; default 15; range -89 to 89; Degrees above the horizon.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"
 - `size`: integer; default 384; range 64 to 1024; Width and height in pixels.
+
+## record_animation
+
+Timeline: render keyframed camera moves (yaw, pitch, zoom) and sculpt layer strengths (morphs such as a smile or a blink) to a looping animated PNG, eased between keys. Keys are {time in seconds, yaw, pitch, zoom, layers: [{id, layer, strength}]}; a value a key leaves out carries on from the keys around it. The scene is left as it was. Use it for a camera fly-around, a reveal or a before-and-after morph.
+
+- `background`: string (dark | light | transparent); default "dark"
+- `ease`: string (smooth | linear); default "smooth"
+- `fps`: integer; default 24; range 1 to 60
+- `ids`: array of integer; Only these objects; every visible object when omitted.
+- `keys`: array of object; required; Keyframes. Each value holds from its key to the next key that sets it, eased between them; values a key leaves out carry on from the keys around it.
+- `path`: string; required; Where to write the animation, ending in .png (an animated PNG that browsers play in a loop).
+- `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"
+- `size`: integer; default 384; range 64 to 1024; Width and height in pixels.
+
+## record_history
+
+Undo history movie: render the model at every step of the undo history from the start to now, one frame per step, to a looping animated PNG (optionally turning the camera across it), then leave the scene and history where they were. Shows how a sculpt was built up.
+
+- `background`: string (dark | light | transparent); default "dark"
+- `fps`: integer; default 4; range 1 to 30; Undo steps shown per second.
+- `path`: string; required; Where to write the movie, ending in .png (an animated PNG).
+- `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"
+- `size`: integer; default 384; range 64 to 1024
+- `turn`: number; default 0; range -720 to 720; Degrees the camera turns over the whole movie, so the build is seen from around it.
+- `view`: string (front | back | left | right | top | bottom | three_quarter); default "three_quarter"
 
 ## pick
 
@@ -464,13 +489,23 @@ Make the masked faces a new face group. Face groups divide a mesh into named reg
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
+## group_paint
+
+Group brush: paint the faces along a stroke into one face group (a new one, or `group`), as one undo step. points are [x, y, z] on the surface (pick gives them) and radius the brush's reach in world units. Use it to mark an eyelid, a panel or a seam by hand where group_auto's angle, parts, paint and uv rules do not fit.
+
+- `group`: integer; range 0 to inf; Paint this existing group number; a new group when omitted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `points`: array of array; required; The stroke over the surface as [x, y, z] points (pick gives them), in order.
+- `radius`: number; required; range -inf to 1000; The brush radius in world units; faces whose middle lies within it of the stroke are painted.
+
 ## group_auto
 
-Replace an object's face groups with automatic ones: by angle (a new group wherever neighbouring faces turn by more than the angle, so a cube gets six) or by parts (each loose piece its own group). One undo step.
+Replace an object's face groups with automatic ones: by angle (a new group wherever neighbouring faces turn by more than the angle, so a cube gets six) or by parts (each loose piece its own group), by paint (connected faces of one painted colour) or by uv (each UV island). One undo step.
 
 - `angle`: number; default 30; range 1 to 179
-- `by`: string (angle | parts); default "angle"; angle starts a new group wherever neighbouring faces turn by more than `angle` degrees (the planes of a hard-surface model, the sides of a cube); parts gives each loose piece its own group.
+- `by`: string (angle | parts | paint | uv); default "angle"; angle starts a new group wherever neighbouring faces turn by more than `angle` degrees (the planes of a hard-surface model, the sides of a cube); parts gives each loose piece its own group; paint groups connected faces of one painted colour (within `tolerance`); uv gives each UV island its own group (from the object's UVs, or an automatic unwrap when it has none).
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `tolerance`: number; default 0.12; range 0.001 to 1; paint: how far apart two colours (0 to 1 per channel) may be and still share a group.
 
 ## group_clear
 
@@ -700,6 +735,19 @@ Place a primitive, or a copy of another object, at a point on a surface, standin
 - `size`: number; default 0.2; range -inf to 10000; The inserted mesh's largest dimension, in world units.
 - `source_id`: integer; range 1 to inf; Insert a copy of this object instead (a horn, a bolt, an eye).
 
+## insert_along
+
+String copies of a primitive or another object along a stroke over a surface, as an insert-mesh brush does: each stands on the surface normal, sunk in, evenly spaced and turned to follow the stroke. Rows of scales, studs and rivets, spikes down a spine, stitches, chain links, teeth along a jaw. path is [x, y, z, nx, ny, nz] points (pick gives the point and normal); merge makes one object (the default).
+
+- `align`: boolean; default true; Turn each copy so its x follows the stroke (a chain, a row of scales).
+- `kind`: string (sphere | cube | cylinder | cone | torus); default "sphere"; A primitive to insert, unless source_id is given.
+- `merge`: boolean; default true; Make all copies one object; false gives one object per copy.
+- `path`: array of array; required; The stroke over the surface as [x, y, z, nx, ny, nz] points with their normals (pick gives both), in order.
+- `sink`: number; default 0.25; range -1 to 1; How far each copy sinks into the surface, as a fraction of its height.
+- `size`: number; default 0.2; range -inf to 10000; Each copy's largest dimension, in world units.
+- `source_id`: integer; range 1 to inf; Insert copies of this object instead (scales, studs, spikes, chain links, teeth).
+- `spacing`: number; default 1.2; range 0.1 to 20; Distance between copies along the stroke, as a multiple of size.
+
 ## boolean
 
 Union, difference (a minus b) or intersection of two objects through a voxel grid, giving one watertight object; the inputs are replaced unless keep_inputs. Detail finer than a voxel is smoothed, so raise resolution for sharp results. Both inputs should be closed meshes (mesh_check).
@@ -789,7 +837,7 @@ Add the meshes in an OBJ, STL, PLY, glTF/GLB or 3MF file as new objects (one per
 
 ## export_mesh
 
-Write objects to OBJ, STL, PLY, GLB or 3MF, chosen by the path's extension, overwriting it. GLB keeps sculpt layers as morph targets at their strengths; STL and PLY join the objects into one mesh.
+Write objects to OBJ, STL, PLY, GLB, glTF or 3MF, chosen by the path's extension, overwriting it. GLB and glTF keep sculpt layers as morph targets at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
 
 - `ids`: array of integer; Objects to write; every visible object when omitted. STL and PLY join them into one mesh.
 - `path`: string; required; A file path on this computer.

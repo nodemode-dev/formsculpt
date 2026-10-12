@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.21.0 · 2026-10-12
+
+### Added
+
+- `insert_along`: copies of a primitive or another object strung along a surface stroke, spaced and turned to follow it. Window: the Insert brush.
+- `group_auto` by `paint` (painted regions, slivers folded away) and by `uv` (UV islands); `group_paint`, a group brush along a stroke. Window: Groups by paint, Groups by UV and the Group brush.
+- `record_animation`: a timeline of eased keyframes for the camera's turn, height and zoom and for sculpt layer strengths, rendered to a looping animated PNG; `record_history`, a movie of every undo step from the start (94 commands in all). Window: Add key, Record animation, Clear keys and History movie; service routes `/api/engine/animation` and `/api/engine/history_movie`.
+- glTF in its separate form: `export_mesh` to a `.gltf` writes a `.bin` beside it, and `import_mesh` reads a `.gltf` whose buffers are files beside it.
+
 ## 0.20.0 · 2026-10-12
 
 ### Added
