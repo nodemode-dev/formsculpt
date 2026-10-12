@@ -212,3 +212,9 @@ GET /api/engine/boolean_preview?a=&b=&op= returns the exact result as an FSCM pa
 - kind: rationale
 - logged: v0.29.0 · 2026-10-12
 GET /api/engine/view takes render=path with samples (1 to 1,024) and bounces (1 to 8). POST /api/engine/substance writes send_to_substance's package to FSC_SUBSTANCE_DIR or ~/.formsculptor/substance/<object name>; 404 for a missing object, the engine's no_uvs refusal as data. 18 service tests.
+
+### routers/engine.py · render passes and the Substance sync
+- refers-to: app/routers/engine.py :: view_image (pass, aperture), substance_sync; tests/test_service.py :: test_path_render_and_substance_routes
+- kind: rationale
+- logged: v0.30.0 · 2026-10-12
+GET /api/engine/view takes pass (beauty, depth, normal, ao; anything else is 422) and aperture (0 to 1) with render=path; they are not sent for the preview render. POST /api/engine/substance/sync reads Painter's export from the same package folder the send route writes (substance_sync); a folder without <name>_BaseColor.png answers io_failed as data. 18 service tests.
