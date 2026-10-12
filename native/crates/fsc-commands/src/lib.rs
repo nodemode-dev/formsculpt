@@ -156,6 +156,17 @@ pub static COMMANDS: &[Command] = &[
         run: view_cmds::record_animation,
     },
     Command {
+        id: "view.history_movie",
+        mcp: "record_history",
+        group: Group::View,
+        label: "Record History Movie",
+        description: "Undo history movie: render the model at every step of the undo history from the start to now, one frame per step, to a looping animated PNG (optionally turning the camera across it), then leave the scene and history where they were. Shows how a sculpt was built up.",
+        keys: &[],
+        hints: WRITE,
+        schema: view_cmds::history_movie_schema,
+        run: view_cmds::record_history,
+    },
+    Command {
         id: "view.pick",
         mcp: "pick",
         group: Group::View,

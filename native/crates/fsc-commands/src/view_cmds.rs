@@ -208,6 +208,85 @@ pub(crate) fn record_animation(s: &mut Session, args: &Value) -> Result<Value, C
     Ok(json!({"path": path, "frames": frames, "seconds": duration, "size": size, "bytes": bytes.len(), "layer_tracks": layer_tracks.len(), "ms": started.elapsed().as_millis()}))
 }
 
+pub(crate) fn history_movie_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "minLength": 1, "description": "Where to write the movie, ending in .png (an animated PNG)."},
+            "fps": {"type": "integer", "minimum": 1, "maximum": 30, "default": 4, "description": "Undo steps shown per second."},
+            "size": {"type": "integer", "minimum": 64, "maximum": 1024, "default": 384},
+            "view": {"type": "string", "enum": ["front", "back", "left", "right", "top", "bottom", "three_quarter"], "default": "three_quarter"},
+            "turn": {"type": "number", "minimum": -720, "maximum": 720, "default": 0, "description": "Degrees the camera turns over the whole movie, so the build is seen from around it."},
+            "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay"},
+            "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+    })
+}
+
+/// Undo history movie: steps back to the start of the history and renders one frame per step up to where it was,
+/// then leaves the scene and history where they were.
+pub(crate) fn record_history(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let path = args.get("path").and_then(Value::as_str).ok_or_else(|| bad("path is required"))?.to_string();
+    if !path.to_ascii_lowercase().ends_with(".png") {
+        return Err(bad("path must end in .png"));
+    }
+    let fps = int(args, "fps", 4, 1, 30)?;
+    let size = int(args, "size", 384, 64, 1024)?;
+    let turn = args.get("turn").and_then(Value::as_f64).unwrap_or(0.0).clamp(-720.0, 720.0) as f32;
+    let view = args.get("view").and_then(Value::as_str).unwrap_or("three_quarter");
+    let &(_, yaw0, pitch) = VIEWS.iter().find(|v| v.0 == view).ok_or_else(|| bad(format!("unknown view {view}")))?;
+    let (_, done) = s.history.steps();
+    if done == 0 {
+        return Err(CommandError::new("no_history", "there are no steps to show yet"));
+    }
+    if done > 600 {
+        return Err(bad("the history has more than 600 steps; that is too long for one movie"));
+    }
+    let started = std::time::Instant::now();
+    let mut shots = Vec::with_capacity(done + 1);
+    let mut failure = None;
+    for k in 0..=done {
+        if let Err(e) = s.history.go_to(&mut s.scene, k) {
+            failure = Some(CommandError::new("history", e));
+            break;
+        }
+        if s.scene.objects.iter().all(|o| !o.visible) {
+            continue;
+        }
+        let mut frame_args = json!({"width": size, "height": size, "frame": "all", "yaw": yaw0 + turn * k as f32 / done as f32, "pitch": pitch});
+        for key in ["shading", "background"] {
+            if let Some(v) = args.get(key) {
+                frame_args[key] = v.clone();
+            }
+        }
+        match render_pixels(s, &frame_args) {
+            Ok((pixels, _)) => shots.push(pixels),
+            Err(e) => {
+                failure = Some(e);
+                break;
+            }
+        }
+    }
+    let back = s.history.go_to(&mut s.scene, done);
+    if let Some(e) = failure {
+        return Err(e);
+    }
+    back.map_err(|e| CommandError::new("history", e))?;
+    if shots.len() < 2 {
+        return Err(CommandError::new("no_history", "fewer than two steps had anything to show"));
+    }
+    // Hold the finished model for a second at the end.
+    let last = shots.last().cloned().expect("two or more");
+    for _ in 0..fps {
+        shots.push(last.clone());
+    }
+    let bytes = fsc_paint::apng_rgba(size, size, &shots, fps as u16).map_err(|e| CommandError::new("render_failed", e))?;
+    std::fs::write(&path, &bytes).map_err(|e| CommandError::new("write_failed", format!("could not write {path}: {e}")))?;
+    Ok(json!({"path": path, "steps": done, "frames": shots.len(), "size": size, "bytes": bytes.len(), "ms": started.elapsed().as_millis()}))
+}
+
 pub(crate) fn get_view(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let (pixels, mut facts) = render_pixels(s, args)?;
     let (w, h) = (facts["width"].as_u64().unwrap_or(0) as usize, facts["height"].as_u64().unwrap_or(0) as usize);
