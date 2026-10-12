@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.19.0 · 2026-10-12
+
+### Added
+
+- `shadow_box`: a closed solid from two or three outlines seen from the front, side and top, with a blend for rounded meeting edges (85 commands in all). Window: the Silhouette tool keeps an outline per view, then Build shadow box and Clear outlines.
+- `array_object` modes `mirror` (one reflected copy across an axis) and `curve` (copies spaced along a path, turned to follow it), and `linked` copies that follow every change to their original until edited themselves; `get_scene` shows `instance_of`. Window: Mirror copy, Array on curve (along the Curve stroke's path) and Linked copies.
+- Interface customization: every panel section folds under its heading, the panel can sit on the left, it comes in small, normal and large sizes, and any panel button can be pinned to the tool rail by right-clicking it (Clear rail empties it), all kept in the browser.
+
 ## 0.18.0 · 2026-10-11
 
 ### Added

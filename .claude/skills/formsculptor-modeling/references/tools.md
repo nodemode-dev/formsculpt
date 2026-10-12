@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.18.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.19.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`, `alpha_load`
 - Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
@@ -146,6 +146,17 @@ Build a base mesh from a skeleton of spheres ([x, y, z, radius]) joined by taper
 - `name`: string; Name for the new object; a default when omitted.
 - `resolution`: integer; default 96; range 32 to 256; Voxel cells along the longest side.
 - `spheres`: array of array; required; Joints as [x, y, z, radius].
+
+## shadow_box
+
+Build a base mesh from two or three outlines: the solid whose silhouette from the front is `front` (x, y), from the side `side` (z, y) and from above `top` (x, z), each extruded and intersected, with rounded edges. Fast blocking for props, heads in profile, vehicles, furniture: draw the side profile and the front shape and sculpt from there. A new watertight object.
+
+- `blend`: number; default 0.05; range 0 to 0.5; Rounds the edges where the outlines meet, as a fraction of the solid's size.
+- `front`: array of array; The outline seen from the front, as [x, y] points in world units (a closed polygon).
+- `name`: string; Name for the new object; a default when omitted.
+- `resolution`: integer; default 128; range 32 to 256; Voxel cells along the longest side.
+- `side`: array of array; The outline seen from the side (the right view), as [z, y] points.
+- `top`: array of array; The outline seen from above, as [x, z] points.
 
 ## curve_tube
 
@@ -615,14 +626,17 @@ Split an object into one object per connected part of its mesh.
 
 Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them.
 
+- `align`: boolean; default true; Curve: turn each copy so the original's +x follows the path.
 - `angle`: number; default 360; range -360 to 360; Radial: the total turn in degrees; 360 spaces the copies evenly around the full circle.
 - `axis`: string (x | y | z); default "y"; Radial: the axis the copies turn around (through center).
 - `center`: array of number; Radial: the point the axis passes through; the world origin when omitted.
 - `count`: integer; default 4; range 2 to 200; Copies in all, the original included.
 - `id`: integer; range 1 to inf; The object to repeat; the active object when omitted.
+- `linked`: boolean; default false; Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it.
 - `merge`: boolean; default false; Join the copies with the original into one object instead of adding separate objects.
-- `mode`: string (linear | radial); default "linear"
+- `mode`: string (linear | radial | mirror | curve); default "linear"; linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points.
 - `offset`: array of number; Linear: the step from one copy to the next, in world units; one bounds width along x when omitted.
+- `points`: array of array; Curve: the path, as [x, y, z] points; each copy's bounds centre sits on it.
 
 ## insert_mesh
 
