@@ -62,6 +62,10 @@ try {
   check('a project saves', x.fsc_save() === 0 && out().length > 1000);
   const [en, el] = held(enc.encode('scene.usda'));
   check('a USD file exports', x.fsc_export(en, el, 0, 0) === 0 && dec.decode(out().slice(0, 9)) === '#usda 1.0');
+  const cutter = call('add_primitive', { kind: 'cube', size: 0.8 }).result.object.id;
+  call('transform_object', { id: cutter, translate: [0.5, 0.5, 0] });
+  check('a live boolean preview is built exactly', x.fsc_boolean_preview(id, cutter, 1) === 0 && dec.decode(out().slice(0, 4)) === 'FSCM');
+  check('an exact boolean commits', call('boolean', { a: id, b: cutter, op: 'difference' }).result?.method === 'exact');
   check('an unknown command is an error, not a trap', call('no_such').error.code === 'unknown_command');
 } catch (err) {
   console.log(`FAIL  the module trapped: ${panic || err}`);

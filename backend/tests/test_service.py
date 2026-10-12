@@ -111,6 +111,23 @@ def test_paint_has_seven_floats_and_old_projects_open_opaque(client):
     assert "alphaMode" not in doc["materials"][0] and "emissiveFactor" not in doc["materials"][0]
 
 
+def test_boolean_preview_draws_without_changing_the_scene(client):
+    a = call(client, "add_primitive", kind="sphere", detail=3)["object"]["id"]
+    b = call(client, "add_primitive", kind="cube")["object"]["id"]
+    call(client, "transform_object", id=b, translate=[0.6, 0, 0])
+    steps = len(call(client, "get_history")["steps"])
+    r = client.get("/api/engine/boolean_preview", params={"a": a, "b": b, "op": "difference"})
+    assert r.status_code == 200 and r.content[:4] == b"FSCM"
+    vertices, indices, revision, flags = struct.unpack("<IIII", r.content[4:20])
+    assert vertices > 0 and indices % 3 == 0 and revision == 0 and flags & 1
+    assert len(call(client, "get_scene")["objects"]) == 2 and len(call(client, "get_history")["steps"]) == steps
+    assert client.get("/api/engine/boolean_preview", params={"a": a, "b": 999, "op": "union"}).status_code == 404
+    assert client.get("/api/engine/boolean_preview", params={"a": a, "b": b, "op": "xor"}).status_code == 422
+    plane = call(client, "add_primitive", kind="plane")["object"]["id"]
+    refused = client.get("/api/engine/boolean_preview", params={"a": plane, "b": b, "op": "union"})
+    assert refused.status_code == 400 and "closed manifold" in refused.json()["detail"]
+
+
 def test_usda_export_route(client):
     call(client, "add_primitive", kind="cone")
     r = client.get("/api/engine/export", params={"format": "usda"})

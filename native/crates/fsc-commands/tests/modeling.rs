@@ -37,6 +37,58 @@ fn a_stroke_is_one_undo_step_and_redo_restores_it() {
 }
 
 #[test]
+fn exact_booleans_keep_sharp_detail_and_paint() {
+    let mut s = Session::default();
+    // A cube minus a smaller, offset cube: an exact notch whose faces stay flat and whose corner stays sharp.
+    let a = add(&mut s, "cube", json!({}));
+    call(&mut s, "paint_fill", json!({"id": a, "color": "#ff0000"}));
+    let b = add(&mut s, "cube", json!({"size": 0.6}));
+    call(&mut s, "paint_fill", json!({"id": b, "color": "#0000ff"}));
+    call(&mut s, "transform_object", json!({"id": b, "translate": [0.4, 0.4, 0.4]}));
+    let r = call(&mut s, "boolean", json!({"a": a, "b": b, "op": "difference"}));
+    assert_eq!(r["method"], "exact");
+    let id = r["id"].as_u64().unwrap();
+    assert!(watertight(&mut s, id));
+    assert!(printable(&mut s, id).0);
+    // The notch floor is exactly at 0.1 (the cutter's lower face), and the outer corner still at 0.5.
+    let floor = call(&mut s, "pick", json!({"origin": [0.3, 5, 0.3], "direction": [0, -1, 0]}));
+    assert!((floor["point"][1].as_f64().unwrap() - 0.1).abs() < 1e-4, "{floor}");
+    let corner = call(&mut s, "pick", json!({"origin": [-0.45, 5, -0.45], "direction": [0, -1, 0]}));
+    assert!((corner["point"][1].as_f64().unwrap() - 0.5).abs() < 1e-4);
+    // Few triangles: an exact cut of two boxes is not a voxel surface.
+    assert!(r["triangles"].as_u64().unwrap() < 4000, "{}", r["triangles"]);
+    let mesh = &s.scene.get(id as u32).unwrap().mesh;
+    assert!(mesh.paint.iter().any(|p| p[0] > 0.9) && mesh.paint.iter().any(|p| p[2] > 0.9), "both colours survive the cut");
+    // Union and intersection of two overlapping spheres: closed, and the intersection is the lens between them.
+    for (op, max_tris) in [("union", 200_000u64), ("intersection", 200_000)] {
+        let mut s = Session::default();
+        let a = add(&mut s, "sphere", json!({"detail": 4}));
+        let b = add(&mut s, "sphere", json!({"detail": 4}));
+        call(&mut s, "transform_object", json!({"id": b, "translate": [1.0, 0, 0]}));
+        let r = call(&mut s, "boolean", json!({"a": a, "b": b, "op": op}));
+        let id = r["id"].as_u64().unwrap();
+        assert!(watertight(&mut s, id), "{op} is not watertight");
+        assert!(r["triangles"].as_u64().unwrap() < max_tris);
+        let width = size(&r, 0);
+        let expected = if op == "union" { 3.0 } else { 1.0 };
+        assert!((width - expected).abs() < 0.02, "{op} width {width}");
+    }
+    // An open surface cannot be cut exactly: the voxel boolean takes over and says why.
+    let mut s = Session::default();
+    let a = add(&mut s, "plane", json!({}));
+    let b = add(&mut s, "sphere", json!({"detail": 3}));
+    let r = call(&mut s, "boolean", json!({"a": a, "b": b, "op": "union", "resolution": 48}));
+    assert_eq!(r["method"], "voxel");
+    assert!(r["fallback"].as_str().unwrap().contains("not a closed manifold"));
+    // A cube minus the same cube leaves nothing, said plainly; the scene is unchanged.
+    let mut s = Session::default();
+    let a = add(&mut s, "cube", json!({}));
+    let b = add(&mut s, "cube", json!({}));
+    assert_eq!(fails(&mut s, "boolean", json!({"a": a, "b": b, "op": "difference"})), "boolean_failed");
+    assert_eq!(call(&mut s, "get_scene", json!({}))["objects"].as_array().unwrap().len(), 2);
+}
+
+#[test]
 fn booleans_are_watertight_and_blend_fuses() {
     let mut sharp = Session::default();
     let mut soft = Session::default();
