@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.28.0 · 2026-10-12
+
+### Added
+
+- Exact mesh booleans: `boolean` cuts along the true intersection by default (`method: "exact"`), keeping sharp edges, flat faces, sculpted detail and paint; open input falls back to the voxel boolean and says why; `method: "voxel"` and `blend` keep the voxel route. Built on boolmesh (MPL-2.0).
+- Live boolean: the window draws the exact union, difference or intersection of two objects in their place and follows as either changes; Union, Subtract or Intersect keeps it. Service route `/api/engine/boolean_preview`; also in the browser engine.
+- Tests: exact booleans (notch geometry, coplanar faces, paint, fallback, nothing left), the preview route, the browser engine's preview (engine 34, service 17, browser engine 14 checks).
+
+### Changed
+
+- Minimum Rust is 1.88 (boolmesh needs it).
+- The window's note is a fixed three-line box, so a long note no longer moves the sections below it.
+
 ## 0.27.0 · 2026-10-12
 
 ### Added
