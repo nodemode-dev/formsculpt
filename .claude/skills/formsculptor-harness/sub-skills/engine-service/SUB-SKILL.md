@@ -11,7 +11,7 @@ Own `backend/app/`. Serves the built frontend, exposes the API and runs the engi
 
 ## Preconditions
 
-State at 0.9.0: routers `system`, `engine` (dispatch, mesh, stroke socket, import, export, project, maps, autosave, and `/view`, a PNG from the headless `get_view`), `nodemode` (status and send: the scene as GLB plus a rendered preview uploaded through NodeMode's `/api/upload`, then announced to `/api/formsculptor/receive`; formvis's protocol) and `mcp`. Outbound requests go through `services/outbound.py` (http or https only, as given). `__version__` lives in `backend/app/__init__.py` and is one of the bump sites.
+State at 0.9.0: routers `system`, `engine` (dispatch, mesh, stroke socket, import, export, project, maps, autosave, and `/view`, a PNG from the headless `get_view`), `nodemode` (status and send: the scene as GLB plus a rendered preview uploaded through NodeMode's `/api/upload`, then announced to `/api/formsculptor/receive`; formvis's protocol) and `mcp`. Outbound requests go through `services/outbound.py` (http or https only, as given). `__version__` lives in `backend/app/__init__.py` and is one of the bump sites. At 0.18.0 `services/scripting.py` (`Fsc`, `run_file`, `list_plugins`) serves both `./formsculptor script` (`setup/run_script.py`, HTTP to a running engine or an in-process one) and the `plugins` router (`/api/plugins`, `/api/plugins/run`); scripts and plugins reach the engine only through registry commands, so they never need their own engine API. Keep `Fsc.call`'s command positional-only.
 
 ## Procedure
 

@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.17.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.18.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -10,7 +10,7 @@ Generated from the engine's command registry (formsculptor 0.17.0) by `./formscu
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Sculpting: `sculpt_stroke`, `alpha_load`
-- Painting: `paint_fill`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
+- Painting: `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `bake_maps`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_auto`, `group_clear`, `hide_faces`
 - Topology: `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -229,6 +229,23 @@ Paint a whole object with a colour, roughness or metalness (only the channels gi
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `metalness`: number; range 0 to 1
 - `roughness`: number; range 0 to 1
+
+## paint_project
+
+Paint an image onto the surface: from a view like a slide projector (only onto surfaces that face it and are not hidden behind others, fading at grazing angles), or tiled triplanar over the whole object. Goes into the active paint layer when there is one; masked areas are protected; the image's alpha and opacity set how strongly it replaces the paint. Vertex paint, so detail is limited by the mesh's resolution: subdivide first for fine images. One undo step.
+
+- `height`: number; default 640; range 1 to 8192
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `mode`: string (view | triplanar); default "view"; view: projected from a camera like a slide projector, onto the surfaces facing it and not hidden behind others; triplanar: tiled over the whole surface from the three axis planes (fabric, stone, skin texture).
+- `opacity`: number; default 1; range 0 to 1; How strongly the image replaces the paint (its own alpha multiplies this).
+- `path`: string; A PNG file on the engine's machine, instead of png_base64.
+- `pitch`: number
+- `png_base64`: string; The image as a base64 PNG.
+- `scale`: number; range -inf to 10000; triplanar: the image's size in world units; a quarter of the object's size when omitted.
+- `view`: string (front | back | right | left | top | bottom | three_quarter); default "front"; view mode: the named camera, framed as get_view frames it, so the image lands where it would sit over a get_view picture of the same view and aspect.
+- `view_proj`: array of number; view mode: a column-major view-projection matrix instead of a named view (the window sends its camera's); the image covers the whole view.
+- `width`: number; default 640; range 1 to 8192
+- `yaw`: number
 
 ## paint_layer_add
 
