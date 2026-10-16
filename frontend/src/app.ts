@@ -105,6 +105,10 @@ interface Shell {
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
+  repeatStep: HTMLSelectElement;
+  repeatResult: HTMLSelectElement;
+  scatterCount: HTMLInputElement;
+  repeatList: HTMLParagraphElement;
   arrayScaleEnd: HTMLInputElement;
   arrayJitter: HTMLInputElement;
   arraySeed: HTMLInputElement;
@@ -567,10 +571,13 @@ function buildShell(root: HTMLElement): Shell {
   const arrayJitter = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Array jitter %' });
   const arraySeed = input('number', { min: '1', max: '9999', step: '1', value: '1', 'aria-label': 'Jitter seed' });
   const arrayLinked = input('checkbox', { 'aria-label': 'Linked copies' });
+  const repeatStep = choices('Repeater step', [['line', 'Line'], ['radial', 'Radial'], ['mirror', 'Mirror'], ['curve', 'Along curve']]);
+  const repeatResult = choices('Repeater result', [['merge', 'One object'], ['separate', 'Separate copies'], ['linked', 'Linked copies']]);
+  const scatterCount = input('number', { min: '1', max: '2048', step: '1', value: '60', 'aria-label': 'Scatter count' });
   const vdmPick = choices('Stamp map', [['horn', 'Horn'], ['hook', 'Hook'], ['mushroom', 'Mushroom']]);
   const textInput = input('text', { maxlength: '160', value: 'FORM', 'aria-label': 'Text', spellcheck: 'false' });
   const buildFields = el('div', 'fields');
-  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Last copy scale', arrayScaleEnd), field('Array jitter %', arrayJitter), field('Jitter seed', arraySeed), field('Linked copies', arrayLinked), field('Stamp map', vdmPick), field('Text', textInput));
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Last copy scale', arrayScaleEnd), field('Array jitter %', arrayJitter), field('Jitter seed', arraySeed), field('Linked copies', arrayLinked), field('Repeater step', repeatStep), field('Repeater result', repeatResult), field('Scatter count', scatterCount), field('Stamp map', vdmPick), field('Text', textInput));
   panel.append(buildFields);
   const buildGrid = el('div', 'add-grid two');
   const buildButtons = (
@@ -581,6 +588,10 @@ function buildShell(root: HTMLElement): Shell {
       ['array_radial', 'Array radial'],
       ['array_mirror', 'Mirror copy'],
       ['array_curve', 'Array on curve'],
+      ['repeat_add', 'Add repeater step'],
+      ['repeat_clear', 'Clear steps'],
+      ['repeat_apply', 'Apply repeater'],
+      ['scatter', 'Scatter on surface'],
       ['shadow_box', 'Build shadow box'],
       ['clear_outlines', 'Clear outlines'],
       ['extrude_outline', 'Extrude outline'],
@@ -596,6 +607,9 @@ function buildShell(root: HTMLElement): Shell {
   });
   buildGrid.classList.add('after-fields');
   panel.append(buildGrid);
+  // The repeater stack, written in place as steps are added or cleared; one line is always there so nothing moves.
+  const repeatList = el('p', 'panel-hint', 'No repeater steps');
+  panel.append(repeatList);
 
   panel.append(el('h2', 'gap', 'Brush'));
   const brushGrid = el('div', 'add-grid');
@@ -1198,7 +1212,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -3258,6 +3272,95 @@ class SceneView {
     await this.run('curve_tube', { points, smooth: 2, ...this.tubeArgs() });
   }
 
+  /** The repeater stack waiting for Apply repeater, innermost step first (repeat_object's steps). */
+  private repeatSteps: { step: Record<string, unknown>; label: string }[] = [];
+
+  /** Add repeater step, Clear steps, Apply repeater, and Scatter on surface (copies of the object chosen before onto the active one). */
+  private async repeater(action: 'repeat_add' | 'repeat_clear' | 'repeat_apply' | 'scatter'): Promise<void> {
+    const id = this.scene.active;
+    const sized = (oid: number | null): number => {
+      const o = this.scene.objects.find((x) => x.id === oid);
+      return o?.bounds ? Math.max(o.bounds.max[0] - o.bounds.min[0], o.bounds.max[1] - o.bounds.min[1], o.bounds.max[2] - o.bounds.min[2]) : 1;
+    };
+    const share = Math.max(0, Math.min(1, Number(this.shell.arrayJitter.value) / 100));
+    const seed = Math.max(1, Math.round(Number(this.shell.arraySeed.value) || 1));
+    const showSteps = (): void => {
+      const text = this.repeatSteps.length ? t('Repeater: {list}').replace('{list}', this.repeatSteps.map((s) => s.label).join(' > ')) : t('No repeater steps');
+      if (this.shell.repeatList.textContent !== text) this.shell.repeatList.textContent = text;
+    };
+    if (action === 'repeat_clear') {
+      this.repeatSteps = [];
+      showSteps();
+      return;
+    }
+    if (id === null) {
+      this.note('Select the object to repeat first');
+      return;
+    }
+    const size = sized(id);
+    if (action === 'repeat_add') {
+      if (this.repeatSteps.length >= 4) {
+        this.note(t('A repeater holds up to 4 steps'));
+        return;
+      }
+      const count = Math.max(2, Math.min(64, Math.round(Number(this.shell.arrayCount.value) || 6)));
+      const kind = this.shell.repeatStep.value;
+      // Each step's own scatter: the jitter share turns up to 45 degrees, scales up to half and shifts up to a quarter of the object's size.
+      const randomize = share > 0 ? { randomize: { position: size * 0.25 * share, rotation: 45 * share, scale: 0.5 * share } } : {};
+      let step: Record<string, unknown>;
+      let label: string;
+      if (kind === 'mirror') {
+        step = { kind: 'mirror', axis: 'x' };
+        label = t('Mirror');
+      } else if (kind === 'curve') {
+        if (!this.curve) {
+          this.note('Draw a path with the Curve stroke tool first');
+          return;
+        }
+        step = { kind: 'curve', points: SceneView.spline(this.curve.handles, 8), count, ...randomize };
+        label = `${t('Along curve')} ${count}`;
+      } else if (kind === 'radial') {
+        step = { kind: 'radial', count, axis: 'y', ...randomize };
+        label = `${t('Radial')} ${count}`;
+      } else {
+        const gap = size * 1.2 * (this.repeatSteps.filter((s) => s.step.kind === 'line').length * 1.5 + 1);
+        step = { kind: 'line', count, offset: [gap, 0, 0], ...randomize };
+        label = `${t('Line')} ${count}`;
+      }
+      this.repeatSteps.push({ step, label });
+      showSteps();
+      return;
+    }
+    if (action === 'repeat_apply') {
+      if (!this.repeatSteps.length) {
+        this.note(t('Add a repeater step first'));
+        return;
+      }
+      const r = await dispatch<{ copies: number }>('repeat_object', { id, steps: this.repeatSteps.map((s) => s.step), seed, validate: this.shell.repeatResult.value });
+      this.note(r.ok ? t('Repeated into {n} copies').replace('{n}', String(r.result.copies)) : r.error.message);
+      await this.refresh();
+      return;
+    }
+    if (this.previous === null || this.previous === id) {
+      this.note(t('Choose the object to scatter, then the surface to scatter it on'));
+      return;
+    }
+    const count = Math.max(1, Math.min(2048, Math.round(Number(this.shell.scatterCount.value) || 60)));
+    const r = await dispatch<{ placed: number; requested: number }>('scatter_on_surface', {
+      id: this.previous,
+      target: id,
+      count,
+      seed,
+      min_distance: sized(this.previous) * 0.9,
+      scale_min: 1 - 0.5 * share,
+      scale_max: 1 + 0.5 * share,
+      offset: sized(this.previous) * 0.25,
+      validate: this.shell.repeatResult.value,
+    });
+    this.note(r.ok ? t('Scattered {placed} of {requested} copies').replace('{placed}', String(r.result.placed)).replace('{requested}', String(r.result.requested)) : r.error.message);
+    await this.refresh();
+  }
+
   private async build(action: string): Promise<void> {
     const first = this.scene.objects.length === 0;
     if (action === 'skeleton') {
@@ -3295,6 +3398,8 @@ class SceneView {
         await this.run('array_object', { id, count, mode: 'curve', points, linked, ...shape });
       } else if (action === 'array_mirror') await this.run('array_object', { id, mode: 'mirror', axis: 'x', linked });
       else await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y', linked, ...shape });
+    } else if (action === 'repeat_add' || action === 'repeat_clear' || action === 'repeat_apply' || action === 'scatter') {
+      await this.repeater(action);
     } else if (action === 'shadow_box') {
       const s = this.silhouettes;
       const n = [s.front, s.side, s.top].filter(Boolean).length;

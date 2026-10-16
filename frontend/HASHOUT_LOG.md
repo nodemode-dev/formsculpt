@@ -501,3 +501,9 @@ The UV view shows one tile at a time (the UV tile field, 1001 to 1100) through g
 - kind: rationale
 - logged: v0.45.0 · 2026-10-16
 All tiles asks get_uv_layout for its overview (the smallest square of tiles holding every occupied one) and draws the tile borders as one dashed path in the marks overlay, rewritten in place, so the picture keeps its square. In the overview a click opens the tile under it (sets UV tile and turns All tiles off) and nothing is dragged, pinned or picked, and pins and the path are hidden because their positions belong to one tile. Bake maps asks uv_tiles first and bakes with udim whenever islands sit anywhere but tile 1001 alone, so a tiled object always gets one map set per tile and GLB export one material per tile, with no extra control.
+
+### Repeater stack and Scatter on surface in Build
+- refers-to: app.ts :: repeatSteps, repeater, build (repeat_add, repeat_clear, repeat_apply, scatter), the Repeater step, Repeater result and Scatter count fields, repeatList; ui/command-map.ts :: build repeat_add, repeat_clear, repeat_apply, scatter
+- kind: rationale
+- logged: v0.46.0 · 2026-10-16
+Add repeater step reads the existing Array copies, Array jitter % and Jitter seed fields rather than new ones, so a step is set up exactly like a plain array; the stack lives in the window until Apply repeater sends it to repeat_object, innermost first, and Repeater result picks merge, separate or linked. A line step's gap grows with each earlier line step so a second line step lays rows out rather than stacking on the first. The stack is shown in one hint line that is always present and rewritten in place only when its text changes. Scatter on surface follows the Live boolean convention: the object chosen before is scattered over the active one; spacing is 0.9 of the source's size, the offset a quarter of it so copies sit on the surface rather than half sunk, and the jitter share widens the scale range.
