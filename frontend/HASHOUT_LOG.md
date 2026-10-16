@@ -561,3 +561,9 @@ The engine owns the Spotlight's images and placement; the window draws what spot
 - kind: rationale
 - logged: v0.55.0 · 2026-10-16
 Until 0.55.0 the textured draw took colour from the texture but roughness and metalness from the per-corner copy of the vertex paint, so a material filled into the texture alone did not show in lit shading (a roughness fill into the texture changed nothing on screen). The window now fetches get_texture's roughness_metal channel whenever it refetches the colour (only when the texture's revision moved) and uploads it to a second GL texture on unit 4; the lit branch reads roughness from green and metalness from blue at the corner's UV. The colour texture's alpha is the painted opacity, so the screen-door gate reads it instead of the copy's constant 1. Emissive from the texture is still not drawn (it would need a third map).
+
+### ZModeler tool and hover highlight
+- refers-to: app.ts :: BRUSHES and CLICK_TOOLS (zmodeler), the ZModeler action and Loop position % fields, zmodel, zmodelHit, zmodelHoverAt, drawZmodelHover, the canvas pointermove and pointerleave listeners; styles/shell.css :: path.zmodel-hover
+- kind: rationale
+- logged: v0.56.0 · 2026-10-16
+ZModeler is a click tool: the panel's ZModeler action (edge insert, extrude, close; face inset, extrude, delete) picks the command and a click sends the picked point. The hover asks poly_pick with the pointer's ray, one request at a time for the newest position (as the Spotlight brush does), and writes one SVG path that exists from the start: the edge for edge actions (dashed when it is an open border, which is what extrude and close need) or the face's outline for face actions; only d, its class and visibility change. It hides for every other tool and when the pointer leaves. Point slide is agent and palette only, since it needs a drag target.

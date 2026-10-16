@@ -100,6 +100,9 @@ interface Shell {
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
   quadTarget: HTMLInputElement;
+  zmodelAction: HTMLSelectElement;
+  zmodelAt: HTMLInputElement;
+  zmodelHover: SVGPathElement;
   actionButtons: HTMLButtonElement[];
   skeleton: HTMLSelectElement;
   lathe: HTMLSelectElement;
@@ -340,6 +343,7 @@ const BRUSHES: [string, string][] = [
   ['group_brush', 'Group brush'],
   ['retopo', 'Retopo quad'],
   ['edge_loop', 'Edge loop'],
+  ['zmodeler', 'ZModeler'],
   ['bevel_edge', 'Bevel edge'],
   ['clip', 'Clip'],
   ['zsphere', 'Add joint'],
@@ -381,7 +385,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['eyedropper', 'mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
+const CLICK_TOOLS = new Set(['eyedropper', 'mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'zmodeler', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -556,7 +560,11 @@ function buildShell(root: HTMLElement): Shell {
   const brushRing = document.createElementNS(SVG, 'circle');
   brushRing.setAttribute('class', 'brush-ring');
   brushRing.setAttribute('r', '0');
-  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing);
+  // The ZModeler hover: the edge or face the next click acts on, one path whose d and visibility change.
+  const zmodelHover = document.createElementNS(SVG, 'path');
+  zmodelHover.setAttribute('class', 'zmodel-hover');
+  zmodelHover.setAttribute('visibility', 'hidden');
+  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing, zmodelHover);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -1046,7 +1054,9 @@ function buildShell(root: HTMLElement): Shell {
   const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Voxel resolution' });
   const topoFields = el('div', 'fields');
   const quadTarget = input('number', { min: '100', max: '400000', value: '4000', 'aria-label': 'Target quads' });
-  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget));
+  const zmodelAction = choices('ZModeler action', [['edge:insert', 'Insert edge loop'], ['edge:extrude', 'Extrude edge'], ['edge:close', 'Close hole'], ['face:inset', 'Inset face'], ['face:extrude', 'Extrude face'], ['face:delete', 'Delete face']]);
+  const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
+  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -1352,7 +1362,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelHover, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1802,6 +1812,9 @@ class SceneView {
     };
     shell.canvas.addEventListener('pointermove', ring);
     shell.canvas.addEventListener('pointerleave', () => ring(null));
+    shell.canvas.addEventListener('pointermove', (e) => this.zmodelHoverAt(e.clientX, e.clientY));
+    shell.canvas.addEventListener('pointerleave', () => this.zmodelHoverAt(null, null));
+    shell.zmodelAction.addEventListener('change', () => this.drawZmodelHover());
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null),
@@ -2406,6 +2419,70 @@ class SceneView {
   }
 
   /** Projects world points to canvas pixels with the current camera (null behind it). */
+  /** ZModeler: the action chosen in the panel, applied at the clicked point (edge actions to its nearest edge, face
+   * actions to the face under it). */
+  private async zmodel(id: number, point: Vec3): Promise<void> {
+    const [target, action] = this.shell.zmodelAction.value.split(':');
+    const args: Record<string, unknown> = { id, point, action };
+    if (action === 'insert') args.at = Math.max(5, Math.min(95, Number(this.shell.zmodelAt.value) || 50)) / 100;
+    await this.run(target === 'face' ? 'zmodel_face' : 'zmodel_edge', args);
+    this.zmodelHit = null;
+    this.drawZmodelHover();
+  }
+
+  /** The last poly_pick under the pointer, the pointer's newest position waiting for a reply, and whether one is out. */
+  private zmodelHit: { edge_points: [Vec3, Vec3]; face_corners: Vec3[]; border: boolean } | null = null;
+  private zmodelPending: [number, number] | null = null;
+  private zmodelBusy = false;
+
+  /** Hover for the ZModeler tool: one poly_pick at a time for the newest pointer position, then the highlight is
+   * redrawn from its answer; off for every other tool. */
+  private zmodelHoverAt(x: number | null, y: number | null): void {
+    if (this.brush !== 'zmodeler' || x === null || y === null || this.scene.active === null) {
+      this.zmodelHit = null;
+      this.zmodelPending = null;
+      this.drawZmodelHover();
+      return;
+    }
+    this.zmodelPending = [x, y];
+    if (this.zmodelBusy) return;
+    this.zmodelBusy = true;
+    void (async () => {
+      while (this.zmodelPending) {
+        const [cx, cy] = this.zmodelPending;
+        this.zmodelPending = null;
+        const ray = this.viewport.rayAtClient(cx, cy);
+        if (!ray) continue;
+        const r = await dispatch<{ hit: boolean; edge_points: [Vec3, Vec3]; face_corners: Vec3[]; border: boolean }>('poly_pick', { id: this.scene.active, ray: { origin: ray.origin, dir: ray.dir } });
+        this.zmodelHit = r.ok && r.result.hit ? r.result : null;
+        if (this.brush === 'zmodeler') this.drawZmodelHover();
+      }
+      this.zmodelBusy = false;
+    })();
+  }
+
+  /** Writes the hover path: the target edge for edge actions, the target face's outline for face actions. */
+  private drawZmodelHover(): void {
+    const path = this.shell.zmodelHover;
+    const h = this.zmodelHit;
+    if (!h || this.brush !== 'zmodeler') {
+      setAttr(path, 'visibility', 'hidden');
+      return;
+    }
+    const project = this.projector();
+    const face = this.shell.zmodelAction.value.startsWith('face:');
+    const pts = (face ? h.face_corners : h.edge_points).map(project);
+    if (pts.some((q) => q === null)) {
+      setAttr(path, 'visibility', 'hidden');
+      return;
+    }
+    const d = (pts as [number, number][]).map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ') + (face ? ' Z' : '');
+    setAttr(path, 'd', d);
+    path.classList.toggle('face', face);
+    path.classList.toggle('border', !face && h.border);
+    setAttr(path, 'visibility', 'visible');
+  }
+
   private projector(): (p: Vec3) => [number, number] | null {
     const m = this.viewport.camera.viewProjection();
     const w = this.shell.canvas.clientWidth;
@@ -3558,6 +3635,7 @@ class SceneView {
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
     else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
     else if (tool === 'edge_loop') await this.run('insert_edge_loop', { id, point });
+    else if (tool === 'zmodeler') await this.zmodel(id, point);
     else if (tool === 'bevel_edge') await this.run('bevel_edge', { id, point, mode: ctrl ? 'round' : 'chamfer' });
     else if (tool === 'clip') {
       // A level cut through the click as seen: everything above it on screen goes (Ctrl keeps both halves).
