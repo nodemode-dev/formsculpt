@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler-actie",
  "ZModeler Edge": "ZModeler: rand",
  "ZModeler Face": "ZModeler: vlak",
- "ZModeler Point": "ZModeler: punt"
+ "ZModeler Point": "ZModeler: punt",
+ "Auto-crease": "Automatische vouw"
 }

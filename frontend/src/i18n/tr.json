@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler eylemi",
  "ZModeler Edge": "ZModeler: kenar",
  "ZModeler Face": "ZModeler: yüz",
- "ZModeler Point": "ZModeler: nokta"
+ "ZModeler Point": "ZModeler: nokta",
+ "Auto-crease": "Otomatik kırışık"
 }

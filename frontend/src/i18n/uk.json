@@ -972,5 +972,6 @@
  "ZModeler action": "Дія ZModeler",
  "ZModeler Edge": "ZModeler: ребро",
  "ZModeler Face": "ZModeler: грань",
- "ZModeler Point": "ZModeler: точка"
+ "ZModeler Point": "ZModeler: точка",
+ "Auto-crease": "Автоматична складка"
 }

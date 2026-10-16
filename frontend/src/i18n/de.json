@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler-Aktion",
  "ZModeler Edge": "ZModeler: Kante",
  "ZModeler Face": "ZModeler: Fläche",
- "ZModeler Point": "ZModeler: Punkt"
+ "ZModeler Point": "ZModeler: Punkt",
+ "Auto-crease": "Automatische Kante"
 }

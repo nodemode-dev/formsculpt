@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler-handling",
  "ZModeler Edge": "ZModeler: kant",
  "ZModeler Face": "ZModeler: flade",
- "ZModeler Point": "ZModeler: punkt"
+ "ZModeler Point": "ZModeler: punkt",
+ "Auto-crease": "Automatisk fold"
 }

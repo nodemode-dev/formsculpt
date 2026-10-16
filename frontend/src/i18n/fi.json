@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler-toiminto",
  "ZModeler Edge": "ZModeler: reuna",
  "ZModeler Face": "ZModeler: tahko",
- "ZModeler Point": "ZModeler: piste"
+ "ZModeler Point": "ZModeler: piste",
+ "Auto-crease": "Automaattinen taite"
 }

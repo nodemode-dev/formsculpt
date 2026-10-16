@@ -972,5 +972,6 @@
  "ZModeler action": "Azione ZModeler",
  "ZModeler Edge": "ZModeler: spigolo",
  "ZModeler Face": "ZModeler: faccia",
- "ZModeler Point": "ZModeler: punto"
+ "ZModeler Point": "ZModeler: punto",
+ "Auto-crease": "Piega automatica"
 }

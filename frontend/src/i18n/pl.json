@@ -972,5 +972,6 @@
  "ZModeler action": "Akcja ZModelera",
  "ZModeler Edge": "ZModeler: krawędź",
  "ZModeler Face": "ZModeler: ściana",
- "ZModeler Point": "ZModeler: punkt"
+ "ZModeler Point": "ZModeler: punkt",
+ "Auto-crease": "Automatyczne zagięcie"
 }

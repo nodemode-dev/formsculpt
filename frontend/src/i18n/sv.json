@@ -972,5 +972,6 @@
  "ZModeler action": "ZModeler-åtgärd",
  "ZModeler Edge": "ZModeler: kant",
  "ZModeler Face": "ZModeler: yta",
- "ZModeler Point": "ZModeler: punkt"
+ "ZModeler Point": "ZModeler: punkt",
+ "Auto-crease": "Automatiskt veck"
 }
