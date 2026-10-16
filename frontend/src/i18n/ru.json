@@ -701,5 +701,22 @@
  "Sculpt": "Лепка",
  "Selection Sets": "Наборы выделения",
  "This object has no selection sets yet": "У этого объекта пока нет наборов выделения",
- "Window": "Окно"
+ "Window": "Окно",
+ "Click a curve handle first": "Сначала щёлкните маркер кривой",
+ "Curve IK": "IK кривой",
+ "Drag as chain": "Тянуть как цепь",
+ "End radius %": "Конечный радиус %",
+ "Grid snap": "Привязка к сетке",
+ "None saved": "Нет сохранённых",
+ "Per point": "По точкам",
+ "Point radius %": "Радиус точки %",
+ "Point twist": "Скручивание точки",
+ "Radius along path": "Радиус вдоль пути",
+ "Restore": "Восстановить",
+ "Selection set": "Набор выделения",
+ "Set": "Набор",
+ "Start to end": "От начала к концу",
+ "Surface offset": "Отступ от поверхности",
+ "The chain is too short to reach there; it stretched as far as it could": "Цепь слишком коротка, чтобы дотянуться туда; она вытянулась насколько смогла",
+ "Uniform": "Равномерно"
 }

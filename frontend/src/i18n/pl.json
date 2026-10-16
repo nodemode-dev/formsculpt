@@ -701,5 +701,22 @@
  "Sculpt": "Rzeźbienie",
  "Selection Sets": "Zestawy zaznaczenia",
  "This object has no selection sets yet": "Ten obiekt nie ma jeszcze zestawów zaznaczenia",
- "Window": "Okno"
+ "Window": "Okno",
+ "Click a curve handle first": "Najpierw kliknij uchwyt krzywej",
+ "Curve IK": "IK krzywej",
+ "Drag as chain": "Przeciągaj jak łańcuch",
+ "End radius %": "Promień końcowy %",
+ "Grid snap": "Przyciąganie do siatki",
+ "None saved": "Brak zapisanych",
+ "Per point": "Dla każdego punktu",
+ "Point radius %": "Promień punktu %",
+ "Point twist": "Skręt punktu",
+ "Radius along path": "Promień wzdłuż ścieżki",
+ "Restore": "Przywróć",
+ "Selection set": "Zestaw zaznaczenia",
+ "Set": "Zestaw",
+ "Start to end": "Od początku do końca",
+ "Surface offset": "Odsunięcie od powierzchni",
+ "The chain is too short to reach there; it stretched as far as it could": "Łańcuch jest za krótki, by tam sięgnąć; rozciągnął się, jak mógł najdalej",
+ "Uniform": "Jednolity"
 }

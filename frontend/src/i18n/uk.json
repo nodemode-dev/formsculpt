@@ -701,5 +701,22 @@
  "Sculpt": "Ліплення",
  "Selection Sets": "Набори виділення",
  "This object has no selection sets yet": "Цей об'єкт ще не має наборів виділення",
- "Window": "Вікно"
+ "Window": "Вікно",
+ "Click a curve handle first": "Спершу клацніть маркер кривої",
+ "Curve IK": "IK кривої",
+ "Drag as chain": "Тягнути як ланцюг",
+ "End radius %": "Кінцевий радіус %",
+ "Grid snap": "Прив'язка до сітки",
+ "None saved": "Немає збережених",
+ "Per point": "По точках",
+ "Point radius %": "Радіус точки %",
+ "Point twist": "Скручування точки",
+ "Radius along path": "Радіус уздовж шляху",
+ "Restore": "Відновити",
+ "Selection set": "Набір виділення",
+ "Set": "Набір",
+ "Start to end": "Від початку до кінця",
+ "Surface offset": "Відступ від поверхні",
+ "The chain is too short to reach there; it stretched as far as it could": "Ланцюг надто короткий, щоб дотягнутися туди; він витягнувся наскільки зміг",
+ "Uniform": "Рівномірно"
 }

@@ -701,5 +701,22 @@
  "Sculpt": "Muotoile",
  "Selection Sets": "Valintajoukot",
  "This object has no selection sets yet": "Tällä objektilla ei ole vielä valintajoukkoja",
- "Window": "Ikkuna"
+ "Window": "Ikkuna",
+ "Click a curve handle first": "Napsauta ensin käyrän kahvaa",
+ "Curve IK": "Käyrän IK",
+ "Drag as chain": "Vedä ketjuna",
+ "End radius %": "Loppusäde %",
+ "Grid snap": "Kohdistus ruudukkoon",
+ "None saved": "Ei tallennettuja",
+ "Per point": "Pisteittäin",
+ "Point radius %": "Pisteen säde %",
+ "Point twist": "Pisteen kierto",
+ "Radius along path": "Säde polkua pitkin",
+ "Restore": "Palauta",
+ "Selection set": "Valintajoukko",
+ "Set": "Joukko",
+ "Start to end": "Alusta loppuun",
+ "Surface offset": "Pinnan siirtymä",
+ "The chain is too short to reach there; it stretched as far as it could": "Ketju on liian lyhyt ulottuakseen sinne; se venyi niin pitkälle kuin pystyi",
+ "Uniform": "Tasainen"
 }

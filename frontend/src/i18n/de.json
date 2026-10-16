@@ -701,5 +701,22 @@
  "Sculpt": "Modellieren",
  "Selection Sets": "Auswahlsätze",
  "This object has no selection sets yet": "Dieses Objekt hat noch keine Auswahlsätze",
- "Window": "Fenster"
+ "Window": "Fenster",
+ "Click a curve handle first": "Zuerst einen Kurvengriff anklicken",
+ "Curve IK": "Kurven-IK",
+ "Drag as chain": "Als Kette ziehen",
+ "End radius %": "Endradius %",
+ "Grid snap": "Rasterfang",
+ "None saved": "Keiner gespeichert",
+ "Per point": "Pro Punkt",
+ "Point radius %": "Punktradius %",
+ "Point twist": "Punktdrehung",
+ "Radius along path": "Radius entlang des Pfads",
+ "Restore": "Wiederherstellen",
+ "Selection set": "Auswahlsatz",
+ "Set": "Satz",
+ "Start to end": "Anfang bis Ende",
+ "Surface offset": "Oberflächenabstand",
+ "The chain is too short to reach there; it stretched as far as it could": "Die Kette ist zu kurz, um dorthin zu reichen; sie wurde so weit wie möglich gestreckt",
+ "Uniform": "Gleichmäßig"
 }

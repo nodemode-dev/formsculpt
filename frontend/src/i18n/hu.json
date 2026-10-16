@@ -701,5 +701,22 @@
  "Sculpt": "Szobrászat",
  "Selection Sets": "Kijelöléskészletek",
  "This object has no selection sets yet": "Ennek az objektumnak még nincs kijelöléskészlete",
- "Window": "Ablak"
+ "Window": "Ablak",
+ "Click a curve handle first": "Először kattints egy görbefogantyúra",
+ "Curve IK": "Görbe IK",
+ "Drag as chain": "Húzás láncként",
+ "End radius %": "Végsugár %",
+ "Grid snap": "Rácshoz igazítás",
+ "None saved": "Nincs mentve",
+ "Per point": "Pontonként",
+ "Point radius %": "Pont sugara %",
+ "Point twist": "Pont csavarása",
+ "Radius along path": "Sugár az útvonal mentén",
+ "Restore": "Visszaállítás",
+ "Selection set": "Kijelöléskészlet",
+ "Set": "Készlet",
+ "Start to end": "Elejétől a végéig",
+ "Surface offset": "Felületi eltolás",
+ "The chain is too short to reach there; it stretched as far as it could": "A lánc túl rövid ahhoz, hogy odaérjen; amennyire tudott, megnyúlt",
+ "Uniform": "Egyenletes"
 }

@@ -701,5 +701,22 @@
  "Sculpt": "Esculpir",
  "Selection Sets": "Conjuntos de seleção",
  "This object has no selection sets yet": "Este objeto ainda não tem conjuntos de seleção",
- "Window": "Janela"
+ "Window": "Janela",
+ "Click a curve handle first": "Clique primeiro em uma alça da curva",
+ "Curve IK": "IK de curva",
+ "Drag as chain": "Arrastar como corrente",
+ "End radius %": "Raio final %",
+ "Grid snap": "Encaixe na grade",
+ "None saved": "Nenhum salvo",
+ "Per point": "Por ponto",
+ "Point radius %": "Raio do ponto %",
+ "Point twist": "Torção do ponto",
+ "Radius along path": "Raio ao longo do caminho",
+ "Restore": "Restaurar",
+ "Selection set": "Conjunto de seleção",
+ "Set": "Conjunto",
+ "Start to end": "Do início ao fim",
+ "Surface offset": "Deslocamento da superfície",
+ "The chain is too short to reach there; it stretched as far as it could": "A corrente é curta demais para chegar lá; ela se esticou o máximo possível",
+ "Uniform": "Uniforme"
 }

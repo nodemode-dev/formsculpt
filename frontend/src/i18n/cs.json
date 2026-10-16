@@ -701,5 +701,22 @@
  "Sculpt": "Sochání",
  "Selection Sets": "Sady výběru",
  "This object has no selection sets yet": "Tento objekt zatím nemá žádné sady výběru",
- "Window": "Okno"
+ "Window": "Okno",
+ "Click a curve handle first": "Nejprve klikněte na úchyt křivky",
+ "Curve IK": "IK křivky",
+ "Drag as chain": "Táhnout jako řetěz",
+ "End radius %": "Koncový poloměr %",
+ "Grid snap": "Přichytávání k mřížce",
+ "None saved": "Žádná uložená",
+ "Per point": "Po bodech",
+ "Point radius %": "Poloměr bodu %",
+ "Point twist": "Zkroucení bodu",
+ "Radius along path": "Poloměr podél cesty",
+ "Restore": "Obnovit",
+ "Selection set": "Sada výběru",
+ "Set": "Sada",
+ "Start to end": "Od začátku do konce",
+ "Surface offset": "Odsazení od povrchu",
+ "The chain is too short to reach there; it stretched as far as it could": "Řetěz je příliš krátký, aby tam dosáhl; natáhl se, jak nejvíc mohl",
+ "Uniform": "Jednotný"
 }

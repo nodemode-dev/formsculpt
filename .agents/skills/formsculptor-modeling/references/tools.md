@@ -7,7 +7,7 @@ Generated from the engine's command registry (formsculptor 0.33.0) by `./formscu
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -304,6 +304,19 @@ Evaluate a curve without changing the scene: control points (smooth, or sharp co
 - `points`: array of value; required; The curve's control points: [x, y, z], [x, y, z, radius], or objects {p, radius, twist, sharp, round}. A sharp point is a corner; sharp with round above 0 becomes a circular fillet of that world radius.
 - `radius`: number; default 1; range 0 to inf; Radius for points that give none.
 - `spacing`: number; range 0 to inf; When given, resample by arc length instead: samples this many world units apart (corners always kept).
+
+Note: read-only.
+
+## curve_ik
+
+Drag one control point of a curve to a target and let the rest follow, without changing the scene: the points are a chain of fixed-length segments (the lengths between neighbours are kept), solved with FABRIK. pin_start keeps the first point fixed (default on), pin_end keeps the last fixed; with neither pinned the chain trails behind the dragged point like a rope. If the target is out of reach the chain stretches straight toward it as far as it can and reached is false. Points use the same formats as sample_curve and come back with new positions and everything else (radius, twist, sharp, round) unchanged, plus error (distance left to the target) and the segment lengths. A closed curve is solved as open. Feed the result to curve_tube, sample_curve or edit_build.
+
+- `index`: integer; required; range 0 to inf; Which point to drag, counting from 0.
+- `iterations`: integer; default 32; range 1 to 200; Most FABRIK passes to run.
+- `pin_end`: boolean; default false; Keep the last point where it is.
+- `pin_start`: boolean; default true; Keep the first point where it is.
+- `points`: array of value; required; The chain's control points, in the same formats as sample_curve. They are treated as an open chain of fixed-length segments; a closed curve is solved as open, so give the points without repeating the first at the end.
+- `target`: array of number; required; [x, y, z] to drag that point to.
 
 Note: read-only.
 

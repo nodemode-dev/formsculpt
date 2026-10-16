@@ -701,5 +701,22 @@
  "Sculpt": "Scolpisci",
  "Selection Sets": "Set di selezione",
  "This object has no selection sets yet": "Questo oggetto non ha ancora set di selezione",
- "Window": "Finestra"
+ "Window": "Finestra",
+ "Click a curve handle first": "Fai prima clic su una maniglia della curva",
+ "Curve IK": "IK della curva",
+ "Drag as chain": "Trascina come catena",
+ "End radius %": "Raggio finale %",
+ "Grid snap": "Aggancio alla griglia",
+ "None saved": "Nessuno salvato",
+ "Per point": "Per punto",
+ "Point radius %": "Raggio del punto %",
+ "Point twist": "Torsione del punto",
+ "Radius along path": "Raggio lungo il percorso",
+ "Restore": "Ripristina",
+ "Selection set": "Set di selezione",
+ "Set": "Set",
+ "Start to end": "Dall'inizio alla fine",
+ "Surface offset": "Scostamento dalla superficie",
+ "The chain is too short to reach there; it stretched as far as it could": "La catena è troppo corta per arrivare lì; si è allungata il più possibile",
+ "Uniform": "Uniforme"
 }

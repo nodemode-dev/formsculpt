@@ -701,5 +701,22 @@
  "Sculpt": "Skulptera",
  "Selection Sets": "Markeringsuppsättningar",
  "This object has no selection sets yet": "Det här objektet har inga markeringsuppsättningar än",
- "Window": "Fönster"
+ "Window": "Fönster",
+ "Click a curve handle first": "Klicka först på ett kurvhandtag",
+ "Curve IK": "Kurv-IK",
+ "Drag as chain": "Dra som kedja",
+ "End radius %": "Slutradie %",
+ "Grid snap": "Fäst mot rutnät",
+ "None saved": "Ingen sparad",
+ "Per point": "Per punkt",
+ "Point radius %": "Punktradie %",
+ "Point twist": "Punktvridning",
+ "Radius along path": "Radie längs banan",
+ "Restore": "Återställ",
+ "Selection set": "Markeringsuppsättning",
+ "Set": "Uppsättning",
+ "Start to end": "Början till slut",
+ "Surface offset": "Ytförskjutning",
+ "The chain is too short to reach there; it stretched as far as it could": "Kedjan är för kort för att nå dit; den sträcktes så långt den kunde",
+ "Uniform": "Jämn"
 }

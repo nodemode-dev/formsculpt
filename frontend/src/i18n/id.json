@@ -701,5 +701,22 @@
  "Sculpt": "Pahat",
  "Selection Sets": "Set Seleksi",
  "This object has no selection sets yet": "Objek ini belum memiliki set seleksi",
- "Window": "Jendela"
+ "Window": "Jendela",
+ "Click a curve handle first": "Klik pegangan kurva terlebih dahulu",
+ "Curve IK": "IK Kurva",
+ "Drag as chain": "Seret sebagai rantai",
+ "End radius %": "Radius akhir %",
+ "Grid snap": "Tempel ke kisi",
+ "None saved": "Belum ada yang disimpan",
+ "Per point": "Per titik",
+ "Point radius %": "Radius titik %",
+ "Point twist": "Puntiran titik",
+ "Radius along path": "Radius sepanjang jalur",
+ "Restore": "Pulihkan",
+ "Selection set": "Set seleksi",
+ "Set": "Set",
+ "Start to end": "Awal ke akhir",
+ "Surface offset": "Offset permukaan",
+ "The chain is too short to reach there; it stretched as far as it could": "Rantai terlalu pendek untuk mencapai ke sana; rantai direntangkan sejauh mungkin",
+ "Uniform": "Seragam"
 }

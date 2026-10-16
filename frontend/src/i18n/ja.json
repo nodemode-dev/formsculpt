@@ -701,5 +701,22 @@
  "Sculpt": "スカルプト",
  "Selection Sets": "選択セット",
  "This object has no selection sets yet": "このオブジェクトにはまだ選択セットがありません",
- "Window": "ウィンドウ"
+ "Window": "ウィンドウ",
+ "Click a curve handle first": "まずカーブのハンドルをクリックしてください",
+ "Curve IK": "カーブ IK",
+ "Drag as chain": "チェーンとしてドラッグ",
+ "End radius %": "終端の半径 %",
+ "Grid snap": "グリッドにスナップ",
+ "None saved": "保存なし",
+ "Per point": "ポイントごと",
+ "Point radius %": "ポイントの半径 %",
+ "Point twist": "ポイントのねじれ",
+ "Radius along path": "パスに沿った半径",
+ "Restore": "復元",
+ "Selection set": "選択セット",
+ "Set": "セット",
+ "Start to end": "始点から終点",
+ "Surface offset": "サーフェスオフセット",
+ "The chain is too short to reach there; it stretched as far as it could": "チェーンが短すぎて届きません。できるだけ伸ばしました",
+ "Uniform": "均一"
 }

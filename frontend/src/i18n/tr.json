@@ -701,5 +701,22 @@
  "Sculpt": "Heykel",
  "Selection Sets": "Seçim Kümeleri",
  "This object has no selection sets yet": "Bu nesnenin henüz seçim kümesi yok",
- "Window": "Pencere"
+ "Window": "Pencere",
+ "Click a curve handle first": "Önce bir eğri tutamacına tıklayın",
+ "Curve IK": "Eğri IK",
+ "Drag as chain": "Zincir olarak sürükle",
+ "End radius %": "Bitiş yarıçapı %",
+ "Grid snap": "Izgaraya yasla",
+ "None saved": "Kayıtlı yok",
+ "Per point": "Nokta başına",
+ "Point radius %": "Nokta yarıçapı %",
+ "Point twist": "Nokta bükümü",
+ "Radius along path": "Yol boyunca yarıçap",
+ "Restore": "Geri yükle",
+ "Selection set": "Seçim kümesi",
+ "Set": "Küme",
+ "Start to end": "Baştan sona",
+ "Surface offset": "Yüzey ofseti",
+ "The chain is too short to reach there; it stretched as far as it could": "Zincir oraya ulaşmak için çok kısa; gidebildiği kadar uzadı",
+ "Uniform": "Düzgün"
 }

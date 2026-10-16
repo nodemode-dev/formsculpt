@@ -701,5 +701,22 @@
  "Sculpt": "Skulpter",
  "Selection Sets": "Utvalgssett",
  "This object has no selection sets yet": "Dette objektet har ingen utvalgssett ennå",
- "Window": "Vindu"
+ "Window": "Vindu",
+ "Click a curve handle first": "Klikk på et kurvehåndtak først",
+ "Curve IK": "Kurve-IK",
+ "Drag as chain": "Dra som kjede",
+ "End radius %": "Sluttradius %",
+ "Grid snap": "Fest til rutenett",
+ "None saved": "Ingen lagret",
+ "Per point": "Per punkt",
+ "Point radius %": "Punktradius %",
+ "Point twist": "Punktvridning",
+ "Radius along path": "Radius langs banen",
+ "Restore": "Gjenopprett",
+ "Selection set": "Utvalgssett",
+ "Set": "Sett",
+ "Start to end": "Start til slutt",
+ "Surface offset": "Overflateforskyvning",
+ "The chain is too short to reach there; it stretched as far as it could": "Kjeden er for kort til å nå dit; den ble strukket så langt den kunne",
+ "Uniform": "Jevn"
 }

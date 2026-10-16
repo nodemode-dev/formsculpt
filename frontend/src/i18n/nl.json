@@ -701,5 +701,22 @@
  "Sculpt": "Boetseren",
  "Selection Sets": "Selectiesets",
  "This object has no selection sets yet": "Dit object heeft nog geen selectiesets",
- "Window": "Venster"
+ "Window": "Venster",
+ "Click a curve handle first": "Klik eerst op een handgreep van de curve",
+ "Curve IK": "Curve-IK",
+ "Drag as chain": "Slepen als ketting",
+ "End radius %": "Eindstraal %",
+ "Grid snap": "Uitlijnen op raster",
+ "None saved": "Geen opgeslagen",
+ "Per point": "Per punt",
+ "Point radius %": "Puntstraal %",
+ "Point twist": "Puntdraaiing",
+ "Radius along path": "Straal langs het pad",
+ "Restore": "Herstellen",
+ "Selection set": "Selectieset",
+ "Set": "Set",
+ "Start to end": "Van begin tot eind",
+ "Surface offset": "Oppervlakteverschuiving",
+ "The chain is too short to reach there; it stretched as far as it could": "De ketting is te kort om daar te komen; hij is zo ver mogelijk uitgerekt",
+ "Uniform": "Gelijkmatig"
 }

@@ -701,5 +701,22 @@
  "Sculpt": "雕刻",
  "Selection Sets": "選取集",
  "This object has no selection sets yet": "此物件還沒有選取集",
- "Window": "視窗"
+ "Window": "視窗",
+ "Click a curve handle first": "請先點擊一個曲線控制點",
+ "Curve IK": "曲線 IK",
+ "Drag as chain": "以鏈條拖曳",
+ "End radius %": "末端半徑 %",
+ "Grid snap": "格線吸附",
+ "None saved": "尚未儲存",
+ "Per point": "逐點",
+ "Point radius %": "點半徑 %",
+ "Point twist": "點扭轉",
+ "Radius along path": "沿路徑半徑",
+ "Restore": "還原",
+ "Selection set": "選取集",
+ "Set": "集",
+ "Start to end": "從起點到終點",
+ "Surface offset": "表面偏移",
+ "The chain is too short to reach there; it stretched as far as it could": "鏈條太短無法到達該處；已盡量伸展",
+ "Uniform": "均勻"
 }

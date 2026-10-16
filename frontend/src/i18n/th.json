@@ -701,5 +701,22 @@
  "Sculpt": "ปั้น",
  "Selection Sets": "ชุดการเลือก",
  "This object has no selection sets yet": "วัตถุนี้ยังไม่มีชุดการเลือก",
- "Window": "หน้าต่าง"
+ "Window": "หน้าต่าง",
+ "Click a curve handle first": "คลิกที่จุดจับของเส้นโค้งก่อน",
+ "Curve IK": "IK ของเส้นโค้ง",
+ "Drag as chain": "ลากแบบโซ่",
+ "End radius %": "รัศมีปลาย %",
+ "Grid snap": "สแนปกับกริด",
+ "None saved": "ยังไม่ได้บันทึก",
+ "Per point": "รายจุด",
+ "Point radius %": "รัศมีจุด %",
+ "Point twist": "การบิดของจุด",
+ "Radius along path": "รัศมีตามเส้นทาง",
+ "Restore": "คืนค่า",
+ "Selection set": "ชุดการเลือก",
+ "Set": "ชุด",
+ "Start to end": "จากต้นถึงปลาย",
+ "Surface offset": "ระยะห่างจากพื้นผิว",
+ "The chain is too short to reach there; it stretched as far as it could": "โซ่สั้นเกินกว่าจะไปถึง จึงยืดออกให้มากที่สุดเท่าที่ทำได้",
+ "Uniform": "สม่ำเสมอ"
 }

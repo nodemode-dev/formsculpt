@@ -701,5 +701,22 @@
  "Sculpt": "Skulptér",
  "Selection Sets": "Markeringssæt",
  "This object has no selection sets yet": "Dette objekt har endnu ingen markeringssæt",
- "Window": "Vindue"
+ "Window": "Vindue",
+ "Click a curve handle first": "Klik først på et kurvehåndtag",
+ "Curve IK": "Kurve-IK",
+ "Drag as chain": "Træk som kæde",
+ "End radius %": "Slutradius %",
+ "Grid snap": "Fastgør til gitter",
+ "None saved": "Ingen gemt",
+ "Per point": "Pr. punkt",
+ "Point radius %": "Punktradius %",
+ "Point twist": "Punktdrejning",
+ "Radius along path": "Radius langs stien",
+ "Restore": "Gendan",
+ "Selection set": "Markeringssæt",
+ "Set": "Sæt",
+ "Start to end": "Start til slut",
+ "Surface offset": "Overfladeforskydning",
+ "The chain is too short to reach there; it stretched as far as it could": "Kæden er for kort til at nå derhen; den blev strakt så langt som muligt",
+ "Uniform": "Ensartet"
 }

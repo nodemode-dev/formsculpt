@@ -701,5 +701,22 @@
  "Sculpt": "Sculpter",
  "Selection Sets": "Jeux de sélection",
  "This object has no selection sets yet": "Cet objet n'a pas encore de jeu de sélection",
- "Window": "Fenêtre"
+ "Window": "Fenêtre",
+ "Click a curve handle first": "Cliquez d'abord sur une poignée de la courbe",
+ "Curve IK": "IK de courbe",
+ "Drag as chain": "Glisser comme une chaîne",
+ "End radius %": "Rayon final %",
+ "Grid snap": "Aimantation à la grille",
+ "None saved": "Aucun enregistré",
+ "Per point": "Par point",
+ "Point radius %": "Rayon du point %",
+ "Point twist": "Torsion du point",
+ "Radius along path": "Rayon le long du tracé",
+ "Restore": "Restaurer",
+ "Selection set": "Jeu de sélection",
+ "Set": "Jeu",
+ "Start to end": "Du début à la fin",
+ "Surface offset": "Décalage de surface",
+ "The chain is too short to reach there; it stretched as far as it could": "La chaîne est trop courte pour atteindre ce point ; elle s'est étirée autant que possible",
+ "Uniform": "Uniforme"
 }

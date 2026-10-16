@@ -701,5 +701,22 @@
  "Sculpt": "Điêu khắc",
  "Selection Sets": "Bộ chọn",
  "This object has no selection sets yet": "Đối tượng này chưa có bộ chọn nào",
- "Window": "Cửa sổ"
+ "Window": "Cửa sổ",
+ "Click a curve handle first": "Hãy nhấp vào một tay nắm của đường cong trước",
+ "Curve IK": "IK đường cong",
+ "Drag as chain": "Kéo như chuỗi xích",
+ "End radius %": "Bán kính cuối %",
+ "Grid snap": "Bắt dính lưới",
+ "None saved": "Chưa lưu",
+ "Per point": "Theo từng điểm",
+ "Point radius %": "Bán kính điểm %",
+ "Point twist": "Độ xoắn điểm",
+ "Radius along path": "Bán kính dọc đường dẫn",
+ "Restore": "Khôi phục",
+ "Selection set": "Bộ chọn",
+ "Set": "Bộ",
+ "Start to end": "Từ đầu đến cuối",
+ "Surface offset": "Độ lệch bề mặt",
+ "The chain is too short to reach there; it stretched as far as it could": "Chuỗi quá ngắn để tới đó; nó đã duỗi ra hết mức có thể",
+ "Uniform": "Đồng đều"
 }
