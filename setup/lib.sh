@@ -35,3 +35,19 @@ fs_target_triple() {
   rustc -vV | awk '/^host:/ {print $2}'
 }
 fs_exe() { [ "$(fs_os)" = windows ] && echo ".exe" || echo ""; }
+fs_rust_env() {
+  [ -d "$HOME/.cargo/bin" ] && PATH="$HOME/.cargo/bin:$PATH"
+  export PATH
+  unset RUSTC RUSTC_WORKSPACE_WRAPPER RUSTFLAGS CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTFLAGS CARGO_BUILD_TARGET CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR CARGO_BUILD_RUSTC
+  export RUSTC_WRAPPER="" CARGO_BUILD_RUSTC_WRAPPER=""
+}
+fs_rust_fresh() {
+  local target="$FSC_ROOT/src-tauri/target" now
+  now="$(rustc -vV 2>/dev/null | tr '\n' ' ')"
+  if [ -d "$target/release" ] && [ "$(cat "$target/.formsculptor-rustc" 2>/dev/null)" != "$now" ]; then
+    fs_say "the Rust compiler differs from the one that built src-tauri/target; cleaning it"
+    ( cd "$FSC_ROOT/src-tauri" && cargo clean )
+  fi
+  mkdir -p "$target"
+  printf '%s' "$now" > "$target/.formsculptor-rustc"
+}

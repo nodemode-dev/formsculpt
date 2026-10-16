@@ -19,6 +19,7 @@ usage: ./formsculptor [command] [options]
   serve               serve the built frontend from the backend on 127.0.0.1:8196
   freeze              freeze the backend into the Tauri sidecar binary
   desktop dev|build   run or bundle the desktop app
+  app [flags]         build the installable desktop app start to finish (same as ./build_app)
   doctor              check the toolchain, installs and ports
   test [all|engine|service|e2e]  run the engine and service tests (all), one suite, or the window smoke test (e2e, needs boot)
   bench [level]       time mesh build, normals, BVH, raycasts and brush-radius queries (icosphere level, default 8)
@@ -57,6 +58,7 @@ case "$cmd" in
       build) exec setup/desktop_build "$@" ;;
       *) usage; exit 2 ;;
     esac ;;
+  app) exec ./build_app "$@" ;;
   doctor) exec setup/doctor "$@" ;;
   bench) exec setup/bench "$@" ;;
   test) exec setup/run_tests "$@" ;;
