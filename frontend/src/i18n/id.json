@@ -718,5 +718,17 @@
  "Start to end": "Awal ke akhir",
  "Surface offset": "Offset permukaan",
  "The chain is too short to reach there; it stretched as far as it could": "Rantai terlalu pendek untuk mencapai ke sana; rantai direntangkan sejauh mungkin",
- "Uniform": "Seragam"
+ "Uniform": "Seragam",
+ "Click on the object without dragging to add a curve point.": "Klik objek tanpa menyeret untuk menambah titik kurva.",
+ "Curve From Border": "Kurva dari Batas",
+ "Curve from group border": "Kurva dari batas grup",
+ "Curve from Group Border": "Kurva dari Batas Grup",
+ "Curve from mask edge": "Kurva dari tepi masker",
+ "Curve from Mask Edge": "Kurva dari Tepi Masker",
+ "Edit Last Stroke as Curve": "Edit Goresan Terakhir sebagai Kurva",
+ "Face group number": "Nomor grup permukaan",
+ "Last stroke as curve": "Goresan terakhir jadi kurva",
+ "Make a brush stroke first": "Buat goresan kuas terlebih dahulu",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Goresan dibatalkan dan menunggu sebagai kurva: geser pegangannya, lalu Terapkan kurva",
+ "The stroke left too few points on the object to make a curve": "Goresan meninggalkan terlalu sedikit titik pada objek untuk membuat kurva"
 }

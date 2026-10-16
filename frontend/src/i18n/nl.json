@@ -718,5 +718,17 @@
  "Start to end": "Van begin tot eind",
  "Surface offset": "Oppervlakteverschuiving",
  "The chain is too short to reach there; it stretched as far as it could": "De ketting is te kort om daar te komen; hij is zo ver mogelijk uitgerekt",
- "Uniform": "Gelijkmatig"
+ "Uniform": "Gelijkmatig",
+ "Click on the object without dragging to add a curve point.": "Klik zonder te slepen op het object om een curvepunt toe te voegen.",
+ "Curve From Border": "Curve uit rand",
+ "Curve from group border": "Curve uit groepsrand",
+ "Curve from Group Border": "Curve uit groepsrand",
+ "Curve from mask edge": "Curve uit maskerrand",
+ "Curve from Mask Edge": "Curve uit maskerrand",
+ "Edit Last Stroke as Curve": "Laatste streek als curve bewerken",
+ "Face group number": "Nummer van de vlakgroep",
+ "Last stroke as curve": "Laatste streek als curve",
+ "Make a brush stroke first": "Maak eerst een penseelstreek",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "De streek is ongedaan gemaakt en wacht als curve: verplaats de handgrepen en kies dan Curve toepassen",
+ "The stroke left too few points on the object to make a curve": "De streek liet te weinig punten op het object achter voor een curve"
 }

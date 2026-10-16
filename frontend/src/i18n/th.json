@@ -718,5 +718,17 @@
  "Start to end": "จากต้นถึงปลาย",
  "Surface offset": "ระยะห่างจากพื้นผิว",
  "The chain is too short to reach there; it stretched as far as it could": "โซ่สั้นเกินกว่าจะไปถึง จึงยืดออกให้มากที่สุดเท่าที่ทำได้",
- "Uniform": "สม่ำเสมอ"
+ "Uniform": "สม่ำเสมอ",
+ "Click on the object without dragging to add a curve point.": "คลิกบนวัตถุโดยไม่ลากเพื่อเพิ่มจุดของเส้นโค้ง",
+ "Curve From Border": "เส้นโค้งจากขอบ",
+ "Curve from group border": "เส้นโค้งจากขอบกลุ่ม",
+ "Curve from Group Border": "เส้นโค้งจากขอบกลุ่ม",
+ "Curve from mask edge": "เส้นโค้งจากขอบมาสก์",
+ "Curve from Mask Edge": "เส้นโค้งจากขอบมาสก์",
+ "Edit Last Stroke as Curve": "แก้ไขเส้นล่าสุดเป็นเส้นโค้ง",
+ "Face group number": "หมายเลขกลุ่มหน้า",
+ "Last stroke as curve": "เส้นล่าสุดเป็นเส้นโค้ง",
+ "Make a brush stroke first": "ลากแปรงหนึ่งเส้นก่อน",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "เส้นถูกยกเลิกและรออยู่ในรูปเส้นโค้ง: ย้ายจุดจับ แล้วกดใช้เส้นโค้ง",
+ "The stroke left too few points on the object to make a curve": "เส้นทิ้งจุดบนวัตถุน้อยเกินกว่าจะสร้างเส้นโค้งได้"
 }

@@ -718,5 +718,17 @@
  "Start to end": "Від початку до кінця",
  "Surface offset": "Відступ від поверхні",
  "The chain is too short to reach there; it stretched as far as it could": "Ланцюг надто короткий, щоб дотягнутися туди; він витягнувся наскільки зміг",
- "Uniform": "Рівномірно"
+ "Uniform": "Рівномірно",
+ "Click on the object without dragging to add a curve point.": "Клацніть по об'єкту без перетягування, щоб додати точку кривої.",
+ "Curve From Border": "Крива з межі",
+ "Curve from group border": "Крива з межі групи",
+ "Curve from Group Border": "Крива з межі групи",
+ "Curve from mask edge": "Крива з краю маски",
+ "Curve from Mask Edge": "Крива з краю маски",
+ "Edit Last Stroke as Curve": "Редагувати останній мазок як криву",
+ "Face group number": "Номер групи граней",
+ "Last stroke as curve": "Останній мазок у криву",
+ "Make a brush stroke first": "Спершу зробіть мазок пензлем",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Мазок скасовано, він чекає як крива: пересуньте маркери, потім «Застосувати криву»",
+ "The stroke left too few points on the object to make a curve": "Мазок залишив на об'єкті замало точок для кривої"
 }

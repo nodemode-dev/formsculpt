@@ -718,5 +718,17 @@
  "Start to end": "Od początku do końca",
  "Surface offset": "Odsunięcie od powierzchni",
  "The chain is too short to reach there; it stretched as far as it could": "Łańcuch jest za krótki, by tam sięgnąć; rozciągnął się, jak mógł najdalej",
- "Uniform": "Jednolity"
+ "Uniform": "Jednolity",
+ "Click on the object without dragging to add a curve point.": "Kliknij obiekt bez przeciągania, aby dodać punkt krzywej.",
+ "Curve From Border": "Krzywa z krawędzi",
+ "Curve from group border": "Krzywa z krawędzi grupy",
+ "Curve from Group Border": "Krzywa z krawędzi grupy",
+ "Curve from mask edge": "Krzywa z krawędzi maski",
+ "Curve from Mask Edge": "Krzywa z krawędzi maski",
+ "Edit Last Stroke as Curve": "Edytuj ostatnie pociągnięcie jako krzywą",
+ "Face group number": "Numer grupy ścian",
+ "Last stroke as curve": "Ostatnie pociągnięcie jako krzywa",
+ "Make a brush stroke first": "Najpierw wykonaj pociągnięcie pędzlem",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Pociągnięcie cofnięto i czeka jako krzywa: przesuń uchwyty, a potem Zastosuj krzywą",
+ "The stroke left too few points on the object to make a curve": "Pociągnięcie zostawiło na obiekcie za mało punktów na krzywą"
 }

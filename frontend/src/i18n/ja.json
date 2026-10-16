@@ -718,5 +718,17 @@
  "Start to end": "始点から終点",
  "Surface offset": "サーフェスオフセット",
  "The chain is too short to reach there; it stretched as far as it could": "チェーンが短すぎて届きません。できるだけ伸ばしました",
- "Uniform": "均一"
+ "Uniform": "均一",
+ "Click on the object without dragging to add a curve point.": "ドラッグせずにオブジェクトをクリックするとカーブのポイントを追加します。",
+ "Curve From Border": "境界からカーブ",
+ "Curve from group border": "グループ境界からカーブ",
+ "Curve from Group Border": "グループ境界からカーブ",
+ "Curve from mask edge": "マスクの縁からカーブ",
+ "Curve from Mask Edge": "マスクの縁からカーブ",
+ "Edit Last Stroke as Curve": "最後のストロークをカーブとして編集",
+ "Face group number": "フェースグループ番号",
+ "Last stroke as curve": "最後のストロークをカーブに",
+ "Make a brush stroke first": "まずブラシストロークを描いてください",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "ストロークは取り消され、カーブとして待機しています。ハンドルを動かしてからカーブを適用してください",
+ "The stroke left too few points on the object to make a curve": "ストロークがオブジェクト上に残したポイントが少なすぎてカーブを作れません"
 }

@@ -718,5 +718,17 @@
  "Start to end": "Elejétől a végéig",
  "Surface offset": "Felületi eltolás",
  "The chain is too short to reach there; it stretched as far as it could": "A lánc túl rövid ahhoz, hogy odaérjen; amennyire tudott, megnyúlt",
- "Uniform": "Egyenletes"
+ "Uniform": "Egyenletes",
+ "Click on the object without dragging to add a curve point.": "Kattints az objektumra húzás nélkül egy görbepont hozzáadásához.",
+ "Curve From Border": "Görbe szegélyből",
+ "Curve from group border": "Görbe a csoport szegélyéből",
+ "Curve from Group Border": "Görbe a csoport szegélyéből",
+ "Curve from mask edge": "Görbe a maszk széléből",
+ "Curve from Mask Edge": "Görbe a maszk széléből",
+ "Edit Last Stroke as Curve": "Utolsó vonás szerkesztése görbeként",
+ "Face group number": "Lapcsoport száma",
+ "Last stroke as curve": "Utolsó vonás görbeként",
+ "Make a brush stroke first": "Először húzz egy ecsetvonást",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "A vonás visszavonva, görbeként vár: mozgasd a fogantyúit, majd Görbe alkalmazása",
+ "The stroke left too few points on the object to make a curve": "A vonás túl kevés pontot hagyott az objektumon egy görbéhez"
 }

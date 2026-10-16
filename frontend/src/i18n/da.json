@@ -718,5 +718,17 @@
  "Start to end": "Start til slut",
  "Surface offset": "Overfladeforskydning",
  "The chain is too short to reach there; it stretched as far as it could": "Kæden er for kort til at nå derhen; den blev strakt så langt som muligt",
- "Uniform": "Ensartet"
+ "Uniform": "Ensartet",
+ "Click on the object without dragging to add a curve point.": "Klik på objektet uden at trække for at tilføje et kurvepunkt.",
+ "Curve From Border": "Kurve fra kant",
+ "Curve from group border": "Kurve fra gruppekant",
+ "Curve from Group Border": "Kurve fra gruppekant",
+ "Curve from mask edge": "Kurve fra maskekant",
+ "Curve from Mask Edge": "Kurve fra maskekant",
+ "Edit Last Stroke as Curve": "Redigér sidste strøg som kurve",
+ "Face group number": "Fladegruppens nummer",
+ "Last stroke as curve": "Sidste strøg som kurve",
+ "Make a brush stroke first": "Lav først et penselstrøg",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Strøget er fortrudt og venter som en kurve: flyt dets håndtag, og vælg så Anvend kurve",
+ "The stroke left too few points on the object to make a curve": "Strøget efterlod for få punkter på objektet til en kurve"
 }

@@ -718,5 +718,17 @@
  "Start to end": "Anfang bis Ende",
  "Surface offset": "Oberflächenabstand",
  "The chain is too short to reach there; it stretched as far as it could": "Die Kette ist zu kurz, um dorthin zu reichen; sie wurde so weit wie möglich gestreckt",
- "Uniform": "Gleichmäßig"
+ "Uniform": "Gleichmäßig",
+ "Click on the object without dragging to add a curve point.": "Ohne Ziehen auf das Objekt klicken, um einen Kurvenpunkt hinzuzufügen.",
+ "Curve From Border": "Kurve aus Rand",
+ "Curve from group border": "Kurve aus Gruppenrand",
+ "Curve from Group Border": "Kurve aus Gruppenrand",
+ "Curve from mask edge": "Kurve aus Maskenkante",
+ "Curve from Mask Edge": "Kurve aus Maskenkante",
+ "Edit Last Stroke as Curve": "Letzten Strich als Kurve bearbeiten",
+ "Face group number": "Nummer der Flächengruppe",
+ "Last stroke as curve": "Letzter Strich als Kurve",
+ "Make a brush stroke first": "Zuerst einen Pinselstrich machen",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Der Strich ist rückgängig gemacht und wartet als Kurve: Griffe verschieben, dann Kurve anwenden",
+ "The stroke left too few points on the object to make a curve": "Der Strich hat zu wenige Punkte auf dem Objekt für eine Kurve hinterlassen"
 }

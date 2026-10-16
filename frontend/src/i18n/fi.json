@@ -718,5 +718,17 @@
  "Start to end": "Alusta loppuun",
  "Surface offset": "Pinnan siirtymä",
  "The chain is too short to reach there; it stretched as far as it could": "Ketju on liian lyhyt ulottuakseen sinne; se venyi niin pitkälle kuin pystyi",
- "Uniform": "Tasainen"
+ "Uniform": "Tasainen",
+ "Click on the object without dragging to add a curve point.": "Napsauta objektia vetämättä lisätäksesi käyrän pisteen.",
+ "Curve From Border": "Käyrä reunasta",
+ "Curve from group border": "Käyrä ryhmän reunasta",
+ "Curve from Group Border": "Käyrä ryhmän reunasta",
+ "Curve from mask edge": "Käyrä maskin reunasta",
+ "Curve from Mask Edge": "Käyrä maskin reunasta",
+ "Edit Last Stroke as Curve": "Muokkaa viimeistä vetoa käyränä",
+ "Face group number": "Pintaryhmän numero",
+ "Last stroke as curve": "Viimeinen veto käyräksi",
+ "Make a brush stroke first": "Tee ensin siveltimen veto",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Veto on peruttu ja odottaa käyränä: siirrä kahvoja ja valitse sitten Käytä käyrää",
+ "The stroke left too few points on the object to make a curve": "Veto jätti objektiin liian vähän pisteitä käyrää varten"
 }

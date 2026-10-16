@@ -718,5 +718,17 @@
  "Start to end": "Od začátku do konce",
  "Surface offset": "Odsazení od povrchu",
  "The chain is too short to reach there; it stretched as far as it could": "Řetěz je příliš krátký, aby tam dosáhl; natáhl se, jak nejvíc mohl",
- "Uniform": "Jednotný"
+ "Uniform": "Jednotný",
+ "Click on the object without dragging to add a curve point.": "Klikněte na objekt bez tažení a přidejte bod křivky.",
+ "Curve From Border": "Křivka z okraje",
+ "Curve from group border": "Křivka z okraje skupiny",
+ "Curve from Group Border": "Křivka z okraje skupiny",
+ "Curve from mask edge": "Křivka z okraje masky",
+ "Curve from Mask Edge": "Křivka z okraje masky",
+ "Edit Last Stroke as Curve": "Upravit poslední tah jako křivku",
+ "Face group number": "Číslo skupiny ploch",
+ "Last stroke as curve": "Poslední tah jako křivka",
+ "Make a brush stroke first": "Nejprve udělejte tah štětcem",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Tah je vrácen a čeká jako křivka: posuňte úchyty a pak Použít křivku",
+ "The stroke left too few points on the object to make a curve": "Tah zanechal na objektu příliš málo bodů pro křivku"
 }

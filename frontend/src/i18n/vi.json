@@ -718,5 +718,17 @@
  "Start to end": "Từ đầu đến cuối",
  "Surface offset": "Độ lệch bề mặt",
  "The chain is too short to reach there; it stretched as far as it could": "Chuỗi quá ngắn để tới đó; nó đã duỗi ra hết mức có thể",
- "Uniform": "Đồng đều"
+ "Uniform": "Đồng đều",
+ "Click on the object without dragging to add a curve point.": "Nhấp vào đối tượng mà không kéo để thêm một điểm đường cong.",
+ "Curve From Border": "Đường cong từ biên",
+ "Curve from group border": "Đường cong từ biên nhóm",
+ "Curve from Group Border": "Đường cong từ biên nhóm",
+ "Curve from mask edge": "Đường cong từ mép mặt nạ",
+ "Curve from Mask Edge": "Đường cong từ mép mặt nạ",
+ "Edit Last Stroke as Curve": "Sửa nét cuối thành đường cong",
+ "Face group number": "Số nhóm mặt",
+ "Last stroke as curve": "Nét cuối thành đường cong",
+ "Make a brush stroke first": "Hãy vẽ một nét cọ trước",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Nét đã được hoàn tác và chờ dưới dạng đường cong: di chuyển các tay nắm, rồi Áp dụng đường cong",
+ "The stroke left too few points on the object to make a curve": "Nét để lại quá ít điểm trên đối tượng để tạo đường cong"
 }

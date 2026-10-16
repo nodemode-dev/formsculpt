@@ -718,5 +718,17 @@
  "Start to end": "Baştan sona",
  "Surface offset": "Yüzey ofseti",
  "The chain is too short to reach there; it stretched as far as it could": "Zincir oraya ulaşmak için çok kısa; gidebildiği kadar uzadı",
- "Uniform": "Düzgün"
+ "Uniform": "Düzgün",
+ "Click on the object without dragging to add a curve point.": "Eğri noktası eklemek için sürüklemeden nesneye tıklayın.",
+ "Curve From Border": "Kenardan Eğri",
+ "Curve from group border": "Grup kenarından eğri",
+ "Curve from Group Border": "Grup Kenarından Eğri",
+ "Curve from mask edge": "Maske kenarından eğri",
+ "Curve from Mask Edge": "Maske Kenarından Eğri",
+ "Edit Last Stroke as Curve": "Son Darbeyi Eğri Olarak Düzenle",
+ "Face group number": "Yüz grubu numarası",
+ "Last stroke as curve": "Son darbe eğri olarak",
+ "Make a brush stroke first": "Önce bir fırça darbesi yapın",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Darbe geri alındı ve eğri olarak bekliyor: tutamaçlarını taşıyın, ardından Eğriyi uygula",
+ "The stroke left too few points on the object to make a curve": "Darbe, eğri oluşturmak için nesne üzerinde çok az nokta bıraktı"
 }

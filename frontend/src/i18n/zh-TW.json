@@ -718,5 +718,17 @@
  "Start to end": "從起點到終點",
  "Surface offset": "表面偏移",
  "The chain is too short to reach there; it stretched as far as it could": "鏈條太短無法到達該處；已盡量伸展",
- "Uniform": "均勻"
+ "Uniform": "均勻",
+ "Click on the object without dragging to add a curve point.": "在物件上點擊（不拖曳）即可新增曲線點。",
+ "Curve From Border": "從邊界產生曲線",
+ "Curve from group border": "從群組邊界產生曲線",
+ "Curve from Group Border": "從群組邊界產生曲線",
+ "Curve from mask edge": "從遮罩邊緣產生曲線",
+ "Curve from Mask Edge": "從遮罩邊緣產生曲線",
+ "Edit Last Stroke as Curve": "將上一筆編輯為曲線",
+ "Face group number": "面群組編號",
+ "Last stroke as curve": "上一筆轉為曲線",
+ "Make a brush stroke first": "請先畫一筆",
+ "The stroke is undone and waits as a curve: move its handles, then Apply curve": "該筆已復原並以曲線等待：移動其控制點，然後套用曲線",
+ "The stroke left too few points on the object to make a curve": "該筆在物件上留下的點太少，無法產生曲線"
 }

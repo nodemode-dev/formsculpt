@@ -7,7 +7,7 @@ Generated from the engine's command registry (formsculptor 0.34.0) by `./formscu
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -317,6 +317,19 @@ Drag one control point of a curve to a target and let the rest follow, without c
 - `pin_start`: boolean; default true; Keep the first point where it is.
 - `points`: array of value; required; The chain's control points, in the same formats as sample_curve. They are treated as an open chain of fixed-length segments; a closed curve is solved as open, so give the points without repeating the first at the end.
 - `target`: array of number; required; [x, y, z] to drag that point to.
+
+Note: read-only.
+
+## curve_from_border
+
+Turn the border of a set of faces into curve control points, without changing the scene. The set is the faces in one face group (source group, with group giving the id) or the faces whose three vertices have a mean mask of 0.5 or more (source mask). A border edge has exactly one face inside the set, so open mesh edges of the set count too. Border edges are chained into closed loops and open chains, longest first; loop picks one (0 is the longest). The chosen border is cut into points control points (default 16, 3 to 256) evenly spaced by arc length, each optionally lifted along the surface normal by offset. Returns points as [{p: [x, y, z]}, ...], closed, loops (how many borders were found) and length (the arc length of the chosen border). Refuses with no_border when the set is empty or covers a whole closed mesh. Feed the points to sample_curve, curve_tube, curve_ik or edit_build, passing closed when the border is closed.
+
+- `group`: integer; range 0 to inf; The face group id; required when source is group.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `loop`: integer; default 0; range 0 to inf; Which border to take, counting from 0 in order of length (0 is the longest).
+- `offset`: number; default 0; Lift each point along the surface normal by this distance, in world units.
+- `points`: integer; default 16; range 3 to 256; How many control points to place, evenly spaced by arc length.
+- `source`: string (group | mask); default "group"; Which faces make the set: those in one face group, or those whose three vertices have a mean mask of 0.5 or more.
 
 Note: read-only.
 
