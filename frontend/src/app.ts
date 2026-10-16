@@ -104,6 +104,9 @@ interface Shell {
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
+  arrayScaleEnd: HTMLInputElement;
+  arrayJitter: HTMLInputElement;
+  arraySeed: HTMLInputElement;
   folderName: HTMLInputElement;
   reference: HTMLImageElement;
   referenceInput: HTMLInputElement;
@@ -550,11 +553,14 @@ function buildShell(root: HTMLElement): Shell {
   const insertKind = choices('Insert shape', [['sphere', 'Sphere'], ['cube', 'Cube'], ['cylinder', 'Cylinder'], ['cone', 'Cone'], ['torus', 'Torus'], ['previous', 'Previous object']]);
   const insertSize = input('number', { min: '0.01', max: '10', step: '0.05', value: '0.2', 'aria-label': 'Insert size' });
   const arrayCount = input('number', { min: '2', max: '200', value: '6', 'aria-label': 'Array copies' });
+  const arrayScaleEnd = input('number', { min: '0.05', max: '10', step: '0.05', value: '1', 'aria-label': 'Last copy scale' });
+  const arrayJitter = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Array jitter %' });
+  const arraySeed = input('number', { min: '1', max: '9999', step: '1', value: '1', 'aria-label': 'Jitter seed' });
   const arrayLinked = input('checkbox', { 'aria-label': 'Linked copies' });
   const vdmPick = choices('Stamp map', [['horn', 'Horn'], ['hook', 'Hook'], ['mushroom', 'Mushroom']]);
   const textInput = input('text', { maxlength: '160', value: 'FORM', 'aria-label': 'Text', spellcheck: 'false' });
   const buildFields = el('div', 'fields');
-  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Linked copies', arrayLinked), field('Stamp map', vdmPick), field('Text', textInput));
+  buildFields.append(field('Skeleton', skeleton), field('Lathe profile', lathe), field('Tube radius', tubeRadius), field('Insert shape', insertKind), field('Insert size', insertSize), field('Array copies', arrayCount), field('Last copy scale', arrayScaleEnd), field('Array jitter %', arrayJitter), field('Jitter seed', arraySeed), field('Linked copies', arrayLinked), field('Stamp map', vdmPick), field('Text', textInput));
   panel.append(buildFields);
   const buildGrid = el('div', 'add-grid two');
   const buildButtons = (
@@ -633,6 +639,7 @@ function buildShell(root: HTMLElement): Shell {
   const falloffDots = document.createElementNS(SVG, 'path');
   falloffCurve.append(falloffLine, falloffDots);
   panel.append(falloffCurve);
+  panel.append(el('p', 'panel-hint', 'Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.'));
   const alphaGrid = el('div', 'add-grid after-fields');
   const curveButtons = (
     [
@@ -1153,7 +1160,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1425,8 +1432,15 @@ class SceneView {
       const fx = (e.clientX - box.left) / Math.max(1, box.width);
       const fy = (e.clientY - box.top) / Math.max(1, box.height);
       if (e.type === 'pointerdown') {
+        const index = Math.max(0, Math.min(FALLOFF_POINTS - 1, Math.round(((fx * 200 - 4) / 192) * (FALLOFF_POINTS - 1))));
+        if (e.altKey) {
+          this.falloffSharp[index] = !this.falloffSharp[index];
+          shell.falloff.value = 'custom';
+          this.drawFalloff();
+          return;
+        }
         shell.falloffCurve.setPointerCapture(e.pointerId);
-        this.falloffDrag = Math.max(0, Math.min(FALLOFF_POINTS - 1, Math.round(((fx * 200 - 4) / 192) * (FALLOFF_POINTS - 1))));
+        this.falloffDrag = index;
       }
       if (this.falloffDrag === null) return;
       this.falloffWeights[this.falloffDrag] = Math.max(0, Math.min(1, (60 - fy * 64) / 56));
@@ -2534,15 +2548,42 @@ class SceneView {
     const xy = (i: number, v: number): [number, number] => [4 + (i / (FALLOFF_POINTS - 1)) * 192, 60 - v * 56];
     const line = Array.from({ length: 41 }, (_, k) => {
       const x = (k / 40) * (FALLOFF_POINTS - 1);
-      const i = Math.min(FALLOFF_POINTS - 2, Math.floor(x));
-      const v = preset ? preset(k / 40) : w[i] + (w[i + 1] - w[i]) * (x - i);
+      const v = preset ? preset(k / 40) : this.falloffAt(k / 40);
       return xy(x, v);
     });
     this.shell.falloffLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
-    this.shell.falloffDots.setAttribute('d', w.map((v, i) => xy(i, v)).map(([x, y]) => `M${x - 3},${y - 3}h6v6h-6z`).join(''));
+    this.shell.falloffDots.setAttribute('d', w.map((v, i) => xy(i, v)).map(([x, y], i) => (this.falloffSharp[i] ? `M${x - 3},${y - 3}h6v6h-6z` : `M${x - 3.5},${y}a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0`)).join(''));
+  }
+
+  /** The drawn falloff at u (0 centre, 1 rim): Hermite spans whose tangents follow the span at a corner and the neighbours at a smooth point, so all corners is exactly the old straight-line curve. */
+  private falloffAt(u: number): number {
+    const w = this.falloffWeights;
+    const n = w.length - 1;
+    const x = Math.max(0, Math.min(1, u)) * n;
+    const i = Math.min(n - 1, Math.floor(x));
+    const t = x - i;
+    const slope = (j: number): number => {
+      if (this.falloffSharp[j]) return w[i + 1] - w[i];
+      const prev = w[Math.max(0, j - 1)];
+      const next = w[Math.min(n, j + 1)];
+      return (next - prev) / (j === 0 || j === n ? 1 : 2);
+    };
+    const [m0, m1] = [slope(i), slope(i + 1)];
+    const t2 = t * t;
+    const t3 = t2 * t;
+    const v = (2 * t3 - 3 * t2 + 1) * w[i] + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * w[i + 1] + (t3 - t2) * m1;
+    return Math.max(0, Math.min(1, v));
+  }
+
+  /** The weights a custom falloff sends: the five points while all are corners (as before), else 33 samples of the drawn curve. */
+  private falloffSent(): number[] {
+    const round = (v: number): number => Math.round(v * 1000) / 1000;
+    if (this.falloffSharp.every(Boolean)) return this.falloffWeights.map(round);
+    return Array.from({ length: 33 }, (_, k) => round(this.falloffAt(k / 32)));
   }
 
   private falloffDrag: number | null = null;
+  private falloffSharp: boolean[] = Array.from({ length: FALLOFF_POINTS }, () => true);
   private falloffWeights: number[] = Array.from({ length: FALLOFF_POINTS }, (_, i) => FALLOFFS.smooth(i / (FALLOFF_POINTS - 1)));
 
   /** The key light (first) and up to three added lights, as the Light fields edit them. */
@@ -3088,6 +3129,16 @@ class SceneView {
       }
       const count = Math.max(2, Math.min(200, Math.round(Number(this.shell.arrayCount.value) || 6)));
       const linked = this.shell.arrayLinked.checked;
+      // The repeater's shape: a scale ramp to Last copy scale and a seeded jitter whose share sets turn (up to 45 degrees),
+      // scale (up to half) and offset (up to a quarter of the object's size).
+      const scaleEnd = Math.max(0.05, Math.min(10, Number(this.shell.arrayScaleEnd.value) || 1));
+      const share = Math.max(0, Math.min(1, Number(this.shell.arrayJitter.value) / 100));
+      const o = this.scene.objects.find((x) => x.id === id);
+      const size = o?.bounds ? Math.max(o.bounds.max[0] - o.bounds.min[0], o.bounds.max[1] - o.bounds.min[1], o.bounds.max[2] - o.bounds.min[2]) : 1;
+      const shape: Record<string, unknown> = {
+        ...(scaleEnd !== 1 ? { scale_start: 1, scale_end: scaleEnd } : {}),
+        ...(share > 0 ? { jitter: { position: size * 0.25 * share, rotation: 45 * share, scale: 0.5 * share, seed: Math.max(1, Math.round(Number(this.shell.arraySeed.value) || 1)) } } : {}),
+      };
       if (action === 'array_curve') {
         // Along the waiting curve stroke's spline (draw one with the Curve stroke tool).
         if (!this.curve) {
@@ -3095,9 +3146,9 @@ class SceneView {
           return;
         }
         const points = SceneView.spline(this.curve.handles, 8);
-        await this.run('array_object', { id, count, mode: 'curve', points, linked });
+        await this.run('array_object', { id, count, mode: 'curve', points, linked, ...shape });
       } else if (action === 'array_mirror') await this.run('array_object', { id, mode: 'mirror', axis: 'x', linked });
-      else await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y', linked });
+      else await this.run('array_object', { id, count, mode: action === 'array_line' ? 'linear' : 'radial', axis: 'y', linked, ...shape });
     } else if (action === 'shadow_box') {
       const s = this.silhouettes;
       const n = [s.front, s.side, s.top].filter(Boolean).length;
@@ -3169,7 +3220,7 @@ class SceneView {
       strength: Number(s.strength.value) / 100,
       invert: s.invert.checked,
       falloff: s.falloff.value === 'custom' ? 'smooth' : s.falloff.value,
-      falloffCurve: s.falloff.value === 'custom' ? this.falloffWeights.map((w) => Math.round(w * 1000) / 1000) : null,
+      falloffCurve: s.falloff.value === 'custom' ? this.falloffSent() : null,
       stroke: s.strokeMode.value,
       pressure: { gamma: Math.max(0.2, Math.min(5, Number(s.pressureGamma.value) || 1)), strength: s.pressureStrength.checked, size: s.pressureSize.checked },
       lazy: Number(s.lazy.value) / 100,
