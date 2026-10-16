@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.51.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.52.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.51.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -426,6 +426,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `strength`: number; default 0.5; range 0 to 1
 - `stroke`: string (dots | roll | spray); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly.
 - `symmetry`: object; fields radial, x, y, z
+- `target`: string (vertex | texture); default "vertex"; Paint brush only: vertex paints the mesh's vertex paint; texture paints the object's texture per texel in UV space (texture_create first), so a stroke can be finer than the mesh. Refused with bad_arguments for any other brush. Invert erases toward the default paint in the chosen channels.
 - `view_dir`: array of number; The direction the viewer looks along, [x, y, z], for front_facing; mirrored with each symmetry copy. Absent in sculpt_stroke, the first point's normal approximates it.
 
 ## alpha_load
@@ -466,6 +467,41 @@ Paint a whole object with a colour, roughness or metalness (only the channels gi
 - `metalness`: number; range 0 to 1
 - `opacity`: number; range 0 to 1; 1 is solid; lower lets what is behind show through (drawn dithered in the window, as alpha in GLB and baked colour maps).
 - `roughness`: number; range 0 to 1
+- `target`: string (vertex | texture); default "vertex"; texture fills every texel of the object's texture (texture_create first) instead of the vertex paint; masked and hidden areas are protected as for vertices.
+
+## texture_create
+
+Give an object a texture: paint kept per texel in UV space (colour, roughness, metalness, opacity, emissive) instead of per vertex, so a stroke can be finer than the mesh. Needs UVs (uv_unwrap first; refuses with no_uvs). size is texels per side, 256 to 4096 (default 1024). from vertex (default) bakes the current vertex paint into the texels by rasterising each UV triangle with its corner paint interpolated, with a few texels of padding past the seams; from blank starts from the default grey. Replaces any texture the object has. Paint it with sculpt_stroke brush paint and target texture, or paint_fill with target texture; read it with get_texture and pick_paint. GLB and glTF export and bake_maps then take colour, roughness-metal and glow from the texture, and projects save it. Changing the UVs (unwrap with a different result, uv_transform, uv_pack, relax, topology changes) drops it. One undo step.
+
+- `from`: string (vertex | blank); default "vertex"; vertex bakes the current vertex paint into the texels (each UV triangle rasterised with its corner paint interpolated, with a few texels of padding past the seams); blank starts from the default grey.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `size`: integer; default 1024; range 256 to 4096; Texels per side (square).
+
+## texture_clear
+
+Remove an object's texture; its vertex paint is untouched. Refuses with no_texture when it has none. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## get_texture
+
+The object's texture as a PNG (png_base64): channel color (RGB with opacity as alpha), roughness_metal (roughness in green, metalness in blue) or emissive (glow colour). Give size to reduce it by averaging for a preview. The reply has size, texture_size and revision, which rises on every change, so a viewer fetches again only when it moves. Refuses with no_texture when the object has none. Read-only.
+
+- `channel`: string (color | roughness_metal | emissive); default "color"; color is RGB with opacity as alpha; roughness_metal has roughness in green and metalness in blue; emissive is the glow colour (paint colour times emissive).
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `size`: integer; range 1 to 4096; Reduce the picture to this many texels a side by averaging (never above the texture's own size); for previews.
+
+Note: read-only.
+
+## pick_paint
+
+The eyedropper: the paint at a surface point. Give point [x, y, z] (the nearest surface point is used) or ray {origin, dir} (the first hit; hit false on a miss), in object space. Returns color (#rrggbb), rgb, roughness, metalness, opacity and emissive, and source: texture when the object has a texture (sampled at the hit's UV) or vertex (interpolated from the hit triangle's vertex paint by barycentric weights). Read-only.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `point`: array of number; A point [x, y, z] in object space on or near the surface; the nearest surface point is used.
+- `ray`: object; A ray in object space instead of point; the first surface it hits is used (hit false when it misses).; fields dir, origin
+
+Note: read-only.
 
 ## paint_project
 
