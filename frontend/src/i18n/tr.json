@@ -816,5 +816,7 @@
  "UV Tiles": "UV Karoları",
  "UV Tiles by Face Group": "Yüz Grubuna Göre UV Karoları",
  "UV Tiles by Island": "Adaya Göre UV Karoları",
- "UV tiles in use: {list}": "Kullanılan UV karoları: {list}"
+ "UV tiles in use: {list}": "Kullanılan UV karoları: {list}",
+ "All tiles": "Tüm karolar",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "{list} karoları için {size} px haritalar pişirildi; karo başına bir malzeme için GLB dışa aktarın"
 }

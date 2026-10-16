@@ -816,5 +816,7 @@
  "UV Tiles": "UV-fliser",
  "UV Tiles by Face Group": "UV-fliser efter fladegruppe",
  "UV Tiles by Island": "UV-fliser efter ø",
- "UV tiles in use: {list}": "UV-fliser i brug: {list}"
+ "UV tiles in use: {list}": "UV-fliser i brug: {list}",
+ "All tiles": "Alle fliser",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "{size} px-maps bagt til fliserne {list}; eksportér GLB for ét materiale pr. flise"
 }

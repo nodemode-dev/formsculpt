@@ -816,5 +816,7 @@
  "UV Tiles": "UV 타일",
  "UV Tiles by Face Group": "페이스 그룹별 UV 타일",
  "UV Tiles by Island": "아일랜드별 UV 타일",
- "UV tiles in use: {list}": "사용 중인 UV 타일: {list}"
+ "UV tiles in use: {list}": "사용 중인 UV 타일: {list}",
+ "All tiles": "모든 타일",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "타일 {list}에 {size} px 맵을 베이크했습니다. GLB로 내보내면 타일마다 머티리얼이 하나씩 생깁니다"
 }

@@ -816,5 +816,7 @@
  "UV Tiles": "Blocos UV",
  "UV Tiles by Face Group": "Blocos UV por grupo de faces",
  "UV Tiles by Island": "Blocos UV por ilha",
- "UV tiles in use: {list}": "Blocos UV em uso: {list}"
+ "UV tiles in use: {list}": "Blocos UV em uso: {list}",
+ "All tiles": "Todos os blocos",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Mapas de {size} px gerados para os blocos {list}; exporte GLB para um material por bloco"
 }

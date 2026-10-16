@@ -816,5 +816,7 @@
  "UV Tiles": "Teselas UV",
  "UV Tiles by Face Group": "Teselas UV por grupo de caras",
  "UV Tiles by Island": "Teselas UV por isla",
- "UV tiles in use: {list}": "Teselas UV en uso: {list}"
+ "UV tiles in use: {list}": "Teselas UV en uso: {list}",
+ "All tiles": "Todas las teselas",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Mapas de {size} px horneados para las teselas {list}; exporta GLB para un material por tesela"
 }

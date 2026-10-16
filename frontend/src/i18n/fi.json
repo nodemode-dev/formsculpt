@@ -816,5 +816,7 @@
  "UV Tiles": "UV-laatat",
  "UV Tiles by Face Group": "UV-laatat pintaryhmittäin",
  "UV Tiles by Island": "UV-laatat saarekkeittain",
- "UV tiles in use: {list}": "Käytössä olevat UV-laatat: {list}"
+ "UV tiles in use: {list}": "Käytössä olevat UV-laatat: {list}",
+ "All tiles": "Kaikki laatat",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "{size} px:n kartat paistettu laatoille {list}; vie GLB, niin jokainen laatta saa oman materiaalin"
 }

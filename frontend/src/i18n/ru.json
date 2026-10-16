@@ -816,5 +816,7 @@
  "UV Tiles": "UV-тайлы",
  "UV Tiles by Face Group": "UV-тайлы по группам граней",
  "UV Tiles by Island": "UV-тайлы по островам",
- "UV tiles in use: {list}": "Используемые UV-тайлы: {list}"
+ "UV tiles in use: {list}": "Используемые UV-тайлы: {list}",
+ "All tiles": "Все тайлы",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Карты {size} px запечены для тайлов {list}; экспорт в GLB даст по материалу на тайл"
 }

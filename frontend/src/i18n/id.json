@@ -816,5 +816,7 @@
  "UV Tiles": "Ubin UV",
  "UV Tiles by Face Group": "Ubin UV per Face Group",
  "UV Tiles by Island": "Ubin UV per Island",
- "UV tiles in use: {list}": "Ubin UV yang dipakai: {list}"
+ "UV tiles in use: {list}": "Ubin UV yang dipakai: {list}",
+ "All tiles": "Semua ubin",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Peta {size} px di-bake untuk ubin {list}; ekspor GLB untuk satu material per ubin"
 }

@@ -816,5 +816,7 @@
  "UV Tiles": "UVタイル",
  "UV Tiles by Face Group": "フェイスグループ別UVタイル",
  "UV Tiles by Island": "アイランド別UVタイル",
- "UV tiles in use: {list}": "使用中のUVタイル: {list}"
+ "UV tiles in use: {list}": "使用中のUVタイル: {list}",
+ "All tiles": "すべてのタイル",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "タイル {list} に {size} px のマップをベイクしました。GLB 書き出しでタイルごとにマテリアルが付きます"
 }

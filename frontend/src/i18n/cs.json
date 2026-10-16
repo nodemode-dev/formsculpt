@@ -816,5 +816,7 @@
  "UV Tiles": "Dlaždice UV",
  "UV Tiles by Face Group": "Dlaždice UV podle skupiny ploch",
  "UV Tiles by Island": "Dlaždice UV podle ostrova",
- "UV tiles in use: {list}": "Použité dlaždice UV: {list}"
+ "UV tiles in use: {list}": "Použité dlaždice UV: {list}",
+ "All tiles": "Všechny dlaždice",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Mapy {size} px zapečeny pro dlaždice {list}; export GLB dá jeden materiál na dlaždici"
 }

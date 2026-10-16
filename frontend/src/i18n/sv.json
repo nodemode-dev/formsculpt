@@ -816,5 +816,7 @@
  "UV Tiles": "UV-kakel",
  "UV Tiles by Face Group": "UV-kakel efter ytgrupp",
  "UV Tiles by Island": "UV-kakel efter ö",
- "UV tiles in use: {list}": "UV-kakel som används: {list}"
+ "UV tiles in use: {list}": "UV-kakel som används: {list}",
+ "All tiles": "Alla kakel",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Kartor på {size} px bakade för kaklen {list}; exportera GLB för ett material per kakel"
 }

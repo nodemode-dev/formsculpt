@@ -816,5 +816,7 @@
  "UV Tiles": "UV-csempék",
  "UV Tiles by Face Group": "UV-csempék lapcsoportonként",
  "UV Tiles by Island": "UV-csempék szigetenként",
- "UV tiles in use: {list}": "Használt UV-csempék: {list}"
+ "UV tiles in use: {list}": "Használt UV-csempék: {list}",
+ "All tiles": "Minden csempe",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "{size} px-es térképek sütve a(z) {list} csempékhez; GLB-exporttal csempénként egy anyag lesz"
 }

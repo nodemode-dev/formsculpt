@@ -816,5 +816,7 @@
  "UV Tiles": "Kafelki UV",
  "UV Tiles by Face Group": "Kafelki UV wg grupy ścian",
  "UV Tiles by Island": "Kafelki UV wg wyspy",
- "UV tiles in use: {list}": "Używane kafelki UV: {list}"
+ "UV tiles in use: {list}": "Używane kafelki UV: {list}",
+ "All tiles": "Wszystkie kafelki",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Wypalono mapy {size} px dla kafelków {list}; eksport GLB da jeden materiał na kafelek"
 }

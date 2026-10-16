@@ -816,5 +816,7 @@
  "UV Tiles": "Tuiles UV",
  "UV Tiles by Face Group": "Tuiles UV par groupe de faces",
  "UV Tiles by Island": "Tuiles UV par îlot",
- "UV tiles in use: {list}": "Tuiles UV utilisées : {list}"
+ "UV tiles in use: {list}": "Tuiles UV utilisées : {list}",
+ "All tiles": "Toutes les tuiles",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Textures de {size} px calculées pour les tuiles {list} ; exportez en GLB pour un matériau par tuile"
 }

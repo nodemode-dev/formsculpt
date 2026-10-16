@@ -816,5 +816,7 @@
  "UV Tiles": "Tile UV",
  "UV Tiles by Face Group": "Tile UV theo nhóm mặt",
  "UV Tiles by Island": "Tile UV theo island",
- "UV tiles in use: {list}": "Tile UV đang dùng: {list}"
+ "UV tiles in use: {list}": "Tile UV đang dùng: {list}",
+ "All tiles": "Tất cả tile",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "Đã nướng map {size} px cho các tile {list}; xuất GLB để mỗi tile có một vật liệu"
 }

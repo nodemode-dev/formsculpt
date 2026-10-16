@@ -816,5 +816,7 @@
  "UV Tiles": "UV 磚片",
  "UV Tiles by Face Group": "依面群組分 UV 磚片",
  "UV Tiles by Island": "依島分 UV 磚片",
- "UV tiles in use: {list}": "使用中的 UV 磚片：{list}"
+ "UV tiles in use: {list}": "使用中的 UV 磚片：{list}",
+ "All tiles": "全部磚片",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "已為磚片 {list} 烘焙 {size} px 貼圖；匯出 GLB 可每個磚片一個材質"
 }

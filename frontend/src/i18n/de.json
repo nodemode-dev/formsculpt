@@ -816,5 +816,7 @@
  "UV Tiles": "UV-Kacheln",
  "UV Tiles by Face Group": "UV-Kacheln nach Flächengruppe",
  "UV Tiles by Island": "UV-Kacheln nach Insel",
- "UV tiles in use: {list}": "UV-Kacheln in Verwendung: {list}"
+ "UV tiles in use: {list}": "UV-Kacheln in Verwendung: {list}",
+ "All tiles": "Alle Kacheln",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "{size}-px-Maps für Kacheln {list} gebacken; GLB exportieren für ein Material pro Kachel"
 }

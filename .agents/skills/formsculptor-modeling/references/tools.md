@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.43.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.44.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -663,11 +663,12 @@ Drag UV vertices by hand: the UV point nearest at goes to to, or with radius eve
 
 ## get_uv_layout
 
-Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there, and tile (a UDIM tile number, default 1001) to picture another tile, with at inside it. Use it to look before moving islands with uv_transform.
+Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there, and tile (a UDIM tile number, default 1001) to picture another tile, with at inside it, or overview true to picture every occupied tile at once. Use it to look before moving islands with uv_transform.
 
 - `at`: array of number; A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `island`: integer; range 0 to inf; An island's number to draw brighter, instead of at.
+- `overview`: boolean; default false; Draw every occupied UDIM tile at once instead of one tile: the smallest square of tiles holding them all, scaled to the picture. The reply's overview gives its lower left tile corner (u0, v0) and its width in tiles (n); at, island bounds and used are then in that scaled square.
 - `size`: integer; default 512; range 64 to 2048; Width and height of the picture in pixels.
 - `tile`: integer; default 1001; range 1001 to 1100; The UDIM tile to draw (1001 is the unit square); at is then given inside that tile, 0 to 1.
 
@@ -803,14 +804,14 @@ Spread UV islands over UDIM tiles and pack each tile's islands into its tile, ke
 
 ## bake_maps
 
-Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. With tile (1001 to 1100) only that UDIM tile is baked, as if it were the unit square. With udim true (path needed) every tile that holds UV islands (see uv_tiles) is baked and written in the Mari naming, NAME_color.1001.png and so on, and the reply lists tiles; the object keeps the maps of tile 1001 (or of the given tile, or of the first tile) for GLB export, and covered and hit describe that tile. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.
+Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. With tile (1001 to 1100) only that UDIM tile is baked, as if it were the unit square. With udim true every tile that holds UV islands (see uv_tiles) is baked and kept on the object, and written in the Mari naming, NAME_color.1001.png and so on, when path is given; the reply lists tiles. GLB and glTF export then writes one primitive and one material per tile, each with that tile's maps and its UVs moved into 0 to 1; triangles in tiles without maps keep the object's ordinary material. The object's own single map set is the maps of tile 1001 (or of the given tile, or of the first tile), and covered and hit describe that tile. A plain or single-tile bake drops the per-tile maps. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.
 
 - `id`: integer; range 1 to inf; The object to bake onto (it needs UVs from uv_unwrap); the active object when omitted.
-- `path`: string; A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set).
+- `path`: string; A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set). Optional, also with udim.
 - `size`: integer (256 | 512 | 1024 | 2048 | 4096); default 1024; Texture width and height in pixels.
 - `source_id`: integer; range 1 to inf; Bake detail from this object (a high-resolution sculpt) instead; by default the object's highest subdivision level, or the object itself.
 - `tile`: integer; range 1001 to 1100; Bake only this UDIM tile: the UVs are shifted by minus the tile's offset so the tile fills the texture, and texels outside the tile are left uncovered.
-- `udim`: boolean; default false; Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows). Needs path. Not together with tile.
+- `udim`: boolean; default false; Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows) when path is given. Every baked tile is also kept on the object, so GLB and glTF export gives one primitive and one material per tile with that tile's maps. Not together with tile.
 
 ## mask_invert
 

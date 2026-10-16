@@ -816,5 +816,7 @@
  "UV Tiles": "ไทล์ UV",
  "UV Tiles by Face Group": "ไทล์ UV ตามเฟซกรุ๊ป",
  "UV Tiles by Island": "ไทล์ UV ตามไอแลนด์",
- "UV tiles in use: {list}": "ไทล์ UV ที่ใช้อยู่: {list}"
+ "UV tiles in use: {list}": "ไทล์ UV ที่ใช้อยู่: {list}",
+ "All tiles": "ไทล์ทั้งหมด",
+ "Baked {size} px maps for tiles {list}; Export GLB for one material per tile": "เบคแมป {size} px ให้ไทล์ {list} แล้ว ส่งออก GLB เพื่อให้แต่ละไทล์มีวัสดุของตัวเอง"
 }
