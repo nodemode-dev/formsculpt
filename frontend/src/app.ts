@@ -31,6 +31,7 @@ import { MenuBar, PopupMenu } from './ui/menu';
 import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
 import { scheduleChrome } from './ui/chrome';
 import { t } from './ui/i18n';
+import { registerTerminal } from './ui/terminal';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { PanelLayout } from './ui/layout';
 import { SpaceMouse } from './ui/spacemouse';
@@ -418,7 +419,7 @@ function buildShell(root: HTMLElement): Shell {
   brand.innerHTML = ICONS.mark;
   brand.append(el('span', '', 'formsculptor'), el('span', 'ver', `v${VERSION}`));
   const menubar = el('div', 'fs-menubar');
-  bar.append(brand, menubar, el('div', 'spacer'));
+  bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
 
   const rail = el('nav', 'rail');
   rail.setAttribute('aria-label', 'Tools');
@@ -1405,6 +1406,28 @@ class SceneView {
 
   stroking(): boolean {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
+  }
+
+  /** What an agent asked from the dock should know about the window: the active object and the scene's size. */
+  agentContext(): string {
+    const active = this.scene.objects.find((o) => o.id === this.scene.active);
+    const count = this.scene.objects.length;
+    if (!active) return count ? `formsculptor window: ${count} objects, none active` : 'formsculptor window: empty scene';
+    return `formsculptor window: active object id ${active.id} named ${JSON.stringify(active.name)}, ${count} objects in the scene`;
+  }
+
+  agentNote(): string {
+    const active = this.scene.objects.find((o) => o.id === this.scene.active);
+    return active ? `with ${active.name} active` : '';
+  }
+
+  async selectObject(id: number): Promise<void> {
+    if (!this.scene.objects.some((o) => o.id === id)) return;
+    await this.run('select_object', { id });
+  }
+
+  agentNotice(tool: string): void {
+    if (tool) this.note(`Agent · ${tool.replace(/_/g, ' ')}`);
   }
 
   private async shapeEnd(): Promise<void> {
@@ -3423,6 +3446,19 @@ async function boot(shell: Shell): Promise<void> {
     const view = new SceneView(shell, viewport);
     view.registerCommands();
     view.wireContextMenus();
+    const tools = document.querySelector<HTMLElement>('.appbar-tools');
+    const root = document.getElementById('app');
+    if (tools && root) {
+      registerTerminal({
+        root, tools,
+        available: () => !browserEngine(),
+        context: () => view.agentContext(),
+        note: () => view.agentNote(),
+        fail: (err) => setText(shell.message, err instanceof Error ? err.message : String(err)),
+        activity: (tool) => view.agentNotice(tool),
+        select: (ids) => { if (ids.length) void view.selectObject(ids[0]); },
+      });
+    }
     viewport.onFrame = (s) => {
       setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
       view.drawCurve();

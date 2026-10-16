@@ -3,7 +3,8 @@ html, body { margin: 0; height: 100%; background: var(--bg-primary); color: var(
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 
-#app { display: grid; height: 100%; grid-template-rows: var(--bar-h) 1fr var(--status-h); grid-template-columns: var(--rail-w) 1fr var(--panel-w); grid-template-areas: "bar bar bar" "rail stage panel" "status status status"; }
+#app { display: grid; height: 100%; grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) var(--status-h); grid-template-columns: var(--rail-w) 1fr var(--panel-w); grid-template-areas: "bar bar bar" "rail stage panel" "dock dock dock" "status status status"; }
+#app.is-dock-open { --dock-h: min(var(--dock-open-h, 280px), 70vh); }
 
 .appbar { grid-area: bar; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-3); padding-inline: var(--space-3); background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; letter-spacing: -0.01em; }
@@ -22,7 +23,7 @@ button { font: inherit; color: inherit; }
 .panel .fold-hidden { display: none !important; }
 .panel.panel-small { zoom: 0.9; }
 .panel.panel-large { zoom: 1.12; }
-#app.panel-left { grid-template-columns: var(--panel-w) 1fr var(--rail-w); grid-template-areas: "bar bar bar" "panel stage rail" "status status status"; }
+#app.panel-left { grid-template-columns: var(--panel-w) 1fr var(--rail-w); grid-template-areas: "bar bar bar" "panel stage rail" "dock dock dock" "status status status"; }
 #app.panel-left .panel { border-left: 0; border-right: 1px solid var(--border-color); }
 #app.panel-left .rail { border-right: 0; border-left: 1px solid var(--border-color); }
 .rail { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding-block: var(--space-2); overflow-y: auto; }
