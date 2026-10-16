@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.34.0 · 2026-10-16
+
+### Added
+
+- `curve_ik`: drag one control point of a curve and the rest follow as a chain of fixed-length segments (FABRIK), with the first, last, both or neither end pinned; read-only, returns the new points, whether the target was reached and the segment lengths.
+- Curves in the window: a radius and a twist per handle (Point radius %, Point twist), Radius along path (Uniform, Start to end with End radius %, Per point) for tubes, Surface offset and Grid snap when placing handles, and Drag as chain (through `curve_ik`).
+- A Selection Sets section in the panel: the active object's sets in a list, with Save, Restore and Delete.
+- `./formsculptor doctor` checks that every translation table covers the interface strings.
+- 126 engine commands; 720 interface strings in every language.
+
 ## 0.33.0 · 2026-10-16
 
 ### Added
