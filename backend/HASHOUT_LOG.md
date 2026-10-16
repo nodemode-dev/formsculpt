@@ -218,3 +218,21 @@ GET /api/engine/view takes render=path with samples (1 to 1,024) and bounces (1 
 - kind: rationale
 - logged: v0.30.0 · 2026-10-12
 GET /api/engine/view takes pass (beauty, depth, normal, ao; anything else is 422) and aperture (0 to 1) with render=path; they are not sent for the preview render. POST /api/engine/substance/sync reads Painter's export from the same package folder the send route writes (substance_sync); a folder without <name>_BaseColor.png answers io_failed as data. 18 service tests.
+
+### services/commands.py and services/events.py · the window command bus
+- refers-to: app/services/commands.py, app/services/events.py, app/routers/commands.py, app/routers/events.py
+- kind: rationale
+- logged: v0.32.0 · 2026-10-16
+Ported from FormLit (same owner, Apache-2.0), trimmed: no revision counter, no batch route. It carries window-only commands (terminal.*, claudecode.*, chat.*, agents.prefs) that must never reach MCP; every sculpting command stays in the Rust registry, which is still the only place an agent tool is declared. /api/events is SSE with a hello frame, a 15 s ping and retry 1500; the isolation middleware is pure ASGI, so the stream is not buffered.
+
+### services/terminal.py and routers/terminal_socket.py · PTY sessions
+- refers-to: app/services/terminal.py, app/services/cmd_terminal.py, app/routers/terminal_socket.py
+- kind: gotcha
+- logged: v0.32.0 · 2026-10-16
+ptyprocess on Unix, pywinpty on Windows, 256 KB scrollback replayed to a late attacher. Browsers apply no CORS to WebSockets, so the socket refuses any origin that is not localhost, 127.0.0.1, ::1, tauri.localhost or tauri:// (close 4403); ids are 48-bit random and only listed through terminal.list. A gen counter keeps a restarted tab from receiving the old shell's last bytes. The exit frame is the literal text {"type": "exit"} (json.dumps spacing), which the window compares as a string. Checked live: stty size followed a resize frame, FSC_TERMINAL reached the shell, a foreign origin was refused.
+
+### services/claude_code.py and services/cmd_chat.py · Claude Code in the window
+- refers-to: app/services/claude_code.py, app/services/cmd_chat.py, app/services/agents.py :: INAPP_TOKEN, app/routers/mcp.py :: call_tool
+- kind: rationale
+- logged: v0.32.0 · 2026-10-16
+The dock tab runs the person's own claude through the login shell (exec, so Stop reaches it, and npm-installed claude finds node) with --mcp-config pointing at this service's /mcp, --allowedTools mcp__formsculptor and a sculpting note. The config carries x-formsculptor-inapp with a token made per engine run, so the in-app agent skips the outside-agent prompt; a decline in the last ten minutes still refuses it. CLAUDE* variables are dropped from children except the sign-in ones, or Claude Code thinks it is nested. Chat runs claude -p with stream-json once per message and --resume for continuity; images from tool results are written to <data>/Chat and served by name only from that folder. The frozen engine now chooses its own port before uvicorn starts (FSC_PORT=0 used to reach uvicorn), so the MCP URL handed to Claude Code is real. Data folder: FSC_DATA_DIR, default ~/Formsculptor (Agent, Chat, preferences.json).
