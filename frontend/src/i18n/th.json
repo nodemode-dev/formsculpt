@@ -965,5 +965,12 @@
  "Spotlight image": "ภาพสปอตไลต์",
  "Spotlight Image Pixels": "พิกเซลภาพสปอตไลต์",
  "Spotlight Images": "รายการภาพสปอตไลต์",
- "Spotlight opacity": "ความทึบสปอตไลต์"
+ "Spotlight opacity": "ความทึบสปอตไลต์",
+ "Loop position %": "ตำแหน่งลูป %",
+ "Poly Pick": "เลือกโพลีกอน",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "การทำงานของ ZModeler",
+ "ZModeler Edge": "ZModeler: ขอบ",
+ "ZModeler Face": "ZModeler: หน้า",
+ "ZModeler Point": "ZModeler: จุด"
 }

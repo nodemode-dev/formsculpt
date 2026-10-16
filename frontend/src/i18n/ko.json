@@ -965,5 +965,12 @@
  "Spotlight image": "스포트라이트 이미지",
  "Spotlight Image Pixels": "스포트라이트 이미지 픽셀",
  "Spotlight Images": "스포트라이트 이미지 목록",
- "Spotlight opacity": "스포트라이트 불투명도"
+ "Spotlight opacity": "스포트라이트 불투명도",
+ "Loop position %": "루프 위치 %",
+ "Poly Pick": "폴리곤 선택",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler 동작",
+ "ZModeler Edge": "ZModeler: 엣지",
+ "ZModeler Face": "ZModeler: 면",
+ "ZModeler Point": "ZModeler: 점"
 }

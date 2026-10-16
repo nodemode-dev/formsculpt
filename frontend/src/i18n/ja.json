@@ -965,5 +965,12 @@
  "Spotlight image": "スポットライト画像",
  "Spotlight Image Pixels": "スポットライト画像のピクセル",
  "Spotlight Images": "スポットライト画像一覧",
- "Spotlight opacity": "スポットライトの不透明度"
+ "Spotlight opacity": "スポットライトの不透明度",
+ "Loop position %": "ループ位置 %",
+ "Poly Pick": "ポリゴン選択",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModelerのアクション",
+ "ZModeler Edge": "ZModeler: エッジ",
+ "ZModeler Face": "ZModeler: 面",
+ "ZModeler Point": "ZModeler: 点"
 }

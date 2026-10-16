@@ -965,5 +965,12 @@
  "Spotlight image": "Изображение Spotlight",
  "Spotlight Image Pixels": "Пиксели изображения Spotlight",
  "Spotlight Images": "Изображения Spotlight",
- "Spotlight opacity": "Непрозрачность Spotlight"
+ "Spotlight opacity": "Непрозрачность Spotlight",
+ "Loop position %": "Положение петли %",
+ "Poly Pick": "Выбор полигона",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "Действие ZModeler",
+ "ZModeler Edge": "ZModeler: ребро",
+ "ZModeler Face": "ZModeler: грань",
+ "ZModeler Point": "ZModeler: точка"
 }

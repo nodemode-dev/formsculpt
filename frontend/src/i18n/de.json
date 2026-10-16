@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight-Bild",
  "Spotlight Image Pixels": "Spotlight-Bildpixel",
  "Spotlight Images": "Spotlight-Bilder",
- "Spotlight opacity": "Spotlight-Deckkraft"
+ "Spotlight opacity": "Spotlight-Deckkraft",
+ "Loop position %": "Schleifenposition %",
+ "Poly Pick": "Polygon-Auswahl",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler-Aktion",
+ "ZModeler Edge": "ZModeler: Kante",
+ "ZModeler Face": "ZModeler: Fläche",
+ "ZModeler Point": "ZModeler: Punkt"
 }

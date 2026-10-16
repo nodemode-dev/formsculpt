@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight görseli",
  "Spotlight Image Pixels": "Spotlight görsel pikselleri",
  "Spotlight Images": "Spotlight görselleri",
- "Spotlight opacity": "Spotlight opaklığı"
+ "Spotlight opacity": "Spotlight opaklığı",
+ "Loop position %": "Döngü konumu %",
+ "Poly Pick": "Çokgen seçimi",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler eylemi",
+ "ZModeler Edge": "ZModeler: kenar",
+ "ZModeler Face": "ZModeler: yüz",
+ "ZModeler Point": "ZModeler: nokta"
 }

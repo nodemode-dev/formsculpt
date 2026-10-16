@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight-afbeelding",
  "Spotlight Image Pixels": "Spotlight-afbeeldingspixels",
  "Spotlight Images": "Spotlight-afbeeldingen",
- "Spotlight opacity": "Spotlight-dekking"
+ "Spotlight opacity": "Spotlight-dekking",
+ "Loop position %": "Luspositie %",
+ "Poly Pick": "Polygoon kiezen",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler-actie",
+ "ZModeler Edge": "ZModeler: rand",
+ "ZModeler Face": "ZModeler: vlak",
+ "ZModeler Point": "ZModeler: punt"
 }

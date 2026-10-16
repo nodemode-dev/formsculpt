@@ -965,5 +965,12 @@
  "Spotlight image": "聚光燈影像",
  "Spotlight Image Pixels": "聚光燈影像像素",
  "Spotlight Images": "聚光燈影像清單",
- "Spotlight opacity": "聚光燈不透明度"
+ "Spotlight opacity": "聚光燈不透明度",
+ "Loop position %": "循環邊位置 %",
+ "Poly Pick": "多邊形拾取",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler 操作",
+ "ZModeler Edge": "ZModeler：邊",
+ "ZModeler Face": "ZModeler：面",
+ "ZModeler Point": "ZModeler：點"
 }

@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight-billede",
  "Spotlight Image Pixels": "Spotlight-billedpixels",
  "Spotlight Images": "Spotlight-billeder",
- "Spotlight opacity": "Spotlight-dækkevne"
+ "Spotlight opacity": "Spotlight-dækkevne",
+ "Loop position %": "Løkkeposition %",
+ "Poly Pick": "Polygonvalg",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler-handling",
+ "ZModeler Edge": "ZModeler: kant",
+ "ZModeler Face": "ZModeler: flade",
+ "ZModeler Point": "ZModeler: punkt"
 }

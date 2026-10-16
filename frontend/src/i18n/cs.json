@@ -965,5 +965,12 @@
  "Spotlight image": "Obrázek Spotlight",
  "Spotlight Image Pixels": "Pixely obrázku Spotlight",
  "Spotlight Images": "Obrázky Spotlight",
- "Spotlight opacity": "Krytí Spotlight"
+ "Spotlight opacity": "Krytí Spotlight",
+ "Loop position %": "Poloha smyčky %",
+ "Poly Pick": "Výběr polygonu",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "Akce ZModeleru",
+ "ZModeler Edge": "ZModeler: hrana",
+ "ZModeler Face": "ZModeler: plocha",
+ "ZModeler Point": "ZModeler: bod"
 }

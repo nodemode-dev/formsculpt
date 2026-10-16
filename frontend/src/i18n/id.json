@@ -965,5 +965,12 @@
  "Spotlight image": "Gambar Spotlight",
  "Spotlight Image Pixels": "Piksel gambar Spotlight",
  "Spotlight Images": "Gambar Spotlight",
- "Spotlight opacity": "Opasitas Spotlight"
+ "Spotlight opacity": "Opasitas Spotlight",
+ "Loop position %": "Posisi loop %",
+ "Poly Pick": "Pilih poligon",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "Aksi ZModeler",
+ "ZModeler Edge": "ZModeler: tepi",
+ "ZModeler Face": "ZModeler: muka",
+ "ZModeler Point": "ZModeler: titik"
 }

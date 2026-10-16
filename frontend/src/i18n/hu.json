@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight-kép",
  "Spotlight Image Pixels": "Spotlight-kép képpontjai",
  "Spotlight Images": "Spotlight-képek",
- "Spotlight opacity": "Spotlight-átlátszatlanság"
+ "Spotlight opacity": "Spotlight-átlátszatlanság",
+ "Loop position %": "Hurok helyzete %",
+ "Poly Pick": "Poligon kiválasztása",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler-művelet",
+ "ZModeler Edge": "ZModeler: él",
+ "ZModeler Face": "ZModeler: lap",
+ "ZModeler Point": "ZModeler: pont"
 }

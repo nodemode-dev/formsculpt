@@ -965,5 +965,12 @@
  "Spotlight image": "Immagine Spotlight",
  "Spotlight Image Pixels": "Pixel immagine Spotlight",
  "Spotlight Images": "Immagini Spotlight",
- "Spotlight opacity": "Opacità Spotlight"
+ "Spotlight opacity": "Opacità Spotlight",
+ "Loop position %": "Posizione del loop %",
+ "Poly Pick": "Selezione poligono",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "Azione ZModeler",
+ "ZModeler Edge": "ZModeler: spigolo",
+ "ZModeler Face": "ZModeler: faccia",
+ "ZModeler Point": "ZModeler: punto"
 }

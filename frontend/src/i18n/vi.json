@@ -965,5 +965,12 @@
  "Spotlight image": "Ảnh Spotlight",
  "Spotlight Image Pixels": "Điểm ảnh Spotlight",
  "Spotlight Images": "Danh sách ảnh Spotlight",
- "Spotlight opacity": "Độ mờ đục Spotlight"
+ "Spotlight opacity": "Độ mờ đục Spotlight",
+ "Loop position %": "Vị trí vòng lặp %",
+ "Poly Pick": "Chọn đa giác",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "Thao tác ZModeler",
+ "ZModeler Edge": "ZModeler: cạnh",
+ "ZModeler Face": "ZModeler: mặt",
+ "ZModeler Point": "ZModeler: điểm"
 }

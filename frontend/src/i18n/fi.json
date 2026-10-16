@@ -965,5 +965,12 @@
  "Spotlight image": "Spotlight-kuva",
  "Spotlight Image Pixels": "Spotlight-kuvan pikselit",
  "Spotlight Images": "Spotlight-kuvat",
- "Spotlight opacity": "Spotlight-peittävyys"
+ "Spotlight opacity": "Spotlight-peittävyys",
+ "Loop position %": "Silmukan sijainti %",
+ "Poly Pick": "Monikulmion valinta",
+ "ZModeler": "ZModeler",
+ "ZModeler action": "ZModeler-toiminto",
+ "ZModeler Edge": "ZModeler: reuna",
+ "ZModeler Face": "ZModeler: tahko",
+ "ZModeler Point": "ZModeler: piste"
 }
