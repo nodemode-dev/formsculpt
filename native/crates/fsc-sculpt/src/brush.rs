@@ -18,13 +18,33 @@ pub enum BrushKind {
     SnakeHook,
     Noise,
     Smudge,
+    /// A regularized Kelvinlet grab that drags a wide, smooth, volume-like neighbourhood.
+    Elastic,
+    /// Hard-surface polish: cuts what sticks out of the fitted plane and smooths without crossing creases.
+    Polish,
+    /// Builds a raised layer whose per-vertex offset over the stroke is capped at `height`.
+    Layer,
+    /// Slides vertices along the surface in the stroke direction without changing height.
+    Nudge,
+    /// A single draw dab at the first point of the stroke.
+    Stamp,
+    /// Scales down the active sculpt layer's contribution under the brush.
+    LayerReset,
 }
 
 impl BrushKind {
-    pub const NAMES: [&'static str; 16] = ["draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise", "smudge"];
+    pub const NAMES: [&'static str; 22] = [
+        "draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise", "smudge", "elastic", "polish", "layer", "nudge", "stamp",
+        "layer_reset",
+    ];
 
     pub fn moves_vertices(&self) -> bool {
         !matches!(self, BrushKind::Mask | BrushKind::Paint | BrushKind::Smudge)
+    }
+
+    /// Whether the brush captures the vertices under the first point and drags them by the pointer's offset.
+    pub fn drags(&self) -> bool {
+        matches!(self, BrushKind::Grab | BrushKind::Elastic)
     }
 
     pub fn parse(name: &str) -> Option<BrushKind> {
@@ -45,6 +65,12 @@ impl BrushKind {
             "snake_hook" => BrushKind::SnakeHook,
             "noise" => BrushKind::Noise,
             "smudge" => BrushKind::Smudge,
+            "elastic" => BrushKind::Elastic,
+            "polish" => BrushKind::Polish,
+            "layer" => BrushKind::Layer,
+            "nudge" => BrushKind::Nudge,
+            "stamp" => BrushKind::Stamp,
+            "layer_reset" => BrushKind::LayerReset,
             _ => return None,
         })
     }
@@ -137,6 +163,8 @@ pub struct BrushSettings {
     pub pressure_gamma: f32,
     pub pressure_strength: bool,
     pub pressure_size: bool,
+    /// Layer brush: the cap on each vertex's offset over one stroke, in world units (0 means a tenth of the radius).
+    pub height: f32,
 }
 
 impl Default for BrushSettings {
@@ -162,6 +190,7 @@ impl Default for BrushSettings {
             pressure_gamma: 1.0,
             pressure_strength: true,
             pressure_size: false,
+            height: 0.0,
         }
     }
 }

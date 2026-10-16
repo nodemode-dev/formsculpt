@@ -117,6 +117,7 @@ pub fn stroke_end(s: &mut Session) -> Value {
     let Some((id, stroke)) = s.stroke.take() else { return json!({"ok": true, "result": null}) };
     let kind = stroke.settings.kind;
     let dabs = stroke.dabs;
+    let no_layer = stroke.no_active_layer;
     let Some(object) = s.scene.get_mut(id) else { return json!({"ok": false, "error": {"code": "not_found", "message": "the stroke's object is gone"}}) };
     let result = stroke.finish(object);
     let revision = object.revision;
@@ -125,7 +126,7 @@ pub fn stroke_end(s: &mut Session) -> Value {
     let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), name[1..].replace('_', " "));
     let changed = crate::push_stroke(s, id, label, result);
     crate::sync_instances(s);
-    json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology}})
+    json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology, "no_active_layer": no_layer}})
 }
 
 /// The FSCU vertex update: magic, count, revision, object id, then indices, positions, normals, mask and (when the

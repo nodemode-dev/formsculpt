@@ -68,6 +68,7 @@ fn free(o: &Object, v: u32, hidden: bool) -> f32 {
 struct Grab {
     anchor: Vec3,
     plane_normal: Vec3,
+    kelvin: bool,
     copies: Vec<(Mat3, Captured)>,
 }
 
@@ -101,6 +102,14 @@ pub struct Stroke {
     /// With paint layers: the paint target's values before the stroke, and which target that was.
     layer_before: HashMap<u32, LayerPaint>,
     paint_target: Option<Option<usize>>,
+    /// Layer brush: per vertex the offset accumulated so far this stroke and the direction it rises along.
+    layer_acc: HashMap<u32, (f32, Vec3)>,
+    /// Layer reset: per vertex the active layer's contribution at first touch and the share of it still left.
+    reset_left: HashMap<u32, (Vec3, f32)>,
+    /// Nudge: the surface as it was when the stroke began, which slid vertices are put back onto.
+    nudge_surface: Option<(Mesh, fsc_core::Bvh)>,
+    /// Set when a layer reset ran with no active sculpt layer.
+    pub no_active_layer: bool,
     pub dabs: u32,
 }
 
@@ -131,6 +140,10 @@ impl Stroke {
             tilt: 0.0,
             layer_before: HashMap::new(),
             paint_target: None,
+            layer_acc: HashMap::new(),
+            reset_left: HashMap::new(),
+            nudge_surface: None,
+            no_active_layer: false,
             planes,
             snake_prev: None,
             transforms,
@@ -168,7 +181,7 @@ impl Stroke {
 
     pub fn sample_ray(&mut self, object: &mut Object, origin: Vec3, dir: Vec3, pressure: f32) -> bool {
         let dir = dir.normalize_or(Vec3::NEG_Z);
-        if self.settings.kind == BrushKind::Grab {
+        if self.settings.kind.drags() {
             if let Some(grab) = &self.grab {
                 let denom = dir.dot(grab.plane_normal);
                 if denom.abs() < 1e-6 {
@@ -245,7 +258,10 @@ impl Stroke {
         for c in centers {
             // Spray scatters each dab around the path (in the plane across the surface normal there), turns its
             // alpha at random and gives it a random share of the strength.
-            let c = if self.settings.spray > 0.0 && self.settings.kind != BrushKind::SnakeHook {
+            if self.settings.kind == BrushKind::Stamp && self.dabs > 0 {
+                break;
+            }
+            let c = if self.settings.spray > 0.0 && !matches!(self.settings.kind, BrushKind::SnakeHook | BrushKind::Nudge) {
                 let (a, d, t, k) = (self.random(), self.random(), self.random(), self.random());
                 let n = self.last_normal;
                 let u = n.any_orthonormal_vector();
@@ -267,6 +283,17 @@ impl Stroke {
                 self.snake_prev = Some(c);
                 continue;
             }
+            if self.settings.kind == BrushKind::Nudge {
+                if let Some(prev) = self.snake_prev {
+                    for k in 0..self.transforms.len() {
+                        let m = self.transforms[k];
+                        self.nudge_dab(object, m * ((prev + c) * 0.5), m * (c - prev), pressure.clamp(0.0, 1.0));
+                    }
+                    self.dabs += 1;
+                }
+                self.snake_prev = Some(c);
+                continue;
+            }
             for k in 0..self.transforms.len() {
                 let m = self.transforms[k];
                 self.dab(object, k, m * c, pressure.clamp(0.0, 1.0));
@@ -279,7 +306,7 @@ impl Stroke {
     }
 
     fn refine(&mut self, object: &mut Object, centers: &[Vec3], frac: f32) {
-        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab | BrushKind::Paint | BrushKind::Smudge) {
+        if matches!(self.settings.kind, BrushKind::Mask | BrushKind::Grab | BrushKind::Elastic | BrushKind::Paint | BrushKind::Smudge | BrushKind::LayerReset | BrushKind::Layer) {
             return;
         }
         if self.snapshot.is_none() {
@@ -355,8 +382,41 @@ impl Stroke {
         self.found = found;
     }
 
+    /// Slides the vertices around `center` by `delta` with its component along each vertex normal removed, weighted by
+    /// falloff, strength and the mask, then puts each back onto the surface the stroke started with along its normal,
+    /// so the surface moves along itself and keeps its height.
+    fn nudge_dab(&mut self, object: &mut Object, center: Vec3, delta: Vec3, pressure: f32) {
+        let s = self.settings;
+        let mut found = std::mem::take(&mut self.found);
+        let (surface, tree) = self.nudge_surface.take().unwrap_or_else(|| (object.mesh.clone(), fsc_core::Bvh::build(&object.mesh)));
+        let lift = s.radius * 0.25;
+        object.bvh.vertices_in_sphere(&object.mesh, center, s.radius, &mut found);
+        let hid = object.mesh.has_hidden();
+        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * 2.0;
+        for &v in &found {
+            self.remember(object, v);
+            let p = object.mesh.position(v);
+            let n = Vec3::from_array(object.mesh.normals[v as usize]);
+            let w = (s.falloff.weight(p.distance(center) / s.radius) * amount).min(1.0) * free(object, v, hid);
+            let mut q = p + (delta - n * delta.dot(n)) * w;
+            if w > 0.0 {
+                if let Some(hit) = tree.raycast(&surface, q + n * lift, -n).filter(|h| h.t < lift * 2.0) {
+                    q += n * (hit.point - q).dot(n);
+                }
+            }
+            object.mesh.positions[v as usize] = q.to_array();
+        }
+        self.nudge_surface = Some((surface, tree));
+        self.finish_dab(object, &found);
+        self.found = found;
+    }
+
     fn dab(&mut self, object: &mut Object, copy: usize, center: Vec3, pressure: f32) {
         let s = self.settings;
+        if s.kind == BrushKind::LayerReset && object.layers.active.is_none_or(|a| a >= object.layers.list.len()) {
+            self.no_active_layer = true;
+            return;
+        }
         let r = if s.pressure_size { s.radius * pressure.max(0.1) } else { s.radius };
         let mut found = std::mem::take(&mut self.found);
         object.bvh.vertices_in_sphere(&object.mesh, center, r, &mut found);
@@ -474,6 +534,57 @@ impl Stroke {
                 let p = object.mesh.position(v);
                 object.mesh.positions[v as usize] = p.lerp(targets[k], w * 0.6).to_array();
             }
+        } else if s.kind == BrushKind::LayerReset {
+            // The layer's delta only changes when the stroke ends, so each vertex keeps its contribution from first
+            // touch and the share still left; every dab removes a falloff-weighted part of what is left.
+            let at = object.layers.active.expect("checked");
+            let layer_strength = object.layers.list[at].strength;
+            for (k, &v) in found.iter().enumerate() {
+                let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
+                if w <= 0.0 {
+                    continue;
+                }
+                let (contribution, left) = *self.reset_left.entry(v).or_insert_with(|| {
+                    let d = object.layers.list[at].delta.get(v as usize).copied().unwrap_or([0.0; 3]);
+                    (Vec3::from_array(d) * layer_strength, 1.0)
+                });
+                let now = left * (1.0 - w);
+                self.reset_left.insert(v, (contribution, now));
+                let p = object.mesh.position(v);
+                object.mesh.positions[v as usize] = (p - contribution * (left - now)).to_array();
+            }
+        } else if s.kind == BrushKind::Polish {
+            // Cuts what stands out of the dab's fitted plane, then pulls each vertex toward the average of the
+            // neighbours whose normals lie within 40 degrees of its own, so creases are neither cut nor rounded.
+            let cos_edge = 40f32.to_radians().cos();
+            let targets: Vec<(Vec3, bool)> = found
+                .iter()
+                .map(|&v| {
+                    let p = object.mesh.position(v);
+                    let vn = Vec3::from_array(object.mesh.normals[v as usize]);
+                    let (mut sum, mut total, mut crease) = (Vec3::ZERO, 0.0, false);
+                    for &u in object.topology.neighbors_of(v) {
+                        let k = ((vn.dot(Vec3::from_array(object.mesh.normals[u as usize])) - cos_edge) / (1.0 - cos_edge)).clamp(0.0, 1.0);
+                        crease |= k == 0.0;
+                        sum += object.mesh.position(u) * k;
+                        total += k;
+                    }
+                    (if total > 1e-6 { sum / total } else { p }, crease)
+                })
+                .collect();
+            for (k, &v) in found.iter().enumerate() {
+                let w = weights[k] * amount * free(object, v, hid);
+                if w <= 0.0 {
+                    continue;
+                }
+                let p = object.mesh.position(v);
+                let vn = Vec3::from_array(object.mesh.normals[v as usize]);
+                let d = (p - area_c).dot(area_n);
+                let similar = if targets[k].1 { 0.0 } else { ((vn.dot(area_n) - cos_edge) / 0.15).clamp(0.0, 1.0) };
+                let cut = if d * sign > 0.0 { area_n * (d * (w * 0.5).min(1.0) * similar) } else { Vec3::ZERO };
+                let smooth = if targets[k].1 { Vec3::ZERO } else { (targets[k].0 - p) * (w * 0.3).min(1.0) };
+                object.mesh.positions[v as usize] = (p - cut + smooth).to_array();
+            }
         } else {
             let (plane_c, plane_n) = *self.planes[copy].get_or_insert((area_c, area_n));
             let noise_scale = if s.noise_scale > 0.0 { s.noise_scale } else { r * 0.2 };
@@ -485,7 +596,14 @@ impl Stroke {
                 let p = object.mesh.position(v);
                 let vn = Vec3::from_array(object.mesh.normals[v as usize]);
                 let moved = match s.kind {
-                    BrushKind::Draw => p + area_n * (w * r * 0.06 * sign),
+                    BrushKind::Draw | BrushKind::Stamp => p + area_n * (w * r * 0.06 * sign),
+                    BrushKind::Layer => {
+                        let cap = if s.height > 0.0 { s.height } else { s.radius * 0.1 };
+                        let entry = self.layer_acc.entry(v).or_insert((0.0, vn));
+                        let step = ((entry.0 + w * r * 0.06).min(cap) - entry.0).max(0.0);
+                        entry.0 += step;
+                        p + entry.1 * (step * sign)
+                    }
                     BrushKind::Inflate => p + vn * (w * r * 0.06 * sign),
                     BrushKind::Clay => {
                         let plane = area_c + area_n * (r * 0.08 * sign);
@@ -518,7 +636,7 @@ impl Stroke {
                         }
                     }
                     BrushKind::Noise => p + vn * (fbm(p / noise_scale) * w * r * 0.05 * sign),
-                    BrushKind::Smooth | BrushKind::Relax | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint | BrushKind::SnakeHook | BrushKind::Smudge => p,
+                    BrushKind::Smooth | BrushKind::Relax | BrushKind::Grab | BrushKind::Mask | BrushKind::Paint | BrushKind::SnakeHook | BrushKind::Smudge | BrushKind::Elastic | BrushKind::Polish | BrushKind::Nudge | BrushKind::LayerReset => p,
                 };
                 object.mesh.positions[v as usize] = moved.to_array();
             }
@@ -541,16 +659,18 @@ impl Stroke {
     fn begin_grab(&mut self, object: &mut Object, anchor: Vec3, plane_normal: Vec3) {
         let s = self.settings;
         let hid = object.mesh.has_hidden();
+        let kelvin = s.kind == BrushKind::Elastic;
+        let reach = if kelvin { s.radius * KELVIN_REACH } else { s.radius };
         let mut copies = Vec::new();
         for m in self.transforms.clone() {
             let c = m * anchor;
             let mut found = Vec::new();
-            object.bvh.vertices_in_sphere(&object.mesh, c, s.radius, &mut found);
+            object.bvh.vertices_in_sphere(&object.mesh, c, reach, &mut found);
             let list = found
                 .iter()
                 .map(|&v| {
                     let p = object.mesh.position(v);
-                    let w = s.falloff.weight(p.distance(c) / s.radius) * free(object, v, hid);
+                    let w = if kelvin { 1.0 } else { s.falloff.weight(p.distance(c) / s.radius) } * free(object, v, hid);
                     (v, w, p)
                 })
                 .collect();
@@ -559,7 +679,7 @@ impl Stroke {
             }
             copies.push((m, list));
         }
-        self.grab = Some(Grab { anchor, plane_normal, copies });
+        self.grab = Some(Grab { anchor, plane_normal, kelvin, copies });
     }
 
     fn apply_grab(&mut self, object: &mut Object, delta: Vec3, pressure: f32) {
@@ -568,8 +688,10 @@ impl Stroke {
         let amount = self.settings.strength.max(0.05) * pressure.max(0.05) * 2.0;
         for (m, list) in &grab.copies {
             let d = *m * delta;
+            let centre = *m * grab.anchor;
             for &(v, w, p0) in list {
-                object.mesh.positions[v as usize] = (p0 + d * (w * amount).min(1.0)).to_array();
+                let moved = if grab.kelvin { kelvinlet(p0 - centre, d * (w * amount).min(1.0), self.settings.radius) } else { d * (w * amount).min(1.0) };
+                object.mesh.positions[v as usize] = (p0 + moved).to_array();
                 touched.push(v);
             }
         }
@@ -644,6 +766,19 @@ impl Stroke {
         }
         edit
     }
+}
+
+const KELVIN_REACH: f32 = 3.0;
+
+/// The regularized grab Kelvinlet (de Goes and James 2017, Poisson ratio 0.4, scale `eps`) of a push `force` at offset
+/// `r` from its centre, normalised so the centre moves by the full force, and eased to zero between 2 and 3 scales.
+fn kelvinlet(r: Vec3, force: Vec3, eps: f32) -> Vec3 {
+    let (a, b) = (1.0, 1.0 / (4.0 * (1.0 - 0.4)));
+    let ra = (r.length_squared() + eps * eps).sqrt();
+    let u = force * ((a - b) / ra + a * eps * eps / (2.0 * ra * ra * ra)) + r * (r.dot(force) * b / (ra * ra * ra));
+    let centre = (1.5 * a - b) / eps;
+    let t = (r.length() / eps - (KELVIN_REACH - 1.0)).clamp(0.0, 1.0);
+    u / centre * (1.0 - t * t * (3.0 - 2.0 * t))
 }
 
 fn hash3(x: i32, y: i32, z: i32) -> f32 {

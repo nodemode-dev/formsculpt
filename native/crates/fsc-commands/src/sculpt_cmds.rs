@@ -105,6 +105,7 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         pressure_gamma: f(args, "pressure_gamma", 1.0, 0.2, 5.0)?,
         pressure_strength: args.get("pressure_strength").and_then(Value::as_bool).unwrap_or(true),
         pressure_size: args.get("pressure_size").and_then(Value::as_bool).unwrap_or(false),
+        height: f(args, "height", 0.0, 0.0, 1e4)?,
     })
 }
 
@@ -452,7 +453,8 @@ pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, Comman
 
 pub(crate) fn brush_props() -> Value {
     json!({
-        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale."},
+        "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none."},
+        "height": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0."},
         "noise_scale": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Noise brush: feature size in world units; a fifth of the radius when 0."},
         "alpha": {"type": "string", "description": "A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp."},
         "alpha_angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "Turns the alpha, in degrees."},
@@ -520,7 +522,7 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
     }
     let mut stroke = Stroke::new(settings);
     stroke.set_alpha(alpha);
-    if settings.kind == BrushKind::Grab {
+    if settings.kind.drags() {
         let (first, _) = parsed[0];
         let (last, pressure) = *parsed.last().expect("non-empty");
         stroke.grab_between(object, first, last, pressure);
@@ -530,11 +532,16 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         }
     }
     let dabs = stroke.dabs;
+    let no_layer = stroke.no_active_layer;
     let result = stroke.finish(object);
     let after = summary(object);
     let label = format!("{} Stroke", capital(BrushKind::NAMES[settings.kind as usize]));
     let moved = push_stroke(s, id, label, result);
-    Ok(json!({"object": after, "dabs": dabs, "vertices_changed": moved}))
+    let mut reply = json!({"object": after, "dabs": dabs, "vertices_changed": moved});
+    if no_layer {
+        reply["no_active_layer"] = json!(true);
+    }
+    Ok(reply)
 }
 
 pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeEdit) -> Value {
