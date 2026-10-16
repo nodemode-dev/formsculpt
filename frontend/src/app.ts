@@ -138,6 +138,14 @@ interface Shell {
   curveInterp: HTMLSelectElement;
   curveClosed: HTMLInputElement;
   curveRound: HTMLInputElement;
+  radiusMode: HTMLSelectElement;
+  radiusEnd: HTMLInputElement;
+  pointRadius: HTMLInputElement;
+  pointTwist: HTMLInputElement;
+  curveOffset: HTMLInputElement;
+  curveGrid: HTMLInputElement;
+  curveChain: HTMLInputElement;
+  setPick: HTMLSelectElement;
   tubeProfile: HTMLSelectElement;
   tubeCap: HTMLSelectElement;
   tubeHole: HTMLInputElement;
@@ -643,7 +651,14 @@ function buildShell(root: HTMLElement): Shell {
   const tubeHole = input('number', { min: '0', max: '1', step: '0.005', value: '0', 'aria-label': 'Pipe wall' });
   const tubeSpiral = input('number', { min: '0', max: '64', step: '0.5', value: '0', 'aria-label': 'Spiral turns' });
   const pathFields = el('div', 'fields after-fields');
-  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Tube profile', tubeProfile), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
+  const radiusMode = choices('Radius along path', [['uniform', 'Uniform'], ['start_end', 'Start to end'], ['per_point', 'Per point']]);
+  const radiusEnd = input('range', { min: '5', max: '300', value: '100', 'aria-label': 'End radius %' });
+  const pointRadius = input('range', { min: '5', max: '400', value: '100', 'aria-label': 'Point radius %' });
+  const pointTwist = input('number', { min: '-720', max: '720', step: '5', value: '0', 'aria-label': 'Point twist' });
+  const curveOffset = input('number', { min: '-1', max: '1', step: '0.005', value: '0', 'aria-label': 'Surface offset' });
+  const curveGrid = input('number', { min: '0', max: '10', step: '0.05', value: '0', 'aria-label': 'Grid snap' });
+  const curveChain = input('checkbox', { 'aria-label': 'Drag as chain' });
+  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Surface offset', curveOffset), field('Grid snap', curveGrid), field('Drag as chain', curveChain), field('Tube profile', tubeProfile), field('Radius along path', radiusMode), field('End radius %', radiusEnd), field('Point radius %', pointRadius), field('Point twist', pointTwist), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
   panel.append(pathFields);
   const pathGrid = el('div', 'add-grid two after-fields');
   const pathButtons = (
@@ -871,6 +886,24 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(layerGrid);
 
+  panel.append(el('h2', 'gap', 'Selection Sets'));
+  const setPick = el('select');
+  setPick.setAttribute('aria-label', 'Selection set');
+  const noSet = el('option', '', 'None saved');
+  noSet.value = '';
+  setPick.append(noSet);
+  const setFields = el('div', 'fields');
+  setFields.append(field('Set', setPick));
+  panel.append(setFields);
+  const setGrid = el('div', 'add-grid three after-fields');
+  for (const [cmd, label] of [['selection.save', 'Save'], ['selection.restore', 'Restore'], ['selection.delete', 'Delete']]) {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.cmd = cmd;
+    setGrid.append(b);
+  }
+  panel.append(setGrid);
+
   panel.append(el('h2', 'gap', 'View'));
   const fov = input('range', { min: '15', max: '100', value: '40', 'aria-label': 'Field of view' });
   const showGroups = input('checkbox', { 'aria-label': 'Show face groups' });
@@ -1075,7 +1108,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1328,6 +1361,8 @@ class SceneView {
       }),
     );
     shell.curveRound.addEventListener('input', () => this.setCorners('round'));
+    shell.pointRadius.addEventListener('change', () => this.setPointShape());
+    shell.pointTwist.addEventListener('change', () => this.setPointShape());
     shell.curveInterp.addEventListener('change', () => void this.resample());
     shell.curveClosed.addEventListener('change', () => void this.resample());
     shell.falloff.addEventListener('change', () => {
@@ -1467,7 +1502,7 @@ class SceneView {
   /** The brush a curve stroke applies: the last sculpting or painting brush chosen before the Curve tool. */
   private lastBrush = 'draw';
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
-  private curve: { handles: Vec3[]; wpp: number; sharp: boolean[]; round: number[]; samples: Vec3[] | null } | null = null;
+  private curve: { handles: Vec3[]; wpp: number; sharp: boolean[]; round: number[]; radius: number[]; twist: number[]; samples: Vec3[] | null } | null = null;
   /** The handle last clicked (Corner round sets its fillet), and whether Alt was held when a handle was pressed. */
   private curvePick: number | null = null;
   private curveAlt = false;
@@ -1705,7 +1740,8 @@ class SceneView {
   private curvePoints(): Record<string, unknown>[] {
     const c = this.curve;
     if (!c) return [];
-    return c.handles.map((p, i) => ({ p, sharp: c.sharp[i], round: c.sharp[i] ? c.round[i] : 0 }));
+    const base = Math.max(0.005, Math.min(1, Number(this.shell.tubeRadius.value) || 0.05));
+    return c.handles.map((p, i) => ({ p, sharp: c.sharp[i], round: c.sharp[i] ? c.round[i] : 0, radius: base * c.radius[i], twist: c.twist[i] }));
   }
 
   private curveOptions(): { interp: string; closed: boolean } {
@@ -1780,8 +1816,11 @@ class SceneView {
 
   private tubeArgs(): Record<string, unknown> {
     const s = this.shell;
+    const radius = Math.max(0.005, Math.min(1, Number(s.tubeRadius.value) || 0.05));
     return {
-      radius: Math.max(0.005, Math.min(1, Number(s.tubeRadius.value) || 0.05)),
+      radius,
+      radius_mode: s.radiusMode.value,
+      radius_end: radius * Math.max(0.05, Number(s.radiusEnd.value) / 100),
       profile: s.tubeProfile.value,
       cap: s.tubeCap.value,
       hole: Math.max(0, Number(s.tubeHole.value) || 0),
@@ -2089,22 +2128,26 @@ class SceneView {
     const pick = async (q: [number, number]): Promise<Vec3 | null> => {
       const ray = this.viewport.rayAtClient(rect.left + q[0], rect.top + q[1]);
       if (!ray) return null;
-      const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
-      return hit.ok && hit.result.hit && hit.result.id === id && hit.result.point ? hit.result.point : null;
+      const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+      if (!(hit.ok && hit.result.hit && hit.result.id === id && hit.result.point)) return null;
+      return this.snapHandle(hit.result.point, hit.result.normal);
     };
     if (edit !== undefined && this.curve) {
       const q = pts[pts.length - 1];
       const at = this.curveScreen()[edit];
       if (!q || (at && Math.hypot(q[0] - at[0], q[1] - at[1]) < 3)) {
         this.curvePick = edit;
+        this.shell.pointRadius.value = String(Math.round(this.curve.radius[edit] * 100));
+        this.shell.pointTwist.value = String(this.curve.twist[edit]);
         if (this.curveAlt) this.setCorners('toggle');
         else this.drawCurve();
         this.note(`Handle ${edit + 1}: ${this.curve.sharp[edit] ? 'a corner' : 'smooth'}; Alt-click toggles, Corner round rounds it`);
         return;
       }
       const point = await pick(q);
-      if (point) this.curve.handles[edit] = point;
-      else this.note('A handle must stay on the active object');
+      if (!point) this.note('A handle must stay on the active object');
+      else if (this.shell.curveChain.checked) await this.chainDrag(edit, point);
+      else this.curve.handles[edit] = point;
       this.drawCurve();
       void this.resample();
       return;
@@ -2135,11 +2178,48 @@ class SceneView {
       this.note('Draw the curve over the active object');
       return;
     }
-    this.curve = { handles, wpp, sharp: handles.map(() => false), round: handles.map(() => 0), samples: null };
+    this.curve = { handles, wpp, sharp: handles.map(() => false), round: handles.map(() => 0), radius: handles.map(() => 1), twist: handles.map(() => 0), samples: null };
     this.curvePick = null;
     this.drawCurve();
     void this.resample();
     this.note(`Curve ready: ${handles.length} handles; drag one to bend it, Alt-click one for a corner, then Apply curve or Tube from curve`);
+  }
+
+  /** A picked surface point lifted along its normal by Surface offset, then rounded to Grid snap's step when it is above 0. */
+  private snapHandle(point: Vec3, normal?: Vec3): Vec3 {
+    const offset = Number(this.shell.curveOffset.value) || 0;
+    const step = Math.max(0, Number(this.shell.curveGrid.value) || 0);
+    let p: Vec3 = normal && offset ? [point[0] + normal[0] * offset, point[1] + normal[1] * offset, point[2] + normal[2] * offset] : point;
+    if (step > 0) p = [Math.round(p[0] / step) * step, Math.round(p[1] / step) * step, Math.round(p[2] / step) * step];
+    return p;
+  }
+
+  /** Drag as chain: the handles keep their spacing and follow the dragged one (the first handle stays put), solved by the engine's curve_ik. */
+  private async chainDrag(index: number, target: Vec3): Promise<void> {
+    const c = this.curve;
+    if (!c) return;
+    const reply = await dispatch<{ points: { p: Vec3 }[]; reached: boolean }>('curve_ik', { points: this.curvePoints(), index, target, pin_start: index !== 0 });
+    if (this.curve !== c) return;
+    if (!reply.ok) {
+      this.note(reply.error.message);
+      return;
+    }
+    reply.result.points.forEach((pt, i) => (c.handles[i] = pt.p));
+    if (!reply.result.reached) this.note('The chain is too short to reach there; it stretched as far as it could');
+  }
+
+  /** Point radius % and Point twist write to the chosen handle. */
+  private setPointShape(): void {
+    const c = this.curve;
+    const pick = this.curvePick;
+    if (!c || pick === null) {
+      this.note('Click a curve handle first');
+      return;
+    }
+    c.radius[pick] = Math.max(0.05, Number(this.shell.pointRadius.value) / 100);
+    c.twist[pick] = Number(this.shell.pointTwist.value) || 0;
+    this.shell.radiusMode.value = 'per_point';
+    this.note(`Handle ${pick + 1}: radius ${Math.round(c.radius[pick] * 100)}%, twist ${c.twist[pick]} degrees; Radius along path is Per point`);
   }
 
   /** Runs the last brush along the waiting curve as one stroke (the curve stays, so it can be applied again). */
@@ -2525,7 +2605,8 @@ class SceneView {
       this.note(t('This object has no selection sets yet'));
       return;
     }
-    let suggest = names[names.length - 1] ?? '';
+    const chosen = this.shell.setPick.value;
+    let suggest = action !== 'save' && names.includes(chosen) ? chosen : names[names.length - 1] ?? '';
     if (action === 'save') for (let n = names.length + 1; !suggest || names.includes(suggest); n++) suggest = `Set ${n}`;
     const title = action === 'save' ? t('Save Selection Set') : action === 'restore' ? t('Restore Selection Set') : t('Delete Selection Set');
     const name = await this.prompt.ask(title, suggest);
@@ -2845,6 +2926,29 @@ class SceneView {
     void this.drawUv(false);
     const history = await dispatch<{ steps: string[]; done: number }>('get_history');
     if (history.ok) this.patchHistory(history.result.steps, history.result.done);
+    await this.patchSets();
+  }
+
+  /** The Selection Sets list for the active object; options are reused and only their text changes. */
+  private async patchSets(): Promise<void> {
+    const pick = this.shell.setPick;
+    const id = this.scene.active;
+    const reply = id === null ? null : await dispatch<{ sets: { name: string }[] }>('selection_set_list', { id });
+    const names = reply?.ok ? reply.result.sets.map((x) => x.name) : [];
+    const keep = names.includes(pick.value) ? pick.value : names[names.length - 1] ?? '';
+    const rows = names.length ? names : [''];
+    while (pick.options.length > rows.length) pick.lastElementChild?.remove();
+    rows.forEach((name, i) => {
+      let o = pick.options[i];
+      if (!o) {
+        o = el('option', '', '');
+        pick.append(o);
+      }
+      if (o.value !== name) o.value = name;
+      setText(o, name || t('None saved'));
+    });
+    if (pick.value !== keep) pick.value = keep;
+    pick.disabled = !names.length;
   }
 
   /** One row per state: "Start", then each step; rows are reused so the list never rebuilds. */

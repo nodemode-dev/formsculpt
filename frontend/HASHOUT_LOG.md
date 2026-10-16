@@ -429,3 +429,9 @@ Replaces the flat clear colour, the 41-line GL_LINES grid that ran aliased to th
 - kind: rationale
 - logged: v0.33.0 · 2026-10-16
 Mask > Selection Sets saves, restores and deletes by name through the PromptDialog: saving offers the next free "Set n", restoring and deleting offer the newest set and refuse a name the object does not have. Edit > Channels copies, pastes and clears the mask, groups or paint through the engine's one-channel clipboard, so they go from one object to another with matching topology. The labels sit in a [id, label, ...] table so setup/i18n.py extracts them.
+
+### Curves round two in the window · per-point shape, snapping, chain drag; the Selection Sets list
+- refers-to: app.ts :: curvePoints, tubeArgs, snapHandle, chainDrag, setPointShape, curveEnd, patchSets
+- kind: rationale
+- logged: v0.34.0 · 2026-10-16
+Each handle carries a radius factor and a twist; curvePoints sends radius as Tube radius times the factor, so changing Tube radius rescales every handle together. Radius along path maps straight onto curve_tube's radius_mode (uniform, start_end with End radius % of Tube radius, per_point); setting a handle's Point radius % or Point twist switches the mode to Per point so the change shows. Picked handle points pass through snapHandle: lifted along the surface normal by Surface offset, then rounded per axis to Grid snap's step when it is above 0. Drag as chain sends the handles to curve_ik with the first handle pinned (or nothing pinned when the first is dragged), so the spacing holds and the rest follow; chained handles leave the surface, which suits tubes more than surface strokes. The Selection Sets list reuses its option elements and is refreshed after every scene refresh with one selection_set_list call; Restore and Delete use the chosen set.
