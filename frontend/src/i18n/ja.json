@@ -988,5 +988,16 @@
  "Get Creases": "クリースを取得",
  "Slide amount %": "スライド量 %",
  "Slide edge loop": "エッジループをスライド",
- "Slide point": "点をスライド"
+ "Slide point": "点をスライド",
+ "Disc": "ディスク",
+ "Eye loop": "目のループ",
+ "Get Wireframe": "ワイヤーフレームを取得",
+ "Grid": "グリッド",
+ "Mouth loop": "口のループ",
+ "Patch columns": "パッチの列",
+ "Patch rows": "パッチの行",
+ "Patch size %": "パッチサイズ %",
+ "Retopo patch": "リトポパッチ",
+ "Retopology Patch": "リトポロジーパッチ",
+ "Strip": "ストリップ"
 }

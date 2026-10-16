@@ -988,5 +988,16 @@
  "Get Creases": "Éles élek lekérése",
  "Slide amount %": "Csúsztatás mértéke %",
  "Slide edge loop": "Élhurok csúsztatása",
- "Slide point": "Pont csúsztatása"
+ "Slide point": "Pont csúsztatása",
+ "Disc": "Korong",
+ "Eye loop": "Szemhurok",
+ "Get Wireframe": "Drótváz lekérése",
+ "Grid": "Rács",
+ "Mouth loop": "Szájhurok",
+ "Patch columns": "Folt oszlopai",
+ "Patch rows": "Folt sorai",
+ "Patch size %": "Folt mérete %",
+ "Retopo patch": "Retopo-folt",
+ "Retopology Patch": "Retopológiai folt",
+ "Strip": "Sáv"
 }

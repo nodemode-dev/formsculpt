@@ -988,5 +988,16 @@
  "Get Creases": "Ambil lipatan",
  "Slide amount %": "Jumlah geser %",
  "Slide edge loop": "Geser loop tepi",
- "Slide point": "Geser titik"
+ "Slide point": "Geser titik",
+ "Disc": "Cakram",
+ "Eye loop": "Loop mata",
+ "Get Wireframe": "Ambil kerangka kawat",
+ "Grid": "Kisi",
+ "Mouth loop": "Loop mulut",
+ "Patch columns": "Kolom patch",
+ "Patch rows": "Baris patch",
+ "Patch size %": "Ukuran patch %",
+ "Retopo patch": "Patch retopo",
+ "Retopology Patch": "Patch retopologi",
+ "Strip": "Strip"
 }

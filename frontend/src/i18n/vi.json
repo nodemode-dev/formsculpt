@@ -988,5 +988,16 @@
  "Get Creases": "Lấy nếp gấp",
  "Slide amount %": "Mức trượt %",
  "Slide edge loop": "Trượt vòng cạnh",
- "Slide point": "Trượt điểm"
+ "Slide point": "Trượt điểm",
+ "Disc": "Đĩa",
+ "Eye loop": "Vòng mắt",
+ "Get Wireframe": "Lấy khung dây",
+ "Grid": "Lưới",
+ "Mouth loop": "Vòng miệng",
+ "Patch columns": "Số cột mảnh",
+ "Patch rows": "Số hàng mảnh",
+ "Patch size %": "Kích thước mảnh %",
+ "Retopo patch": "Mảnh retopo",
+ "Retopology Patch": "Mảnh retopology",
+ "Strip": "Dải"
 }

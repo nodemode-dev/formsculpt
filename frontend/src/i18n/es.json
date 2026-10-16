@@ -988,5 +988,16 @@
  "Get Creases": "Obtener pliegues",
  "Slide amount %": "Cantidad de deslizamiento %",
  "Slide edge loop": "Deslizar bucle de aristas",
- "Slide point": "Deslizar punto"
+ "Slide point": "Deslizar punto",
+ "Disc": "Disco",
+ "Eye loop": "Bucle de ojo",
+ "Get Wireframe": "Obtener malla de alambre",
+ "Grid": "Cuadrícula",
+ "Mouth loop": "Bucle de boca",
+ "Patch columns": "Columnas del parche",
+ "Patch rows": "Filas del parche",
+ "Patch size %": "Tamaño del parche %",
+ "Retopo patch": "Parche de retopo",
+ "Retopology Patch": "Parche de retopología",
+ "Strip": "Tira"
 }

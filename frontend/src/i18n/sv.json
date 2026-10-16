@@ -988,5 +988,16 @@
  "Get Creases": "Hämta veck",
  "Slide amount %": "Glidmängd %",
  "Slide edge loop": "Skjut kantslinga",
- "Slide point": "Skjut punkt"
+ "Slide point": "Skjut punkt",
+ "Disc": "Skiva",
+ "Eye loop": "Ögonslinga",
+ "Get Wireframe": "Hämta trådmodell",
+ "Grid": "Rutnät",
+ "Mouth loop": "Munslinga",
+ "Patch columns": "Lappkolumner",
+ "Patch rows": "Lapprader",
+ "Patch size %": "Lappstorlek %",
+ "Retopo patch": "Retopo-lapp",
+ "Retopology Patch": "Retopologilapp",
+ "Strip": "Remsa"
 }

@@ -988,5 +988,16 @@
  "Get Creases": "Obter vincos",
  "Slide amount %": "Deslizamento %",
  "Slide edge loop": "Deslizar loop de arestas",
- "Slide point": "Deslizar ponto"
+ "Slide point": "Deslizar ponto",
+ "Disc": "Disco",
+ "Eye loop": "Loop do olho",
+ "Get Wireframe": "Obter wireframe",
+ "Grid": "Grade",
+ "Mouth loop": "Loop da boca",
+ "Patch columns": "Colunas do patch",
+ "Patch rows": "Linhas do patch",
+ "Patch size %": "Tamanho do patch %",
+ "Retopo patch": "Patch de retopo",
+ "Retopology Patch": "Patch de retopologia",
+ "Strip": "Faixa"
 }

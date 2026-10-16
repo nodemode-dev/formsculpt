@@ -988,5 +988,16 @@
  "Get Creases": "Получить складки",
  "Slide amount %": "Величина сдвига %",
  "Slide edge loop": "Сдвинуть петлю рёбер",
- "Slide point": "Сдвинуть точку"
+ "Slide point": "Сдвинуть точку",
+ "Disc": "Диск",
+ "Eye loop": "Петля глаза",
+ "Get Wireframe": "Получить каркас",
+ "Grid": "Сетка",
+ "Mouth loop": "Петля рта",
+ "Patch columns": "Столбцы заплатки",
+ "Patch rows": "Ряды заплатки",
+ "Patch size %": "Размер заплатки %",
+ "Retopo patch": "Заплатка ретопо",
+ "Retopology Patch": "Заплатка ретопологии",
+ "Strip": "Полоса"
 }

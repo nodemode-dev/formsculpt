@@ -988,5 +988,16 @@
  "Get Creases": "ดึงรอยพับ",
  "Slide amount %": "ระยะเลื่อน %",
  "Slide edge loop": "เลื่อนลูปขอบ",
- "Slide point": "เลื่อนจุด"
+ "Slide point": "เลื่อนจุด",
+ "Disc": "จาน",
+ "Eye loop": "ลูปรอบตา",
+ "Get Wireframe": "ดึงโครงลวด",
+ "Grid": "ตาราง",
+ "Mouth loop": "ลูปรอบปาก",
+ "Patch columns": "คอลัมน์ของแพตช์",
+ "Patch rows": "แถวของแพตช์",
+ "Patch size %": "ขนาดแพตช์ %",
+ "Retopo patch": "แพตช์รีโทโป",
+ "Retopology Patch": "แพตช์รีโทโพโลยี",
+ "Strip": "แถบ"
 }

@@ -988,5 +988,16 @@
  "Get Creases": "Hent folder",
  "Slide amount %": "Glidemængde %",
  "Slide edge loop": "Skub kantløkke",
- "Slide point": "Skub punkt"
+ "Slide point": "Skub punkt",
+ "Disc": "Skive",
+ "Eye loop": "Øjenløkke",
+ "Get Wireframe": "Hent trådmodel",
+ "Grid": "Gitter",
+ "Mouth loop": "Mundløkke",
+ "Patch columns": "Lapkolonner",
+ "Patch rows": "Laprækker",
+ "Patch size %": "Lapstørrelse %",
+ "Retopo patch": "Retopo-lap",
+ "Retopology Patch": "Retopologi-lap",
+ "Strip": "Strimmel"
 }

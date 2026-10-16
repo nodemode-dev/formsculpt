@@ -988,5 +988,16 @@
  "Get Creases": "Kırışıkları al",
  "Slide amount %": "Kaydırma miktarı %",
  "Slide edge loop": "Kenar döngüsünü kaydır",
- "Slide point": "Noktayı kaydır"
+ "Slide point": "Noktayı kaydır",
+ "Disc": "Disk",
+ "Eye loop": "Göz döngüsü",
+ "Get Wireframe": "Tel kafesi al",
+ "Grid": "Izgara",
+ "Mouth loop": "Ağız döngüsü",
+ "Patch columns": "Yama sütunları",
+ "Patch rows": "Yama satırları",
+ "Patch size %": "Yama boyutu %",
+ "Retopo patch": "Retopo yaması",
+ "Retopology Patch": "Retopoloji yaması",
+ "Strip": "Şerit"
 }

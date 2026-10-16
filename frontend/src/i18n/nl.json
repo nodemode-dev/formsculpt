@@ -988,5 +988,16 @@
  "Get Creases": "Vouwen ophalen",
  "Slide amount %": "Schuifafstand %",
  "Slide edge loop": "Randlus verschuiven",
- "Slide point": "Punt verschuiven"
+ "Slide point": "Punt verschuiven",
+ "Disc": "Schijf",
+ "Eye loop": "Ooglus",
+ "Get Wireframe": "Draadmodel ophalen",
+ "Grid": "Raster",
+ "Mouth loop": "Mondlus",
+ "Patch columns": "Patchkolommen",
+ "Patch rows": "Patchrijen",
+ "Patch size %": "Patchgrootte %",
+ "Retopo patch": "Retopo-patch",
+ "Retopology Patch": "Retopologiepatch",
+ "Strip": "Strook"
 }

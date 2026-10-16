@@ -988,5 +988,16 @@
  "Get Creases": "Ottieni pieghe",
  "Slide amount %": "Scorrimento %",
  "Slide edge loop": "Scorri loop di spigoli",
- "Slide point": "Scorri punto"
+ "Slide point": "Scorri punto",
+ "Disc": "Disco",
+ "Eye loop": "Loop dell'occhio",
+ "Get Wireframe": "Ottieni wireframe",
+ "Grid": "Griglia",
+ "Mouth loop": "Loop della bocca",
+ "Patch columns": "Colonne della patch",
+ "Patch rows": "Righe della patch",
+ "Patch size %": "Dimensione della patch %",
+ "Retopo patch": "Patch di retopo",
+ "Retopology Patch": "Patch di retopologia",
+ "Strip": "Striscia"
 }

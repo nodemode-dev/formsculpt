@@ -988,5 +988,16 @@
  "Get Creases": "Hae taitteet",
  "Slide amount %": "Liu'utuksen määrä %",
  "Slide edge loop": "Liu'uta reunasilmukkaa",
- "Slide point": "Liu'uta pistettä"
+ "Slide point": "Liu'uta pistettä",
+ "Disc": "Kiekko",
+ "Eye loop": "Silmäsilmukka",
+ "Get Wireframe": "Hae rautalankamalli",
+ "Grid": "Ruudukko",
+ "Mouth loop": "Suusilmukka",
+ "Patch columns": "Paikan sarakkeet",
+ "Patch rows": "Paikan rivit",
+ "Patch size %": "Paikan koko %",
+ "Retopo patch": "Retopo-paikka",
+ "Retopology Patch": "Retopologiapaikka",
+ "Strip": "Kaista"
 }

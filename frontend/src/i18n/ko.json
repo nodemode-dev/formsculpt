@@ -988,5 +988,16 @@
  "Get Creases": "크리스 가져오기",
  "Slide amount %": "슬라이드 양 %",
  "Slide edge loop": "엣지 루프 슬라이드",
- "Slide point": "점 슬라이드"
+ "Slide point": "점 슬라이드",
+ "Disc": "디스크",
+ "Eye loop": "눈 루프",
+ "Get Wireframe": "와이어프레임 가져오기",
+ "Grid": "격자",
+ "Mouth loop": "입 루프",
+ "Patch columns": "패치 열",
+ "Patch rows": "패치 행",
+ "Patch size %": "패치 크기 %",
+ "Retopo patch": "리토폴로지 패치",
+ "Retopology Patch": "리토폴로지 패치 추가",
+ "Strip": "띠"
 }

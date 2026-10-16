@@ -988,5 +988,16 @@
  "Get Creases": "Отримати складки",
  "Slide amount %": "Величина зсуву %",
  "Slide edge loop": "Зсунути петлю ребер",
- "Slide point": "Зсунути точку"
+ "Slide point": "Зсунути точку",
+ "Disc": "Диск",
+ "Eye loop": "Петля ока",
+ "Get Wireframe": "Отримати каркас",
+ "Grid": "Сітка",
+ "Mouth loop": "Петля рота",
+ "Patch columns": "Стовпці латки",
+ "Patch rows": "Ряди латки",
+ "Patch size %": "Розмір латки %",
+ "Retopo patch": "Латка ретопо",
+ "Retopology Patch": "Латка ретопології",
+ "Strip": "Смуга"
 }

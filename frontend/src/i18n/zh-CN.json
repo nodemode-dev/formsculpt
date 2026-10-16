@@ -988,5 +988,16 @@
  "Get Creases": "获取折痕",
  "Slide amount %": "滑动量 %",
  "Slide edge loop": "滑动循环边",
- "Slide point": "滑动点"
+ "Slide point": "滑动点",
+ "Disc": "圆盘",
+ "Eye loop": "眼部环线",
+ "Get Wireframe": "获取线框",
+ "Grid": "网格",
+ "Mouth loop": "嘴部环线",
+ "Patch columns": "面片列数",
+ "Patch rows": "面片行数",
+ "Patch size %": "面片大小 %",
+ "Retopo patch": "重拓扑面片",
+ "Retopology Patch": "添加重拓扑面片",
+ "Strip": "条带"
 }

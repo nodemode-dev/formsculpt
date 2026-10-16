@@ -988,5 +988,16 @@
  "Get Creases": "Pobierz zagięcia",
  "Slide amount %": "Przesunięcie %",
  "Slide edge loop": "Przesuń pętlę krawędzi",
- "Slide point": "Przesuń punkt"
+ "Slide point": "Przesuń punkt",
+ "Disc": "Dysk",
+ "Eye loop": "Pętla oka",
+ "Get Wireframe": "Pobierz siatkę krawędzi",
+ "Grid": "Siatka",
+ "Mouth loop": "Pętla ust",
+ "Patch columns": "Kolumny łaty",
+ "Patch rows": "Rzędy łaty",
+ "Patch size %": "Rozmiar łaty %",
+ "Retopo patch": "Łata retopo",
+ "Retopology Patch": "Łata retopologii",
+ "Strip": "Pasek"
 }

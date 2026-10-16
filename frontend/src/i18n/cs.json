@@ -988,5 +988,16 @@
  "Get Creases": "Zjistit ostré hrany",
  "Slide amount %": "Míra posunu %",
  "Slide edge loop": "Posunout smyčku hran",
- "Slide point": "Posunout bod"
+ "Slide point": "Posunout bod",
+ "Disc": "Disk",
+ "Eye loop": "Smyčka oka",
+ "Get Wireframe": "Zjistit drátový model",
+ "Grid": "Mřížka",
+ "Mouth loop": "Smyčka úst",
+ "Patch columns": "Sloupce záplaty",
+ "Patch rows": "Řádky záplaty",
+ "Patch size %": "Velikost záplaty %",
+ "Retopo patch": "Retopo záplata",
+ "Retopology Patch": "Retopologická záplata",
+ "Strip": "Pás"
 }

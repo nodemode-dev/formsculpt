@@ -988,5 +988,16 @@
  "Get Creases": "Obtenir les plis",
  "Slide amount %": "Glissement %",
  "Slide edge loop": "Glisser la boucle d'arêtes",
- "Slide point": "Glisser le point"
+ "Slide point": "Glisser le point",
+ "Disc": "Disque",
+ "Eye loop": "Boucle d'œil",
+ "Get Wireframe": "Obtenir le maillage filaire",
+ "Grid": "Grille",
+ "Mouth loop": "Boucle de bouche",
+ "Patch columns": "Colonnes du patch",
+ "Patch rows": "Rangées du patch",
+ "Patch size %": "Taille du patch %",
+ "Retopo patch": "Patch de retopo",
+ "Retopology Patch": "Patch de retopologie",
+ "Strip": "Bande"
 }

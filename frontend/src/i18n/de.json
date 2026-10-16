@@ -988,5 +988,16 @@
  "Get Creases": "Scharfe Kanten holen",
  "Slide amount %": "Verschiebung %",
  "Slide edge loop": "Kantenschleife verschieben",
- "Slide point": "Punkt verschieben"
+ "Slide point": "Punkt verschieben",
+ "Disc": "Scheibe",
+ "Eye loop": "Augenschleife",
+ "Get Wireframe": "Drahtgitter holen",
+ "Grid": "Raster",
+ "Mouth loop": "Mundschleife",
+ "Patch columns": "Patch-Spalten",
+ "Patch rows": "Patch-Zeilen",
+ "Patch size %": "Patch-Größe %",
+ "Retopo patch": "Retopo-Patch",
+ "Retopology Patch": "Retopologie-Patch",
+ "Strip": "Streifen"
 }
