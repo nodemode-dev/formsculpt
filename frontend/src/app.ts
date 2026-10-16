@@ -134,6 +134,14 @@ interface Shell {
   pressureStrength: HTMLInputElement;
   pressureSize: HTMLInputElement;
   curveButtons: HTMLButtonElement[];
+  curveInterp: HTMLSelectElement;
+  curveClosed: HTMLInputElement;
+  curveRound: HTMLInputElement;
+  tubeProfile: HTMLSelectElement;
+  tubeCap: HTMLSelectElement;
+  tubeHole: HTMLInputElement;
+  tubeSpiral: HTMLInputElement;
+  pathButtons: HTMLButtonElement[];
   curveLine: SVGPolylineElement;
   curveHandles: SVGPathElement;
   paintLayer: HTMLSelectElement;
@@ -619,6 +627,33 @@ function buildShell(root: HTMLElement): Shell {
   });
   const alphaLoad = curveButtons[0];
   panel.append(alphaGrid);
+  const curveInterp = choices('Path shape', [['catmull_rom', 'Smooth'], ['bspline', 'Softer'], ['linear', 'Straight']]);
+  const curveClosed = input('checkbox', { 'aria-label': 'Closed path' });
+  const curveRound = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Corner round' });
+  const tubeProfile = choices('Tube profile', [['circle', 'Circle'], ['square', 'Square'], ['triangle', 'Triangle'], ['star', 'Star'], ['flat', 'Flat strap']]);
+  const tubeCap = choices('Tube ends', [['flat', 'Flat'], ['round', 'Round'], ['none', 'Open']]);
+  const tubeHole = input('number', { min: '0', max: '1', step: '0.005', value: '0', 'aria-label': 'Pipe wall' });
+  const tubeSpiral = input('number', { min: '0', max: '64', step: '0.5', value: '0', 'aria-label': 'Spiral turns' });
+  const pathFields = el('div', 'fields after-fields');
+  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Tube profile', tubeProfile), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
+  panel.append(pathFields);
+  const pathGrid = el('div', 'add-grid two after-fields');
+  const pathButtons = (
+    [
+      ['toggle_corner', 'Sharp or smooth'],
+      ['all_sharp', 'All corners sharp'],
+      ['all_smooth', 'All points smooth'],
+      ['tube_curve', 'Tube from curve'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    pathGrid.append(b);
+    return b;
+  });
+  panel.append(pathGrid);
+  panel.append(el('p', 'panel-hint', 'Alt-click a curve handle to make it a corner; Corner round rounds the chosen or every sharp corner.'));
 
   panel.append(el('h2', 'gap', 'Paint'));
   const paintColor = input('color', { value: '#c8402f', 'aria-label': 'Paint colour' });
@@ -1004,6 +1039,7 @@ function buildShell(root: HTMLElement): Shell {
   tag(addButtons, 'add', (b) => b.dataset.kind);
   tag(buildButtons, 'build', action);
   tag(curveButtons, 'curve', action);
+  tag(pathButtons, 'curve', action);
   tag(paintButtons, 'paint', action);
   tag(paintLayerButtons, 'paintLayer', action);
   tag(uvButtons, 'uv', action);
@@ -1020,7 +1056,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1230,6 +1266,14 @@ class SceneView {
       const id = editable('tube');
       if (id !== null) void this.run('edit_build', { id, radius: Math.max(0.005, Math.min(1, Number(shell.tubeRadius.value) || 0.05)) });
     });
+    for (const control of [shell.tubeProfile, shell.tubeCap, shell.tubeHole, shell.tubeSpiral]) {
+      control.addEventListener('change', () => {
+        const id = editable('tube');
+        if (id === null) return;
+        const { profile, cap, hole, spiral } = this.tubeArgs();
+        void this.run('edit_build', { id, profile, cap, hole, spiral });
+      });
+    }
     shell.lathe.addEventListener('change', () => {
       const id = editable('lathe');
       const preset = LATHES[shell.lathe.value];
@@ -1256,6 +1300,16 @@ class SceneView {
         else this.clearCurve();
       }),
     );
+    shell.pathButtons.forEach((b) =>
+      this.on(b, () => {
+        const a = b.dataset.action;
+        if (a === 'tube_curve') void this.tubeFromCurve();
+        else this.setCorners(a === 'all_sharp' ? 'sharp' : a === 'all_smooth' ? 'smooth' : 'toggle');
+      }),
+    );
+    shell.curveRound.addEventListener('input', () => this.setCorners('round'));
+    shell.curveInterp.addEventListener('change', () => void this.resample());
+    shell.curveClosed.addEventListener('change', () => void this.resample());
     shell.falloff.addEventListener('change', () => {
       const preset = FALLOFFS[shell.falloff.value];
       if (preset) this.falloffWeights = this.falloffWeights.map((_, i) => preset(i / (FALLOFF_POINTS - 1)));
@@ -1322,6 +1376,7 @@ class SceneView {
           // Pressing on a handle of the waiting curve moves that handle instead of drawing a new curve.
           const near = this.curveScreen().findIndex((q) => q !== null && Math.hypot(q[0] - p[0], q[1] - p[1]) < 10);
           if (near >= 0) this.shape.edit = near;
+          this.curveAlt = e.altKey;
         }
         if (this.shape.kind === 'dragdot' || (this.shape.kind === 'curve' && this.shape.edit !== undefined)) this.shape.pts = [p];
         else if (this.shape.kind === 'mask_box' || this.shape.kind === 'stamp') this.shape.pts = [this.shape.pts[0] ?? p, p];
@@ -1392,7 +1447,12 @@ class SceneView {
   /** The brush a curve stroke applies: the last sculpting or painting brush chosen before the Curve tool. */
   private lastBrush = 'draw';
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
-  private curve: { handles: Vec3[]; wpp: number } | null = null;
+  private curve: { handles: Vec3[]; wpp: number; sharp: boolean[]; round: number[]; samples: Vec3[] | null } | null = null;
+  /** The handle last clicked (Corner round sets its fillet), and whether Alt was held when a handle was pressed. */
+  private curvePick: number | null = null;
+  private curveAlt = false;
+  private resampling = false;
+  private resampleAgain = false;
   private catalogue: CatalogueCommand[] = [];
   private handlers = new Map<string, () => void>();
   private contextEvent: MouseEvent | null = null;
@@ -1564,13 +1624,110 @@ class SceneView {
     if (moving !== undefined && at) screen[moving] = at;
     const shown = screen.filter((q): q is [number, number] => q !== null);
     if (shown.length < 2) {
-      this.shell.curveLine.setAttribute('points', '');
-      this.shell.curveHandles.setAttribute('d', '');
+      setAttr(this.shell.curveLine, 'points', '');
+      setAttr(this.shell.curveHandles, 'd', '');
       return;
     }
-    const line = SceneView.spline(shown, 8);
-    this.shell.curveLine.setAttribute('points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
-    this.shell.curveHandles.setAttribute('d', shown.map((q) => `M${(q[0] - 4).toFixed(1)},${q[1].toFixed(1)}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`).join(''));
+    const c = this.curve;
+    const project = this.projector();
+    const sampled = moving === undefined && c?.samples ? c.samples.map(project).filter((q): q is [number, number] => q !== null) : null;
+    const line = sampled && sampled.length > 1 ? sampled : SceneView.spline(shown, 8);
+    setAttr(this.shell.curveLine, 'points', line.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' '));
+    const marks = screen.map((q, i) => {
+      if (!q) return '';
+      const r = i === this.curvePick ? 6 : 4;
+      const y = q[1].toFixed(1);
+      return c?.sharp[i] ? `M${(q[0] - r).toFixed(1)},${(q[1] - r).toFixed(1)}h${2 * r}v${2 * r}h${-2 * r}z` : `M${(q[0] - r).toFixed(1)},${y}a${r},${r} 0 1,0 ${2 * r},0a${r},${r} 0 1,0 ${-2 * r},0`;
+    });
+    setAttr(this.shell.curveHandles, 'd', marks.join(''));
+  }
+
+  /** The waiting curve's handles as the engine's curve points: corners where marked, with their fillet radius. */
+  private curvePoints(): Record<string, unknown>[] {
+    const c = this.curve;
+    if (!c) return [];
+    return c.handles.map((p, i) => ({ p, sharp: c.sharp[i], round: c.sharp[i] ? c.round[i] : 0 }));
+  }
+
+  private curveOptions(): { interp: string; closed: boolean } {
+    return { interp: this.shell.curveInterp.value, closed: this.shell.curveClosed.checked };
+  }
+
+  /** Asks the engine to sample the waiting curve, so the line drawn is the line a stroke or tube follows. */
+  private async resample(): Promise<void> {
+    if (this.resampling) {
+      this.resampleAgain = true;
+      return;
+    }
+    this.resampling = true;
+    try {
+      do {
+        this.resampleAgain = false;
+        const c = this.curve;
+        if (!c) break;
+        const reply = await dispatch<{ positions: Vec3[] }>('sample_curve', { points: this.curvePoints(), ...this.curveOptions(), per_span: 12 });
+        if (this.curve !== c) continue;
+        const pts = reply.ok ? reply.result.positions : null;
+        c.samples = pts && this.shell.curveClosed.checked && pts.length > 2 ? [...pts, pts[0]] : pts;
+        this.drawCurve();
+      } while (this.resampleAgain);
+    } finally {
+      this.resampling = false;
+    }
+  }
+
+  /** Corner round as a world radius: a share of the curve's mean span, so the slider means the same on any size. */
+  private roundWorld(): number {
+    const c = this.curve;
+    if (!c || c.handles.length < 2) return 0;
+    let total = 0;
+    for (let i = 1; i < c.handles.length; i++) total += distance3(c.handles[i - 1], c.handles[i]);
+    return ((total / (c.handles.length - 1)) * Number(this.shell.curveRound.value)) / 200;
+  }
+
+  private setCorners(which: 'toggle' | 'sharp' | 'smooth' | 'round'): void {
+    const c = this.curve;
+    if (!c) {
+      this.note('Draw a curve with the Curve stroke tool first');
+      return;
+    }
+    const round = this.roundWorld();
+    const pick = this.curvePick;
+    if (which === 'toggle') {
+      if (pick === null) {
+        this.note('Click a curve handle first, or Alt-click it');
+        return;
+      }
+      c.sharp[pick] = !c.sharp[pick];
+      c.round[pick] = c.sharp[pick] ? round : 0;
+    } else if (which === 'round') {
+      for (let i = 0; i < c.handles.length; i++) if (c.sharp[i] && (pick === null || !c.sharp[pick] || i === pick)) c.round[i] = round;
+    } else {
+      c.sharp.fill(which === 'sharp');
+      c.round.fill(which === 'sharp' ? round : 0);
+    }
+    this.drawCurve();
+    void this.resample();
+  }
+
+  /** Builds a tube along the waiting curve with its corners and the tube settings. */
+  private async tubeFromCurve(): Promise<void> {
+    if (!this.curve) {
+      this.note('Draw a curve with the Curve stroke tool first');
+      return;
+    }
+    await this.run('curve_tube', { points: this.curvePoints(), ...this.curveOptions(), ...this.tubeArgs() });
+  }
+
+  private tubeArgs(): Record<string, unknown> {
+    const s = this.shell;
+    return {
+      radius: Math.max(0.005, Math.min(1, Number(s.tubeRadius.value) || 0.05)),
+      profile: s.tubeProfile.value,
+      cap: s.tubeCap.value,
+      hole: Math.max(0, Number(s.tubeHole.value) || 0),
+      spiral: Math.max(0, Number(s.tubeSpiral.value) || 0),
+    };
   }
 
   /** Outlines for the shadow box, in world units: front (x, y), side (z, y), top (x, z). */
@@ -1878,10 +2035,19 @@ class SceneView {
     };
     if (edit !== undefined && this.curve) {
       const q = pts[pts.length - 1];
-      const point = q ? await pick(q) : null;
+      const at = this.curveScreen()[edit];
+      if (!q || (at && Math.hypot(q[0] - at[0], q[1] - at[1]) < 3)) {
+        this.curvePick = edit;
+        if (this.curveAlt) this.setCorners('toggle');
+        else this.drawCurve();
+        this.note(`Handle ${edit + 1}: ${this.curve.sharp[edit] ? 'a corner' : 'smooth'}; Alt-click toggles, Corner round rounds it`);
+        return;
+      }
+      const point = await pick(q);
       if (point) this.curve.handles[edit] = point;
       else this.note('A handle must stay on the active object');
       this.drawCurve();
+      void this.resample();
       return;
     }
     // Handles about every 40 pixels along the drawn path (2 to 32 of them).
@@ -1910,9 +2076,11 @@ class SceneView {
       this.note('Draw the curve over the active object');
       return;
     }
-    this.curve = { handles, wpp };
+    this.curve = { handles, wpp, sharp: handles.map(() => false), round: handles.map(() => 0), samples: null };
+    this.curvePick = null;
     this.drawCurve();
-    this.note(`Curve ready: ${handles.length} handles; drag one to bend it, then Apply curve`);
+    void this.resample();
+    this.note(`Curve ready: ${handles.length} handles; drag one to bend it, Alt-click one for a corner, then Apply curve or Tube from curve`);
   }
 
   /** Runs the last brush along the waiting curve as one stroke (the curve stays, so it can be applied again). */
@@ -1927,13 +2095,16 @@ class SceneView {
     let span = 0;
     for (let i = 1; i < c.handles.length; i++) span = Math.max(span, distance3(c.handles[i - 1], c.handles[i]));
     const per = Math.max(1, Math.min(64, Math.ceil(span / (radius * 0.1))));
-    let points = SceneView.spline(c.handles, per);
+    const sampled = await dispatch<{ positions: Vec3[] }>('sample_curve', { points: this.curvePoints(), ...this.curveOptions(), spacing: radius * 0.1 });
+    let points = sampled.ok && sampled.result.positions.length > 1 ? sampled.result.positions : SceneView.spline(c.handles, per);
+    if (sampled.ok && this.shell.curveClosed.checked && points.length > 2) points = [...points, points[0]];
     if (points.length > 4096) points = points.filter((_, i) => i % Math.ceil(points.length / 4096) === 0);
     await this.run('sculpt_stroke', { ...this.brushArgs(radius, false), id, points });
   }
 
   private clearCurve(): void {
     this.curve = null;
+    this.curvePick = null;
     this.drawCurve();
   }
 
@@ -2431,9 +2602,8 @@ class SceneView {
       this.note('Drag across the view to draw a tube');
       return;
     }
-    const radius = Math.max(0.005, Math.min(1, Number(this.shell.tubeRadius.value) || 0.05));
     const points = t.points.length > 4096 ? t.points.filter((_, i) => i % Math.ceil(t.points.length / 4096) === 0) : t.points;
-    await this.run('curve_tube', { points, radius, smooth: 2 });
+    await this.run('curve_tube', { points, smooth: 2, ...this.tubeArgs() });
   }
 
   private async build(action: string): Promise<void> {

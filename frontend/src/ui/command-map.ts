@@ -44,6 +44,10 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     alpha: c('sculpt.alpha_load', 'Load Alpha'),
     apply_curve: c('sculpt.apply_curve', 'Apply Curve'),
     clear_curve: c('sculpt.clear_curve', 'Clear Curve'),
+    toggle_corner: c('curve.toggle_corner', 'Toggle Sharp or Smooth Point'),
+    all_sharp: c('curve.all_sharp', 'Make Every Curve Point a Corner'),
+    all_smooth: c('curve.all_smooth', 'Make Every Curve Point Smooth'),
+    tube_curve: c('build.tube_from_curve', 'Tube from Curve'),
   },
   paint: {
     paint_fill: n('paint.fill', 'Fill Object'),
