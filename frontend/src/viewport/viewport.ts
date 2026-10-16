@@ -1,6 +1,6 @@
 import type { MeshBuffers, VertexUpdate } from '../engine/service';
 import { OrbitCamera, type ViewName } from './camera';
-import { GlRenderer } from './gl-renderer';
+import { GlRenderer, hexColor } from './gl-renderer';
 import type { Vec3 } from './math';
 
 export interface ViewportStats {
@@ -35,8 +35,13 @@ export class Viewport {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.renderer = new GlRenderer(canvas);
-    const bg = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg');
+    const css = getComputedStyle(document.body);
+    const bg = css.getPropertyValue('--canvas-bg');
     if (bg) this.renderer.setClearColor(bg);
+    const b = this.renderer.backdrop;
+    b.top = hexColor(css.getPropertyValue('--viewport-top')) ?? b.top;
+    b.bottom = hexColor(css.getPropertyValue('--viewport-bottom')) ?? b.bottom;
+    b.gridColor = hexColor(css.getPropertyValue('--viewport-grid')) ?? b.gridColor;
     new ResizeObserver(() => this.resize()).observe(canvas);
     canvas.addEventListener('pointerdown', (e) => this.down(e));
     canvas.addEventListener('pointermove', (e) => this.move(e));

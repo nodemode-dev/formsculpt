@@ -13,8 +13,11 @@
   --text-primary: #f7f7f7;
   --text-secondary: #a4a4a4;
   --text-muted: #717072;
-  --canvas-bg: #1c1b1d;
+  --canvas-bg: #1f1f22;
   --grid-color: #5e5e60;
+  --viewport-top: #3c3c41;
+  --viewport-bottom: #17171a;
+  --viewport-grid: #9e9ea8;
   --ok-color: #22c55e;
   --warn-color: #eab308;
   --danger-color: #ef4444;
@@ -71,7 +74,10 @@ body.theme-light {
   --text-primary: #26241d;
   --text-secondary: #4c4a40;
   --text-muted: #8b887a;
-  --canvas-bg: #e7e5dd;
+  --canvas-bg: #c9c7c0;
   --grid-color: #b8b4a6;
+  --viewport-top: #e4e3de;
+  --viewport-bottom: #a9a7a0;
+  --viewport-grid: #55534c;
   --shadow-lg: 0 4px 14px rgba(96, 90, 70, 0.16);
 }

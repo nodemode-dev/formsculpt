@@ -233,19 +233,6 @@ export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, numb
 const PAINT_DEFAULT = [0.8, 0.8, 0.8, 0.5, 0.0, 1.0, 0.0];
 const PF = PAINT_FLOATS;
 
-const LINE_VS = `#version 300 es
-layout(location=0) in vec3 aPos;
-layout(location=1) in vec3 aCol;
-uniform mat4 uViewProj;
-out vec3 vCol;
-void main() { vCol = aCol; gl_Position = uViewProj * vec4(aPos, 1.0); }`;
-
-const LINE_FS = `#version 300 es
-precision mediump float;
-in vec3 vCol;
-out vec4 outColor;
-void main() { outColor = vec4(vCol, 1.0); }`;
-
 interface GpuMesh {
   vao: WebGLVertexArrayObject;
   buffers: WebGLBuffer[];
@@ -302,9 +289,10 @@ export class GlRenderer {
   readonly kind = 'webgl2';
   private gl: WebGL2RenderingContext;
   private meshProgram: WebGLProgram;
-  private lineProgram: WebGLProgram;
   private meshes = new Map<number, GpuMesh>();
-  private grid: { vao: WebGLVertexArrayObject; count: number };
+  private gradientProgram: WebGLProgram;
+  private floorProgram: WebGLProgram;
+  backdrop: Backdrop = { mode: 'gradient', top: [0.235, 0.235, 0.255], bottom: [0.09, 0.09, 0.1], mid: 0.55, vignette: 0.35, grid: true, gridColor: [0.62, 0.62, 0.66] };
   /** A 1 by 1 texture bound when no image matcap is in use, so the sampler is never incomplete. */
   private blank: WebGLTexture;
   /** The background program, its empty VAO, and a 1 by 1 black environment bound when none is in use. */
@@ -319,9 +307,9 @@ export class GlRenderer {
     if (!gl) throw new Error('WebGL2 is not available');
     this.gl = gl;
     this.meshProgram = compile(gl, MESH_VS, MESH_FS);
-    this.lineProgram = compile(gl, LINE_VS, LINE_FS);
-    this.grid = this.buildGrid(20, 1);
     this.bgProgram = compile(gl, BG_VS, BG_FS);
+    this.gradientProgram = compile(gl, BG_VS, GRADIENT_FS);
+    this.floorProgram = compile(gl, BG_VS, FLOOR_FS);
     this.bgVao = gl.createVertexArray();
     this.blankEnv = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.blankEnv);
@@ -339,26 +327,58 @@ export class GlRenderer {
     this.clear = [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
   }
 
-  private buildGrid(half: number, step: number): { vao: WebGLVertexArrayObject; count: number } {
+  /** The studio gradient behind the scene, drawn at the far plane with the depth test off. */
+  private drawGradient(width: number, height: number): void {
     const gl = this.gl;
-    const data: number[] = [];
-    for (let i = -half; i <= half; i += step) {
-      const major = i === 0;
-      const cx: [number, number, number] = major ? [0.75, 0.25, 0.25] : [0.24, 0.24, 0.26];
-      const cz: [number, number, number] = major ? [0.25, 0.4, 0.8] : [0.24, 0.24, 0.26];
-      data.push(-half, 0, i, ...cx, half, 0, i, ...cx, i, 0, -half, ...cz, i, 0, half, ...cz);
-    }
-    const vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
-    gl.bindVertexArray(null);
-    return { vao, count: data.length / 6 };
+    const b = this.backdrop;
+    const p = this.gradientProgram;
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+    gl.useProgram(p);
+    gl.uniform3fv(gl.getUniformLocation(p, 'uTop'), b.top);
+    gl.uniform3fv(gl.getUniformLocation(p, 'uBottom'), b.bottom);
+    gl.uniform1f(gl.getUniformLocation(p, 'uMid'), b.mid);
+    gl.uniform1f(gl.getUniformLocation(p, 'uVignette'), b.vignette);
+    gl.uniform2f(gl.getUniformLocation(p, 'uSize'), width, height);
+    gl.bindVertexArray(this.bgVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.depthMask(true);
+    gl.enable(gl.DEPTH_TEST);
+  }
+
+  /** The floor grid: an infinite plane at y = 0 traced per pixel, lines that stay one pixel wide at any distance, a
+   *  scale that follows the camera distance (blending between powers of ten), fading with distance and at grazing
+   *  angles so a side view shows no line clutter; the x axis red, the z axis blue. Drawn behind the meshes. */
+  private drawFloor(camera: OrbitCamera, vp: Float32Array): void {
+    const inv = invert(vp);
+    if (!inv) return;
+    const gl = this.gl;
+    const p = this.floorProgram;
+    const eye = camera.eye();
+    const t = camera.target;
+    const dir = [t[0] - eye[0], t[1] - eye[1], t[2] - eye[2]];
+    const len = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+    const level = Math.log10(Math.max(camera.distance * 0.6, 1e-4));
+    const base = Math.floor(level);
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.useProgram(p);
+    gl.uniformMatrix4fv(gl.getUniformLocation(p, 'uInvViewProj'), false, inv);
+    gl.uniform3f(gl.getUniformLocation(p, 'uEye'), eye[0], eye[1], eye[2]);
+    gl.uniform3f(gl.getUniformLocation(p, 'uViewDir'), dir[0] / len, dir[1] / len, dir[2] / len);
+    gl.uniform1f(gl.getUniformLocation(p, 'uOrtho'), camera.orthographic ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(p, 'uScale'), 10 ** base);
+    gl.uniform1f(gl.getUniformLocation(p, 'uFrac'), level - base);
+    gl.uniform1f(gl.getUniformLocation(p, 'uFade'), camera.distance * (camera.orthographic ? 12 : 7));
+    gl.uniform3fv(gl.getUniformLocation(p, 'uLine'), this.backdrop.gridColor);
+    gl.uniform1f(gl.getUniformLocation(p, 'uAlpha'), 0.32);
+    gl.bindVertexArray(this.bgVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disable(gl.BLEND);
+    gl.depthMask(true);
+    gl.enable(gl.DEPTH_TEST);
   }
 
   /** Previews a transform of one object (column-major 4 by 4) until its new geometry arrives; null clears it. */
@@ -673,11 +693,10 @@ export class GlRenderer {
         gl.depthMask(true);
         gl.enable(gl.DEPTH_TEST);
       }
+    } else if (this.backdrop.mode === 'gradient') {
+      this.drawGradient(width, height);
     }
-    gl.useProgram(this.lineProgram);
-    gl.uniformMatrix4fv(gl.getUniformLocation(this.lineProgram, 'uViewProj'), false, vp);
-    gl.bindVertexArray(this.grid.vao);
-    gl.drawArrays(gl.LINES, 0, this.grid.count);
+    if (this.backdrop.grid) this.drawFloor(camera, vp);
     gl.useProgram(this.meshProgram);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uViewProj'), false, vp);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uView'), false, camera.view());
@@ -1111,3 +1130,87 @@ void main() {
   else c = c / (c + vec3(1.0));
   outColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
 }`;
+
+const GRADIENT_FS = `#version 300 es
+precision highp float;
+in vec2 vNdc;
+uniform vec3 uTop;
+uniform vec3 uBottom;
+uniform float uMid;
+uniform float uVignette;
+uniform vec2 uSize;
+out vec4 outColor;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main() {
+  vec2 uv = vNdc * 0.5 + 0.5;
+  float m = clamp(uMid, 0.05, 0.95);
+  float t = uv.y < m ? 0.5 * uv.y / m : 0.5 + 0.5 * (uv.y - m) / (1.0 - m);
+  vec3 c = mix(uBottom, uTop, smoothstep(0.0, 1.0, t));
+  vec2 d = (uv - vec2(0.5, 0.55)) * vec2(uSize.x / max(uSize.y, 1.0), 1.0);
+  c *= 1.0 - uVignette * smoothstep(0.25, 1.15, length(d));
+  c += (hash(gl_FragCoord.xy) - 0.5) / 255.0;
+  outColor = vec4(c, 1.0);
+}`;
+
+const FLOOR_FS = `#version 300 es
+precision highp float;
+in vec2 vNdc;
+uniform mat4 uInvViewProj;
+uniform vec3 uEye;
+uniform vec3 uViewDir;
+uniform float uOrtho;
+uniform float uScale;
+uniform float uFrac;
+uniform float uFade;
+uniform vec3 uLine;
+uniform float uAlpha;
+out vec4 outColor;
+vec3 unproject(float z) { vec4 p = uInvViewProj * vec4(vNdc, z, 1.0); return p.xyz / p.w; }
+float lines(vec2 p, float step) {
+  vec2 c = p / step;
+  vec2 w = max(fwidth(c), vec2(1e-5));
+  vec2 g = abs(fract(c - 0.5) - 0.5) / w;
+  return 1.0 - min(min(g.x, g.y), 1.0);
+}
+void main() {
+  vec3 a = unproject(-1.0);
+  vec3 b = unproject(1.0);
+  vec3 dir = b - a;
+  if (abs(dir.y) < 1e-7) discard;
+  float t = -a.y / dir.y;
+  if (t < 0.0 || t > 1.0) discard;
+  vec3 p = a + dir * t;
+  vec3 toEye = uOrtho > 0.5 ? -uViewDir : normalize(uEye - p);
+  float grazing = smoothstep(0.04, 0.3, abs(toEye.y));
+  float fade = 1.0 - smoothstep(uFade * 0.3, uFade, length(p.xz - uEye.xz));
+  float minor = lines(p.xz, uScale * 0.1) * (1.0 - uFrac) * 0.45;
+  float major = lines(p.xz, uScale);
+  float big = lines(p.xz, uScale * 10.0) * uFrac;
+  vec2 axis = 1.0 - min(abs(p.xz) / max(fwidth(p.xz) * 1.5, vec2(1e-5)), vec2(1.0));
+  float grid = max(minor, max(major * 0.75, big * 0.75));
+  vec3 color = uLine;
+  float alpha = grid * uAlpha;
+  if (axis.y > 0.0) { color = mix(color, vec3(0.85, 0.3, 0.32), axis.y); alpha = max(alpha, axis.y * 0.9); }
+  if (axis.x > 0.0) { color = mix(color, vec3(0.3, 0.48, 0.9), axis.x); alpha = max(alpha, axis.x * 0.9); }
+  alpha *= fade * grazing;
+  if (alpha < 0.004) discard;
+  outColor = vec4(color, alpha);
+}`;
+
+/** The viewport's backdrop: a vertical studio gradient (with a vignette) or a flat colour, and the floor grid. */
+export interface Backdrop {
+  mode: 'gradient' | 'color';
+  top: [number, number, number];
+  bottom: [number, number, number];
+  mid: number;
+  vignette: number;
+  grid: boolean;
+  gridColor: [number, number, number];
+}
+
+export function hexColor(css: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(css.trim());
+  if (!m) return null;
+  const v = parseInt(m[1], 16);
+  return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+}

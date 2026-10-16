@@ -37,7 +37,7 @@ button { font: inherit; color: inherit; }
 .kv dt { color: var(--text-secondary); }
 .kv dd { margin: 0; text-align: right; font-family: var(--font-mono); font-size: 12px; min-width: 9ch; }
 
-.stage { grid-area: stage; position: relative; z-index: var(--z-base); background: var(--canvas-bg); background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--grid-color) 35%, transparent) 1px, transparent 0); background-size: 24px 24px; display: grid; place-items: center; }
+.stage { grid-area: stage; position: relative; z-index: var(--z-base); background: linear-gradient(to bottom, var(--viewport-top), var(--viewport-bottom)); display: grid; place-items: center; }
 .viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 .stage-reference { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: var(--z-raised); }
 .stage-reference[hidden] { display: none; }
