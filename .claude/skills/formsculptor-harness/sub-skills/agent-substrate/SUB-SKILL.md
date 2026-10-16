@@ -23,6 +23,10 @@ State: built at 0.3.0. The tool list always comes from the engine's catalogue (`
 6. Agent configs and skills: `./formsculptor agents install` and `agents sync`. The operator skill `formsculptor-modeling` is generated; never hand-edit its tools.md.
 7. Treat all tool arguments as untrusted input; validate against the schema before dispatch.
 
+## The dock
+
+The window's terminal dock (Mod+J) holds shells, a Claude Code tab and a Chat tab. Its commands live on the service's small bus (`backend/app/services/commands.py`, `POST /api/commands/{id}`), not in the Rust registry, because they must never reach MCP: `terminal.*`, `claudecode.*`, `chat.*`, `agents.prefs`. Bytes travel over `WS /api/terminal/{id}` (local origins only); chat and terminal events over `GET /api/events`. Claude Code and Chat get `--mcp-config` for this service's `/mcp` with the `x-formsculptor-inapp` header and a per-run token, so they skip the outside-agent prompt; a recent decline still refuses them. Children lose `CLAUDE*` variables except the sign-in ones. A new window-only command is an `@command` in a `backend/app/services/cmd_*.py` imported by `app.main`, and its module is a hidden import in `setup/freeze_backend`.
+
 ## Gate
 
 Done when the same call succeeds over HTTP and stdio, with and without a window, and consent denial blocks window execution.

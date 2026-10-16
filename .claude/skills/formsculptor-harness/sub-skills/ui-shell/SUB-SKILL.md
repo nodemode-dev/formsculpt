@@ -24,6 +24,10 @@ State at 0.10.0: `frontend/src/app.ts` builds the right panel in this order: Fil
 7. Menus, palette entries and shortcuts derive from the catalogue (`sub-skills/command-registry/SUB-SKILL.md`).
 8. No em dash in markdown or UI copy; near-zero comments; rationale into `frontend/HASHOUT_LOG.md`.
 
+## Languages
+
+26 interface languages, English the source and the key (`frontend/src/ui/i18n.ts`, tables in `frontend/src/i18n/[code].json`, regional es-MX and fr-CA falling back to es and fr). Text set in code goes through `t()`; everything else is caught by the page translator, which skips anything inside `[data-no-i18n]`, the terminal, chat, object names and history. A new interface string lands in every table in the same change: run `./formsculptor i18n extract`, add the translations, then `./formsculptor i18n check` must show no placeholder mismatch. Text built at run time is a `{name}` template in the tables.
+
 ## Gate
 
 Done when the throttled DOM check is clean and a grep shows no raw z-index numbers or icon imports in the change (`sub-skills/verification/SUB-SKILL.md`).

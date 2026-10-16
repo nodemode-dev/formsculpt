@@ -4,7 +4,7 @@ description: "Guides work on formsculptor, the Form-family 3D sculpting app by n
 license: Apache-2.0
 metadata:
   nodemode.author: nodemode-ai
-  nodemode.pack-version: "0.1.0"
+  nodemode.pack-version: "0.2.0"
 ---
 
 # Formsculptor Harness
@@ -44,7 +44,7 @@ Sub-skill paths resolve as `sub-skills/[skill-name]/SUB-SKILL.md` from this fold
 | Backend | `backend/app/` (FastAPI, 127.0.0.1:8196) | routers system, io, projects, jobs, assets, mcp, nodemode; serves the built frontend |
 | Sidecar entry | `backend/formsculptor_engine.py` | PyInstaller entry for the frozen engine |
 | Desktop | `src-tauri/` (Tauri 2) | splash, sidecar spawn, main window, file association |
-| Dispatcher | `./formsculptor` and `setup/` | one script per task |
+| Dispatcher | `./formsculptor`, `./build_app` and `setup/` | one script per task; `build_app` (and `build_app.bat`) builds the installable desktop app start to finish |
 
 ## Dependency graph
 
@@ -90,7 +90,9 @@ These come from the dev-rules operating mode and apply to every sub-skill.
 | OBJ, STL, PLY, glTF, 3MF, FBX, the `.fsc` zip | `sub-skills/io-formats/SUB-SKILL.md` |
 | Adding or changing a command end to end | `sub-skills/command-registry/SUB-SKILL.md` |
 | MCP server, window bridge, consent, headless path, stdio shim, agent configs | `sub-skills/agent-substrate/SUB-SKILL.md` |
+| Terminal dock, Claude Code tab, Chat tab, the window command bus, PTY sessions | `sub-skills/agent-substrate/SUB-SKILL.md` § The dock |
 | UI shell, palette, menus, shortcuts, tokens, icons, worker client | `sub-skills/ui-shell/SUB-SKILL.md` |
+| Interface languages, strings.json, a new interface string | `sub-skills/ui-shell/SUB-SKILL.md` § Languages |
 | FastAPI routers, PyO3 use, jobs, assets, sidecar entry | `sub-skills/engine-service/SUB-SKILL.md` |
 | Tauri, sidecar spawn, splash, updater, file association, packaging | `sub-skills/desktop-shell/SUB-SKILL.md` |
 | Proving a change: DOM check, bench, selfcheck, release gate, version bump | `sub-skills/verification/SUB-SKILL.md` |

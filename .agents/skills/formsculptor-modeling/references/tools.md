@@ -7,7 +7,7 @@ Generated from the engine's command registry (formsculptor 0.31.0) by `./formscu
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -205,22 +205,32 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 
 ## edit_build
 
-Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.
+Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move) or given sharp, round, radius or twist (set_points), and for tubes the interp, radius_mode, sides, profile, twist, spiral, spiral_offset, cap and hole as well as the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.
 
 - `add`: object; Skeleton: add a sphere at point, linked to the nearest sphere (ZSphere style: click beside a joint to grow a limb).; fields point, radius
 - `blend`: number; range 0 to 1; Skeleton: how softly limbs merge.
+- `cap`: string (flat | round | none); Tube: the end caps.
 - `closed`: boolean; Tube: close the curve into a ring.
 - `drag`: object; Skeleton: move the sphere nearest from to to.; fields from, to
+- `hole`: number; range 0 to 1000000; Tube: wall thickness of a hollow pipe; 0 for solid.
 - `id`: integer; range 1 to inf; A tube, lathe or skeleton; the active object when omitted.
+- `interp`: string (catmull_rom | bspline | linear); Tube or lathe: how the path runs between points.
 - `links`: array of array; Skeleton: new links.
 - `move`: array of object; Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]); skeleton: replace spheres (to [x, y, z, radius]).
-- `points`: array of array; Tube: a new curve, as [x, y, z] or [x, y, z, radius].
-- `profile`: array of array; Lathe: a new profile, as [radius, y].
+- `points`: array of value; Tube: a new curve, as [x, y, z], [x, y, z, radius] or objects {p, radius, twist, sharp, round}.
+- `profile`: value; Lathe: a new outline, as [radius, y] or {p, sharp, round}. Tube: a cross-section preset or a closed polygon of [x, y] points.
 - `radius`: number; range -inf to 1000000; Tube: the radius for points without their own.
+- `radius_end`: number; range 0 to inf; Tube: the far-end radius for start_end.
+- `radius_mode`: string (per_point | uniform | start_end); Tube: how radii are chosen.
 - `resolution`: integer; range 32 to 256; Skeleton: voxel cells along the longest side.
 - `segments`: integer; range 3 to 256; Steps around the tube or the lathe's axis.
+- `set_points`: array of object; Tube or lathe: change flags of single points by index without touching their positions: sharp (corner), round (fillet radius on a sharp point), radius and twist in degrees (tube only). null clears a field.
+- `sides`: integer; range 3 to 128; Tube: sides around the circle profile.
 - `smooth`: integer; range 1 to 32; Tube: curve steps between points.
 - `spheres`: array of array; Skeleton: new joints as [x, y, z, radius].
+- `spiral`: number; range -1000 to 1000; Tube: turns of the cross-section around the path.
+- `spiral_offset`: number; range -1000000 to 1000000; Tube: distance of the cross-section from the path.
+- `twist`: number; range -36000 to 36000; Tube: total roll along the path in degrees.
 
 ## text_mesh
 
@@ -265,22 +275,47 @@ Hard-surface cut: extrude a closed outline straight through the object along `di
 
 ## curve_tube
 
-Sweep a round tube along a smooth curve through the given points (radius per point or overall), capped or closed into a ring, and make it active: hair strands, horns, tails, cables, straps, piping.
+Sweep a cross-section along a curve through the given points and make it active: hair strands, horns, tails, cables, straps, piping, ropes, springs, pipes. Points can be smooth or sharp corners, and a sharp point with round becomes a circular fillet; interp picks catmull_rom, bspline or linear; radius is per point, uniform or tapered start to end; profile is circle, square, triangle, star, flat or your own polygon; twist and spiral with spiral_offset make helices and rope; cap is flat, round or none; hole makes a hollow pipe. Remembered, so edit_build can change any of it later (set_points flips one point's sharp or round). Use sample_curve to see the exact path first.
 
+- `cap`: string (flat | round | none); default "flat"; The ends of an open tube: flat disc, rounded dome, or left open.
 - `closed`: boolean; default false; Join the last point back to the first (a ring) instead of capping the ends.
+- `hole`: number; default 0; range 0 to 1000000; Above 0 makes a hollow pipe with this wall thickness (world units); the ends show the wall.
+- `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; How the path runs between points; sharp points split it into sections interpolated on their own.
 - `name`: string; Name for the new object; a default when omitted.
-- `points`: array of array; required; The curve as [x, y, z] or [x, y, z, radius] points; a point's radius overrides radius.
-- `radius`: number; default 0.1; range 0 to inf; Tube radius where a point gives none.
-- `segments`: integer; default 16; range 3 to 128; Sides around the tube.
-- `smooth`: integer; default 4; range 1 to 32; Rings per curve span (a smooth spline through the points).
+- `points`: array of value; required; The curve as [x, y, z] or [x, y, z, radius] points, or objects {p: [x, y, z], radius, twist (degrees), sharp, round}. sharp makes the point a corner; sharp with round above 0 turns the corner into a circular fillet of that world radius. A point's radius overrides radius.
+- `profile`: value; default "circle"; The cross-section: a preset, or a closed polygon of [x, y] points (or {p, sharp, round}) in units of the radius; points default to corners, sharp false makes one smooth.
+- `radius`: number; default 0.1; range 0 to inf; Tube radius where a point gives none (and the start radius for radius_mode start_end).
+- `radius_end`: number; range 0 to inf; start_end: the radius at the far end; radius when omitted.
+- `radius_mode`: string (per_point | uniform | start_end); default "per_point"; per_point uses each point's radius; uniform uses radius everywhere; start_end tapers linearly by length from radius to radius_end.
+- `segments`: integer; default 16; range 3 to 128; Sides around the tube (the circle profile).
+- `sides`: integer; range 3 to 128; Same as segments; wins when both are given.
+- `smooth`: integer; default 4; range 1 to 32; Rings per curve span (also the finish of fillet arcs).
+- `spiral`: number; default 0; range -1000 to 1000; Turns the cross-section and its spiral_offset make around the path from start to end.
+- `spiral_offset`: number; default 0; range -1000000 to 1000000; Distance of the cross-section's centre from the path; with spiral turns it makes a helix, rope strand or spring.
+- `twist`: number; default 0; range -36000 to 36000; Total roll of the cross-section along the path, in degrees (adds to each point's twist).
+
+## sample_curve
+
+Evaluate a curve without changing the scene: control points (smooth, or sharp corners with optional round fillet radius) go in, a polyline comes out with positions, unit tangents, radii, twists (degrees), arc-length fractions t, the total length and the indices of crisp corners. interp is catmull_rom (centripetal, through the points), bspline or linear; closed loops the curve; per_span sets samples between points, or spacing resamples evenly by arc length. This is the one place curve corners and fillets are computed: draw the result as the preview, and curve_tube, array curve mode and quad_remesh guides follow the same curve.
+
+- `closed`: boolean; default false; Loop the last point back to the first. The result does not repeat the first sample at the end.
+- `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; catmull_rom passes through every smooth point (centripetal, no cusps); bspline approximates with a smoother curve; linear is a polyline. Sharp points split the curve into sections that are interpolated on their own.
+- `per_span`: integer; default 8; range 1 to 64; Samples per span between control points (also sets how finely fillet arcs are cut).
+- `points`: array of value; required; The curve's control points: [x, y, z], [x, y, z, radius], or objects {p, radius, twist, sharp, round}. A sharp point is a corner; sharp with round above 0 becomes a circular fillet of that world radius.
+- `radius`: number; default 1; range 0 to inf; Radius for points that give none.
+- `spacing`: number; range 0 to inf; When given, resample by arc length instead: samples this many world units apart (corners always kept).
+
+Note: read-only.
 
 ## lathe
 
-Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces.
+Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces. Outline points are corners by default; give {p: [radius, y], sharp, round} to round a corner with a fillet of that radius or sharp false to make a point a smooth knot.
 
+- `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; How the outline runs through smooth points.
 - `name`: string; Name for the new object; a default when omitted.
-- `profile`: array of array; required; The outline as [radius, y] points from bottom to top, spun around the y axis. A radius of 0 closes to a point; open ends are capped flat.
+- `profile`: array of value; required; The outline as [radius, y] points from bottom to top, spun around the y axis; or objects {p: [radius, y], sharp, round}. Points are corners by default; sharp false makes one a smooth knot, and a sharp point with round above 0 gets a circular fillet of that radius. A radius of 0 closes to a point; open ends are capped flat.
 - `segments`: integer; default 48; range 3 to 256; Steps around the axis.
+- `smooth`: integer; default 6; range 1 to 32; Rows per outline span between smooth points and around fillets.
 
 ## select_object
 
@@ -548,9 +583,9 @@ Groom fibers made by grow_fibers along a stroke: comb bends them toward the stro
 
 ## substance_sync
 
-Bring textures exported from Substance 3D Painter back: <name>_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.
+Bring textures exported from Substance 3D Painter back: [name]_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.
 
-- `color`: string; The base colour PNG; <name>_BaseColor.png in folder when omitted.
+- `color`: string; The base colour PNG; [name]_BaseColor.png in folder when omitted.
 - `folder`: string; required; The folder send_to_substance wrote and Painter exported back into.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
@@ -794,7 +829,7 @@ Note: read-only.
 Rebuild an object as an even, quad-dominant mesh near a target face count: quads from a voxel grid, relaxed along the original surface. OBJ export writes them as quads. The grid makes edge flow follow the axes rather than the form (no guide curves). One undo step; the mask is cleared, paint is carried over.
 
 - `faces`: integer; default 4000; range 100 to 400000; Target number of quads.
-- `guides`: array of array; Guide curves as lists of [x, y, z] points (drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes.
+- `guides`: array of array; Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `relax`: integer; default 6; range 0 to 30; Smoothing passes that even out the quads while staying on the original surface.
 
@@ -905,6 +940,18 @@ Bend, twist or taper an object along an axis of its bounds. Masked vertices are 
 - `kind`: string (bend | twist | taper); required
 - `toward`: string (x | y | z); default "x"; Bend only: the direction the axis curves toward.
 
+## warp_along_curve
+
+Bend an object along a curve: its long axis (or the given axis) is laid onto the curve's arc length and each cross-section is carried along the curve with a twist-free frame, so a straight bar becomes a tail, a horn or a ring. stretch fits the object's length to the whole curve. Curve points use the same formats as sample_curve (sharp corners and fillets respected). Masked vertices are held in proportion to the mask. One undo step.
+
+- `axis`: string (x | y | z); The object's axis that runs along the curve; its longest side when omitted.
+- `closed`: boolean; default false
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"
+- `points`: array of value; required; The curve to follow, in the same point formats as sample_curve (sharp and round respected).
+- `stretch`: boolean; default true; Fit the object's length to the curve's full length. Off keeps the object's length (in world units) from the curve's start, running on straight past the end.
+- `twist`: number; default 0; range -36000 to 36000; Extra roll about the curve in degrees, spread over its length.
+
 ## lattice_deform
 
 Reshape an object with a lattice: a box of control points around its bounds (2 to 6 per axis, 3 by default); move some of them and the surface follows smoothly (free-form deformation), held by the mask. Good for broad proportion changes: widen a jaw, push a skull back, bulge a belly, squash a whole prop. One undo step; the reply gives the lattice's box.
@@ -933,13 +980,15 @@ Repeat an object in a line (offset per copy) or around an axis (radial, evenly o
 - `angle`: number; default 360; range -360 to 360; Radial: the total turn in degrees; 360 spaces the copies evenly around the full circle.
 - `axis`: string (x | y | z); default "y"; Radial: the axis the copies turn around (through center).
 - `center`: array of number; Radial: the point the axis passes through; the world origin when omitted.
+- `closed`: boolean; default false; Curve: loop the path back to its first point.
 - `count`: integer; default 4; range 2 to 200; Copies in all, the original included.
 - `id`: integer; range 1 to inf; The object to repeat; the active object when omitted.
+- `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; Curve: how the path runs between points.
 - `linked`: boolean; default false; Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it.
 - `merge`: boolean; default false; Join the copies with the original into one object instead of adding separate objects.
 - `mode`: string (linear | radial | mirror | curve); default "linear"; linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points.
 - `offset`: array of number; Linear: the step from one copy to the next, in world units; one bounds width along x when omitted.
-- `points`: array of array; Curve: the path, as [x, y, z] points; each copy's bounds centre sits on it.
+- `points`: array of value; Curve: the path, as [x, y, z] points or objects {p, sharp, round} (corners and fillets as in sample_curve); each copy's bounds centre sits on it.
 
 ## insert_mesh
 
