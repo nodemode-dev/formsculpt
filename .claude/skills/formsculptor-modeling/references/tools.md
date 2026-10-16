@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.44.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.45.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -1165,6 +1165,32 @@ Repeat an object in a line (offset per copy) or around an axis (radial, evenly o
 - `points`: array of value; Curve: the path, as [x, y, z] points or objects {p, sharp, round} (corners and fillets as in sample_curve); each copy's bounds centre sits on it.
 - `scale_end`: number; default 1; range 0.01 to 100; Uniform scale of the last copy; copies in between ramp linearly. Not allowed with mirror.
 - `scale_start`: number; default 1; range 0.01 to 100; Uniform scale of the first copy in the ramp (about the original's bounds centre). Not allowed with mirror.
+
+## repeat_object
+
+Nested repeaters on an object, as ZBrush's repeater stack: 1 to 4 steps, the first innermost, each repeating the whole set the steps before it made, so the copy counts multiply (at most 2048). A step is a line (count, offset between copies), radial (count, axis, total angle, centre), mirror (axis, plane offset; the reflected copy has its winding flipped so normals stay outward) or curve (points, count, align; copies evenly by arc length along the path). Any step can carry randomize (position in units, rotation in degrees, scale as a fraction) for each copy it creates, from a seed. validate merge (default) joins every copy into one new object and removes the source; separate makes one object per copy and keeps the source; linked does the same and the copies follow the source when it changes; preview changes nothing and only returns the transforms. One undo step; the reply gives the copy count, the new object ids, the first 64 transforms (position, rotation in Euler degrees, scale and the matrix) and a scene summary.
+
+- `id`: integer; range 1 to inf; The source object to repeat; the active object when omitted.
+- `seed`: integer; default 1; The random seed for every randomize.
+- `steps`: array of object; required; The repeaters as an ordered stack, the first innermost: step 2 repeats the whole set step 1 made, and so on, so the copy counts multiply (at most 2048 in all, the source included).
+- `validate`: string (merge | separate | linked | preview); default "merge"; merge: all copies, the source included, become one new object and the source is removed. separate: each copy is a new object and the source stays. linked: like separate, and the copies follow the source when it changes. preview: nothing changes; the reply only gives the transforms.
+
+## scatter_on_surface
+
+Scatter copies of an object over the surface of another: pebbles on a hill, scales, thorns, moss, studs. Points are drawn uniformly by triangle area from a seed, with the normal interpolated from the vertex normals; align normal stands each copy's +Y on the surface normal and up keeps it upright, with a random spin about that axis, a random scale between scale_min and scale_max and an offset along the normal. min_distance keeps copies apart by rejection sampling with a bounded number of tries, and the reply says how many were placed against how many were asked for. mask_only places only where the target's mask is set. validate merge (default) makes one new object and leaves the source and target alone; separate makes one object per copy; linked does the same and the copies follow the source; preview changes nothing and only returns the transforms. One undo step; the reply gives placed, requested, the new object ids and the first 64 transforms.
+
+- `align`: string (normal | up); default "normal"; normal turns each copy so its +Y follows the surface normal; up keeps it upright.
+- `count`: integer; default 100; range 1 to 2048; Copies to place; fewer are placed when min_distance leaves no room, and the reply says how many.
+- `id`: integer; range 1 to inf; The source object to scatter; the active object when omitted.
+- `mask_only`: boolean; default false; Place only where the target's mask is set (the mask interpolated at the sample is at least 0.5); refused when the target has no masked vertex.
+- `min_distance`: number; default 0; range 0 to inf; The least distance between two copies' surface points, in world units; found by rejection sampling with a bounded number of tries.
+- `offset`: number; default 0; How far each copy's bounds centre sits off the surface along the normal, in world units.
+- `scale_max`: number; default 1; range 0.01 to 100; Largest uniform scale of a copy; each copy takes a random scale between the two.
+- `scale_min`: number; default 1; range 0.01 to 100; Smallest uniform scale of a copy.
+- `seed`: integer; default 1; The random seed; the same seed gives the same scatter.
+- `spin`: number; default 360; range 0 to 360; Random turn about the aligned axis, up to this many degrees.
+- `target`: integer; required; range 1 to inf; The object whose surface the copies land on; it must differ from the source.
+- `validate`: string (merge | separate | linked | preview); default "merge"; merge: all copies become one new object, the source and target untouched. separate: one new object per copy. linked: like separate, and the copies follow the source when it changes. preview: nothing changes; the reply only gives the transforms.
 
 ## insert_mesh
 
