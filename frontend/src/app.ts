@@ -87,6 +87,12 @@ interface Shell {
   deformAngle: HTMLInputElement;
   layerSelect: HTMLSelectElement;
   layerStrength: HTMLInputElement;
+  layerShape: HTMLInputElement;
+  layerPaint: HTMLInputElement;
+  layerMask: HTMLInputElement;
+  layerOffset: HTMLInputElement;
+  layerMaskedOnly: HTMLInputElement;
+  layerExtractMode: HTMLSelectElement;
   layerButtons: HTMLButtonElement[];
   topoButtons: HTMLButtonElement[];
   resolution: HTMLInputElement;
@@ -446,6 +452,9 @@ const LAYER_ACTIONS: [string, string][] = [
   ['layer_apply', 'Apply'],
   ['layer_delete', 'Delete'],
   ['surface_noise', 'Noise layer'],
+  ['layer_offset', 'Offset layer'],
+  ['layer_bake', 'Bake layer'],
+  ['layer_extract', 'Extract layer'],
 ];
 
 const ACTIONS: [string, string][] = [
@@ -885,7 +894,13 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(paintGrid);
   const paintLayer = choices('Paint layer', [['', 'Base']]);
-  const paintBlend = choices('Paint layer blend', [['normal', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['add', 'Add']]);
+  const paintBlend = choices('Paint layer blend', [
+    ['normal', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['add', 'Add'],
+    ['darken', 'Darken'], ['lighten', 'Lighten'], ['color_dodge', 'Colour dodge'], ['color_burn', 'Colour burn'], ['linear_burn', 'Linear burn'],
+    ['linear_light', 'Linear light'], ['vivid_light', 'Vivid light'], ['pin_light', 'Pin light'], ['hard_light', 'Hard light'], ['soft_light', 'Soft light'],
+    ['difference', 'Difference'], ['exclusion', 'Exclusion'], ['subtract', 'Subtract'], ['divide', 'Divide'],
+    ['hue', 'Hue'], ['saturation', 'Saturation'], ['color', 'Colour'], ['luminosity', 'Luminosity'],
+  ]);
   const paintOpacity = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Paint layer opacity' });
   const paintVisible = input('checkbox', { 'aria-label': 'Paint layer visible' });
   paintVisible.checked = true;
@@ -1054,6 +1069,17 @@ function buildShell(root: HTMLElement): Shell {
   layerSelect.append(baseOption);
   const layerStrength = input('range', { min: '-100', max: '200', value: '100', 'aria-label': 'Layer strength' });
   layerStrength.disabled = true;
+  const factor = (label: string): HTMLInputElement => {
+    const f = input('range', { min: '-200', max: '200', value: '100', 'aria-label': label });
+    f.disabled = true;
+    return f;
+  };
+  const layerShape = factor('Layer shape %');
+  const layerPaint = factor('Layer paint %');
+  const layerMask = factor('Layer mask %');
+  const layerOffset = input('number', { min: '-20', max: '20', step: '0.5', value: '1', 'aria-label': 'Layer offset %' });
+  const layerMaskedOnly = input('checkbox', { 'aria-label': 'Masked only' });
+  const layerExtractMode = choices('Layer extract', [['difference', 'This layer alone'], ['mask', 'Its mask'], ['displaced_only', 'What it moves']]);
   const layerFields = el('div', 'fields');
   // The noise editor for the Noise layer button: pattern, feature size and height as percentages of the object's
   // size, octaves, gain and a stretch; the alpha pattern uses the Brush section's alpha.
@@ -1063,7 +1089,7 @@ function buildShell(root: HTMLElement): Shell {
   const noiseOctaves = input('number', { min: '1', max: '8', value: '3', 'aria-label': 'Noise octaves' });
   const noiseGain = input('range', { min: '10', max: '90', value: '50', 'aria-label': 'Noise gain' });
   const noiseStretch = choices('Noise stretch', [['none', 'None'], ['x', 'Along x'], ['y', 'Along y'], ['z', 'Along z']]);
-  layerFields.append(field('Record into', layerSelect), field('Strength', layerStrength), field('Noise pattern', noisePattern), field('Noise size %', noiseSize), field('Noise height %', noiseHeight), field('Octaves', noiseOctaves), field('Gain', noiseGain), field('Stretch', noiseStretch));
+  layerFields.append(field('Record into', layerSelect), field('Strength', layerStrength), field('Layer shape %', layerShape), field('Layer paint %', layerPaint), field('Layer mask %', layerMask), field('Layer offset %', layerOffset), field('Masked only', layerMaskedOnly), field('Layer extract', layerExtractMode), field('Noise pattern', noisePattern), field('Noise size %', noiseSize), field('Noise height %', noiseHeight), field('Octaves', noiseOctaves), field('Gain', noiseGain), field('Stretch', noiseStretch));
   panel.append(layerFields);
   const layerGrid = el('div', 'add-grid three after-fields');
   const layerButtons = LAYER_ACTIONS.map(([action, label]) => {
@@ -1300,7 +1326,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1644,6 +1670,13 @@ class SceneView {
       if (!o || o.active_layer === null) return;
       void this.run('layer_set_strength', { id: o.id, index: o.active_layer, strength: Number(shell.layerStrength.value) / 100 });
     });
+    for (const [control, key] of [[shell.layerShape, 'shape_factor'], [shell.layerPaint, 'paint_factor'], [shell.layerMask, 'mask_factor']] as const) {
+      control.addEventListener('change', () => {
+        const o = this.scene.objects.find((x) => x.id === this.scene.active);
+        if (!o || o.active_layer === null) return;
+        void this.run('layer_set', { id: o.id, layer: o.active_layer, [key]: Number(control.value) / 100 });
+      });
+    }
     shell.buildButtons.forEach((b) => this.on(b, () => void this.build(b.dataset.action ?? '')));
     const trace = (e: PointerEvent): void => {
       if (this.shape) {
@@ -3913,6 +3946,14 @@ class SceneView {
       const v = String(Math.round(layers[pick].strength * 100));
       if (strength.value !== v) strength.value = v;
     }
+    // The per-channel factors follow the active layer the same way, written only when they differ.
+    const s = this.shell;
+    for (const [control, key] of [[s.layerShape, 'shape_factor'], [s.layerPaint, 'paint_factor'], [s.layerMask, 'mask_factor']] as const) {
+      if (control.disabled !== disabled) control.disabled = disabled;
+      if (pick === null || document.activeElement === control) continue;
+      const v = String(Math.round((layers[pick][key] ?? 1) * 100));
+      if (control.value !== v) control.value = v;
+    }
   }
 
   /** The Paint section's layer controls follow the active object's paint stack; options are reused in place. */
@@ -4400,6 +4441,13 @@ class SceneView {
     if (action === 'layer_add') void this.run(action, { id: o.id });
     else if (action === 'surface_noise') void this.run(action, { id: o.id, ...this.noiseArgs(o) });
     else if (o.active_layer === null) this.note('Pick a layer under Record into first');
+    else if (action === 'layer_offset') {
+      // A raise of Layer offset % of the object's size, into the active layer (only where masked when Masked only is on).
+      const b = o.bounds;
+      const size = b ? Math.max(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) : 1;
+      void this.run('layer_offset', { id: o.id, distance: (size * Number(this.shell.layerOffset.value)) / 100, masked_only: this.shell.layerMaskedOnly.checked });
+    } else if (action === 'layer_bake') void this.run('layer_bake', { id: o.id, layer: o.active_layer });
+    else if (action === 'layer_extract') void this.run('layer_extract', { id: o.id, layer: o.active_layer, mode: this.shell.layerExtractMode.value });
     else void this.run(action, { id: o.id, index: o.active_layer });
   }
 

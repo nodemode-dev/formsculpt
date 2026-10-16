@@ -162,6 +162,9 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     layer_apply: n('layer.apply', 'Apply Layer'),
     layer_delete: n('layer.delete', 'Delete Layer'),
     surface_noise: n('layer.surface_noise', 'Noise Layer'),
+    layer_offset: n('layer.offset_view', 'Offset Layer'),
+    layer_bake: n('layer.bake_view', 'Bake Layer'),
+    layer_extract: n('layer.extract_view', 'Extract Layer'),
   },
   view: {
     hide: n('object.hide', 'Hide Object', { icon: 'eye' }),

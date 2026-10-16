@@ -30,7 +30,7 @@ export interface ObjectSummary {
   revision: number;
   level: number;
   levels: number;
-  layers: { name: string; strength: number }[];
+  layers: { name: string; strength: number; shape_factor?: number; paint_factor?: number; mask_factor?: number; has_paint?: boolean; has_mask?: boolean }[];
   active_layer: number | null;
   /** Paint layers, bottom first, and the one painted into (null: the base). */
   paint_layers?: { name: string; blend: string; opacity: number; visible: boolean }[];

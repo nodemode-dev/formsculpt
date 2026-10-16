@@ -537,3 +537,9 @@ The alpha options are sent only while an alpha is chosen and only away from thei
 - kind: rationale
 - logged: v0.51.0 · 2026-10-16
 The Box and Lasso mask tools keep how they are drawn and gain what they do: Selection action sends the same outline to mask_shape, hide_shape (Hide and Show), group_from_outline or split_shape (closed, so both pieces stay watertight), so every action shares one projection and one inside test in the engine. Selection shape reads the lasso's freehand line as drawn, as about a dozen control points of a smooth curve, as a band Path width pixels across, or by its two ends as a line keeping one side; the picture size is sent so the band's pixels mean screen pixels. Flip selection inverts any of them. Extract mask sends Extract as only when it is not Shell, so the default extraction is the same call as before.
+
+### Sculpt layer channels and the full blend list
+- refers-to: app.ts :: LAYER_ACTIONS (layer_offset, layer_bake, layer_extract), layerAction, the Layer shape %, Layer paint %, Layer mask %, Layer offset %, Masked only and Layer extract fields, their change listeners, the layer patch (factors), the Paint layer blend choices; engine/service.ts :: ObjectSummary.layers; ui/command-map.ts :: layer
+- kind: rationale
+- logged: v0.52.0 · 2026-10-16
+The three factor sliders sit under Strength and follow the active layer the same way it does: enabled with a layer, written only when the value differs and never while the slider has focus, and sent through layer_set on change, so dragging never fights the refresh. Offset layer raises by a share of the object's size so the field reads the same on any model. Bake layer and Extract layer pass the layer as layer (the new commands' name) while the older buttons keep index. The paint layer Blend list now offers all 23 modes; per-channel overrides (channel_blend) stay with agents and the palette.
