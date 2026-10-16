@@ -100,7 +100,8 @@ pub(crate) fn uv_layout_schema() -> Value {
             "size": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 512, "description": "Width and height of the picture in pixels."},
             "at": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected."},
             "island": {"type": "integer", "minimum": 0, "description": "An island's number to draw brighter, instead of at."},
-            "tile": {"type": "integer", "minimum": 1001, "maximum": 1100, "default": 1001, "description": "The UDIM tile to draw (1001 is the unit square); at is then given inside that tile, 0 to 1."}
+            "tile": {"type": "integer", "minimum": 1001, "maximum": 1100, "default": 1001, "description": "The UDIM tile to draw (1001 is the unit square); at is then given inside that tile, 0 to 1."},
+            "overview": {"type": "boolean", "default": false, "description": "Draw every occupied UDIM tile at once instead of one tile: the smallest square of tiles holding them all, scaled to the picture. The reply's overview gives its lower left tile corner (u0, v0) and its width in tiles (n); at, island bounds and used are then in that scaled square."}
         },
         "required": [],
         "additionalProperties": false
@@ -122,7 +123,26 @@ pub(crate) fn uv_layout(s: &mut Session, args: &Value) -> Result<Value, CommandE
     let mesh = &s.scene.get(id).expect("checked").mesh;
     need_uvs(mesh)?;
     let shifted;
-    let mesh = if tile == 1001 {
+    let mut overview = Value::Null;
+    let mesh = if args.get("overview").and_then(Value::as_bool).unwrap_or(false) {
+        let tiles = crate::udim_cmds::occupied_tiles(mesh);
+        let place = |t: &u32| (((t - 1001) % 10) as f32, ((t - 1001) / 10) as f32);
+        let (mut u0, mut v0, mut u1, mut v1) = (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        for (u, v) in tiles.iter().map(place) {
+            (u0, v0, u1, v1) = (u0.min(u), v0.min(v), u1.max(u), v1.max(v));
+        }
+        if tiles.is_empty() {
+            (u0, v0, u1, v1) = (0.0, 0.0, 0.0, 0.0);
+        }
+        let n = (u1 - u0).max(v1 - v0) + 1.0;
+        let mut copy = mesh.clone();
+        for p in &mut copy.uvs {
+            *p = [(p[0] - u0) / n, (p[1] - v0) / n];
+        }
+        overview = json!({"u0": u0, "v0": v0, "n": n, "tiles": tiles});
+        shifted = copy;
+        &shifted
+    } else if tile == 1001 {
         mesh
     } else {
         shifted = crate::udim_cmds::shifted_to_unit(mesh, tile);
@@ -155,7 +175,7 @@ pub(crate) fn uv_layout(s: &mut Session, args: &Value) -> Result<Value, CommandE
     Ok(json!({
         "width": size, "height": size, "mime": "image/png",
         "png_base64": base64::engine::general_purpose::STANDARD.encode(&png),
-        "islands": count, "listed": listed, "selected": selected,
+        "islands": count, "listed": listed, "selected": selected, "overview": overview,
         "used": round(used), "stretch": {"mean": round(f64::from(mean)), "max": round(f64::from(worst))}
     }))
 }

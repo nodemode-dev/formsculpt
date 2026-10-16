@@ -772,7 +772,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "get_uv_layout",
         group: Group::Paint,
         label: "UV Layout",
-        description: "Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there, and tile (a UDIM tile number, default 1001) to picture another tile, with at inside it. Use it to look before moving islands with uv_transform.",
+        description: "Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there, and tile (a UDIM tile number, default 1001) to picture another tile, with at inside it, or overview true to picture every occupied tile at once. Use it to look before moving islands with uv_transform.",
         keys: &[],
         hints: READ,
         schema: bake_cmds::uv_layout_schema,
