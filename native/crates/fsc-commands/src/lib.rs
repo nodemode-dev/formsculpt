@@ -397,6 +397,17 @@ pub static COMMANDS: &[Command] = &[
         run: curve_cmds::ik,
     },
     Command {
+        id: "curve.from_border",
+        mcp: "curve_from_border",
+        group: Group::Object,
+        label: "Curve From Border",
+        description: "Turn the border of a set of faces into curve control points, without changing the scene. The set is the faces in one face group (source group, with group giving the id) or the faces whose three vertices have a mean mask of 0.5 or more (source mask). A border edge has exactly one face inside the set, so open mesh edges of the set count too. Border edges are chained into closed loops and open chains, longest first; loop picks one (0 is the longest). The chosen border is cut into points control points (default 16, 3 to 256) evenly spaced by arc length, each optionally lifted along the surface normal by offset. Returns points as [{p: [x, y, z]}, ...], closed, loops (how many borders were found) and length (the arc length of the chosen border). Refuses with no_border when the set is empty or covers a whole closed mesh. Feed the points to sample_curve, curve_tube, curve_ik or edit_build, passing closed when the border is closed.",
+        keys: &[],
+        hints: READ,
+        schema: curve_cmds::border_schema,
+        run: curve_cmds::from_border,
+    },
+    Command {
         id: "build.lathe",
         mcp: "lathe",
         group: Group::Object,

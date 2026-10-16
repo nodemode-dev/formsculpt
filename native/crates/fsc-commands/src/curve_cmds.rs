@@ -333,6 +333,61 @@ pub(crate) fn ik(_: &mut Session, args: &Value) -> Result<Value, CommandError> {
     }))
 }
 
+pub(crate) fn border_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "source": {"type": "string", "enum": ["group", "mask"], "default": "group", "description": "Which faces make the set: those in one face group, or those whose three vertices have a mean mask of 0.5 or more."},
+            "group": {"type": "integer", "minimum": 0, "description": "The face group id; required when source is group."},
+            "loop": {"type": "integer", "minimum": 0, "default": 0, "description": "Which border to take, counting from 0 in order of length (0 is the longest)."},
+            "points": {"type": "integer", "minimum": 3, "maximum": 256, "default": 16, "description": "How many control points to place, evenly spaced by arc length."},
+            "offset": {"type": "number", "default": 0, "description": "Lift each point along the surface normal by this distance, in world units."}
+        },
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn from_border(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let source = match args.get("source") {
+        None | Some(Value::Null) => "group",
+        Some(v) => v.as_str().filter(|x| matches!(*x, "group" | "mask")).ok_or_else(|| bad("source must be group or mask"))?,
+    };
+    let count = number(args, "points", 16.0, 3.0, 256.0)?.round() as usize;
+    let offset = number(args, "offset", 0.0, -1e6, 1e6)? as f32;
+    let which = match args.get("loop") {
+        None | Some(Value::Null) => 0,
+        Some(v) => v.as_u64().ok_or_else(|| bad("loop must be a whole number from 0"))? as usize,
+    };
+    let object = s.scene.get(id).expect("checked");
+    let mesh = &object.mesh;
+    let faces = if source == "group" {
+        let group = args.get("group").and_then(Value::as_u64).filter(|g| *g <= u32::MAX as u64).ok_or_else(|| bad("group is required when source is group: a whole number"))?;
+        if !mesh.has_groups() {
+            return Err(CommandError::new("no_groups", "the object has no face groups; make some with group_from_mask or group_auto"));
+        }
+        fsc_core::border::faces_in_group(mesh, group as u32)
+    } else {
+        if object.mask.len() != mesh.vertex_count() {
+            return Err(CommandError::new("no_mask", "the object has no mask"));
+        }
+        fsc_core::border::faces_by_mask(mesh, &object.mask, 0.5)
+    };
+    let loops = fsc_core::border::border_loops(mesh, &faces);
+    if loops.is_empty() {
+        return Err(CommandError::new("no_border", "the face set is empty or covers the whole closed mesh, so it has no border"));
+    }
+    let chosen = loops.get(which).ok_or_else(|| bad(format!("loop {which} is out of range: {} loops found", loops.len())))?;
+    let points = fsc_core::border::resample_border(mesh, chosen, count, offset);
+    Ok(json!({
+        "points": points.iter().map(|p| json!({"p": [p.x, p.y, p.z]})).collect::<Vec<_>>(),
+        "closed": chosen.closed,
+        "loops": loops.len(),
+        "length": chosen.length
+    }))
+}
+
 pub(crate) fn warp_schema() -> Value {
     json!({
         "type": "object",

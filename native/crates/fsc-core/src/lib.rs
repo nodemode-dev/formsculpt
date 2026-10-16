@@ -1,3 +1,4 @@
+pub mod border;
 pub mod bvh;
 pub mod curve;
 pub mod layers;
