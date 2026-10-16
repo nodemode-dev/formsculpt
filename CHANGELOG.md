@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.46.0 · 2026-10-16
+
+### Added
+
+- `repeat_object`: nested repeaters (up to four line, radial, mirror and curve steps, each with seeded randomize) validated as one merged object, separate copies, linked copies or a preview; `scatter_on_surface`: copies spread by area over another object, aligned to the normal or upright, with spacing, scale range, spin, offset and mask-only.
+- Build section: Repeater step and Repeater result fields with Add repeater step, Clear steps and Apply repeater; Scatter count and Scatter on surface.
+- 143 engine commands; 845 interface strings in every language.
+
 ## 0.45.0 · 2026-10-16
 
 ### Added
