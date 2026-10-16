@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.52.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.53.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.52.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -502,6 +502,72 @@ The eyedropper: the paint at a surface point. Give point [x, y, z] (the nearest 
 - `ray`: object; A ray in object space instead of point; the first surface it hits is used (hit false when it misses).; fields dir, origin
 
 Note: read-only.
+
+## spotlight_add
+
+Spotlight: load an image (png_base64 or path) onto the Spotlight, an image dial held over the view for projection painting and sculpting from an image, as in ZBrush. Place it with center ([x, y] fractions of the view, y down), size (its height as a fraction of the view's height), angle (degrees clockwise), opacity, tile and flip; it becomes the active image. Holds up to 16 images. View state: not in the undo history and not saved in projects. Then spotlight_apply paints or sculpts through it.
+
+- `angle`: number; range -360 to 360; Turn in degrees, clockwise on screen.
+- `center`: array of number; The image's centre over the view as [x, y] fractions of the view's width and height, y down; [0.5, 0.5] is the middle.
+- `flip`: boolean; Mirror the image left to right.
+- `name`: string; A name to list it by; Image N when omitted.
+- `opacity`: number; range 0 to 1; How strongly the image paints or sculpts (its own alpha multiplies this); the window also draws it at this opacity.
+- `path`: string; A PNG file on the engine's machine, instead of png_base64.
+- `png_base64`: string; The image as a base64 PNG.
+- `size`: number; range 0.01 to 20; The image's height as a fraction of the view's height (its width follows its aspect).
+- `tile`: boolean; Repeat the image across the whole view instead of one copy.
+
+## spotlight_set
+
+Spotlight: turn the dial for one image (the active one when image is omitted): move it (center), size it, turn it (angle), fade it (opacity), tile or flip it, or make it the active image (activate). Only the fields given change.
+
+- `activate`: boolean; Make this image the active one (the one spotlight_apply uses by default).
+- `angle`: number; range -360 to 360; Turn in degrees, clockwise on screen.
+- `center`: array of number; The image's centre over the view as [x, y] fractions of the view's width and height, y down; [0.5, 0.5] is the middle.
+- `flip`: boolean; Mirror the image left to right.
+- `image`: integer; range 1 to inf; Spotlight image id; the active image when omitted.
+- `opacity`: number; range 0 to 1; How strongly the image paints or sculpts (its own alpha multiplies this); the window also draws it at this opacity.
+- `size`: number; range 0.01 to 20; The image's height as a fraction of the view's height (its width follows its aspect).
+- `tile`: boolean; Repeat the image across the whole view instead of one copy.
+
+## spotlight_list
+
+Spotlight: every image held with its id, name, pixel size, placement and which is active, and a revision that rises on every Spotlight change. Read-only.
+
+- no parameters
+
+Note: read-only.
+
+## spotlight_image
+
+Spotlight: one image's own pixels as a PNG (png_base64) with its placement, so a window can draw an image an agent loaded. Read-only.
+
+- `image`: integer; range 1 to inf; Spotlight image id; the active image when omitted.
+
+Note: read-only.
+
+## spotlight_remove
+
+Spotlight: clear one image (the active one when image is omitted) or every image (all true) from the Spotlight; the last remaining image becomes active. The surface keeps whatever was painted or sculpted through them.
+
+- `all`: boolean; default false; Clear every image from the Spotlight.
+- `image`: integer; range 1 to inf; Spotlight image id; the active image when omitted.
+
+## spotlight_apply
+
+Spotlight: paint or sculpt through a Spotlight image as seen from a camera (view_proj, a column-major view-projection matrix, with the view's width and height in pixels). Only surfaces that face the camera and are not hidden behind others take it, fading at grazing angles; masked and hidden areas are protected. mode paint lays the image's colour into vertex paint (the active paint layer when there is one) or, with target texture, into the object's texture per texel so the image is not limited by the mesh's resolution; mode sculpt raises the surface along its normals by the image's brightness (depth at full white as a fraction of the object's size, negative carves; mid is the brightness that stays put), recorded into the active sculpt layer when there is one. brush {center, radius} in view pixels limits it to one soft dab, as the window's Spotlight brush does while dragging; without it the whole image applies. strength and the image's opacity and alpha set the weight. One undo step.
+
+- `brush`: object; Only under this circle of the view, as a brush dab through the image; the whole image when omitted.; fields center, radius
+- `depth`: number; default 0.02; range -1 to 1; sculpt: the raise at full white as a fraction of the object's size; negative carves.
+- `height`: number; required; range 1 to 16384; The view's height in pixels.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `image`: integer; range 1 to inf; Spotlight image id; the active image when omitted.
+- `mid`: number; default 0; range 0 to 1; sculpt: the brightness that stays put; darker carves and brighter raises (0: black stays, everything else raises).
+- `mode`: string (paint | sculpt); default "paint"; paint: the image's colour onto the surface; sculpt: the surface raised along its normals by the image's brightness.
+- `strength`: number; default 1; range 0 to 1; Multiplies the image's opacity and alpha.
+- `target`: string (vertex | texture); default "vertex"; paint: texture paints the object's texture per texel (texture_create first) instead of vertex paint.
+- `view_proj`: array of number; required; The camera the image is seen through, as a column-major view-projection matrix (the window sends its own).
+- `width`: number; required; range 1 to 16384; The view's width in pixels.
 
 ## paint_project
 
