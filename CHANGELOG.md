@@ -2,6 +2,22 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.32.0 · 2026-10-16
+
+### Added
+
+- Claude in the window: a terminal dock under the viewport (`Mod+J`) with real shells, a Claude Code tab (`Shift+Mod+J`) that runs your own Claude Code connected to formsculptor's MCP tools with no permission prompt, and a Chat tab (`Alt+Mod+J`) where Claude answers in Markdown and sculpts through the same tools, showing each tool call and the views it looked at. Service: `/api/commands/{id}` (window-only commands), `/api/events` (SSE), `WS /api/terminal/{id}`.
+- `./build_app` and `build_app.bat`: one command builds the installable desktop app (tools checked, engine, Python module, window, frozen sidecar, Tauri bundle; a disk image and install on macOS, a deb on Linux, msi and nsis on Windows); `./formsculptor app` runs it.
+- Commands in the window: every panel button and engine command is a command with label, keys, enabled and checked state; a menu bar (File, Edit, Add, Sculpt, Mask, Topology, Object, Paint, View, Window, Help), right-click menus on the viewport and panel buttons, a `Mod+K` palette and a `Mod+/` shortcut editor with conflict handling.
+- Curves: a shared curve model in the engine with smooth or sharp points, fillet rounding of a corner by a radius, Catmull-Rom, B-spline or straight interpolation and closed loops. `sample_curve`; `warp_along_curve` (bend an object along a path); `curve_tube` gains profiles (circle, square, triangle, star, flat or your own outline), round or flat caps, hollow pipes, twist, spirals and start-to-end radius; `lathe` profiles take rounded corners; `edit_build` sets one point's sharp, round, radius or twist. Window: Alt-click a curve handle for a corner, Corner round, Path shape, Closed path, Tube from curve and the tube settings.
+- 26 interface languages, English by default (View > Language), switched live; `./formsculptor i18n extract|check`. German seeded; the other tables follow in 0.33.0.
+- 118 engine commands.
+
+### Changed
+
+- The frozen engine chooses its own port before starting, so the address handed to Claude Code is real.
+- Panel buttons that need an object are disabled with a reason instead of doing nothing; keys work wherever focus is.
+
 ## 0.31.0 · 2026-10-12
 
 ### Added
