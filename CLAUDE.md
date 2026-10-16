@@ -5,7 +5,9 @@
 ## Repo layout notes
 
 - `assets/` is repo-level art (the README logo and the desktop icon source), not app runtime assets: runtime files live in `frontend/public/` and `frontend/src/`.
-- `native/crates/fsc-commands` is the only place a command is declared. The UI, the MCP server and the agent skills read its catalogue; never add a tool name anywhere else.
+- `native/crates/fsc-commands` is the only place a command is declared. The UI, the MCP server and the agent skills read its catalogue; never add a tool name anywhere else. The one exception is window-only service commands that must never reach MCP (`terminal.*`, `claudecode.*`, `chat.*`, `agents.prefs`), which live on the service's bus in `backend/app/services/`.
+- `./build_app` (and `build_app.bat`) builds the installable desktop app start to finish; `./formsculptor app` runs it.
+- A new interface string lands in every table under `frontend/src/i18n/` in the same change (`./formsculptor i18n extract`, then `check`).
 - `frontend/src/engine/` never touches the DOM; UI lives in `frontend/src/ui/`.
 - `backend/formsculptor_engine.py` is the PyInstaller entry for the desktop sidecar, not a dev server. Use `./formsculptor backend` or `./formsculptor boot`.
 - `src-tauri/binaries/` receives the frozen engine from `setup/freeze_backend`; git ignores it.
