@@ -8,7 +8,7 @@ mod usd;
 use fsc_core::Mesh;
 
 pub use formats::Named;
-pub use gltf::{GltfObject, Resolve, Target};
+pub use gltf::{GltfObject, Resolve, Target, TileSplit};
 pub use project::{open as open_project, save as save_project};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

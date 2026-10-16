@@ -98,6 +98,18 @@ pub(crate) fn occupied_tiles(mesh: &Mesh) -> Vec<u32> {
     by_tile(&measure(mesh)).keys().copied().collect()
 }
 
+/// The UDIM tile of each triangle by the island's box centre (0 where the island is outside every tile).
+pub(crate) fn triangle_tiles(mesh: &Mesh) -> Vec<u32> {
+    let l = measure(mesh);
+    let tile: Vec<u32> = (0..l.count()).map(|i| l.cell(i).map_or(0, |(u, v)| tile_number(u, v))).collect();
+    l.island.iter().map(|&i| tile[i as usize]).collect()
+}
+
+/// The export split for an object with per-tile maps and UVs on every corner; None otherwise.
+pub(crate) fn tile_split(o: &fsc_core::Object) -> Option<fsc_io::TileSplit<'_>> {
+    (!o.tile_maps.is_empty() && !o.mesh.uvs.is_empty() && o.mesh.uvs.len() == o.mesh.indices.len()).then(|| fsc_io::TileSplit { of_triangle: triangle_tiles(&o.mesh), maps: o.tile_maps.iter().map(|(t, m)| (*t, m)).collect() })
+}
+
 /// A copy of the mesh with its UVs moved by minus the tile's (u, v) offset, so the tile becomes the unit square.
 pub(crate) fn shifted_to_unit(mesh: &Mesh, tile: u32) -> Mesh {
     let (du, dv) = (((tile - 1001) % 10) as f32, ((tile - 1001) / 10) as f32);
@@ -188,7 +200,7 @@ pub(crate) fn uv_to_tile(s: &mut Session, args: &Value) -> Result<Value, Command
     }
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Move UVs to Tile".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"object": after, "moved": moved, "islands": chosen.iter().filter(|&&c| c).count(), "tile": tile}))
@@ -293,7 +305,7 @@ pub(crate) fn uv_pack_udim(s: &mut Session, args: &Value) -> Result<Value, Comma
     mesh.uvs = coords.iter().map(|q| q.to_array()).collect();
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     s.history.push(Edit::Topology { label: "Pack UVs into Tiles".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"tiles": listed, "islands": l.count()}))
 }

@@ -167,7 +167,7 @@ pub(crate) fn uv_straighten(s: &mut Session, args: &Value) -> Result<Value, Comm
     let mut edited = original.clone();
     edited.uvs = uvs;
     object.replace_mesh(edited, mask.clone());
-    object.maps = None;
+    object.clear_maps();
 
     if relax > 0 {
         let call = json!({"id": id, "iterations": relax, "mode": "conformal", "pinned": hold});
@@ -180,7 +180,7 @@ pub(crate) fn uv_straighten(s: &mut Session, args: &Value) -> Result<Value, Comm
         let _ = s.history.undo(&mut s.scene);
         let object = s.scene.get_mut(id).expect("checked");
         object.replace_mesh(finished, mask.clone());
-        object.maps = None;
+        object.clear_maps();
     }
 
     let object = s.scene.get_mut(id).expect("checked");

@@ -61,6 +61,25 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
                 entry["maps"]["emissive"] = json!(w.put(&format!("{dir}/maps/emissive.png"), &m.emissive_png)?);
             }
         }
+        if !o.tile_maps.is_empty() {
+            let mut tiles = Vec::new();
+            for (tile, m) in &o.tile_maps {
+                let mut t = json!({
+                    "tile": tile,
+                    "size": m.size,
+                    "source": m.source,
+                    "color": w.put(&format!("{dir}/maps/{tile}/color.png"), &m.color_png)?,
+                    "roughness_metal": w.put(&format!("{dir}/maps/{tile}/roughness_metal.png"), &m.mr_png)?,
+                    "normal": w.put(&format!("{dir}/maps/{tile}/normal.png"), &m.normal_png)?,
+                    "displacement": w.put(&format!("{dir}/maps/{tile}/displacement.exr"), &m.displacement_exr)?,
+                });
+                if !m.emissive_png.is_empty() {
+                    t["emissive"] = json!(w.put(&format!("{dir}/maps/{tile}/emissive.png"), &m.emissive_png)?);
+                }
+                tiles.push(t);
+            }
+            entry["tile_maps"] = json!(tiles);
+        }
         if let Some(m) = &o.multires {
             let mut levels = Vec::new();
             for (k, l) in m.levels.iter().enumerate() {
@@ -267,6 +286,21 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
             ior: f("ior", base.ior, 1.0, 2.5),
         };
         o.maps = maps;
+        for t in e.get("tile_maps").and_then(|t| t.as_array()).into_iter().flatten() {
+            let Some(tile) = t["tile"].as_u64() else { continue };
+            o.tile_maps.push((
+                tile as u32,
+                fsc_core::Maps {
+                    size: t["size"].as_u64().unwrap_or(0) as usize,
+                    source: t["source"].as_str().unwrap_or("").to_string(),
+                    color_png: r.raw(&t["color"])?,
+                    mr_png: r.raw(&t["roughness_metal"])?,
+                    normal_png: r.raw(&t["normal"])?,
+                    displacement_exr: r.raw(&t["displacement"])?,
+                    emissive_png: if t["emissive"].is_string() { r.raw(&t["emissive"])? } else { Vec::new() },
+                },
+            ));
+        }
         let mask = r.f32(&e["mask"])?;
         if mask.len() == o.mesh.vertex_count() {
             o.mask = mask;

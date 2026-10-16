@@ -63,7 +63,7 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     mesh.uvs = result.uvs;
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
@@ -215,7 +215,7 @@ pub(crate) fn uv_transform(s: &mut Session, args: &Value) -> Result<Value, Comma
     }
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Move UV island".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"object": after, "island": chosen, "corners": corners.len()}))
@@ -244,7 +244,7 @@ pub(crate) fn uv_pack(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     let (mesh, count, coverage) = packed_mesh(&object.mesh);
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Pack UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"object": after, "islands": count, "coverage": coverage}))
@@ -257,9 +257,9 @@ pub(crate) fn bake_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "The object to bake onto (it needs UVs from uv_unwrap); the active object when omitted."},
             "size": {"type": "integer", "enum": [256, 512, 1024, 2048, 4096], "default": 1024, "description": "Texture width and height in pixels."},
             "source_id": {"type": "integer", "minimum": 1, "description": "Bake detail from this object (a high-resolution sculpt) instead; by default the object's highest subdivision level, or the object itself."},
-            "path": {"type": "string", "minLength": 1, "description": "A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set)."},
+            "path": {"type": "string", "minLength": 1, "description": "A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set). Optional, also with udim."},
             "tile": {"type": "integer", "minimum": 1001, "maximum": 1100, "description": "Bake only this UDIM tile: the UVs are shifted by minus the tile's offset so the tile fills the texture, and texels outside the tile are left uncovered."},
-            "udim": {"type": "boolean", "default": false, "description": "Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows). Needs path. Not together with tile."}
+            "udim": {"type": "boolean", "default": false, "description": "Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows) when path is given. Every baked tile is also kept on the object, so GLB and glTF export gives one primitive and one material per tile with that tile's maps. Not together with tile."}
         },
         "required": [],
         "additionalProperties": false
@@ -287,9 +287,6 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     };
     if udim && tile.is_some() {
         return Err(bad("give tile or udim, not both"));
-    }
-    if udim && args.get("path").and_then(Value::as_str).is_none() {
-        return Err(bad("udim needs path, the folder to write the tiles into"));
     }
     if (udim || tile.is_some()) && object.mesh.uvs.len() != object.mesh.indices.len() {
         return Err(CommandError::new("no_uvs", "the object has no UVs; run uv_unwrap first (UVs are cleared by topology changes)"));
@@ -327,6 +324,7 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     let texels = size * size;
     let mut kept: Option<(Maps, f32, f32, [f32; 2])> = None;
     let mut written = Vec::new();
+    let mut per_tile: Vec<(u32, Maps)> = Vec::new();
     for job in &jobs {
         let shifted;
         let mesh = match job {
@@ -364,6 +362,9 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
         }
         let covered = baked.covered as f32 / texels as f32;
         let hit = if baked.covered > 0 { baked.hits as f32 / baked.covered as f32 } else { 0.0 };
+        if let (true, Some(t)) = (udim, job) {
+            per_tile.push((*t, maps.clone()));
+        }
         if kept.is_none() || *job == Some(1001) {
             kept = Some((maps, covered, hit, [lo, hi]));
         }
@@ -371,6 +372,7 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     let (maps, covered, hit, range) = kept.expect("at least one tile");
     let object = s.scene.get_mut(id).expect("checked");
     object.maps = Some(maps);
+    object.tile_maps = per_tile;
     object.revision += 1;
     let mut out = json!({
         "id": id,

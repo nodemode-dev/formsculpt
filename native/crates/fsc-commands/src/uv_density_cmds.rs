@@ -186,7 +186,7 @@ pub(crate) fn uv_equalize(s: &mut Session, args: &Value) -> Result<Value, Comman
     let after = stats(&measure(&mesh).1, texture);
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let shown = summary(object);
     s.history.push(Edit::Topology { label: "Equalize UV density".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"object": shown, "before": stats_json(&before), "after": stats_json(&after)}))

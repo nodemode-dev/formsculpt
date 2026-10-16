@@ -19,6 +19,8 @@ pub struct Object {
     pub multires: Option<Multires>,
     pub layers: Layers,
     pub maps: Option<Maps>,
+    /// Baked maps per UDIM tile (tile number, maps), ascending by tile; empty unless a udim bake kept them.
+    pub tile_maps: Vec<(u32, Maps)>,
     /// The folder the object is filed under in the scene list (one level, as ZBrush's SubTool folders); empty: none.
     pub folder: String,
     /// Paint layers composited into `mesh.paint` (empty: the paint is plain).
@@ -82,7 +84,13 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, tile_maps: Vec::new(), folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
+    }
+
+    /// Drops the baked maps, the single set and every UDIM tile's.
+    pub fn clear_maps(&mut self) {
+        self.maps = None;
+        self.tile_maps.clear();
     }
 
     pub fn rebuild(&mut self) {

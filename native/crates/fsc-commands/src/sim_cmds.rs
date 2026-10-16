@@ -439,7 +439,7 @@ fn replace_topology(s: &mut Session, id: ObjectId, label: &str, mesh: Mesh) -> V
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask });
     after
@@ -547,7 +547,7 @@ pub(crate) fn delete_faces(s: &mut Session, args: &Value) -> Result<Value, Comma
     out.quads = quads;
     let object = s.scene.get_mut(id).expect("checked");
     let (old_mesh, old_mask) = object.replace_mesh(out, mask);
-    object.maps = None;
+    object.clear_maps();
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Delete Faces".into(), object: id, mesh: old_mesh, mask: old_mask });
     Ok(json!({"object": after, "deleted": removed}))
@@ -590,10 +590,10 @@ pub(crate) fn substance_send(s: &mut Session, args: &Value) -> Result<Value, Com
         written.push(path.display().to_string());
         Ok(())
     };
-    write(format!("{stem}_low.obj"), &fsc_io::export(fsc_io::Format::Obj, &[fsc_io::GltfObject { name: &stem, mesh: low, targets: Vec::new(), maps: None }]).map_err(|e| CommandError::new("io_failed", e))?)?;
+    write(format!("{stem}_low.obj"), &fsc_io::export(fsc_io::Format::Obj, &[fsc_io::GltfObject { name: &stem, mesh: low, targets: Vec::new(), maps: None, tiles: None }]).map_err(|e| CommandError::new("io_failed", e))?)?;
     let has_high = !std::ptr::eq(low, high);
     if has_high {
-        write(format!("{stem}_high.obj"), &fsc_io::export(fsc_io::Format::Obj, &[fsc_io::GltfObject { name: &stem, mesh: high, targets: Vec::new(), maps: None }]).map_err(|e| CommandError::new("io_failed", e))?)?;
+        write(format!("{stem}_high.obj"), &fsc_io::export(fsc_io::Format::Obj, &[fsc_io::GltfObject { name: &stem, mesh: high, targets: Vec::new(), maps: None, tiles: None }]).map_err(|e| CommandError::new("io_failed", e))?)?;
     }
     let mut maps_written = false;
     if let Some(files) = crate::live::map_files(object) {

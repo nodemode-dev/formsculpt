@@ -223,7 +223,7 @@ pub(crate) fn uv_relax(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     edited.uvs = uvs;
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(edited, mask);
-    object.maps = None;
+    object.clear_maps();
     let result = summary(object);
     s.history.push(Edit::Topology { label: "Relax UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;

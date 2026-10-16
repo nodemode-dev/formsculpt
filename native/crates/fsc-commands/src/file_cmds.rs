@@ -87,7 +87,7 @@ pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec
         .iter()
         .map(|&id| {
             let o = s.scene.get(id).expect("checked");
-            GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.strength, delta: &l.delta }).collect(), maps: o.maps.as_ref() }
+            GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.strength, delta: &l.delta }).collect(), maps: o.maps.as_ref(), tiles: crate::udim_cmds::tile_split(o) }
         })
         .collect();
     fsc_io::export(format, &objects).map_err(io)
@@ -234,7 +234,7 @@ pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandErro
             .iter()
             .map(|&id| {
                 let o = s.scene.get(id).expect("checked");
-                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.strength, delta: &l.delta }).collect(), maps: o.maps.as_ref() }
+                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.strength, delta: &l.delta }).collect(), maps: o.maps.as_ref(), tiles: crate::udim_cmds::tile_split(o) }
             })
             .collect();
         let (doc, bin) = fsc_io::export_gltf(&objects, &bin_name);
