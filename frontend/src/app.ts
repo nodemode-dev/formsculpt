@@ -14,7 +14,7 @@ interface PrintReport {
   problems: string[];
 }
 import { Viewport, type Ray } from './viewport/viewport';
-import type { LightSpec } from './viewport/gl-renderer';
+import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { ViewName } from './viewport/camera';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
@@ -143,6 +143,12 @@ interface Shell {
   tubeHole: HTMLInputElement;
   tubeSpiral: HTMLInputElement;
   pathButtons: HTMLButtonElement[];
+  backdropMode: HTMLSelectElement;
+  backdropTop: HTMLInputElement;
+  backdropBottom: HTMLInputElement;
+  backdropMid: HTMLInputElement;
+  backdropVignette: HTMLInputElement;
+  floorGrid: HTMLInputElement;
   curveLine: SVGPolylineElement;
   curveHandles: SVGPathElement;
   paintLayer: HTMLSelectElement;
@@ -328,6 +334,7 @@ const FILE_ACTIONS: [string, string][] = [
 ];
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
+const BACKDROP_KEY = 'formsculptor.backdrop';
 
 const OBJECT_ACTIONS: [string, string][] = [
   ['duplicate', 'Duplicate'],
@@ -880,12 +887,19 @@ function buildShell(root: HTMLElement): Shell {
   const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
   const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
   const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
+  const backdropMode = choices('Background', [['gradient', 'Gradient'], ['color', 'Flat colour']]);
+  const backdropTop = input('color', { value: '#3c3c41', 'aria-label': 'Background top' });
+  const backdropBottom = input('color', { value: '#17171a', 'aria-label': 'Background bottom' });
+  const backdropMid = input('range', { min: '5', max: '95', value: '55', 'aria-label': 'Gradient midpoint' });
+  const backdropVignette = input('range', { min: '0', max: '100', value: '35', 'aria-label': 'Background vignette' });
+  const floorGrid = input('checkbox', { 'aria-label': 'Floor grid' });
+  floorGrid.checked = true;
   const langPick = choices('Language', languages().map(([code, name]) => [code, name] as [string, string]));
   langPick.dataset.noI18n = '';
   langPick.value = language();
   langPick.addEventListener('change', () => { if (isLang(langPick.value)) void setLanguage(langPick.value); });
   const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -1061,7 +1075,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1168,6 +1182,7 @@ class SceneView {
       this.viewport.invalidate();
     });
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
+    this.wireBackdrop();
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
     shell.historyList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
@@ -1471,6 +1486,45 @@ class SceneView {
 
   stroking(): boolean {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
+  }
+
+  /** The backdrop controls: the theme's gradient until the person changes it, then their choice, kept in this browser. */
+  private wireBackdrop(): void {
+    const s = this.shell;
+    const b = this.viewport.renderer.backdrop;
+    const toHex = (c: [number, number, number]): string => `#${c.map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('')}`;
+    let saved: Partial<{ mode: string; top: string; bottom: string; mid: number; vignette: number; grid: boolean }> = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(BACKDROP_KEY) ?? '{}') as typeof saved;
+    } catch {
+      saved = {};
+    }
+    s.backdropMode.value = saved.mode === 'color' ? 'color' : 'gradient';
+    s.backdropTop.value = saved.top ?? toHex(b.top);
+    s.backdropBottom.value = saved.bottom ?? toHex(b.bottom);
+    s.backdropMid.value = String(saved.mid ?? Math.round(b.mid * 100));
+    s.backdropVignette.value = String(saved.vignette ?? Math.round(b.vignette * 100));
+    s.floorGrid.checked = saved.grid ?? b.grid;
+    const apply = (persist: boolean): void => {
+      b.mode = s.backdropMode.value === 'color' ? 'color' : 'gradient';
+      b.top = hexColor(s.backdropTop.value) ?? b.top;
+      b.bottom = hexColor(s.backdropBottom.value) ?? b.bottom;
+      b.mid = Number(s.backdropMid.value) / 100;
+      b.vignette = Number(s.backdropVignette.value) / 100;
+      b.grid = s.floorGrid.checked;
+      this.viewport.renderer.setClearColor(s.backdropBottom.value);
+      this.viewport.invalidate();
+      scheduleChrome();
+      if (!persist) return;
+      try {
+        localStorage.setItem(BACKDROP_KEY, JSON.stringify({ mode: b.mode, top: s.backdropTop.value, bottom: s.backdropBottom.value, mid: Number(s.backdropMid.value), vignette: Number(s.backdropVignette.value), grid: b.grid }));
+      } catch {
+        // storage blocked; the choice lasts for this session
+      }
+    };
+    for (const c of [s.backdropTop, s.backdropBottom, s.backdropMid, s.backdropVignette]) c.addEventListener('input', () => apply(true));
+    for (const c of [s.backdropMode, s.floorGrid]) c.addEventListener('change', () => apply(true));
+    apply(false);
   }
 
   /** What an agent asked from the dock should know about the window: the active object and the scene's size. */
@@ -2372,6 +2426,8 @@ class SceneView {
       { id: 'view.frame', label: 'Frame Active Object', keys: ['F'], icon: 'frame', run: () => this.frameActive(), enabled: () => this.scene.active !== null },
       { id: 'view.groups', label: 'Show Face Groups', run: () => toggle(s.showGroups), checked: () => s.showGroups.checked },
       { id: 'view.trackball', label: 'Trackball Rotation', run: () => toggle(s.trackball), checked: () => s.trackball.checked },
+      { id: 'view.floor_grid', label: 'Floor Grid', keys: ['Shift+P'], run: () => toggle(s.floorGrid), checked: () => s.floorGrid.checked },
+      { id: 'view.backdrop_gradient', label: 'Gradient Background', run: () => { s.backdropMode.value = s.backdropMode.value === 'gradient' ? 'color' : 'gradient'; s.backdropMode.dispatchEvent(new Event('change', { bubbles: true })); }, checked: () => s.backdropMode.value === 'gradient' },
       { id: 'sculpt.mirror_x', label: 'Mirror X', run: () => toggle(s.symX), checked: () => s.symX.checked },
       { id: 'sculpt.invert', label: 'Invert Brush', run: () => toggle(s.invert), checked: () => s.invert.checked },
       { id: 'sculpt.dyntopo', label: 'Dynamic Topology', run: () => toggle(s.dyntopo), checked: () => s.dyntopo.checked, enabled: () => !s.dyntopo.disabled },
@@ -2402,6 +2458,21 @@ class SceneView {
     );
     NEEDS_OBJECT.add('object.rename');
     NEEDS_OBJECT.add('object.delete');
+    list.push(
+      { id: 'selection.save', label: 'Save Selection Set', mutates: true, run: () => void this.selectionSet('save') },
+      { id: 'selection.restore', label: 'Restore Selection Set', mutates: true, run: () => void this.selectionSet('restore') },
+      { id: 'selection.delete', label: 'Delete Selection Set', mutates: true, run: () => void this.selectionSet('delete') },
+    );
+    for (const id of ['selection.save', 'selection.restore', 'selection.delete']) NEEDS_OBJECT.add(id);
+    const channelVerbs: [string, string, string, string][] = [
+      ['channel.copy_mask', 'Copy Mask', 'channel_copy', 'mask'], ['channel.paste_mask', 'Paste Mask', 'channel_paste', 'mask'], ['channel.clear_mask', 'Clear Mask Channel', 'channel_clear', 'mask'],
+      ['channel.copy_groups', 'Copy Groups', 'channel_copy', 'groups'], ['channel.paste_groups', 'Paste Groups', 'channel_paste', 'groups'], ['channel.clear_groups', 'Clear Groups', 'channel_clear', 'groups'],
+      ['channel.copy_paint', 'Copy Paint', 'channel_copy', 'paint'], ['channel.paste_paint', 'Paste Paint', 'channel_paste', 'paint'], ['channel.clear_paint', 'Clear Paint Channel', 'channel_clear', 'paint'],
+    ];
+    for (const [id, label, engine, channel] of channelVerbs) {
+      list.push({ id, label, mutates: engine !== 'channel_copy', risky: id === 'channel.clear_paint', run: () => void this.run(engine, { id: this.scene.active, channel }) });
+      NEEDS_OBJECT.add(id);
+    }
     for (const size of ['small', 'normal', 'large']) {
       list.push({ id: `view.ui_${size}`, label: `Interface Size ${size[0].toUpperCase()}${size.slice(1)}`, run: () => this.setUiSize(size), checked: () => s.layout.size === size });
     }
@@ -2442,6 +2513,28 @@ class SceneView {
     if (!o) return;
     const name = await this.prompt.ask(t('Rename Object'), o.name);
     if (name && name !== o.name) await this.run('rename_object', { id: o.id, name });
+  }
+
+  /** Selection Sets by name: saving offers the next free name, restoring and deleting offer the newest set. */
+  private async selectionSet(action: 'save' | 'restore' | 'delete'): Promise<void> {
+    const id = this.scene.active;
+    if (id === null) return;
+    const listed = await dispatch<{ sets: { name: string }[] }>('selection_set_list', { id });
+    const names = listed.ok ? listed.result.sets.map((x) => x.name) : [];
+    if (action !== 'save' && !names.length) {
+      this.note(t('This object has no selection sets yet'));
+      return;
+    }
+    let suggest = names[names.length - 1] ?? '';
+    if (action === 'save') for (let n = names.length + 1; !suggest || names.includes(suggest); n++) suggest = `Set ${n}`;
+    const title = action === 'save' ? t('Save Selection Set') : action === 'restore' ? t('Restore Selection Set') : t('Delete Selection Set');
+    const name = await this.prompt.ask(title, suggest);
+    if (!name) return;
+    if (action !== 'save' && !names.includes(name)) {
+      this.note(t('No selection set is named {name}').replace('{name}', name));
+      return;
+    }
+    await this.run(`selection_set_${action}`, { id, name });
   }
 
   /** Right-click menus: the viewport's, the object rows' and the pin menu of every panel button. */

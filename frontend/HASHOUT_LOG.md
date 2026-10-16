@@ -417,3 +417,15 @@ The waiting curve keeps sharp and round per handle. A click on a handle (moved u
 - kind: rationale
 - logged: v0.32.0 · 2026-10-16
 FormVis's live model with FormLit's {name} templates: JSON tables keyed by the English, loaded with import.meta.glob only when chosen, regional variants falling back to their parent. The page translator runs from a MutationObserver (before paint) and keeps each node's English in a WeakMap, so a switch back is exact; it skips the terminal, chat, object names and history. The saved language (formsculptor.language) loads before the shell is built, so the first paint is already translated. The menus and data-cmd titles re-label through onLanguage. Changing language measured a layout shift of 0.003 as label widths change; that is the text itself, not a rebuild.
+
+### Viewport backdrop · studio gradient and infinite floor grid
+- refers-to: viewport/gl-renderer.ts :: GRADIENT_FS, FLOOR_FS, Backdrop, drawGradient, drawFloor; viewport/viewport.ts; app.ts :: SceneView.wireBackdrop; styles/tokens.css --viewport-*
+- kind: rationale
+- logged: v0.33.0 · 2026-10-16
+Replaces the flat clear colour, the 41-line GL_LINES grid that ran aliased to the horizon, and the CSS dot pattern behind the canvas. Modelled on the two references: Nomad's Background (Gradient with a midpoint factor, or a flat Color) and ZBrush's document gradient with a floor grid toggled from the canvas. The gradient is a full-screen pass with a soft vignette and a one-step noise dither so an 8-bit ramp never bands. The floor is one full-screen pass that intersects each pixel's view ray with y = 0 and draws anti-aliased lines from screen-space derivatives; the cell size steps by tens with the camera distance and the two scales cross-fade, so the grid never pops while zooming. It fades with distance and at grazing angles, so a front or side view shows a clean horizon and the ortho top view a crisp blueprint. Depth writes are off, so meshes always cover it. The theme's tokens seed the colours; the View panel's Background controls and Shift+P (Floor Grid) override them and persist in formsculptor.backdrop. The stage's CSS gradient matches the GL one, so the frame before the first draw shows no seam.
+
+### Selection Sets and channel clipboard in the window
+- refers-to: app.ts :: registerCommands (selection.*, channel.*), SceneView.selectionSet; ui/menus.ts MASK and EDIT
+- kind: rationale
+- logged: v0.33.0 · 2026-10-16
+Mask > Selection Sets saves, restores and deletes by name through the PromptDialog: saving offers the next free "Set n", restoring and deleting offer the newest set and refuse a name the object does not have. Edit > Channels copies, pastes and clears the mask, groups or paint through the engine's one-channel clipboard, so they go from one object to another with matching topology. The labels sit in a [id, label, ...] table so setup/i18n.py extracts them.

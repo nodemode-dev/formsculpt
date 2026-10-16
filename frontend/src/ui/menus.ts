@@ -31,7 +31,8 @@ const FILE: MenuItem[] = [
 const EDIT: MenuItem[] = [
   'history.undo', 'history.redo', '-',
   'object.duplicate', 'object.delete', 'object.rename', '-',
-  { label: 'Transform', items: [...tool('gizmo', 'lattice'), '-', 'object.bend', 'object.twist', 'object.taper', '-', 'object.align', 'object.distribute'] }, '-',
+  { label: 'Transform', items: [...tool('gizmo', 'lattice'), '-', 'object.bend', 'object.twist', 'object.taper', '-', 'object.align', 'object.distribute'] },
+  { label: 'Channels', items: ['channel.copy_mask', 'channel.paste_mask', 'channel.clear_mask', '-', 'channel.copy_groups', 'channel.paste_groups', 'channel.clear_groups', '-', 'channel.copy_paint', 'channel.paste_paint', 'channel.clear_paint'] }, '-',
   'app.palette', 'app.shortcuts',
 ];
 
@@ -55,7 +56,8 @@ const MASK: MenuItem[] = [
   'mask.invert', 'mask.clear', 'mask.blur', 'mask.sharpen', 'mask.grow', 'mask.shrink', 'mask.cavity', 'mask.peaks', 'mask.color', '-',
   'group.from_mask', 'group.auto', 'group.by_paint', 'group.by_uv', ...tool('group_brush'), '-',
   'faces.hide_masked', 'faces.invert_hidden', 'faces.show', ...tool('hide_group'), '-',
-  'mask.extract', 'mask.extrude', 'mask.inset',
+  'mask.extract', 'mask.extrude', 'mask.inset', '-',
+  { label: 'Selection Sets', items: ['selection.save', 'selection.restore', 'selection.delete'] },
 ];
 
 const TOPOLOGY: MenuItem[] = [
@@ -82,7 +84,7 @@ const PAINT: MenuItem[] = [
 
 const VIEW: MenuItem[] = [
   'view.front', 'view.back', 'view.right', 'view.left', 'view.top', 'view.bottom', 'view.ortho', 'view.frame', 'view.set_pivot', '-',
-  'view.groups', 'view.trackball', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
+  'view.groups', 'view.trackball', 'view.floor_grid', 'view.backdrop_gradient', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
   'view.reference', 'view.clear_reference', 'view.matcap', 'light.load_hdri', 'light.add', 'light.remove', '-',
   'view.turntable', 'view.history_movie', 'view.path_render', 'view.anim_key', 'view.anim_record', 'view.anim_clear', 'view.spacemouse',
 ];
