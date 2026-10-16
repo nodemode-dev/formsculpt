@@ -16,6 +16,61 @@ fn vec3_of(v: &Value, what: &str) -> Result<Vec3, CommandError> {
     Ok(Vec3::new(n(0)?, n(1)?, n(2)?))
 }
 
+pub(crate) fn wire_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "The object whose edges to list (a retopology object); the active object when omitted."},
+            "eye": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A camera position; each edge then says whether it is in view from there."},
+            "occluder": {"type": "integer", "minimum": 1, "description": "The object that can hide the edges (the sculpt under a retopology object); the object itself when omitted."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// A mesh's edges as segments for drawing a wireframe: a quad mesh's quad edges (no diagonals), else its triangle
+/// edges, at most 20000; given an eye, each says whether the occluder hides its middle from there. Read-only.
+pub(crate) fn get_wire(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = crate::sculpt_cmds::target(s, args)?;
+    let eye = match args.get("eye").filter(|v| !v.is_null()) {
+        Some(v) => Some(vec3_of(v, "eye")?),
+        None => None,
+    };
+    let occluder_id = args.get("occluder").and_then(Value::as_u64).map(|v| v as ObjectId).unwrap_or(id);
+    let occluder = s.scene.get(occluder_id).ok_or_else(|| CommandError::new("not_found", format!("no object {occluder_id}")))?;
+    let object = s.scene.get(id).expect("checked");
+    let m = &object.mesh;
+    let mut edges: Vec<(u32, u32)> = match m.quad_faces() {
+        Some(quads) => quads.iter().flat_map(|q| (0..4).map(move |k| (q[k].min(q[(k + 1) % 4]), q[k].max(q[(k + 1) % 4])))).collect(),
+        None => (0..m.triangle_count()).flat_map(|t| {
+            let [a, b, c] = m.triangle(t);
+            [(a.min(b), a.max(b)), (b.min(c), b.max(c)), (c.min(a), c.max(a))]
+        }).collect(),
+    };
+    edges.sort_unstable();
+    edges.dedup();
+    let total = edges.len();
+    edges.truncate(20000);
+    let size = occluder.mesh.bounds().extent().length().max(1e-6);
+    let segments: Vec<Value> = edges.iter().map(|&(a, b)| {
+        let (pa, pb) = (m.position(a), m.position(b));
+        let visible = eye.map(|e| {
+            let mid = (pa + pb) * 0.5;
+            let d = mid.distance(e);
+            // A straight edge between two surface points dips under a curved surface by about length squared over
+            // eight radii; a quarter of its length covers any curve tighter than half its length.
+            let slack = size * 2e-3 + pa.distance(pb) * 0.25;
+            match occluder.bvh.raycast(&occluder.mesh, e, (mid - e) / d.max(1e-9)) {
+                Some(h) => h.t >= d - slack,
+                None => true,
+            }
+        });
+        json!({"a": pa.to_array(), "b": pb.to_array(), "visible": visible})
+    }).collect();
+    Ok(json!({"id": id, "revision": object.revision, "edges": segments, "total": total}))
+}
+
 pub(crate) fn patch_schema() -> Value {
     json!({
         "type": "object",
@@ -24,7 +79,7 @@ pub(crate) fn patch_schema() -> Value {
             "into": {"type": "integer", "minimum": 1, "description": "The retopology object to add to (from retopo_face or an earlier patch); a new one when omitted."},
             "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS, "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole)."},
             "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near the target's surface where the patch's middle goes."},
-            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "Half the patch's width in world units; 15 percent of the target's size when omitted."},
+            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "Half the patch's width in world units; 6 percent of the target's size (its bounding diagonal) when omitted."},
             "up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Which way the patch's top points, flattened onto the surface (the window sends the screen's up); world up when omitted."},
             "angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "A further turn about the surface normal, in degrees."},
             "columns": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid and strip: quads across (default 4). Loops and disc: points around (even, default 12)."},
@@ -59,7 +114,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
             Some(v) => v.as_f64().map(|x| x as f32).filter(|x| x.is_finite() && *x >= lo && *x <= hi).ok_or_else(|| bad(format!("{k} must be a number from {lo} to {hi}"))),
         }
     };
-    let size = num("size", bsize * 0.15, 1e-6, 1000.0)?;
+    let size = num("size", bsize * 0.06, 1e-6, 1000.0)?;
     // By default a quarter of the patch's shortest edge at most, so a fine patch never welds onto itself.
     let shortest = flat.quads.iter().flat_map(|q| (0..4).map(move |k| (q[k], q[(k + 1) % 4]))).map(|(a, b)| {
         let (p, q) = (flat.points[a as usize], flat.points[b as usize]);
