@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Zapisz profil",
  "Save Tube Profile": "Zapisz profil rurki",
- "Tube profile, drag the points": "Profil rurki, przeciągaj punkty"
+ "Tube profile, drag the points": "Profil rurki, przeciągaj punkty",
+ "Array jitter %": "Rozrzut szyku %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Spadek: przeciągnij punkt w górę lub w dół; Alt-kliknij dla narożnika lub gładkiego punktu.",
+ "Jitter seed": "Ziarno rozrzutu",
+ "Last copy scale": "Skala ostatniej kopii"
 }

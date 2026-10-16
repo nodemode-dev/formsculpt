@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Profil speichern",
  "Save Tube Profile": "Röhrenprofil speichern",
- "Tube profile, drag the points": "Röhrenprofil, Punkte ziehen"
+ "Tube profile, drag the points": "Röhrenprofil, Punkte ziehen",
+ "Array jitter %": "Array-Streuung %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Abfall: Punkt nach oben oder unten ziehen; Alt-Klick für Ecke oder glatten Punkt.",
+ "Jitter seed": "Streuungs-Startwert",
+ "Last copy scale": "Skalierung der letzten Kopie"
 }

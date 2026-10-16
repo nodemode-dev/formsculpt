@@ -746,5 +746,9 @@
  "Pulse": "จังหวะ",
  "Save profile": "บันทึกโปรไฟล์",
  "Save Tube Profile": "บันทึกโปรไฟล์ท่อ",
- "Tube profile, drag the points": "โปรไฟล์ท่อ ลากจุดต่างๆ"
+ "Tube profile, drag the points": "โปรไฟล์ท่อ ลากจุดต่างๆ",
+ "Array jitter %": "ความกระจายของอาร์เรย์ %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "การลดหลั่น: ลากจุดขึ้นหรือลง Alt-คลิกเพื่อสลับมุมหรือจุดโค้ง",
+ "Jitter seed": "ค่าเริ่มต้นการกระจาย",
+ "Last copy scale": "ขนาดของสำเนาสุดท้าย"
 }

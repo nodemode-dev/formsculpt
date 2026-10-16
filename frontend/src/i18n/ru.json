@@ -746,5 +746,9 @@
  "Pulse": "Пульс",
  "Save profile": "Сохранить профиль",
  "Save Tube Profile": "Сохранить профиль трубки",
- "Tube profile, drag the points": "Профиль трубки, тяните точки"
+ "Tube profile, drag the points": "Профиль трубки, тяните точки",
+ "Array jitter %": "Разброс массива %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Спад: тяните точку вверх или вниз; Alt-щелчок делает угол или гладкую точку.",
+ "Jitter seed": "Зерно разброса",
+ "Last copy scale": "Масштаб последней копии"
 }

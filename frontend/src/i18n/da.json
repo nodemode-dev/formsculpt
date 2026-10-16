@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Gem profil",
  "Save Tube Profile": "Gem rørprofil",
- "Tube profile, drag the points": "Rørprofil, træk punkterne"
+ "Tube profile, drag the points": "Rørprofil, træk punkterne",
+ "Array jitter %": "Række-variation %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Aftagning: træk et punkt op eller ned; Alt-klik for hjørne eller blødt punkt.",
+ "Jitter seed": "Variationsfrø",
+ "Last copy scale": "Skala for sidste kopi"
 }

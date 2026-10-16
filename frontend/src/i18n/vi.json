@@ -746,5 +746,9 @@
  "Pulse": "Nhịp",
  "Save profile": "Lưu biên dạng",
  "Save Tube Profile": "Lưu biên dạng ống",
- "Tube profile, drag the points": "Biên dạng ống, kéo các điểm"
+ "Tube profile, drag the points": "Biên dạng ống, kéo các điểm",
+ "Array jitter %": "Độ xáo trộn mảng %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Suy giảm: kéo một điểm lên hoặc xuống; Alt-nhấp để chuyển góc hoặc điểm mềm.",
+ "Jitter seed": "Hạt giống xáo trộn",
+ "Last copy scale": "Tỉ lệ bản sao cuối"
 }

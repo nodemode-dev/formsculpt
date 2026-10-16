@@ -746,5 +746,9 @@
  "Pulse": "Pulssi",
  "Save profile": "Tallenna profiili",
  "Save Tube Profile": "Tallenna putken profiili",
- "Tube profile, drag the points": "Putken profiili, vedä pisteitä"
+ "Tube profile, drag the points": "Putken profiili, vedä pisteitä",
+ "Array jitter %": "Monistuksen hajonta %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Vaimeneminen: vedä pistettä ylös tai alas; Alt-napsauta kulmaksi tai pyöreäksi pisteeksi.",
+ "Jitter seed": "Hajonnan siemen",
+ "Last copy scale": "Viimeisen kopion mittakaava"
 }

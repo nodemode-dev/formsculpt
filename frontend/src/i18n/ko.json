@@ -746,5 +746,9 @@
  "Pulse": "펄스",
  "Save profile": "프로필 저장",
  "Save Tube Profile": "튜브 프로필 저장",
- "Tube profile, drag the points": "튜브 프로필, 점을 드래그"
+ "Tube profile, drag the points": "튜브 프로필, 점을 드래그",
+ "Array jitter %": "배열 흩뿌림 %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "감쇠: 점을 위아래로 드래그하고, Alt 클릭으로 모서리와 부드러운 점을 전환합니다.",
+ "Jitter seed": "흩뿌림 시드",
+ "Last copy scale": "마지막 복사본 크기"
 }

@@ -1000,7 +1000,7 @@ Split an object into one object per connected part of its mesh.
 
 ## array_object
 
-Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them.
+Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them. Also along a curve (curve mode with points). scale_start and scale_end ramp a uniform scale from the first copy to the last, and jitter adds a repeatable random offset, turn and scale to each copy from a seed (position in world units, rotation in degrees, scale as a fraction); both are refused in mirror mode, and linked copies keep the ramp and jitter.
 
 - `align`: boolean; default true; Curve: turn each copy so the original's +x follows the path.
 - `angle`: number; default 360; range -360 to 360; Radial: the total turn in degrees; 360 spaces the copies evenly around the full circle.
@@ -1010,11 +1010,14 @@ Repeat an object in a line (offset per copy) or around an axis (radial, evenly o
 - `count`: integer; default 4; range 2 to 200; Copies in all, the original included.
 - `id`: integer; range 1 to inf; The object to repeat; the active object when omitted.
 - `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; Curve: how the path runs between points.
+- `jitter`: object; Deterministic random variation per copy (the original is untouched); the same seed gives the same result. Not allowed with mirror.; fields position, rotation, scale, seed
 - `linked`: boolean; default false; Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it.
 - `merge`: boolean; default false; Join the copies with the original into one object instead of adding separate objects.
 - `mode`: string (linear | radial | mirror | curve); default "linear"; linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points.
 - `offset`: array of number; Linear: the step from one copy to the next, in world units; one bounds width along x when omitted.
 - `points`: array of value; Curve: the path, as [x, y, z] points or objects {p, sharp, round} (corners and fillets as in sample_curve); each copy's bounds centre sits on it.
+- `scale_end`: number; default 1; range 0.01 to 100; Uniform scale of the last copy; copies in between ramp linearly. Not allowed with mirror.
+- `scale_start`: number; default 1; range 0.01 to 100; Uniform scale of the first copy in the ramp (about the original's bounds centre). Not allowed with mirror.
 
 ## insert_mesh
 

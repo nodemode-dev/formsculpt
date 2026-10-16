@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Profiel opslaan",
  "Save Tube Profile": "Buisprofiel opslaan",
- "Tube profile, drag the points": "Buisprofiel, sleep de punten"
+ "Tube profile, drag the points": "Buisprofiel, sleep de punten",
+ "Array jitter %": "Reeksvariatie %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Afloop: sleep een punt omhoog of omlaag; Alt-klik voor een hoek of een glad punt.",
+ "Jitter seed": "Variatiezaad",
+ "Last copy scale": "Schaal van de laatste kopie"
 }

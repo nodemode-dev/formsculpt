@@ -746,5 +746,9 @@
  "Pulse": "脉冲",
  "Save profile": "保存轮廓",
  "Save Tube Profile": "保存管道轮廓",
- "Tube profile, drag the points": "管道轮廓，拖动各点"
+ "Tube profile, drag the points": "管道轮廓，拖动各点",
+ "Array jitter %": "阵列随机偏移 %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "衰减：上下拖动点；Alt 点击切换尖角或平滑点。",
+ "Jitter seed": "随机种子",
+ "Last copy scale": "最后一个副本的缩放"
 }

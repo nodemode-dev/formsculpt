@@ -746,5 +746,9 @@
  "Pulse": "Denyut",
  "Save profile": "Simpan profil",
  "Save Tube Profile": "Simpan Profil Tabung",
- "Tube profile, drag the points": "Profil tabung, seret titik-titiknya"
+ "Tube profile, drag the points": "Profil tabung, seret titik-titiknya",
+ "Array jitter %": "Acakan larik %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Falloff: seret titik ke atas atau bawah; Alt-klik untuk sudut atau titik halus.",
+ "Jitter seed": "Benih acakan",
+ "Last copy scale": "Skala salinan terakhir"
 }

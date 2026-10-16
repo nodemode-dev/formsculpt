@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Spara profil",
  "Save Tube Profile": "Spara rörprofil",
- "Tube profile, drag the points": "Rörprofil, dra punkterna"
+ "Tube profile, drag the points": "Rörprofil, dra punkterna",
+ "Array jitter %": "Radvariation %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Avtoning: dra en punkt upp eller ned; Alt-klicka för hörn eller mjuk punkt.",
+ "Jitter seed": "Variationsfrö",
+ "Last copy scale": "Skala för sista kopian"
 }

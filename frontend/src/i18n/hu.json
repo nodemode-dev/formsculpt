@@ -746,5 +746,9 @@
  "Pulse": "Pulzálás",
  "Save profile": "Profil mentése",
  "Save Tube Profile": "Csőprofil mentése",
- "Tube profile, drag the points": "Csőprofil, húzd a pontokat"
+ "Tube profile, drag the points": "Csőprofil, húzd a pontokat",
+ "Array jitter %": "Sokszorozás szórása %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Lecsengés: húzz egy pontot fel vagy le; Alt-kattintás sarokért vagy sima pontért.",
+ "Jitter seed": "Szórás kezdőértéke",
+ "Last copy scale": "Utolsó másolat mérete"
 }

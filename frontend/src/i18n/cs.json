@@ -746,5 +746,9 @@
  "Pulse": "Puls",
  "Save profile": "Uložit profil",
  "Save Tube Profile": "Uložit profil trubky",
- "Tube profile, drag the points": "Profil trubky, táhněte body"
+ "Tube profile, drag the points": "Profil trubky, táhněte body",
+ "Array jitter %": "Rozptyl pole %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Útlum: táhněte bod nahoru nebo dolů; Alt-klik přepne roh nebo hladký bod.",
+ "Jitter seed": "Semínko rozptylu",
+ "Last copy scale": "Měřítko poslední kopie"
 }

@@ -746,5 +746,9 @@
  "Pulse": "Pulso",
  "Save profile": "Salvar perfil",
  "Save Tube Profile": "Salvar perfil de tubo",
- "Tube profile, drag the points": "Perfil do tubo, arraste os pontos"
+ "Tube profile, drag the points": "Perfil do tubo, arraste os pontos",
+ "Array jitter %": "Variação da matriz %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Atenuação: arraste um ponto para cima ou para baixo; Alt-clique para canto ou ponto suave.",
+ "Jitter seed": "Semente da variação",
+ "Last copy scale": "Escala da última cópia"
 }

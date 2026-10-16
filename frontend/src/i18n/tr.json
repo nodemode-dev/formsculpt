@@ -746,5 +746,9 @@
  "Pulse": "Nabız",
  "Save profile": "Profili kaydet",
  "Save Tube Profile": "Tüp Profilini Kaydet",
- "Tube profile, drag the points": "Tüp profili, noktaları sürükleyin"
+ "Tube profile, drag the points": "Tüp profili, noktaları sürükleyin",
+ "Array jitter %": "Dizi sapması %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Azalma: bir noktayı yukarı veya aşağı sürükleyin; köşe veya yumuşak nokta için Alt-tıklayın.",
+ "Jitter seed": "Sapma tohumu",
+ "Last copy scale": "Son kopya ölçeği"
 }

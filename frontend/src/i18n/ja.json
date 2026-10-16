@@ -746,5 +746,9 @@
  "Pulse": "パルス",
  "Save profile": "プロファイルを保存",
  "Save Tube Profile": "チューブプロファイルを保存",
- "Tube profile, drag the points": "チューブのプロファイル、ポイントをドラッグ"
+ "Tube profile, drag the points": "チューブのプロファイル、ポイントをドラッグ",
+ "Array jitter %": "配列のばらつき %",
+ "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "フォールオフ: ポイントを上下にドラッグ。Alt クリックで角とスムーズを切り替え。",
+ "Jitter seed": "ばらつきのシード",
+ "Last copy scale": "最後のコピーのスケール"
 }
