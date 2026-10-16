@@ -1,4 +1,5 @@
 import json
+import secrets
 import urllib.parse
 
 from fastapi import APIRouter, Request, Response
@@ -6,7 +7,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from app import __version__
-from app.services import agents, engine
+from app.services import agents, engine, events
 
 router = APIRouter()
 VERSIONS = ["2026-07-28", "2025-11-25"]
@@ -60,9 +61,9 @@ def _text(payload: dict, error: bool = False) -> dict:
     return out
 
 
-async def call_tool(name: str, args: dict) -> dict:
+async def call_tool(name: str, args: dict, inapp: bool = False) -> dict:
     if not engine.read_only(name):
-        refusal = await agents.permit(name)
+        refusal = await agents.permit(name, inapp)
         if refusal:
             return {"content": [{"type": "text", "text": refusal}], "isError": True}
     reply = await run_in_threadpool(engine.dispatch, name, args)
@@ -116,7 +117,10 @@ async def mcp(request: Request) -> Response:
     elif method == "tools/call":
         name, args = params.get("name"), params.get("arguments") or {}
         names = {t["name"] for t in tools()}
-        out = _ok(req_id, await call_tool(name, args), modern) if name in names and isinstance(args, dict) else _err(req_id, -32602, f"No tool named {name}")
+        inapp = secrets.compare_digest(request.headers.get(agents.INAPP_HEADER, ""), agents.INAPP_TOKEN)
+        if inapp:
+            events.publish("agent.activity", tool=name)
+        out = _ok(req_id, await call_tool(name, args, inapp), modern) if name in names and isinstance(args, dict) else _err(req_id, -32602, f"No tool named {name}")
     else:
         out = _err(req_id, -32601, f"Method not found: {method}")
     return Response(content=json.dumps(out), media_type="application/json")

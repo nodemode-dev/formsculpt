@@ -19,6 +19,22 @@ def dist_dir() -> Path | None:
     return path if (path / "index.html").is_file() else None
 
 
+def engine_port() -> int:
+    raw = os.environ.get("FSC_PORT", "").strip()
+    return int(raw) if raw.isdigit() and int(raw) > 0 else BACKEND_PORT
+
+
+def engine_url() -> str:
+    return f"http://127.0.0.1:{engine_port()}"
+
+
+def data_dir() -> Path:
+    raw = os.environ.get("FSC_DATA_DIR", "").strip()
+    path = Path(raw).expanduser() if raw else Path.home() / "Formsculptor"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def is_desktop() -> bool:
     return os.environ.get("FSC_DESKTOP") == "1"
 

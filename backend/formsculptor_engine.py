@@ -29,9 +29,15 @@ def selfcheck() -> int:
     except Exception as exc:
         info["engine"] = f"missing: {exc}"
         info["engine_ok"] = False
+    try:
+        from app.services import claude_code, cmd_chat, cmd_terminal, terminal
+
+        info["terminal"] = bool(cmd_terminal and cmd_chat and claude_code and terminal.login_shell())
+    except Exception as exc:
+        info["terminal"] = f"missing: {exc}"
     info["dist_bundled"] = os.path.isdir(os.path.join(resource_dir(), "frontend_dist"))
     print(json.dumps(info))
-    return 0 if info["engine_ok"] and info["dist_bundled"] else 1
+    return 0 if info["engine_ok"] and info["dist_bundled"] and info["terminal"] is True else 1
 
 
 def parent_alive(pid: int) -> bool:
@@ -75,6 +81,14 @@ def watch_parent() -> None:
     threading.Thread(target=loop, name="parent-watch", daemon=True).start()
 
 
+def free_port() -> int:
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 def main() -> int:
     if "--selfcheck" in sys.argv:
         return selfcheck()
@@ -87,7 +101,8 @@ def main() -> int:
 
     from app.main import app as fastapi_app
 
-    port = int(os.environ.get("FSC_PORT", "0") or 0)
+    port = int(os.environ.get("FSC_PORT", "0") or 0) or free_port()
+    os.environ["FSC_PORT"] = str(port)
     uvicorn.run(fastapi_app, host="127.0.0.1", port=port, log_level="info")
     return 0
 

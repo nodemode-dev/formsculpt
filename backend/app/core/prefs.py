@@ -1,0 +1,43 @@
+import json
+import threading
+from typing import Any
+
+from app.core import config
+
+DEFAULTS: dict = {
+    "claudeFolder": "",
+    "claudeBin": "",
+    "claudeFirstMessage": "",
+}
+_lock = threading.Lock()
+
+
+def _path():
+    return config.data_dir() / "preferences.json"
+
+
+def load() -> dict:
+    with _lock:
+        try:
+            data = json.loads(_path().read_text())
+        except (OSError, ValueError):
+            data = {}
+    out = json.loads(json.dumps(DEFAULTS))
+    out.update(data if isinstance(data, dict) else {})
+    return out
+
+
+def update(values: dict[str, Any]) -> dict:
+    for key, default in DEFAULTS.items():
+        if key in values and values[key] is not None and type(values[key]) is not type(default):
+            raise ValueError(f"preference {key} must be {type(default).__name__}")
+    unknown = sorted(set(values) - set(DEFAULTS))
+    if unknown:
+        raise ValueError(f"unknown preference {', '.join(unknown)}")
+    cur = load()
+    cur.update(values)
+    with _lock:
+        tmp = _path().with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(cur, indent=1))
+        tmp.replace(_path())
+    return cur
