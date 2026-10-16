@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.47.0 · 2026-10-16
+
+### Added
+
+- Six brushes in `sculpt_stroke` and live strokes: `elastic` (a Kelvinlet grab that reaches past the brush), `polish` (cuts to a fitted plane, keeps creases), `layer` (raises to a `height` cap per stroke), `nudge` (slides along the surface), `stamp` (one dab) and `layer_reset` (erases the active sculpt layer under the brush).
+- Window: Elastic, Polish, Layer, Nudge and Layer reset in the brush rail and Sculpt menu, and a Layer height % control.
+- 22 brushes; 851 interface strings in every language.
+
 ## 0.46.0 · 2026-10-16
 
 ### Added
