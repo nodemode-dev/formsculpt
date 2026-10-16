@@ -489,3 +489,9 @@ Alt-click in the UV view pins the nearest UV point (uv_pick, radius 0.03; a seco
 - kind: rationale
 - logged: v0.43.0 · 2026-10-16
 UVs are per triangle corner and the viewport draws indexed vertices, so the checker reuses the per-corner copy the face-group view already builds (expand), with the corner's UV in the colour attribute instead of a group colour; the fragment shader turns it into a 16 by 16 checker and paints anything outside 0..1 red. The copy follows sculpting through refreshExpanded like the group copy, is dropped with the mesh on any re-upload, and the window refetches get_uvs only when the active object or its revision changes (checkerFor). It draws for the active object only and wins over the group colours while on. UV seams gains Automatic charts (uv_unwrap seams charts at its default 45 degrees).
+
+### UDIM tiles in the UV section and the checker
+- refers-to: app.ts :: uvTileNumber, uvTileOffset, uvAt, drawUv, drawUvMarks, wireUvView, uvTiles; ui/command-map.ts :: uv to_tile, tiles_group, tiles_island, tiles; viewport/gl-renderer.ts :: the uChecker branch
+- kind: rationale
+- logged: v0.44.0 · 2026-10-16
+The UV view shows one tile at a time (the UV tile field, 1001 to 1100) through get_uv_layout's tile, so the picture and its square stay the same size and nothing below moves. uvAt returns real UV space (the tile's corner added), so island drags, point drags, pins and paths all work unchanged in any tile; only the island pick, which asks get_uv_layout, sends the point inside the tile, and the marks overlay subtracts the corner. Tiles by group and Tiles by island run uv_pack_udim starting at the shown tile, Island to tile moves the chosen island into it, and List tiles reports each tile's island count. The checker tints every tile past 1001 with its own hue so tiles can be told apart on the model, and red now means outside the UDIM range (u below 0 or from 10, v below 0) instead of outside the unit square.

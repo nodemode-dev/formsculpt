@@ -148,7 +148,9 @@ void main() {
   if (uChecker > 0.5) {
     vec2 cell = floor(fract(vCol.xy) * 16.0);
     albedo = mod(cell.x + cell.y, 2.0) < 0.5 ? vec3(0.86, 0.86, 0.84) : vec3(0.18, 0.2, 0.24);
-    if (vCol.x < 0.0 || vCol.x > 1.0 || vCol.y < 0.0 || vCol.y > 1.0) albedo = vec3(0.85, 0.25, 0.2);
+    float tile = floor(vCol.x) + 10.0 * floor(vCol.y);
+    if (tile > 0.5) albedo *= mix(vec3(1.0), 0.6 + 0.4 * cos(6.2832 * (tile * 0.17 + vec3(0.0, 0.33, 0.67))), 0.6);
+    if (vCol.x < 0.0 || vCol.x >= 10.0 || vCol.y < 0.0) albedo = vec3(0.85, 0.25, 0.2);
   }
   vec3 col;
   if (uLit > 0.5) {

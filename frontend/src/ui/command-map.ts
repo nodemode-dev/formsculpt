@@ -82,6 +82,10 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     cut_path: n('uv.cut_path', 'Cut UV Seam Along Path'),
     straighten_path: n('uv.straighten_path', 'Straighten UV Path'),
     clear_marks: n('uv.clear_marks', 'Clear UV Pins and Path'),
+    to_tile: n('uv.to_tile_view', 'Move UV Island to Tile'),
+    tiles_group: n('uv.tiles_group', 'UV Tiles by Face Group'),
+    tiles_island: n('uv.tiles_island', 'UV Tiles by Island'),
+    tiles: n('uv.tiles_list', 'List UV Tiles'),
   },
   action: {
     undo: c('history.undo', 'Undo', { keys: ['Mod+Z'], icon: 'undo' }),
