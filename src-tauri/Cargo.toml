@@ -1,6 +1,6 @@
 [package]
 name = "formsculptor"
-version = "0.47.0"
+version = "0.48.0"
 description = "3D sculpting and modeling"
 authors = ["nodemode-ai"]
 license = "Apache-2.0"
