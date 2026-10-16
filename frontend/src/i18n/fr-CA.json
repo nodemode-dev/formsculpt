@@ -1,0 +1,23 @@
+{
+ "Allow an outside agent to sculpt?": "Autoriser un agent externe à sculpter?",
+ "Alt-click a curve handle to make it a corner; Corner round rounds the chosen or every sharp corner.": "Alt+clic sur une poignée de courbe pour en faire un angle; Arrondi d'angle arrondit l'angle choisi ou tous les angles vifs.",
+ "Bring a conversation you had in a Claude Code tab into this chat": "Importer dans ce clavardage une conversation tenue dans un onglet Claude Code",
+ "Chat": "Clavardage",
+ "Chat with Claude": "Clavarder avec Claude",
+ "Chat with Claude about your model": "Clavardez avec Claude à propos de votre modèle",
+ "Click an island to choose it; drag to move it.": "Cliquez sur un îlot pour le choisir; faites-le glisser pour le déplacer.",
+ "Close the Chat tab": "Fermer l'onglet Clavardage",
+ "Fill Holes": "Combler les trous",
+ "Fill holes": "Combler les trous",
+ "Memory: how much of Claude's working memory this conversation uses (it reads all of it again with each message). Reply: tokens written so far. Chat: everything sent and written in this conversation, and what it has cost.": "Mémoire : la part de la mémoire de travail de Claude qu'utilise cette conversation (il la relit en entier à chaque message). Réponse : jetons écrits jusqu'ici. Clavardage : tout ce qui a été envoyé et écrit dans cette conversation, et ce que cela a coûté.",
+ "New Chat": "Nouveau clavardage",
+ "No terminal is open. Start a shell with the plus button, Claude Code with the agent button, or Chat with the speech bubble.": "Aucun terminal n'est ouvert. Lancez un shell avec le bouton plus, Claude Code avec le bouton agent, ou le Clavardage avec la bulle.",
+ "No UVs yet; Unwrap to make them": "Pas encore d'UV; utilisez Déplier pour en créer",
+ "Opens the Chat tab, where Claude answers in plain language and works through formsculptor's tools.": "Ouvre l'onglet Clavardage, où Claude répond en langage simple et travaille avec les outils de formsculptor.",
+ "Path rendering 64 samples per pixel; the picture downloads when it is done": "Rendu de chemin à 64 échantillons par pixel; l'image se télécharge à la fin",
+ "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Affiche ou masque le dock du terminal sous la vue; les programmes continuent de tourner tant qu'il est masqué.",
+ "The active object is not in a folder; Put in folder first": "L'objet actif n'est pas dans un dossier; utilisez d'abord Mettre dans un dossier",
+ "The scene is empty; there is nothing to send": "La scène est vide; il n'y a rien à envoyer",
+ "This browser has no WebHID for a 3D mouse; use Chrome or Edge": "Ce navigateur n'a pas WebHID pour une souris 3D; utilisez Chrome ou Edge",
+ "Viewport": "Fenêtre d'affichage"
+}

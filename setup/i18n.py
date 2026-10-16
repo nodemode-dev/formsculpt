@@ -32,6 +32,7 @@ CALLS = [
     re.compile(r"\b(?:aria-label|title|placeholder)=\"([^\"$<>{}]+)\""),
     re.compile(r">([A-Z][^<>{}$`]{1,200})<"),
     re.compile(r"\b[cn]\(\s*'[a-z0-9_.]+'\s*,\s*'((?:[^'\\]|\\.)+)'"),
+    re.compile(r"\bdef\(\s*'((?:[^'\\]|\\.)+)'"),
 ]
 RUST_LABEL = re.compile(r'^\s*label:\s*"([^"]+)"', re.M)
 
