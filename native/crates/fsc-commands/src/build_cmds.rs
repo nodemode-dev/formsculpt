@@ -254,11 +254,21 @@ pub(crate) fn tube_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}, "description": "The curve as [x, y, z] or [x, y, z, radius] points; a point's radius overrides radius."},
-            "radius": {"type": "number", "exclusiveMinimum": 0, "default": 0.1, "description": "Tube radius where a point gives none."},
-            "segments": {"type": "integer", "minimum": 3, "maximum": 128, "default": 16, "description": "Sides around the tube."},
-            "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "default": 4, "description": "Rings per curve span (a smooth spline through the points)."},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3), "description": "The curve as [x, y, z] or [x, y, z, radius] points, or objects {p: [x, y, z], radius, twist (degrees), sharp, round}. sharp makes the point a corner; sharp with round above 0 turns the corner into a circular fillet of that world radius. A point's radius overrides radius."},
+            "radius": {"type": "number", "exclusiveMinimum": 0, "default": 0.1, "description": "Tube radius where a point gives none (and the start radius for radius_mode start_end)."},
+            "radius_mode": {"type": "string", "enum": ["per_point", "uniform", "start_end"], "default": "per_point", "description": "per_point uses each point's radius; uniform uses radius everywhere; start_end tapers linearly by length from radius to radius_end."},
+            "radius_end": {"type": "number", "exclusiveMinimum": 0, "description": "start_end: the radius at the far end; radius when omitted."},
+            "interp": {"type": "string", "enum": ["catmull_rom", "bspline", "linear"], "default": "catmull_rom", "description": "How the path runs between points; sharp points split it into sections interpolated on their own."},
+            "segments": {"type": "integer", "minimum": 3, "maximum": 128, "default": 16, "description": "Sides around the tube (the circle profile)."},
+            "sides": {"type": "integer", "minimum": 3, "maximum": 128, "description": "Same as segments; wins when both are given."},
+            "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "default": 4, "description": "Rings per curve span (also the finish of fillet arcs)."},
             "closed": {"type": "boolean", "default": false, "description": "Join the last point back to the first (a ring) instead of capping the ends."},
+            "profile": {"anyOf": [{"type": "string", "enum": ["circle", "square", "triangle", "star", "flat"]}, {"type": "array", "minItems": 3, "maxItems": 512, "items": crate::curve_cmds::point_schema(2)}], "default": "circle", "description": "The cross-section: a preset, or a closed polygon of [x, y] points (or {p, sharp, round}) in units of the radius; points default to corners, sharp false makes one smooth."},
+            "twist": {"type": "number", "minimum": -36000, "maximum": 36000, "default": 0, "description": "Total roll of the cross-section along the path, in degrees (adds to each point's twist)."},
+            "spiral": {"type": "number", "minimum": -1000, "maximum": 1000, "default": 0, "description": "Turns the cross-section and its spiral_offset make around the path from start to end."},
+            "spiral_offset": {"type": "number", "minimum": -1000000, "maximum": 1000000, "default": 0, "description": "Distance of the cross-section's centre from the path; with spiral turns it makes a helix, rope strand or spring."},
+            "cap": {"type": "string", "enum": ["flat", "round", "none"], "default": "flat", "description": "The ends of an open tube: flat disc, rounded dome, or left open."},
+            "hole": {"type": "number", "minimum": 0, "maximum": 1000000, "default": 0, "description": "Above 0 makes a hollow pipe with this wall thickness (world units); the ends show the wall."},
             "name": {"type": "string", "description": NAME}
         },
         "required": ["points"],
@@ -293,26 +303,46 @@ fn remember(s: &mut Session, reply: Value, kind: &str, args: &Value) -> Value {
 
 fn tube_mesh(args: &Value) -> Result<Mesh, CommandError> {
     let radius = number(args, "radius", 0.1, 1e-6, 1e6)? as f32;
-    let mut points = Vec::new();
-    for v in list(args, "points")? {
-        let f = floats(v, "point", &[3, 4])?;
-        let r = f.get(3).copied().unwrap_or(radius);
-        if r <= 0.0 {
-            return Err(bad("point radii must be above 0"));
-        }
-        points.push((Vec3::new(f[0], f[1], f[2]), r));
-    }
-    let segments = number(args, "segments", 16.0, 3.0, 128.0)? as usize;
+    let points = crate::curve_cmds::parse_points(list(args, "points")?, 3, radius, false, "point")?;
+    let sides = match args.get("sides").filter(|v| !v.is_null()) {
+        Some(_) => number(args, "sides", 16.0, 3.0, 128.0)?,
+        None => number(args, "segments", 16.0, 3.0, 128.0)?,
+    } as usize;
     let smooth = number(args, "smooth", 4.0, 1.0, 32.0)? as usize;
     let closed = args.get("closed").and_then(Value::as_bool).unwrap_or(false);
-    fsc_topo::tube(&points, segments, smooth, closed).map_err(|e| CommandError::new("build_failed", e))
+    let curve = fsc_core::Curve::new(points, crate::curve_cmds::interp_of(args)?, closed);
+    let mut samples = curve.sample(smooth);
+    let end = number(args, "radius_end", radius as f64, 1e-6, 1e6)? as f32;
+    match args.get("radius_mode").and_then(Value::as_str).unwrap_or("per_point") {
+        "per_point" => {}
+        "uniform" => samples.iter_mut().for_each(|s| s.radius = radius),
+        "start_end" => samples.iter_mut().for_each(|s| s.radius = radius + (end - radius) * s.t),
+        other => return Err(bad(format!("radius_mode must be per_point, uniform or start_end, not {other}"))),
+    }
+    let cap = match args.get("cap").and_then(Value::as_str).unwrap_or("flat") {
+        "flat" => fsc_topo::Cap::Flat,
+        "round" => fsc_topo::Cap::Round,
+        "none" => fsc_topo::Cap::None,
+        other => return Err(bad(format!("cap must be flat, round or none, not {other}"))),
+    };
+    let options = fsc_topo::SweepOptions {
+        profile: crate::curve_cmds::profile_ring(args.get("profile"), sides)?,
+        twist: (number(args, "twist", 0.0, -36000.0, 36000.0)? as f32).to_radians(),
+        spiral_turns: number(args, "spiral", 0.0, -1000.0, 1000.0)? as f32,
+        spiral_offset: number(args, "spiral_offset", 0.0, -1e6, 1e6)? as f32,
+        cap,
+        hole: number(args, "hole", 0.0, 0.0, 1e6)? as f32,
+    };
+    fsc_topo::sweep(&samples, curve.is_closed(), &options).map_err(|e| CommandError::new("build_failed", e))
 }
 
 pub(crate) fn lathe_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "profile": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "The outline as [radius, y] points from bottom to top, spun around the y axis. A radius of 0 closes to a point; open ends are capped flat."},
+            "profile": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(2), "description": "The outline as [radius, y] points from bottom to top, spun around the y axis; or objects {p: [radius, y], sharp, round}. Points are corners by default; sharp false makes one a smooth knot, and a sharp point with round above 0 gets a circular fillet of that radius. A radius of 0 closes to a point; open ends are capped flat."},
+            "interp": {"type": "string", "enum": ["catmull_rom", "bspline", "linear"], "default": "catmull_rom", "description": "How the outline runs through smooth points."},
+            "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "default": 6, "description": "Rows per outline span between smooth points and around fillets."},
             "segments": {"type": "integer", "minimum": 3, "maximum": 256, "default": 48, "description": "Steps around the axis."},
             "name": {"type": "string", "description": NAME}
         },
@@ -329,14 +359,7 @@ pub(crate) fn lathe(s: &mut Session, args: &Value) -> Result<Value, CommandError
 }
 
 fn lathe_mesh(args: &Value) -> Result<Mesh, CommandError> {
-    let mut profile = Vec::new();
-    for v in list(args, "profile")? {
-        let f = floats(v, "profile point", &[2])?;
-        if f[0] < 0.0 {
-            return Err(bad("profile radii must be 0 or more"));
-        }
-        profile.push([f[0], f[1]]);
-    }
+    let profile = crate::curve_cmds::lathe_profile(args)?;
     let segments = number(args, "segments", 48.0, 3.0, 256.0)? as usize;
     fsc_topo::lathe(&profile, segments).map_err(|e| CommandError::new("build_failed", e))
 }
@@ -352,13 +375,23 @@ pub(crate) fn edit_build_schema() -> Value {
             "links": {"type": "array", "maxItems": 1024, "items": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 2, "maxItems": 2}, "description": "Skeleton: new links."},
             "blend": {"type": "number", "minimum": 0, "maximum": 1, "description": "Skeleton: how softly limbs merge."},
             "resolution": {"type": "integer", "minimum": 32, "maximum": 256, "description": "Skeleton: voxel cells along the longest side."},
-            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}, "description": "Tube: a new curve, as [x, y, z] or [x, y, z, radius]."},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3), "description": "Tube: a new curve, as [x, y, z], [x, y, z, radius] or objects {p, radius, twist, sharp, round}."},
+            "set_points": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "object", "properties": {"index": {"type": "integer", "minimum": 0}, "sharp": {"type": ["boolean", "null"]}, "round": {"type": ["number", "null"], "minimum": 0}, "radius": {"type": ["number", "null"], "exclusiveMinimum": 0}, "twist": {"type": ["number", "null"]}}, "required": ["index"], "additionalProperties": false}, "description": "Tube or lathe: change flags of single points by index without touching their positions: sharp (corner), round (fillet radius on a sharp point), radius and twist in degrees (tube only). null clears a field."},
+            "interp": {"type": "string", "enum": ["catmull_rom", "bspline", "linear"], "description": "Tube or lathe: how the path runs between points."},
+            "radius_mode": {"type": "string", "enum": ["per_point", "uniform", "start_end"], "description": "Tube: how radii are chosen."},
+            "radius_end": {"type": "number", "exclusiveMinimum": 0, "description": "Tube: the far-end radius for start_end."},
+            "sides": {"type": "integer", "minimum": 3, "maximum": 128, "description": "Tube: sides around the circle profile."},
+            "twist": {"type": "number", "minimum": -36000, "maximum": 36000, "description": "Tube: total roll along the path in degrees."},
+            "spiral": {"type": "number", "minimum": -1000, "maximum": 1000, "description": "Tube: turns of the cross-section around the path."},
+            "spiral_offset": {"type": "number", "minimum": -1000000, "maximum": 1000000, "description": "Tube: distance of the cross-section from the path."},
+            "cap": {"type": "string", "enum": ["flat", "round", "none"], "description": "Tube: the end caps."},
+            "hole": {"type": "number", "minimum": 0, "maximum": 1000000, "description": "Tube: wall thickness of a hollow pipe; 0 for solid."},
             "move": {"type": "array", "maxItems": 4096, "items": {"type": "object", "properties": {"index": {"type": "integer", "minimum": 0}, "to": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 4}}, "required": ["index", "to"], "additionalProperties": false}, "description": "Tube: move single curve points by index (to [x, y, z] or [x, y, z, radius]); lathe: move profile points (to [radius, y]); skeleton: replace spheres (to [x, y, z, radius])."},
             "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000, "description": "Tube: the radius for points without their own."},
             "segments": {"type": "integer", "minimum": 3, "maximum": 256, "description": "Steps around the tube or the lathe's axis."},
             "smooth": {"type": "integer", "minimum": 1, "maximum": 32, "description": "Tube: curve steps between points."},
             "closed": {"type": "boolean", "description": "Tube: close the curve into a ring."},
-            "profile": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "Lathe: a new profile, as [radius, y]."}
+            "profile": {"anyOf": [{"type": "string", "enum": ["circle", "square", "triangle", "star", "flat"]}, {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(2)}], "description": "Lathe: a new outline, as [radius, y] or {p, sharp, round}. Tube: a cross-section preset or a closed polygon of [x, y] points."}
         },
         "required": [],
         "additionalProperties": false
@@ -377,7 +410,7 @@ pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, Command
         return Err(CommandError::new("not_editable", format!("the {kind} has been changed since it was made, so its shape is fixed")));
     }
     let mut merged = made.clone();
-    for key in ["points", "radius", "segments", "smooth", "closed", "profile", "spheres", "links", "blend", "resolution"] {
+    for key in ["points", "radius", "segments", "smooth", "closed", "profile", "spheres", "links", "blend", "resolution", "interp", "radius_mode", "radius_end", "sides", "twist", "spiral", "spiral_offset", "cap", "hole"] {
         if let Some(v) = args.get(key) {
             merged[key] = v.clone();
         }
@@ -400,7 +433,22 @@ pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, Command
             if i >= len {
                 return Err(bad(format!("move index {i} is past the {len} {list_key}")));
             }
-            merged[list_key][i] = m["to"].clone();
+            crate::curve_cmds::moved_point(&mut merged[list_key][i], &m["to"]);
+        }
+    }
+    if let Some(patches) = args.get("set_points").and_then(Value::as_array) {
+        let (list_key, dim) = match kind.as_str() {
+            "tube" => ("points", 3),
+            "lathe" => ("profile", 2),
+            _ => return Err(bad("set_points edits the points of a tube or a lathe")),
+        };
+        let len = merged[list_key].as_array().map(Vec::len).unwrap_or(0);
+        for p in patches {
+            let i = p["index"].as_u64().unwrap_or(u64::MAX) as usize;
+            if i >= len {
+                return Err(bad(format!("set_points index {i} is past the {len} {list_key}")));
+            }
+            crate::curve_cmds::set_point_fields(&mut merged[list_key][i], p, dim)?;
         }
     }
     let (mesh, label) = match kind.as_str() {

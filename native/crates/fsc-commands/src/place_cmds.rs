@@ -85,7 +85,9 @@ pub(crate) fn array_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "The object to repeat; the active object when omitted."},
             "count": {"type": "integer", "minimum": 2, "maximum": 200, "default": 4, "description": "Copies in all, the original included."},
             "mode": {"type": "string", "enum": ["linear", "radial", "mirror", "curve"], "default": "linear", "description": "linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points."},
-            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "Curve: the path, as [x, y, z] points; each copy's bounds centre sits on it."},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3), "description": "Curve: the path, as [x, y, z] points or objects {p, sharp, round} (corners and fillets as in sample_curve); each copy's bounds centre sits on it."},
+            "interp": {"type": "string", "enum": ["catmull_rom", "bspline", "linear"], "default": "catmull_rom", "description": "Curve: how the path runs between points."},
+            "closed": {"type": "boolean", "default": false, "description": "Curve: loop the path back to its first point."},
             "align": {"type": "boolean", "default": true, "description": "Curve: turn each copy so the original's +x follows the path."},
             "linked": {"type": "boolean", "default": false, "description": "Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it."},
             "offset": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Linear: the step from one copy to the next, in world units; one bounds width along x when omitted."},
@@ -149,20 +151,7 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
         "curve" => {
             // count copies spaced evenly along a polyline, the original's bounds centre on the curve, turned so the
             // original's +x follows the curve's direction when align is on.
-            let points: Vec<Vec3> = args
-                .get("points")
-                .and_then(Value::as_array)
-                .ok_or_else(|| bad("curve mode needs points: [[x, y, z], ...]"))?
-                .iter()
-                .map(|p| {
-                    let a = p.as_array().filter(|a| a.len() == 3).ok_or_else(|| bad("each point is [x, y, z]"))?;
-                    let v: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
-                    if v.iter().any(|x| !x.is_finite()) {
-                        return Err(bad("points are numbers"));
-                    }
-                    Ok(Vec3::new(v[0], v[1], v[2]))
-                })
-                .collect::<Result<_, _>>()?;
+            let points: Vec<Vec3> = crate::curve_cmds::path_positions(args, "points", "curve mode needs points: [[x, y, z], ...]")?;
             if points.len() < 2 {
                 return Err(bad("a curve needs at least two points"));
             }

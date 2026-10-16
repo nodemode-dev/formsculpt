@@ -1,6 +1,7 @@
 mod arrange_cmds;
 mod bake_cmds;
 mod build_cmds;
+mod curve_cmds;
 mod cut_cmds;
 mod file_cmds;
 mod group_cmds;
@@ -309,7 +310,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "edit_build",
         group: Group::Object,
         label: "Edit Tube, Lathe or Skeleton",
-        description: "Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move), the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.",
+        description: "Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move) or given sharp, round, radius or twist (set_points), and for tubes the interp, radius_mode, sides, profile, twist, spiral, spiral_offset, cap and hole as well as the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: build_cmds::edit_build_schema,
@@ -364,18 +365,29 @@ pub static COMMANDS: &[Command] = &[
         mcp: "curve_tube",
         group: Group::Object,
         label: "Curve Tube",
-        description: "Sweep a round tube along a smooth curve through the given points (radius per point or overall), capped or closed into a ring, and make it active: hair strands, horns, tails, cables, straps, piping.",
+        description: "Sweep a cross-section along a curve through the given points and make it active: hair strands, horns, tails, cables, straps, piping, ropes, springs, pipes. Points can be smooth or sharp corners, and a sharp point with round becomes a circular fillet; interp picks catmull_rom, bspline or linear; radius is per point, uniform or tapered start to end; profile is circle, square, triangle, star, flat or your own polygon; twist and spiral with spiral_offset make helices and rope; cap is flat, round or none; hole makes a hollow pipe. Remembered, so edit_build can change any of it later (set_points flips one point's sharp or round). Use sample_curve to see the exact path first.",
         keys: &[],
         hints: WRITE,
         schema: build_cmds::tube_schema,
         run: build_cmds::tube,
     },
     Command {
+        id: "curve.sample",
+        mcp: "sample_curve",
+        group: Group::Object,
+        label: "Sample Curve",
+        description: "Evaluate a curve without changing the scene: control points (smooth, or sharp corners with optional round fillet radius) go in, a polyline comes out with positions, unit tangents, radii, twists (degrees), arc-length fractions t, the total length and the indices of crisp corners. interp is catmull_rom (centripetal, through the points), bspline or linear; closed loops the curve; per_span sets samples between points, or spacing resamples evenly by arc length. This is the one place curve corners and fillets are computed: draw the result as the preview, and curve_tube, array curve mode and quad_remesh guides follow the same curve.",
+        keys: &[],
+        hints: READ,
+        schema: curve_cmds::sample_schema,
+        run: curve_cmds::sample,
+    },
+    Command {
         id: "build.lathe",
         mcp: "lathe",
         group: Group::Object,
         label: "Lathe",
-        description: "Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces.",
+        description: "Spin an outline of [radius, y] points around the vertical axis into a closed solid and make it active: vases, bottles, cups, columns, turned legs, chess pieces. Outline points are corners by default; give {p: [radius, y], sharp, round} to round a corner with a fillet of that radius or sharp false to make a point a smooth knot.",
         keys: &[],
         hints: WRITE,
         schema: build_cmds::lathe_schema,
@@ -1128,6 +1140,17 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: object_cmds::deform_schema,
         run: object_cmds::deform,
+    },
+    Command {
+        id: "object.warp_curve",
+        mcp: "warp_along_curve",
+        group: Group::Object,
+        label: "Warp Along Curve",
+        description: "Bend an object along a curve: its long axis (or the given axis) is laid onto the curve's arc length and each cross-section is carried along the curve with a twist-free frame, so a straight bar becomes a tail, a horn or a ring. stretch fits the object's length to the whole curve. Curve points use the same formats as sample_curve (sharp corners and fillets respected). Masked vertices are held in proportion to the mask. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: curve_cmds::warp_schema,
+        run: curve_cmds::warp_curve,
     },
     Command {
         id: "object.lattice",

@@ -34,7 +34,7 @@ pub(crate) fn quad_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "faces": {"type": "integer", "minimum": 100, "maximum": 400000, "default": 4000, "description": "Target number of quads."},
             "relax": {"type": "integer", "minimum": 0, "maximum": 30, "default": 6, "description": "Smoothing passes that even out the quads while staying on the original surface."},
-            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}}, "description": "Guide curves as lists of [x, y, z] points (drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes."}
+            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes."}
         },
         "required": [],
         "additionalProperties": false
@@ -49,10 +49,7 @@ pub(crate) fn quad_remesh(s: &mut Session, args: &Value) -> Result<Value, Comman
     let started = Instant::now();
     let object = s.scene.get(id).expect("checked");
     let guides: Vec<Vec<Vec3>> = match args.get("guides").and_then(Value::as_array) {
-        Some(list) => list
-            .iter()
-            .map(|g| g.as_array().map(|pts| pts.iter().filter_map(|p| p.as_array().filter(|a| a.len() == 3).map(|a| Vec3::new(a[0].as_f64().unwrap_or(0.0) as f32, a[1].as_f64().unwrap_or(0.0) as f32, a[2].as_f64().unwrap_or(0.0) as f32))).collect()).unwrap_or_default())
-            .collect(),
+        Some(list) => list.iter().map(crate::curve_cmds::guide_positions).collect::<Result<_, _>>()?,
         None => Vec::new(),
     };
     let frame = if guides.is_empty() { None } else { Some(fsc_topo::guide_frame(&guides).ok_or_else(|| CommandError::new("bad_arguments", "the guides have no length"))?) };

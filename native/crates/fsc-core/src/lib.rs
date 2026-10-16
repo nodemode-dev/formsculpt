@@ -1,4 +1,5 @@
 pub mod bvh;
+pub mod curve;
 pub mod layers;
 pub mod mesh;
 pub mod multires;
@@ -9,6 +10,7 @@ pub mod time;
 pub mod topology;
 
 pub use bvh::{Bvh, Hit};
+pub use curve::{Curve, CurvePoint, CurveSample, Interp};
 pub use topology::Topology;
 pub use layers::{Layer, Layers};
 pub use mesh::{mix_paint, paint_channel, paint_from5, Aabb, Mesh, Paint, DEFAULT_PAINT, PAINT_CHANNELS, PAINT_LEN};
