@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.43.0 · 2026-10-16
+
+### Added
+
+- `get_uvs` (an object's per-corner UVs as base64 float32) and `uv_unwrap` `seams: "charts"` with `chart_angle` (automatic disc-shaped charts grown by normal angle, falling back to facing seams when a chart stretches too far).
+- View > UV Checker: a 16 by 16 checker drawn from the active object's UVs, red outside the unit square; UV seams gains Automatic charts.
+- 138 engine commands; 805 interface strings in every language.
+
 ## 0.42.0 · 2026-10-16
 
 ### Added
