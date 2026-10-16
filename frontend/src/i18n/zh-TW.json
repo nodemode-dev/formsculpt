@@ -849,5 +849,12 @@
  "Layer reset": "圖層重設",
  "Layer reset needs an active sculpt layer": "圖層重設需要一個啟用中的雕刻圖層",
  "Nudge": "推移",
- "Polish": "拋光"
+ "Polish": "拋光",
+ "Brush offset %": "筆刷偏移 %",
+ "Constant 3D radius": "恆定 3D 半徑",
+ "Even deposit": "均勻沉積",
+ "Shared radius": "共用半徑",
+ "Snap radius": "半徑吸附",
+ "Spacing %": "間距 %",
+ "Stroke jitter %": "筆觸抖動 %"
 }

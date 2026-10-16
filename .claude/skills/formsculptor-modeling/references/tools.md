@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.46.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.47.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -391,9 +391,11 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `height`: number; default 0; range 0 to 10000; Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
+- `jitter`: object; Random variation per dab, deterministic for a seed and usable with any stroke mode including spray. Position is not used by snake_hook and nudge; strength is not used by snake_hook.; fields position, radius, seed, strength
 - `lazy`: number; default 0; range 0 to 0.95; Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length.
 - `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
 - `noise_scale`: number; default 0; range 0 to 10000; Noise brush: feature size in world units; a fifth of the radius when 0.
+- `offset`: number; default 0; range -1 to 1; Lifts each dab's centre along its area normal by offset times the radius before vertices are gathered: positive touches only what stands out (peaks first), negative reaches into hollows. Not used by the drag brushes.
 - `opacity`: number; range 0 to 1; Paint brush: paint this opacity (1 solid, 0 clear).
 - `points`: array of array; required; The stroke path as [x, y, z] or [x, y, z, pressure] points on or near the surface, in object space. Grab moves the vertices around the first point by the offset to the last.
 - `pressure_gamma`: number; default 1; range 0.2 to 5; Pen pressure curve: pressure is raised to this power (above 1 needs a firmer press, below 1 a lighter one). Per-point pressure is the fourth number of a point.
@@ -401,7 +403,9 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `pressure_strength`: boolean; default true; Pressure scales strength.
 - `radius`: number; default 0.2; range -inf to 10000; World units; compare with the object's bounds from get_scene.
 - `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
+- `snap_radius`: number; default 0; range 0 to 10000; When above 0, each dab's radius (after pressure and jitter) is rounded to the nearest multiple of this in world units, at least one step.
 - `spacing`: number; default 0.15; range 0.02 to 2; Distance between dabs as a fraction of the radius.
+- `spacing_compensation`: boolean; default false; Multiplies each dab's strength by spacing over 0.15 (at most 4), so the total effect along a path stays about the same whatever the spacing. Not used by grab, elastic, snake_hook or nudge.
 - `spray`: number; default 0.6; range 0.05 to 2; Spray stroke: how far dabs scatter from the path, in radii.
 - `strength`: number; default 0.5; range 0 to 1
 - `stroke`: string (dots | roll | spray); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly.

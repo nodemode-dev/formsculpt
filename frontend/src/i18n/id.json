@@ -849,5 +849,12 @@
  "Layer reset": "Reset layer",
  "Layer reset needs an active sculpt layer": "Reset layer memerlukan sculpt layer yang aktif",
  "Nudge": "Geser",
- "Polish": "Poles"
+ "Polish": "Poles",
+ "Brush offset %": "Offset kuas %",
+ "Constant 3D radius": "Radius 3D konstan",
+ "Even deposit": "Pengendapan merata",
+ "Shared radius": "Radius bersama",
+ "Snap radius": "Radius snap",
+ "Spacing %": "Jarak %",
+ "Stroke jitter %": "Jitter goresan %"
 }

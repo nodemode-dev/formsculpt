@@ -849,5 +849,12 @@
  "Layer reset": "Laag resetten",
  "Layer reset needs an active sculpt layer": "Laag resetten vereist een actieve sculptlaag",
  "Nudge": "Duwen",
- "Polish": "Polijsten"
+ "Polish": "Polijsten",
+ "Brush offset %": "Penseelverschuiving %",
+ "Constant 3D radius": "Constante 3D-straal",
+ "Even deposit": "Gelijkmatige afzetting",
+ "Shared radius": "Gedeelde straal",
+ "Snap radius": "Straalstap",
+ "Spacing %": "Tussenruimte %",
+ "Stroke jitter %": "Streekjitter %"
 }

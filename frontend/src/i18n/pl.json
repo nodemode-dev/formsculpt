@@ -849,5 +849,12 @@
  "Layer reset": "Reset warstwy",
  "Layer reset needs an active sculpt layer": "Reset warstwy wymaga aktywnej warstwy rzeźby",
  "Nudge": "Przesunięcie",
- "Polish": "Polerowanie"
+ "Polish": "Polerowanie",
+ "Brush offset %": "Odsunięcie pędzla %",
+ "Constant 3D radius": "Stały promień 3D",
+ "Even deposit": "Równomierne nakładanie",
+ "Shared radius": "Wspólny promień",
+ "Snap radius": "Przyciąganie promienia",
+ "Spacing %": "Odstęp %",
+ "Stroke jitter %": "Jitter pociągnięcia %"
 }

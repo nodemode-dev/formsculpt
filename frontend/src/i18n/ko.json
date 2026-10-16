@@ -849,5 +849,12 @@
  "Layer reset": "레이어 리셋",
  "Layer reset needs an active sculpt layer": "레이어 리셋에는 활성 스컬프트 레이어가 필요합니다",
  "Nudge": "넛지",
- "Polish": "폴리시"
+ "Polish": "폴리시",
+ "Brush offset %": "브러시 오프셋 %",
+ "Constant 3D radius": "고정 3D 반경",
+ "Even deposit": "균일 증착",
+ "Shared radius": "공유 반경",
+ "Snap radius": "반경 스냅",
+ "Spacing %": "간격 %",
+ "Stroke jitter %": "스트로크 지터 %"
 }

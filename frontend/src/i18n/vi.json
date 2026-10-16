@@ -849,5 +849,12 @@
  "Layer reset": "Reset Layer",
  "Layer reset needs an active sculpt layer": "Reset Layer cần một sculpt layer đang hoạt động",
  "Nudge": "Đẩy nhẹ",
- "Polish": "Đánh bóng"
+ "Polish": "Đánh bóng",
+ "Brush offset %": "Độ lệch cọ %",
+ "Constant 3D radius": "Bán kính 3D cố định",
+ "Even deposit": "Lắng đọng đều",
+ "Shared radius": "Bán kính dùng chung",
+ "Snap radius": "Bắt dính bán kính",
+ "Spacing %": "Khoảng cách %",
+ "Stroke jitter %": "Jitter nét vẽ %"
 }

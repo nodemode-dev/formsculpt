@@ -849,5 +849,12 @@
  "Layer reset": "Återställ lager",
  "Layer reset needs an active sculpt layer": "Återställ lager kräver ett aktivt skulptlager",
  "Nudge": "Knuffa",
- "Polish": "Polera"
+ "Polish": "Polera",
+ "Brush offset %": "Penselförskjutning %",
+ "Constant 3D radius": "Konstant 3D-radie",
+ "Even deposit": "Jämn avsättning",
+ "Shared radius": "Delad radie",
+ "Snap radius": "Snappa radie",
+ "Spacing %": "Avstånd %",
+ "Stroke jitter %": "Drag-jitter %"
 }

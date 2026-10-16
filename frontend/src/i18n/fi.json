@@ -849,5 +849,12 @@
  "Layer reset": "Kerroksen nollaus",
  "Layer reset needs an active sculpt layer": "Kerroksen nollaus vaatii aktiivisen veistokerroksen",
  "Nudge": "Työntö",
- "Polish": "Kiillotus"
+ "Polish": "Kiillotus",
+ "Brush offset %": "Siveltimen siirtymä %",
+ "Constant 3D radius": "Vakio 3D-säde",
+ "Even deposit": "Tasainen kerrostus",
+ "Shared radius": "Jaettu säde",
+ "Snap radius": "Säteen kohdistus",
+ "Spacing %": "Välistys %",
+ "Stroke jitter %": "Vedon jitter %"
 }

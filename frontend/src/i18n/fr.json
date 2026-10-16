@@ -849,5 +849,12 @@
  "Layer reset": "Réinitialisation du calque",
  "Layer reset needs an active sculpt layer": "La réinitialisation du calque nécessite un calque de sculpture actif",
  "Nudge": "Décaler",
- "Polish": "Polir"
+ "Polish": "Polir",
+ "Brush offset %": "Décalage du pinceau %",
+ "Constant 3D radius": "Rayon 3D constant",
+ "Even deposit": "Dépôt uniforme",
+ "Shared radius": "Rayon partagé",
+ "Snap radius": "Aimanter le rayon",
+ "Spacing %": "Espacement %",
+ "Stroke jitter %": "Jitter du trait %"
 }

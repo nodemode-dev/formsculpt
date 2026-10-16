@@ -849,5 +849,12 @@
  "Layer reset": "Скидання шару",
  "Layer reset needs an active sculpt layer": "Для скидання шару потрібен активний шар скульптингу",
  "Nudge": "Зсув",
- "Polish": "Полірування"
+ "Polish": "Полірування",
+ "Brush offset %": "Відступ пензля %",
+ "Constant 3D radius": "Постійний 3D-радіус",
+ "Even deposit": "Рівномірне нанесення",
+ "Shared radius": "Спільний радіус",
+ "Snap radius": "Крок радіуса",
+ "Spacing %": "Інтервал %",
+ "Stroke jitter %": "Тремтіння штриха %"
 }

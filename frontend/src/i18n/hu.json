@@ -849,5 +849,12 @@
  "Layer reset": "Réteg visszaállítása",
  "Layer reset needs an active sculpt layer": "A réteg visszaállításához aktív szobrászréteg szükséges",
  "Nudge": "Tolás",
- "Polish": "Csiszolás"
+ "Polish": "Csiszolás",
+ "Brush offset %": "Ecset eltolása %",
+ "Constant 3D radius": "Állandó 3D sugár",
+ "Even deposit": "Egyenletes felrakás",
+ "Shared radius": "Közös sugár",
+ "Snap radius": "Sugár illesztése",
+ "Spacing %": "Térköz %",
+ "Stroke jitter %": "Vonás jitter %"
 }

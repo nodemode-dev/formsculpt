@@ -849,5 +849,12 @@
  "Layer reset": "Tilbakestill lag",
  "Layer reset needs an active sculpt layer": "Tilbakestill lag trenger et aktivt skulpturlag",
  "Nudge": "Dytt",
- "Polish": "Polér"
+ "Polish": "Polér",
+ "Brush offset %": "Penselforskyvning %",
+ "Constant 3D radius": "Konstant 3D-radius",
+ "Even deposit": "Jevn avsetning",
+ "Shared radius": "Delt radius",
+ "Snap radius": "Snap-radius",
+ "Spacing %": "Avstand %",
+ "Stroke jitter %": "Strøk-jitter %"
 }

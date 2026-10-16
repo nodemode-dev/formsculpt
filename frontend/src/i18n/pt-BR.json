@@ -849,5 +849,12 @@
  "Layer reset": "Redefinir camada",
  "Layer reset needs an active sculpt layer": "Redefinir camada precisa de uma camada de escultura ativa",
  "Nudge": "Empurrar",
- "Polish": "Polir"
+ "Polish": "Polir",
+ "Brush offset %": "Deslocamento do pincel %",
+ "Constant 3D radius": "Raio 3D constante",
+ "Even deposit": "Depósito uniforme",
+ "Shared radius": "Raio compartilhado",
+ "Snap radius": "Ajustar raio",
+ "Spacing %": "Espaçamento %",
+ "Stroke jitter %": "Jitter do traço %"
 }

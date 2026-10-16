@@ -849,5 +849,12 @@
  "Layer reset": "Reset vrstvy",
  "Layer reset needs an active sculpt layer": "Reset vrstvy vyžaduje aktivní vrstvu sochání",
  "Nudge": "Postrčit",
- "Polish": "Leštit"
+ "Polish": "Leštit",
+ "Brush offset %": "Odsazení štětce %",
+ "Constant 3D radius": "Konstantní poloměr 3D",
+ "Even deposit": "Rovnoměrné nanášení",
+ "Shared radius": "Sdílený poloměr",
+ "Snap radius": "Krok poloměru",
+ "Spacing %": "Rozestup %",
+ "Stroke jitter %": "Jitter tahu %"
 }

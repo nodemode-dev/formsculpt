@@ -849,5 +849,12 @@
  "Layer reset": "รีเซ็ตเลเยอร์",
  "Layer reset needs an active sculpt layer": "การรีเซ็ตเลเยอร์ต้องมีเลเยอร์สคัลป์ที่ใช้งานอยู่",
  "Nudge": "นัดจ์",
- "Polish": "โพลิช"
+ "Polish": "โพลิช",
+ "Brush offset %": "ออฟเซ็ตแปรง %",
+ "Constant 3D radius": "รัศมี 3D คงที่",
+ "Even deposit": "การสะสมสม่ำเสมอ",
+ "Shared radius": "รัศมีร่วม",
+ "Snap radius": "สแนปรัศมี",
+ "Spacing %": "ระยะห่าง %",
+ "Stroke jitter %": "จิตเตอร์เส้นพู่กัน %"
 }

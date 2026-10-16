@@ -849,5 +849,12 @@
  "Layer reset": "Ripristina livello",
  "Layer reset needs an active sculpt layer": "Ripristina livello richiede un livello di scultura attivo",
  "Nudge": "Spingi",
- "Polish": "Leviga"
+ "Polish": "Leviga",
+ "Brush offset %": "Scostamento pennello %",
+ "Constant 3D radius": "Raggio 3D costante",
+ "Even deposit": "Deposito uniforme",
+ "Shared radius": "Raggio condiviso",
+ "Snap radius": "Aggancia raggio",
+ "Spacing %": "Spaziatura %",
+ "Stroke jitter %": "Jitter del tratto %"
 }

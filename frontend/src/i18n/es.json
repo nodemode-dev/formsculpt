@@ -849,5 +849,12 @@
  "Layer reset": "Reinicio de capa",
  "Layer reset needs an active sculpt layer": "El reinicio de capa necesita una capa de escultura activa",
  "Nudge": "Empujar",
- "Polish": "Pulir"
+ "Polish": "Pulir",
+ "Brush offset %": "Desplazamiento del pincel %",
+ "Constant 3D radius": "Radio 3D constante",
+ "Even deposit": "Depósito uniforme",
+ "Shared radius": "Radio compartido",
+ "Snap radius": "Ajustar radio",
+ "Spacing %": "Espaciado %",
+ "Stroke jitter %": "Jitter del trazo %"
 }

@@ -849,5 +849,12 @@
  "Layer reset": "Ebenen-Reset",
  "Layer reset needs an active sculpt layer": "Ebenen-Reset benötigt eine aktive Sculpt-Ebene",
  "Nudge": "Schieben",
- "Polish": "Polieren"
+ "Polish": "Polieren",
+ "Brush offset %": "Pinsel-Versatz %",
+ "Constant 3D radius": "Konstanter 3D-Radius",
+ "Even deposit": "Gleichmäßiger Auftrag",
+ "Shared radius": "Gemeinsamer Radius",
+ "Snap radius": "Radius einrasten",
+ "Spacing %": "Abstand %",
+ "Stroke jitter %": "Strich-Jitter %"
 }

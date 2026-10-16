@@ -849,5 +849,12 @@
  "Layer reset": "Katman sıfırlama",
  "Layer reset needs an active sculpt layer": "Katman sıfırlama için etkin bir heykel katmanı gerekir",
  "Nudge": "İtme",
- "Polish": "Parlatma"
+ "Polish": "Parlatma",
+ "Brush offset %": "Fırça ofseti %",
+ "Constant 3D radius": "Sabit 3D yarıçap",
+ "Even deposit": "Eşit birikim",
+ "Shared radius": "Ortak yarıçap",
+ "Snap radius": "Yarıçap adımı",
+ "Spacing %": "Aralık %",
+ "Stroke jitter %": "Vuruş titreşimi %"
 }

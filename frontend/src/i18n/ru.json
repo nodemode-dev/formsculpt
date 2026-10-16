@@ -849,5 +849,12 @@
  "Layer reset": "Сброс слоя",
  "Layer reset needs an active sculpt layer": "Для сброса слоя нужен активный слой скульптинга",
  "Nudge": "Сдвиг",
- "Polish": "Полировка"
+ "Polish": "Полировка",
+ "Brush offset %": "Смещение кисти %",
+ "Constant 3D radius": "Постоянный 3D-радиус",
+ "Even deposit": "Равномерное нанесение",
+ "Shared radius": "Общий радиус",
+ "Snap radius": "Шаг радиуса",
+ "Spacing %": "Интервал %",
+ "Stroke jitter %": "Дрожание штриха %"
 }

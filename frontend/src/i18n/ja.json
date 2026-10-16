@@ -849,5 +849,12 @@
  "Layer reset": "レイヤーリセット",
  "Layer reset needs an active sculpt layer": "レイヤーリセットにはアクティブなスカルプトレイヤーが必要です",
  "Nudge": "ナッジ",
- "Polish": "ポリッシュ"
+ "Polish": "ポリッシュ",
+ "Brush offset %": "ブラシオフセット %",
+ "Constant 3D radius": "一定の3D半径",
+ "Even deposit": "均一なデポジット",
+ "Shared radius": "共有半径",
+ "Snap radius": "半径スナップ",
+ "Spacing %": "間隔 %",
+ "Stroke jitter %": "ストロークジッター %"
 }
