@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.54.0 · 2026-10-16
+
+### Added
+
+- Spotlight, after ZBrush: images held over the view with a placement dial. `spotlight_add` (PNG, up to 16 images), `spotlight_set` (centre, size, angle, opacity, tile, flip, active), `spotlight_list`, `spotlight_image`, `spotlight_remove` (one or all) and `spotlight_apply`, which paints the image's colour (into vertex paint or the texture) or sculpts by its brightness through the current camera, onto front-facing, unoccluded surfaces, whole or under one brush dab; one undo step. The images themselves are view state, not undo steps or project data.
+- Window: the Spotlight drawn over the viewport, a dial to move, turn and size the active image, Paint through, Sculpt through, a Spotlight brush (paint or sculpt), Spotlight depth %, Spotlight opacity, Flip Spotlight and Clear Spotlight.
+- 159 engine commands; 967 interface strings in every language.
+
 ## 0.53.0 · 2026-10-16
 
 ### Added
