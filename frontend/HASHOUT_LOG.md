@@ -567,3 +567,9 @@ Until 0.55.0 the textured draw took colour from the texture but roughness and me
 - kind: rationale
 - logged: v0.56.0 · 2026-10-16
 ZModeler is a click tool: the panel's ZModeler action (edge insert, extrude, close; face inset, extrude, delete) picks the command and a click sends the picked point. The hover asks poly_pick with the pointer's ray, one request at a time for the newest position (as the Spotlight brush does), and writes one SVG path that exists from the start: the edge for edge actions (dashed when it is an open border, which is what extrude and close need) or the face's outline for face actions; only d, its class and visibility change. It hides for every other tool and when the pointer leaves. Point slide is agent and palette only, since it needs a drag target.
+
+### ZModeler creases and the point hover
+- refers-to: app.ts :: the ZModeler action list (crease and uncrease for edges and points), the Auto-crease field, zmodel (target point, crease), zmodelHit (vertex_point, creased), drawZmodelHover (the point ring, the creased class); styles/shell.css :: path.zmodel-hover.creased
+- kind: rationale
+- logged: v0.57.0 · 2026-10-16
+Point actions aim at a corner, so the hover becomes a 6 px ring around poly_pick's vertex_point, drawn with two arcs in the same path element; edges already creased draw thicker in the text colour so creasing twice is visible before the click. Auto-crease rides only on the actions the engine takes it for (a new loop, a face inset or extrude). Creases themselves are not drawn in the viewport yet; they show in their effect after subdivision.

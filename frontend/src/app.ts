@@ -102,6 +102,7 @@ interface Shell {
   quadTarget: HTMLInputElement;
   zmodelAction: HTMLSelectElement;
   zmodelAt: HTMLInputElement;
+  zmodelCrease: HTMLInputElement;
   zmodelHover: SVGPathElement;
   actionButtons: HTMLButtonElement[];
   skeleton: HTMLSelectElement;
@@ -1054,9 +1055,10 @@ function buildShell(root: HTMLElement): Shell {
   const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Voxel resolution' });
   const topoFields = el('div', 'fields');
   const quadTarget = input('number', { min: '100', max: '400000', value: '4000', 'aria-label': 'Target quads' });
-  const zmodelAction = choices('ZModeler action', [['edge:insert', 'Insert edge loop'], ['edge:extrude', 'Extrude edge'], ['edge:close', 'Close hole'], ['face:inset', 'Inset face'], ['face:extrude', 'Extrude face'], ['face:delete', 'Delete face']]);
+  const zmodelAction = choices('ZModeler action', [['edge:insert', 'Insert edge loop'], ['edge:extrude', 'Extrude edge'], ['edge:close', 'Close hole'], ['face:inset', 'Inset face'], ['face:extrude', 'Extrude face'], ['face:delete', 'Delete face'], ['edge:crease', 'Crease edge'], ['edge:uncrease', 'Uncrease edge'], ['point:crease', 'Crease point'], ['point:uncrease', 'Uncrease point']]);
   const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
-  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt));
+  const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
+  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Auto-crease', zmodelCrease));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -1362,7 +1364,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelHover, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelCrease, zmodelHover, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -2425,13 +2427,15 @@ class SceneView {
     const [target, action] = this.shell.zmodelAction.value.split(':');
     const args: Record<string, unknown> = { id, point, action };
     if (action === 'insert') args.at = Math.max(5, Math.min(95, Number(this.shell.zmodelAt.value) || 50)) / 100;
-    await this.run(target === 'face' ? 'zmodel_face' : 'zmodel_edge', args);
+    // Auto-crease applies where the engine takes it: a new edge loop, and a face inset or extrude.
+    if (this.shell.zmodelCrease.checked && (action === 'insert' || (target === 'face' && action !== 'delete'))) args.crease = true;
+    await this.run(target === 'face' ? 'zmodel_face' : target === 'point' ? 'zmodel_point' : 'zmodel_edge', args);
     this.zmodelHit = null;
     this.drawZmodelHover();
   }
 
   /** The last poly_pick under the pointer, the pointer's newest position waiting for a reply, and whether one is out. */
-  private zmodelHit: { edge_points: [Vec3, Vec3]; face_corners: Vec3[]; border: boolean } | null = null;
+  private zmodelHit: { edge_points: [Vec3, Vec3]; face_corners: Vec3[]; vertex_point: Vec3; border: boolean; creased: boolean } | null = null;
   private zmodelPending: [number, number] | null = null;
   private zmodelBusy = false;
 
@@ -2453,7 +2457,7 @@ class SceneView {
         this.zmodelPending = null;
         const ray = this.viewport.rayAtClient(cx, cy);
         if (!ray) continue;
-        const r = await dispatch<{ hit: boolean; edge_points: [Vec3, Vec3]; face_corners: Vec3[]; border: boolean }>('poly_pick', { id: this.scene.active, ray: { origin: ray.origin, dir: ray.dir } });
+        const r = await dispatch<{ hit: boolean; edge_points: [Vec3, Vec3]; face_corners: Vec3[]; vertex_point: Vec3; border: boolean; creased: boolean }>('poly_pick', { id: this.scene.active, ray: { origin: ray.origin, dir: ray.dir } });
         this.zmodelHit = r.ok && r.result.hit ? r.result : null;
         if (this.brush === 'zmodeler') this.drawZmodelHover();
       }
@@ -2471,15 +2475,21 @@ class SceneView {
     }
     const project = this.projector();
     const face = this.shell.zmodelAction.value.startsWith('face:');
-    const pts = (face ? h.face_corners : h.edge_points).map(project);
+    const point = this.shell.zmodelAction.value.startsWith('point:');
+    const pts = (face ? h.face_corners : point ? [h.vertex_point] : h.edge_points).map(project);
     if (pts.some((q) => q === null)) {
       setAttr(path, 'visibility', 'hidden');
       return;
     }
-    const d = (pts as [number, number][]).map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ') + (face ? ' Z' : '');
+    const at = pts as [number, number][];
+    // A point is a small ring around the corner; an edge a line; a face its outline.
+    const d = point
+      ? `M${(at[0][0] - 6).toFixed(1)},${at[0][1].toFixed(1)} a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0`
+      : at.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ') + (face ? ' Z' : '');
     setAttr(path, 'd', d);
     path.classList.toggle('face', face);
-    path.classList.toggle('border', !face && h.border);
+    path.classList.toggle('border', !face && !point && h.border);
+    path.classList.toggle('creased', !face && !point && h.creased);
     setAttr(path, 'visibility', 'visible');
   }
 
