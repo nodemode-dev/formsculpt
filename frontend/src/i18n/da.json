@@ -783,5 +783,21 @@
  "Sew UV Islands": "Sy UV-øer",
  "Sewn: {welded} corners joined, {n} islands now": "Syet: {welded} hjørner samlet, nu {n} øer",
  "Straighten UVs": "Ret UV'er ud",
- "This island shares no edge with another island": "Denne ø deler ingen kant med en anden ø"
+ "This island shares no edge with another island": "Denne ø deler ingen kant med en anden ø",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-klik på et UV-punkt for at fastgøre det til Afslap; Ctrl-klik på punkter i én ø for at lave en sti.",
+ "Clear points": "Ryd punkter",
+ "Clear UV Pins and Path": "Ryd UV-nåle og sti",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-klik først på to eller flere punkter i én ø i UV-visningen",
+ "Cut along path": "Klip langs sti",
+ "Cut UV Seam Along Path": "Klip UV-søm langs sti",
+ "No UV point there": "Intet UV-punkt der",
+ "Path of {n} points; Cut along path or Straighten path": "Sti med {n} punkter; Klip langs sti eller Ret sti ud",
+ "Path started; Ctrl-click more points in the same island": "Sti påbegyndt; Ctrl-klik flere punkter i samme ø",
+ "Path straightened": "Sti rettet ud",
+ "Pick UV Point": "Vælg UV-punkt",
+ "Seam cut along the path": "Søm klippet langs stien",
+ "Straighten path": "Ret sti ud",
+ "Straighten UV Path": "Ret UV-sti ud",
+ "UV Edge Path": "UV-kantsti",
+ "{n} pinned points; Relax keeps them still": "{n} fastgjorte punkter; Afslap holder dem stille"
 }

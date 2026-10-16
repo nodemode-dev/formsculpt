@@ -783,5 +783,21 @@
  "Sew UV Islands": "เย็บเกาะ UV",
  "Sewn: {welded} corners joined, {n} islands now": "เย็บแล้ว: เชื่อม {welded} มุม ตอนนี้มี {n} เกาะ",
  "Straighten UVs": "ปรับ UV ให้ตรง",
- "This island shares no edge with another island": "เกาะนี้ไม่มีขอบร่วมกับเกาะอื่น"
+ "This island shares no edge with another island": "เกาะนี้ไม่มีขอบร่วมกับเกาะอื่น",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-คลิกจุด UV เพื่อปักไว้สำหรับคลาย Ctrl-คลิกจุดในเกาะเดียวกันเพื่อสร้างเส้นทาง",
+ "Clear points": "ล้างจุด",
+ "Clear UV Pins and Path": "ล้างหมุดและเส้นทาง UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-คลิกจุดของเกาะเดียวกันสองจุดขึ้นไปในมุมมอง UV ก่อน",
+ "Cut along path": "ตัดตามเส้นทาง",
+ "Cut UV Seam Along Path": "ตัดตะเข็บ UV ตามเส้นทาง",
+ "No UV point there": "ไม่มีจุด UV ที่นั่น",
+ "Path of {n} points; Cut along path or Straighten path": "เส้นทาง {n} จุด ตัดตามเส้นทางหรือปรับเส้นทางให้ตรง",
+ "Path started; Ctrl-click more points in the same island": "เริ่มเส้นทางแล้ว Ctrl-คลิกจุดเพิ่มในเกาะเดียวกัน",
+ "Path straightened": "ปรับเส้นทางให้ตรงแล้ว",
+ "Pick UV Point": "เลือกจุด UV",
+ "Seam cut along the path": "ตัดตะเข็บตามเส้นทางแล้ว",
+ "Straighten path": "ปรับเส้นทางให้ตรง",
+ "Straighten UV Path": "ปรับเส้นทาง UV ให้ตรง",
+ "UV Edge Path": "เส้นทางขอบ UV",
+ "{n} pinned points; Relax keeps them still": "ปักไว้ {n} จุด การคลายจะไม่ขยับจุดเหล่านี้"
 }

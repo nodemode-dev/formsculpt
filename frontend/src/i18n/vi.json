@@ -783,5 +783,21 @@
  "Sew UV Islands": "May các đảo UV",
  "Sewn: {welded} corners joined, {n} islands now": "Đã may: nối {welded} góc, giờ có {n} đảo",
  "Straighten UVs": "Làm thẳng UV",
- "This island shares no edge with another island": "Đảo này không chung cạnh nào với đảo khác"
+ "This island shares no edge with another island": "Đảo này không chung cạnh nào với đảo khác",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-nhấp một điểm UV để ghim cho Thả lỏng; Ctrl-nhấp các điểm của một đảo để tạo đường dẫn.",
+ "Clear points": "Xóa điểm",
+ "Clear UV Pins and Path": "Xóa ghim và đường dẫn UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Trước hết Ctrl-nhấp hai điểm trở lên của một đảo trong khung UV",
+ "Cut along path": "Cắt theo đường dẫn",
+ "Cut UV Seam Along Path": "Cắt đường may UV theo đường dẫn",
+ "No UV point there": "Không có điểm UV ở đó",
+ "Path of {n} points; Cut along path or Straighten path": "Đường dẫn {n} điểm; Cắt theo đường dẫn hoặc Làm thẳng đường dẫn",
+ "Path started; Ctrl-click more points in the same island": "Đã bắt đầu đường dẫn; Ctrl-nhấp thêm điểm trong cùng đảo",
+ "Path straightened": "Đã làm thẳng đường dẫn",
+ "Pick UV Point": "Chọn điểm UV",
+ "Seam cut along the path": "Đã cắt đường may theo đường dẫn",
+ "Straighten path": "Làm thẳng đường dẫn",
+ "Straighten UV Path": "Làm thẳng đường dẫn UV",
+ "UV Edge Path": "Đường dẫn cạnh UV",
+ "{n} pinned points; Relax keeps them still": "{n} điểm đã ghim; Thả lỏng giữ yên chúng"
 }

@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV アイランドを縫い合わせる",
  "Sewn: {welded} corners joined, {n} islands now": "縫い合わせ完了: {welded} 個の角を結合、現在 {n} 個のアイランド",
  "Straighten UVs": "UV をまっすぐにする",
- "This island shares no edge with another island": "このアイランドはほかのアイランドと辺を共有していません"
+ "This island shares no edge with another island": "このアイランドはほかのアイランドと辺を共有していません",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "UV ポイントを Alt クリックでリラックス用に固定、同じアイランドのポイントを Ctrl クリックでパスを作成します。",
+ "Clear points": "ポイントをクリア",
+ "Clear UV Pins and Path": "UV のピンとパスをクリア",
+ "Ctrl-click two or more points of one island in the UV view first": "まず UV ビューで同じアイランドのポイントを 2 つ以上 Ctrl クリックしてください",
+ "Cut along path": "パスに沿ってカット",
+ "Cut UV Seam Along Path": "パスに沿って UV シームをカット",
+ "No UV point there": "そこに UV ポイントはありません",
+ "Path of {n} points; Cut along path or Straighten path": "{n} ポイントのパス。パスに沿ってカットするか、パスをまっすぐにします",
+ "Path started; Ctrl-click more points in the same island": "パスを開始しました。同じアイランドのポイントをさらに Ctrl クリックしてください",
+ "Path straightened": "パスをまっすぐにしました",
+ "Pick UV Point": "UV ポイントを選択",
+ "Seam cut along the path": "パスに沿ってシームをカットしました",
+ "Straighten path": "パスをまっすぐにする",
+ "Straighten UV Path": "UV パスをまっすぐにする",
+ "UV Edge Path": "UV エッジパス",
+ "{n} pinned points; Relax keeps them still": "固定ポイント {n} 個。リラックスでは動きません"
 }

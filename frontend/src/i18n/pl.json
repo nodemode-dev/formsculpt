@@ -783,5 +783,21 @@
  "Sew UV Islands": "Zszyj wyspy UV",
  "Sewn: {welded} corners joined, {n} islands now": "Zszyto: połączono {welded} narożników, teraz {n} wysp",
  "Straighten UVs": "Wyprostuj UV",
- "This island shares no edge with another island": "Ta wyspa nie ma wspólnej krawędzi z inną wyspą"
+ "This island shares no edge with another island": "Ta wyspa nie ma wspólnej krawędzi z inną wyspą",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-kliknij punkt UV, by go przypiąć dla Rozluźnienia; Ctrl-klikaj punkty jednej wyspy, by utworzyć ścieżkę.",
+ "Clear points": "Wyczyść punkty",
+ "Clear UV Pins and Path": "Wyczyść przypięcia i ścieżkę UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Najpierw Ctrl-kliknij dwa lub więcej punktów jednej wyspy w widoku UV",
+ "Cut along path": "Przetnij wzdłuż ścieżki",
+ "Cut UV Seam Along Path": "Przetnij szew UV wzdłuż ścieżki",
+ "No UV point there": "Brak punktu UV w tym miejscu",
+ "Path of {n} points; Cut along path or Straighten path": "Ścieżka z {n} punktów; Przetnij wzdłuż ścieżki lub Wyprostuj ścieżkę",
+ "Path started; Ctrl-click more points in the same island": "Ścieżka rozpoczęta; Ctrl-klikaj kolejne punkty tej samej wyspy",
+ "Path straightened": "Ścieżka wyprostowana",
+ "Pick UV Point": "Wybierz punkt UV",
+ "Seam cut along the path": "Szew przecięty wzdłuż ścieżki",
+ "Straighten path": "Wyprostuj ścieżkę",
+ "Straighten UV Path": "Wyprostuj ścieżkę UV",
+ "UV Edge Path": "Ścieżka krawędzi UV",
+ "{n} pinned points; Relax keeps them still": "Przypiętych punktów: {n}; Rozluźnienie ich nie ruszy"
 }

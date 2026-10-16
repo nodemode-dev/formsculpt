@@ -783,5 +783,21 @@
  "Sew UV Islands": "Coudre des îlots UV",
  "Sewn: {welded} corners joined, {n} islands now": "Cousu : {welded} coins joints, {n} îlots désormais",
  "Straighten UVs": "Redresser les UV",
- "This island shares no edge with another island": "Cet îlot ne partage aucune arête avec un autre îlot"
+ "This island shares no edge with another island": "Cet îlot ne partage aucune arête avec un autre îlot",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-clic sur un point UV pour l'épingler pour Détendre ; Ctrl-clic sur des points d'un îlot pour tracer un chemin.",
+ "Clear points": "Effacer les points",
+ "Clear UV Pins and Path": "Effacer les épingles et le chemin UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Faites d'abord Ctrl-clic sur deux points ou plus d'un îlot dans la vue UV",
+ "Cut along path": "Couper le long du chemin",
+ "Cut UV Seam Along Path": "Couper une couture UV le long du chemin",
+ "No UV point there": "Aucun point UV ici",
+ "Path of {n} points; Cut along path or Straighten path": "Chemin de {n} points ; Couper le long du chemin ou Redresser le chemin",
+ "Path started; Ctrl-click more points in the same island": "Chemin commencé ; Ctrl-clic sur d'autres points du même îlot",
+ "Path straightened": "Chemin redressé",
+ "Pick UV Point": "Choisir un point UV",
+ "Seam cut along the path": "Couture coupée le long du chemin",
+ "Straighten path": "Redresser le chemin",
+ "Straighten UV Path": "Redresser le chemin UV",
+ "UV Edge Path": "Chemin d'arêtes UV",
+ "{n} pinned points; Relax keeps them still": "{n} points épinglés ; Détendre les laisse en place"
 }

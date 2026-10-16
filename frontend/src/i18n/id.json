@@ -783,5 +783,21 @@
  "Sew UV Islands": "Jahit Pulau UV",
  "Sewn: {welded} corners joined, {n} islands now": "Dijahit: {welded} sudut disatukan, kini {n} pulau",
  "Straighten UVs": "Luruskan UV",
- "This island shares no edge with another island": "Pulau ini tidak berbagi tepi dengan pulau lain"
+ "This island shares no edge with another island": "Pulau ini tidak berbagi tepi dengan pulau lain",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-klik titik UV untuk menyematkannya bagi Kendurkan; Ctrl-klik titik-titik satu pulau untuk membuat jalur.",
+ "Clear points": "Hapus titik",
+ "Clear UV Pins and Path": "Hapus Sematan dan Jalur UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-klik dulu dua titik atau lebih dari satu pulau di tampilan UV",
+ "Cut along path": "Potong sepanjang jalur",
+ "Cut UV Seam Along Path": "Potong Kampuh UV Sepanjang Jalur",
+ "No UV point there": "Tidak ada titik UV di sana",
+ "Path of {n} points; Cut along path or Straighten path": "Jalur {n} titik; Potong sepanjang jalur atau Luruskan jalur",
+ "Path started; Ctrl-click more points in the same island": "Jalur dimulai; Ctrl-klik titik lain di pulau yang sama",
+ "Path straightened": "Jalur diluruskan",
+ "Pick UV Point": "Pilih Titik UV",
+ "Seam cut along the path": "Kampuh dipotong sepanjang jalur",
+ "Straighten path": "Luruskan jalur",
+ "Straighten UV Path": "Luruskan Jalur UV",
+ "UV Edge Path": "Jalur Tepi UV",
+ "{n} pinned points; Relax keeps them still": "{n} titik tersemat; Kendurkan membiarkannya diam"
 }

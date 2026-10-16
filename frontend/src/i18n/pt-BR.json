@@ -783,5 +783,21 @@
  "Sew UV Islands": "Costurar ilhas UV",
  "Sewn: {welded} corners joined, {n} islands now": "Costurado: {welded} cantos unidos, agora {n} ilhas",
  "Straighten UVs": "Endireitar UVs",
- "This island shares no edge with another island": "Esta ilha não compartilha nenhuma aresta com outra ilha"
+ "This island shares no edge with another island": "Esta ilha não compartilha nenhuma aresta com outra ilha",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-clique em um ponto UV para fixá-lo no Relaxar; Ctrl-clique em pontos de uma ilha para criar um caminho.",
+ "Clear points": "Limpar pontos",
+ "Clear UV Pins and Path": "Limpar fixações e caminho UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Primeiro dê Ctrl-clique em dois ou mais pontos de uma ilha na vista UV",
+ "Cut along path": "Cortar pelo caminho",
+ "Cut UV Seam Along Path": "Cortar costura UV pelo caminho",
+ "No UV point there": "Não há ponto UV ali",
+ "Path of {n} points; Cut along path or Straighten path": "Caminho de {n} pontos; Cortar pelo caminho ou Endireitar caminho",
+ "Path started; Ctrl-click more points in the same island": "Caminho iniciado; dê Ctrl-clique em mais pontos da mesma ilha",
+ "Path straightened": "Caminho endireitado",
+ "Pick UV Point": "Escolher ponto UV",
+ "Seam cut along the path": "Costura cortada pelo caminho",
+ "Straighten path": "Endireitar caminho",
+ "Straighten UV Path": "Endireitar caminho UV",
+ "UV Edge Path": "Caminho de arestas UV",
+ "{n} pinned points; Relax keeps them still": "{n} pontos fixados; Relaxar os mantém parados"
 }

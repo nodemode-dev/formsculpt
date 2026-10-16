@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV-eilanden naaien",
  "Sewn: {welded} corners joined, {n} islands now": "Genaaid: {welded} hoeken verbonden, nu {n} eilanden",
  "Straighten UVs": "UV's rechttrekken",
- "This island shares no edge with another island": "Dit eiland deelt geen rand met een ander eiland"
+ "This island shares no edge with another island": "Dit eiland deelt geen rand met een ander eiland",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-klik op een UV-punt om het vast te pinnen voor Ontspannen; Ctrl-klik op punten van één eiland voor een pad.",
+ "Clear points": "Punten wissen",
+ "Clear UV Pins and Path": "UV-pinnen en pad wissen",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-klik eerst twee of meer punten van één eiland in de UV-weergave",
+ "Cut along path": "Langs pad knippen",
+ "Cut UV Seam Along Path": "UV-naad langs pad knippen",
+ "No UV point there": "Daar is geen UV-punt",
+ "Path of {n} points; Cut along path or Straighten path": "Pad van {n} punten; Langs pad knippen of Pad rechttrekken",
+ "Path started; Ctrl-click more points in the same island": "Pad gestart; Ctrl-klik meer punten op hetzelfde eiland",
+ "Path straightened": "Pad rechtgetrokken",
+ "Pick UV Point": "UV-punt kiezen",
+ "Seam cut along the path": "Naad langs het pad geknipt",
+ "Straighten path": "Pad rechttrekken",
+ "Straighten UV Path": "UV-pad rechttrekken",
+ "UV Edge Path": "UV-randpad",
+ "{n} pinned points; Relax keeps them still": "{n} vastgepinde punten; Ontspannen laat ze staan"
 }

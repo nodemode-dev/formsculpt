@@ -783,5 +783,21 @@
  "Sew UV Islands": "Sešít ostrovy UV",
  "Sewn: {welded} corners joined, {n} islands now": "Sešito: spojeno rohů {welded}, nyní ostrovů {n}",
  "Straighten UVs": "Narovnat UV",
- "This island shares no edge with another island": "Tento ostrov nesdílí žádnou hranu s jiným ostrovem"
+ "This island shares no edge with another island": "Tento ostrov nesdílí žádnou hranu s jiným ostrovem",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-klik na bod UV ho připíchne pro Uvolnění; Ctrl-kliky na body jednoho ostrova tvoří cestu.",
+ "Clear points": "Vymazat body",
+ "Clear UV Pins and Path": "Vymazat připíchnutí a cestu UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Nejprve Ctrl-klikněte na dva nebo více bodů jednoho ostrova v pohledu UV",
+ "Cut along path": "Řezat podél cesty",
+ "Cut UV Seam Along Path": "Rozříznout šev UV podél cesty",
+ "No UV point there": "Tam není žádný bod UV",
+ "Path of {n} points; Cut along path or Straighten path": "Cesta o {n} bodech; Řezat podél cesty nebo Narovnat cestu",
+ "Path started; Ctrl-click more points in the same island": "Cesta zahájena; Ctrl-klikněte další body téhož ostrova",
+ "Path straightened": "Cesta narovnána",
+ "Pick UV Point": "Vybrat bod UV",
+ "Seam cut along the path": "Šev rozříznut podél cesty",
+ "Straighten path": "Narovnat cestu",
+ "Straighten UV Path": "Narovnat cestu UV",
+ "UV Edge Path": "Cesta po hranách UV",
+ "{n} pinned points; Relax keeps them still": "Připíchnutých bodů: {n}; Uvolnění je nechá na místě"
 }

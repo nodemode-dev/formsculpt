@@ -783,5 +783,21 @@
  "Sew UV Islands": "Ompele UV-saaret",
  "Sewn: {welded} corners joined, {n} islands now": "Ommeltu: {welded} kulmaa yhdistetty, nyt {n} saarta",
  "Straighten UVs": "Suorista UV:t",
- "This island shares no edge with another island": "Tällä saarella ei ole yhteistä reunaa toisen saaren kanssa"
+ "This island shares no edge with another island": "Tällä saarella ei ole yhteistä reunaa toisen saaren kanssa",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-napsauta UV-pistettä kiinnittääksesi sen Rentoutusta varten; Ctrl-napsauta saaren pisteitä tehdäksesi polun.",
+ "Clear points": "Tyhjennä pisteet",
+ "Clear UV Pins and Path": "Tyhjennä UV-kiinnitykset ja polku",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-napsauta ensin kahta tai useampaa saaren pistettä UV-näkymässä",
+ "Cut along path": "Leikkaa polkua pitkin",
+ "Cut UV Seam Along Path": "Leikkaa UV-sauma polkua pitkin",
+ "No UV point there": "Siinä ei ole UV-pistettä",
+ "Path of {n} points; Cut along path or Straighten path": "Polussa {n} pistettä; Leikkaa polkua pitkin tai Suorista polku",
+ "Path started; Ctrl-click more points in the same island": "Polku aloitettu; Ctrl-napsauta lisää saman saaren pisteitä",
+ "Path straightened": "Polku suoristettu",
+ "Pick UV Point": "Valitse UV-piste",
+ "Seam cut along the path": "Sauma leikattu polkua pitkin",
+ "Straighten path": "Suorista polku",
+ "Straighten UV Path": "Suorista UV-polku",
+ "UV Edge Path": "UV-reunapolku",
+ "{n} pinned points; Relax keeps them still": "{n} kiinnitettyä pistettä; Rentoutus pitää ne paikallaan"
 }

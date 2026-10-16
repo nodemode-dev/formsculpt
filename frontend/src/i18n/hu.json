@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV-szigetek varrása",
  "Sewn: {welded} corners joined, {n} islands now": "Varrva: {welded} sarok összekötve, most {n} sziget",
  "Straighten UVs": "UV-k kiegyenesítése",
- "This island shares no edge with another island": "Ennek a szigetnek nincs közös éle másik szigettel"
+ "This island shares no edge with another island": "Ennek a szigetnek nincs közös éle másik szigettel",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-kattintás egy UV-pontra rögzíti a lazításhoz; Ctrl-kattintás egy sziget pontjaira útvonalat hoz létre.",
+ "Clear points": "Pontok törlése",
+ "Clear UV Pins and Path": "UV-rögzítések és útvonal törlése",
+ "Ctrl-click two or more points of one island in the UV view first": "Először Ctrl-kattints egy sziget két vagy több pontjára az UV-nézetben",
+ "Cut along path": "Vágás az útvonal mentén",
+ "Cut UV Seam Along Path": "UV-varrat vágása az útvonal mentén",
+ "No UV point there": "Ott nincs UV-pont",
+ "Path of {n} points; Cut along path or Straighten path": "{n} pontos útvonal; Vágás az útvonal mentén vagy Útvonal kiegyenesítése",
+ "Path started; Ctrl-click more points in the same island": "Útvonal elkezdve; Ctrl-kattints további pontokra ugyanazon a szigeten",
+ "Path straightened": "Útvonal kiegyenesítve",
+ "Pick UV Point": "UV-pont kiválasztása",
+ "Seam cut along the path": "Varrat elvágva az útvonal mentén",
+ "Straighten path": "Útvonal kiegyenesítése",
+ "Straighten UV Path": "UV-útvonal kiegyenesítése",
+ "UV Edge Path": "UV-élútvonal",
+ "{n} pinned points; Relax keeps them still": "{n} rögzített pont; a lazítás nem mozdítja őket"
 }

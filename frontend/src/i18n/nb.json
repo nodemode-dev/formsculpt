@@ -783,5 +783,21 @@
  "Sew UV Islands": "Sy UV-øyer",
  "Sewn: {welded} corners joined, {n} islands now": "Sydd: {welded} hjørner skjøtt, nå {n} øyer",
  "Straighten UVs": "Rett ut UV-er",
- "This island shares no edge with another island": "Denne øya deler ingen kant med en annen øy"
+ "This island shares no edge with another island": "Denne øya deler ingen kant med en annen øy",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-klikk på et UV-punkt for å feste det for Avspenn; Ctrl-klikk på punkter i én øy for å lage en bane.",
+ "Clear points": "Fjern punkter",
+ "Clear UV Pins and Path": "Fjern UV-fester og bane",
+ "Ctrl-click two or more points of one island in the UV view first": "Ctrl-klikk først to eller flere punkter i én øy i UV-visningen",
+ "Cut along path": "Klipp langs bane",
+ "Cut UV Seam Along Path": "Klipp UV-søm langs bane",
+ "No UV point there": "Ikke noe UV-punkt der",
+ "Path of {n} points; Cut along path or Straighten path": "Bane med {n} punkter; Klipp langs bane eller Rett ut bane",
+ "Path started; Ctrl-click more points in the same island": "Bane startet; Ctrl-klikk flere punkter i samme øy",
+ "Path straightened": "Bane rettet ut",
+ "Pick UV Point": "Velg UV-punkt",
+ "Seam cut along the path": "Søm klippet langs banen",
+ "Straighten path": "Rett ut bane",
+ "Straighten UV Path": "Rett ut UV-bane",
+ "UV Edge Path": "UV-kantbane",
+ "{n} pinned points; Relax keeps them still": "{n} festede punkter; Avspenn holder dem i ro"
 }

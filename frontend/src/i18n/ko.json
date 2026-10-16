@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV 아일랜드 꿰매기",
  "Sewn: {welded} corners joined, {n} islands now": "꿰맴: 모서리 {welded}개 연결, 이제 아일랜드 {n}개",
  "Straighten UVs": "UV 곧게 펴기",
- "This island shares no edge with another island": "이 아일랜드는 다른 아일랜드와 공유하는 가장자리가 없습니다"
+ "This island shares no edge with another island": "이 아일랜드는 다른 아일랜드와 공유하는 가장자리가 없습니다",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "UV 점을 Alt 클릭하면 이완용으로 고정되고, 한 아일랜드의 점들을 Ctrl 클릭하면 경로가 만들어집니다.",
+ "Clear points": "점 지우기",
+ "Clear UV Pins and Path": "UV 고정점과 경로 지우기",
+ "Ctrl-click two or more points of one island in the UV view first": "먼저 UV 보기에서 한 아일랜드의 점을 두 개 이상 Ctrl 클릭하세요",
+ "Cut along path": "경로를 따라 자르기",
+ "Cut UV Seam Along Path": "경로를 따라 UV 이음매 자르기",
+ "No UV point there": "그곳에 UV 점이 없습니다",
+ "Path of {n} points; Cut along path or Straighten path": "점 {n}개의 경로. 경로를 따라 자르거나 경로를 곧게 펴세요",
+ "Path started; Ctrl-click more points in the same island": "경로 시작됨. 같은 아일랜드의 점을 더 Ctrl 클릭하세요",
+ "Path straightened": "경로를 곧게 폈습니다",
+ "Pick UV Point": "UV 점 선택",
+ "Seam cut along the path": "경로를 따라 이음매를 잘랐습니다",
+ "Straighten path": "경로 곧게 펴기",
+ "Straighten UV Path": "UV 경로 곧게 펴기",
+ "UV Edge Path": "UV 가장자리 경로",
+ "{n} pinned points; Relax keeps them still": "고정점 {n}개. 이완해도 움직이지 않습니다"
 }

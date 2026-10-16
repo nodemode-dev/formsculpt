@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.41.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -668,6 +668,28 @@ Picture an unwrapped object's UV layout (each island in its own colour, v up) an
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `island`: integer; range 0 to inf; An island's number to draw brighter, instead of at.
 - `size`: integer; default 512; range 64 to 2048; Width and height of the picture in pixels.
+
+Note: read-only.
+
+## uv_pick
+
+Find the mesh vertex whose UV point is nearest a spot in the UV view. Give at [u, v] and an optional radius (UV distance, default 0.02). Returns vertex (the mesh vertex index), uv ([u, v] of that corner), island (numbered as get_uv_layout numbers it) and distance, or vertex null when nothing lies within radius. The vertex can go in uv_relax's pinned list or be an end of a uv_path; refuses with no_uvs when the object is not unwrapped. Read-only.
+
+- `at`: array of number; required; A UV point [u, v] (0 to 1, v up) to pick near.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `radius`: number; default 0.02; range 0 to 1; Largest UV distance from at to the picked corner.
+
+Note: read-only.
+
+## uv_path
+
+Find the shortest chain of mesh edges (by 3D length) from one vertex to another. Give from and to as mesh vertex indices, for instance from uv_pick. With island [a number from get_uv_layout] only edges of that UV island are walked, so the path stays inside one island; without it any mesh edge may be used. Returns path (vertex indices from start to end), length (3D) and edges. The path feeds uv_cut and uv_straighten as their path. Refuses with no_path when the vertices are not joined (inside the island), bad_arguments for an index out of range or from equal to to, and no_uvs when the object is not unwrapped. Read-only.
+
+- `closed`: boolean; default false; Accepted and ignored: from and to must differ, and a loop is made by repeating the first vertex at the end of the path given to uv_cut.
+- `from`: integer; required; range 0 to inf; Mesh vertex index where the path starts.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island`: integer; range 0 to inf; An island's number as get_uv_layout numbers it. When given, only mesh edges with a triangle in that island are walked, so the path stays inside the island.
+- `to`: integer; required; range 0 to inf; Mesh vertex index where the path ends; not the same as from.
 
 Note: read-only.
 

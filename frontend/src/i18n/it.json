@@ -783,5 +783,21 @@
  "Sew UV Islands": "Cuci isole UV",
  "Sewn: {welded} corners joined, {n} islands now": "Cucito: {welded} angoli uniti, ora {n} isole",
  "Straighten UVs": "Raddrizza UV",
- "This island shares no edge with another island": "Questa isola non condivide spigoli con un'altra isola"
+ "This island shares no edge with another island": "Questa isola non condivide spigoli con un'altra isola",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-clic su un punto UV per bloccarlo in Rilassa; Ctrl-clic su punti di un'isola per creare un percorso.",
+ "Clear points": "Cancella punti",
+ "Clear UV Pins and Path": "Cancella blocchi e percorso UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Prima fai Ctrl-clic su due o più punti di un'isola nella vista UV",
+ "Cut along path": "Taglia lungo il percorso",
+ "Cut UV Seam Along Path": "Taglia cucitura UV lungo il percorso",
+ "No UV point there": "Nessun punto UV lì",
+ "Path of {n} points; Cut along path or Straighten path": "Percorso di {n} punti; Taglia lungo il percorso o Raddrizza percorso",
+ "Path started; Ctrl-click more points in the same island": "Percorso iniziato; Ctrl-clic su altri punti della stessa isola",
+ "Path straightened": "Percorso raddrizzato",
+ "Pick UV Point": "Scegli punto UV",
+ "Seam cut along the path": "Cucitura tagliata lungo il percorso",
+ "Straighten path": "Raddrizza percorso",
+ "Straighten UV Path": "Raddrizza percorso UV",
+ "UV Edge Path": "Percorso di spigoli UV",
+ "{n} pinned points; Relax keeps them still": "{n} punti bloccati; Rilassa li tiene fermi"
 }

@@ -783,5 +783,21 @@
  "Sew UV Islands": "缝合 UV 岛",
  "Sewn: {welded} corners joined, {n} islands now": "已缝合：连接了 {welded} 个角，现在共 {n} 个岛",
  "Straighten UVs": "拉直 UV",
- "This island shares no edge with another island": "此岛与其他岛没有共享的边"
+ "This island shares no edge with another island": "此岛与其他岛没有共享的边",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt 点击 UV 点可将其钉住供松弛使用；Ctrl 点击同一岛上的点可创建路径。",
+ "Clear points": "清除点",
+ "Clear UV Pins and Path": "清除 UV 钉点和路径",
+ "Ctrl-click two or more points of one island in the UV view first": "请先在 UV 视图中 Ctrl 点击同一岛上的两个或更多点",
+ "Cut along path": "沿路径切开",
+ "Cut UV Seam Along Path": "沿路径切开 UV 接缝",
+ "No UV point there": "那里没有 UV 点",
+ "Path of {n} points; Cut along path or Straighten path": "路径共 {n} 个点；可沿路径切开或拉直路径",
+ "Path started; Ctrl-click more points in the same island": "已开始路径；继续 Ctrl 点击同一岛上的点",
+ "Path straightened": "路径已拉直",
+ "Pick UV Point": "选取 UV 点",
+ "Seam cut along the path": "已沿路径切开接缝",
+ "Straighten path": "拉直路径",
+ "Straighten UV Path": "拉直 UV 路径",
+ "UV Edge Path": "UV 边路径",
+ "{n} pinned points; Relax keeps them still": "{n} 个钉点；松弛时保持不动"
 }

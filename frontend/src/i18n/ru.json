@@ -783,5 +783,21 @@
  "Sew UV Islands": "Сшить UV-острова",
  "Sewn: {welded} corners joined, {n} islands now": "Сшито: соединено углов {welded}, теперь островов {n}",
  "Straighten UVs": "Выпрямить UV",
- "This island shares no edge with another island": "У этого острова нет общих рёбер с другим островом"
+ "This island shares no edge with another island": "У этого острова нет общих рёбер с другим островом",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-щелчок по UV-точке закрепляет её для расслабления; Ctrl-щелчки по точкам одного острова задают путь.",
+ "Clear points": "Очистить точки",
+ "Clear UV Pins and Path": "Очистить закрепления и путь UV",
+ "Ctrl-click two or more points of one island in the UV view first": "Сначала Ctrl-щелчком отметьте две или больше точек одного острова в UV-виде",
+ "Cut along path": "Разрезать по пути",
+ "Cut UV Seam Along Path": "Разрезать шов UV по пути",
+ "No UV point there": "Там нет UV-точки",
+ "Path of {n} points; Cut along path or Straighten path": "Путь из {n} точек; Разрезать по пути или Выпрямить путь",
+ "Path started; Ctrl-click more points in the same island": "Путь начат; Ctrl-щелчком добавьте точки того же острова",
+ "Path straightened": "Путь выпрямлен",
+ "Pick UV Point": "Выбрать UV-точку",
+ "Seam cut along the path": "Шов разрезан по пути",
+ "Straighten path": "Выпрямить путь",
+ "Straighten UV Path": "Выпрямить UV-путь",
+ "UV Edge Path": "Путь по рёбрам UV",
+ "{n} pinned points; Relax keeps them still": "Закреплённых точек: {n}; расслабление их не сдвинет"
 }

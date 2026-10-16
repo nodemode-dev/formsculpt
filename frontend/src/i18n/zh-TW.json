@@ -783,5 +783,21 @@
  "Sew UV Islands": "縫合 UV 島",
  "Sewn: {welded} corners joined, {n} islands now": "已縫合：連接了 {welded} 個角，現在共 {n} 個島",
  "Straighten UVs": "拉直 UV",
- "This island shares no edge with another island": "此島與其他島沒有共用的邊"
+ "This island shares no edge with another island": "此島與其他島沒有共用的邊",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt 點擊 UV 點可將其釘住供鬆弛使用；Ctrl 點擊同一島上的點可建立路徑。",
+ "Clear points": "清除點",
+ "Clear UV Pins and Path": "清除 UV 釘點和路徑",
+ "Ctrl-click two or more points of one island in the UV view first": "請先在 UV 檢視中 Ctrl 點擊同一島上的兩個或更多點",
+ "Cut along path": "沿路徑切開",
+ "Cut UV Seam Along Path": "沿路徑切開 UV 接縫",
+ "No UV point there": "那裡沒有 UV 點",
+ "Path of {n} points; Cut along path or Straighten path": "路徑共 {n} 個點；可沿路徑切開或拉直路徑",
+ "Path started; Ctrl-click more points in the same island": "已開始路徑；繼續 Ctrl 點擊同一島上的點",
+ "Path straightened": "路徑已拉直",
+ "Pick UV Point": "選取 UV 點",
+ "Seam cut along the path": "已沿路徑切開接縫",
+ "Straighten path": "拉直路徑",
+ "Straighten UV Path": "拉直 UV 路徑",
+ "UV Edge Path": "UV 邊路徑",
+ "{n} pinned points; Relax keeps them still": "{n} 個釘點；鬆弛時保持不動"
 }

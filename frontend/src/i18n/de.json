@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV-Inseln nähen",
  "Sewn: {welded} corners joined, {n} islands now": "Genäht: {welded} Ecken verbunden, jetzt {n} Inseln",
  "Straighten UVs": "UVs begradigen",
- "This island shares no edge with another island": "Diese Insel teilt keine Kante mit einer anderen Insel"
+ "This island shares no edge with another island": "Diese Insel teilt keine Kante mit einer anderen Insel",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Alt-Klick auf einen UV-Punkt fixiert ihn für Entspannen; Strg-Klick auf Punkte einer Insel bildet einen Pfad.",
+ "Clear points": "Punkte löschen",
+ "Clear UV Pins and Path": "UV-Fixierungen und Pfad löschen",
+ "Ctrl-click two or more points of one island in the UV view first": "Zuerst in der UV-Ansicht zwei oder mehr Punkte einer Insel mit Strg anklicken",
+ "Cut along path": "Entlang Pfad schneiden",
+ "Cut UV Seam Along Path": "UV-Naht entlang Pfad schneiden",
+ "No UV point there": "Dort ist kein UV-Punkt",
+ "Path of {n} points; Cut along path or Straighten path": "Pfad mit {n} Punkten; entlang Pfad schneiden oder Pfad begradigen",
+ "Path started; Ctrl-click more points in the same island": "Pfad begonnen; weitere Punkte derselben Insel mit Strg anklicken",
+ "Path straightened": "Pfad begradigt",
+ "Pick UV Point": "UV-Punkt wählen",
+ "Seam cut along the path": "Naht entlang des Pfads geschnitten",
+ "Straighten path": "Pfad begradigen",
+ "Straighten UV Path": "UV-Pfad begradigen",
+ "UV Edge Path": "UV-Kantenpfad",
+ "{n} pinned points; Relax keeps them still": "{n} fixierte Punkte; Entspannen lässt sie stehen"
 }

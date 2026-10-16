@@ -783,5 +783,21 @@
  "Sew UV Islands": "UV Adalarını Dik",
  "Sewn: {welded} corners joined, {n} islands now": "Dikildi: {welded} köşe birleşti, şimdi {n} ada",
  "Straighten UVs": "UV'leri Düzleştir",
- "This island shares no edge with another island": "Bu ada başka bir adayla kenar paylaşmıyor"
+ "This island shares no edge with another island": "Bu ada başka bir adayla kenar paylaşmıyor",
+ "Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.": "Gevşetme için bir UV noktasını sabitlemek üzere Alt-tıklayın; yol oluşturmak için bir adanın noktalarını Ctrl-tıklayın.",
+ "Clear points": "Noktaları temizle",
+ "Clear UV Pins and Path": "UV Sabitlerini ve Yolu Temizle",
+ "Ctrl-click two or more points of one island in the UV view first": "Önce UV görünümünde bir adanın iki veya daha fazla noktasını Ctrl-tıklayın",
+ "Cut along path": "Yol boyunca kes",
+ "Cut UV Seam Along Path": "Yol Boyunca UV Dikişi Kes",
+ "No UV point there": "Orada UV noktası yok",
+ "Path of {n} points; Cut along path or Straighten path": "{n} noktalı yol; Yol boyunca kes veya Yolu düzleştir",
+ "Path started; Ctrl-click more points in the same island": "Yol başladı; aynı adadan daha fazla nokta Ctrl-tıklayın",
+ "Path straightened": "Yol düzleştirildi",
+ "Pick UV Point": "UV Noktası Seç",
+ "Seam cut along the path": "Dikiş yol boyunca kesildi",
+ "Straighten path": "Yolu düzleştir",
+ "Straighten UV Path": "UV Yolunu Düzleştir",
+ "UV Edge Path": "UV Kenar Yolu",
+ "{n} pinned points; Relax keeps them still": "{n} sabit nokta; Gevşetme onları yerinde tutar"
 }
