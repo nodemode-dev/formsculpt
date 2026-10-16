@@ -86,6 +86,7 @@ uniform vec3 uBase;
 uniform float uOrtho;
 uniform float uPainted;
 uniform float uChecker;
+uniform sampler2D uPaintTex;
 uniform float uLit;
 uniform vec4 uCap;
 uniform vec3 uTint;
@@ -145,7 +146,9 @@ void main() {
   vec3 v = uOrtho > 0.5 ? vec3(0.0, 0.0, 1.0) : normalize(-vViewPos);
   if (dot(n, v) < 0.0) n = -n;
   vec3 albedo = uPainted > 0.5 ? vCol : uBase;
-  if (uChecker > 0.5) {
+  if (uChecker > 1.5) {
+    albedo = texture(uPaintTex, vCol.xy).rgb;
+  } else if (uChecker > 0.5) {
     vec2 cell = floor(fract(vCol.xy) * 16.0);
     albedo = mod(cell.x + cell.y, 2.0) < 0.5 ? vec3(0.86, 0.86, 0.84) : vec3(0.18, 0.2, 0.24);
     float tile = floor(vCol.x) + 10.0 * floor(vCol.y);
@@ -255,6 +258,8 @@ interface GpuMesh {
   expanded: Expanded | null;
   /** A per-corner copy carrying UVs for the checker view, or null. */
   checker: Expanded | null;
+  /** The object's painted texture, drawn through the per-corner UV copy when present. */
+  paintTexture: WebGLTexture | null;
   /** Bounds at upload, for fitting the shadow map (strokes move vertices only a little). */
   lo: [number, number, number];
   hi: [number, number, number];
@@ -449,7 +454,7 @@ export class GlRenderer {
         if (x > hi[c]) hi[c] = x;
       }
     }
-    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, lo, hi };
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, paintTexture: null, lo, hi };
     this.meshes.set(mesh.id, gpu);
     if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
   }
@@ -530,6 +535,31 @@ export class GlRenderer {
     m.expanded.buffers.forEach((b) => this.gl.deleteBuffer(b));
     this.gl.deleteVertexArray(m.expanded.vao);
     m.expanded = null;
+  }
+
+  /**
+   * A painted texture for one object, drawn through its per-corner UV copy (set that first with setChecker); null
+   * removes it. The image replaces the previous one in the same GL texture.
+   */
+  setPaintTexture(id: number, image: TexImageSource | null): boolean {
+    const m = this.meshes.get(id);
+    if (!m) return false;
+    const gl = this.gl;
+    if (!image) {
+      if (m.paintTexture) gl.deleteTexture(m.paintTexture);
+      m.paintTexture = null;
+      return true;
+    }
+    m.paintTexture = m.paintTexture ?? gl.createTexture();
+    gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D, m.paintTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.activeTexture(gl.TEXTURE0);
+    return true;
   }
 
   private dropChecker(m: GpuMesh): void {
@@ -815,7 +845,14 @@ export class GlRenderer {
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
       if (m.checker) {
         gl.uniform1f(painted, 1);
-        gl.uniform1f(checker, 1);
+        // 2 samples the painted texture on unit 3 at the corner UVs; 1 draws the checker.
+        gl.uniform1f(checker, m.paintTexture ? 2 : 1);
+        if (m.paintTexture) {
+          gl.activeTexture(gl.TEXTURE3);
+          gl.bindTexture(gl.TEXTURE_2D, m.paintTexture);
+          gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uPaintTex'), 3);
+          gl.activeTexture(gl.TEXTURE0);
+        }
         gl.bindVertexArray(m.checker.vao);
         gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
         gl.vertexAttrib2f(5, 1, 0);

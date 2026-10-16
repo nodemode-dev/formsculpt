@@ -61,6 +61,8 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
   },
   paint: {
     paint_fill: n('paint.fill', 'Fill Object'),
+    texture_create: n('paint.texture_create', 'Make Paint Texture'),
+    texture_clear: n('paint.texture_clear', 'Drop Paint Texture'),
     paint_clear: n('paint.clear', 'Clear Paint'),
     uv_unwrap: n('paint.unwrap', 'Unwrap UVs'),
     bake_maps: n('paint.bake', 'Bake Maps'),

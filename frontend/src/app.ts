@@ -75,6 +75,8 @@ interface Shell {
   paintOpacityCh: HTMLInputElement;
   paintEmissive: HTMLInputElement;
   paintMaterial: HTMLInputElement;
+  paintTexture: HTMLInputElement;
+  materialPreset: HTMLSelectElement;
   shading: HTMLSelectElement;
   paintButtons: HTMLButtonElement[];
   bakeSize: HTMLSelectElement;
@@ -316,6 +318,7 @@ const BRUSHES: [string, string][] = [
   ['lattice', 'Lattice'],
   ['mask_box', 'Box mask'],
   ['mask_lasso', 'Lasso mask'],
+  ['eyedropper', 'Eyedropper'],
   ['mask_topo', 'Topo mask'],
   ['mask_group', 'Mask group'],
   ['hide_group', 'Hide group'],
@@ -371,7 +374,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
+const CLICK_TOOLS = new Set(['eyedropper', 'mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -848,6 +851,8 @@ function buildShell(root: HTMLElement): Shell {
   const paintRough = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Paint roughness' });
   const paintMetal = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint metalness' });
   const paintMaterial = input('checkbox', { 'aria-label': 'Paint roughness and metalness' });
+  const paintTexture = input('checkbox', { 'aria-label': 'Paint into texture' });
+  const materialPreset = choices('Material preset', [['', 'None'], ['clay', 'Clay'], ['gold', 'Gold'], ['silver', 'Silver'], ['copper', 'Copper'], ['chrome', 'Chrome'], ['plastic', 'Red plastic'], ['rubber', 'Rubber'], ['bone', 'Bone'], ['skin', 'Skin'], ['stone', 'Stone']]);
   const paintOpacityCh = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Paint opacity channel' });
   const paintEmissive = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint emissive' });
   const shading = el('select');
@@ -872,12 +877,14 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(projectInput);
   const subsurface = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Subsurface' });
   const transmission = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Transmission' });
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Paint into texture', paintTexture), field('Material preset', materialPreset), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
     [
       ['paint_fill', 'Fill object'],
+      ['texture_create', 'Make texture'],
+      ['texture_clear', 'Drop texture'],
       ['paint_clear', 'Clear paint'],
       ['uv_unwrap', 'Unwrap UVs'],
       ['bake_maps', 'Bake maps'],
@@ -1326,7 +1333,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1479,6 +1486,19 @@ class SceneView {
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
     );
+    shell.materialPreset.addEventListener('change', () => {
+      const m = SceneView.MATERIALS[shell.materialPreset.value];
+      if (!m) return;
+      // A material sets all three, so the brush paints roughness and metalness too.
+      for (const [control, v] of [[shell.paintColor, m[0]], [shell.paintRough, String(m[1])], [shell.paintMetal, String(m[2])]] as const) {
+        control.value = v;
+        control.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (!shell.paintMaterial.checked) {
+        shell.paintMaterial.checked = true;
+        shell.paintMaterial.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
     shell.paintButtons.forEach((b) =>
       this.on(b, () => {
         const id = this.scene.active;
@@ -1492,7 +1512,9 @@ class SceneView {
           this.projectMode = action === 'project_view' ? 'view' : 'triplanar';
           shell.projectInput.click();
         }
-        else void this.run('paint_fill', { id, ...this.paintArgs(true) });
+        else if (action === 'texture_create') void this.run('texture_create', { id, size: Math.max(256, Math.min(4096, Number(shell.bakeSize.value) || 1024)) });
+        else if (action === 'texture_clear') void this.run('texture_clear', { id });
+        else void this.run('paint_fill', { id, ...this.paintArgs(true), ...(shell.paintTexture.checked ? { target: 'texture' } : {}) });
       }),
     );
     shell.shading.addEventListener('change', () => this.applyShading());
@@ -2007,6 +2029,7 @@ class SceneView {
     if (area !== 1) out.area_sample = area;
     const depth = Math.max(0, Number(s.depthMask.value) || 0);
     if (depth > 0) out.depth = depth;
+    if (this.lastBrush === 'paint' && s.paintTexture.checked) out.target = 'texture';
     if (s.alpha.value !== 'none') {
       const stretch = Math.max(0.1, Math.min(10, Number(s.alphaStretch.value) || 1));
       if (stretch !== 1) out.alpha_stretch = stretch;
@@ -3442,6 +3465,38 @@ class SceneView {
   }
 
   /** Tools that act once on the clicked point: topology mask, group mask, hide group, insert. */
+  /** Eyedropper: the paint under the click (texture or vertex paint) goes into the Paint fields, each through its own events. */
+  private async eyedrop(id: number, point: Vec3): Promise<void> {
+    const r = await dispatch<{ color: string; roughness: number; metalness: number; source: string }>('pick_paint', { id, point });
+    if (!r.ok) {
+      this.note(r.error.message);
+      return;
+    }
+    const s = this.shell;
+    const set = (control: HTMLInputElement, v: string): void => {
+      control.value = v;
+      control.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    set(s.paintColor, r.result.color);
+    set(s.paintRough, String(Math.round(r.result.roughness * 100)));
+    set(s.paintMetal, String(Math.round(r.result.metalness * 100)));
+    this.note(t('Picked {color} from the {source}').replace('{color}', r.result.color).replace('{source}', r.result.source === 'texture' ? t('texture') : t('vertex paint')));
+  }
+
+  /** Material presets: colour, roughness and metalness written into the Paint fields together. */
+  private static readonly MATERIALS: Record<string, [string, number, number]> = {
+    clay: ['#b9876a', 85, 0],
+    gold: ['#e3b04b', 25, 100],
+    silver: ['#c9ccd1', 20, 100],
+    copper: ['#c4704b', 30, 100],
+    chrome: ['#e8e8e8', 5, 100],
+    plastic: ['#c0392b', 40, 0],
+    rubber: ['#2b2b2b', 90, 0],
+    bone: ['#e3d9c6', 70, 0],
+    skin: ['#e0ac8f', 55, 0],
+    stone: ['#8a877f', 90, 0],
+  };
+
   private async clickTool(ray: Ray, wpp: number, ctrl: boolean): Promise<void> {
     const id = this.scene.active;
     if (id === null) return;
@@ -3457,6 +3512,7 @@ class SceneView {
     const op = ctrl ? 'subtract' : 'add';
     if (tool === 'mask_topo') await this.run('mask_topology', { id, point, distance: Math.max(1e-4, Number(this.shell.radius.value) * wpp * 2), op });
     else if (tool === 'mask_group') await this.run('mask_by_group', { id, point, op });
+    else if (tool === 'eyedropper') await this.eyedrop(id, point);
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
     else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
     else if (tool === 'edge_loop') await this.run('insert_edge_loop', { id, point });
@@ -3812,7 +3868,8 @@ class SceneView {
     const history = await dispatch<{ steps: string[]; done: number }>('get_history');
     if (history.ok) this.patchHistory(history.result.steps, history.result.done);
     await this.patchSets();
-    if (this.shell.uvChecker.checked || this.checkerFor) await this.syncChecker();
+    const textured = this.scene.objects.some((x) => x.id === this.scene.active && (x.texture_size ?? null) !== null);
+    if (this.shell.uvChecker.checked || this.checkerFor || textured) await this.syncChecker();
   }
 
   /** What the UV checker shows: the active object's id and revision, or '' when off. */
@@ -3821,7 +3878,10 @@ class SceneView {
   /** The UV checker on the active object (get_uvs), off on every other one; refetched only when the object or its revision changes. */
   private async syncChecker(): Promise<void> {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
-    const want = this.shell.uvChecker.checked && o?.uvs ? `${o.id}:${o.revision}` : '';
+    // A painted texture shows through the same per-corner UV copy as the checker, and wins over it.
+    const textured = !!o?.uvs && (o?.texture_size ?? null) !== null;
+    const want = (this.shell.uvChecker.checked || textured) && o?.uvs ? `${o.id}:${o.revision}` : '';
+    if (textured && o) void this.syncTexture(o.id);
     if (want === this.checkerFor) return;
     const [oldId] = this.checkerFor.split(':');
     if (oldId) this.viewport.renderer.setChecker(Number(oldId), null);
@@ -3837,7 +3897,24 @@ class SceneView {
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     if (!this.viewport.renderer.setChecker(o.id, new Float32Array(bytes.buffer))) this.checkerFor = '';
+    if (textured) await this.syncTexture(o.id, true);
     this.viewport.invalidate();
+  }
+
+  /** The texture revision last drawn, by object; refetched (at most 1024 px) when the engine's revision moves on. */
+  private textureShown = new Map<number, number>();
+
+  private async syncTexture(id: number, force = false): Promise<void> {
+    const r = await dispatch<{ png_base64: string; revision: number; texture_size: number }>('get_texture', { id, size: 1024 });
+    if (!r.ok) return;
+    if (!force && this.textureShown.get(id) === r.result.revision) return;
+    const img = new Image();
+    img.src = `data:image/png;base64,${r.result.png_base64}`;
+    await img.decode();
+    if (this.viewport.renderer.setPaintTexture(id, img)) {
+      this.textureShown.set(id, r.result.revision);
+      this.viewport.invalidate();
+    }
   }
 
   /** The Selection Sets list for the active object; options are reused and only their text changes. */

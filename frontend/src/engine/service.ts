@@ -43,6 +43,7 @@ export interface ObjectSummary {
   editable_build?: string | null;
   /** Whether the object has UVs (uv_unwrap; topology changes clear them). */
   uvs?: boolean;
+  texture_size?: number | null;
   material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number };
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
