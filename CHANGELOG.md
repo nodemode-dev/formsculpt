@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.38.0 · 2026-10-16
+
+### Added
+
+- `group_from_outline`: the faces inside a screen outline (lasso or box, in a named view or the window's own camera), optionally only those facing the camera, into a new or given face group as one undo step.
+- Slice curve and Trim curve tools: drag a line across the object; Slice puts the faces on one side into a new face group, Trim cuts that side away (Ctrl for the other side).
+- 128 engine commands; 757 interface strings in every language.
+
 ## 0.37.0 · 2026-10-16
 
 ### Added
