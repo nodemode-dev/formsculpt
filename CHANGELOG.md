@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.56.0 · 2026-10-16
+
+### Added
+
+- ZModeler actions on quad meshes, aimed at a picked point: `poly_pick` (the face, edge and corner under a point or ray), `zmodel_edge` (insert an edge loop at any fraction across the ring, extrude an open-border edge, close a hole with quads), `zmodel_face` (inset, extrude, delete) and `zmodel_point` (slide a corner in its tangent plane). Meshes stay all quads.
+- Window: a ZModeler click tool with a hover highlight of the edge or face the next click acts on, ZModeler action and Loop position %.
+- 163 engine commands; 974 interface strings in every language.
+
 ## 0.55.0 · 2026-10-16
 
 ### Changed
