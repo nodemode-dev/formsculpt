@@ -856,5 +856,12 @@
  "Shared radius": "Спільний радіус",
  "Snap radius": "Крок радіуса",
  "Spacing %": "Інтервал %",
- "Stroke jitter %": "Тремтіння штриха %"
+ "Stroke jitter %": "Тремтіння штриха %",
+ "Accumulate": "Накопичення",
+ "Area sample %": "Область вибірки %",
+ "Connected only": "Лише зв'язане",
+ "Depth mask": "Маска глибини",
+ "Front faces only": "Лише лицьові грані",
+ "Keep sharp edges": "Зберігати гострі краї",
+ "Same group only": "Лише та сама група граней"
 }

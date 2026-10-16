@@ -856,5 +856,12 @@
  "Shared radius": "Jaettu säde",
  "Snap radius": "Säteen kohdistus",
  "Spacing %": "Välistys %",
- "Stroke jitter %": "Vedon jitter %"
+ "Stroke jitter %": "Vedon jitter %",
+ "Accumulate": "Kerää",
+ "Area sample %": "Alueen näyte %",
+ "Connected only": "Vain yhdistetty",
+ "Depth mask": "Syvyysmaski",
+ "Front faces only": "Vain etupuolen tahkot",
+ "Keep sharp edges": "Säilytä terävät reunat",
+ "Same group only": "Vain sama tahkoryhmä"
 }

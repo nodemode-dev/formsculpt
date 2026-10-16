@@ -856,5 +856,12 @@
  "Shared radius": "Bán kính dùng chung",
  "Snap radius": "Bắt dính bán kính",
  "Spacing %": "Khoảng cách %",
- "Stroke jitter %": "Jitter nét vẽ %"
+ "Stroke jitter %": "Jitter nét vẽ %",
+ "Accumulate": "Tích lũy",
+ "Area sample %": "Mẫu vùng %",
+ "Connected only": "Chỉ phần liên thông",
+ "Depth mask": "Mask độ sâu",
+ "Front faces only": "Chỉ mặt trước",
+ "Keep sharp edges": "Giữ cạnh sắc",
+ "Same group only": "Chỉ cùng nhóm mặt"
 }

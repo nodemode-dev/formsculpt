@@ -856,5 +856,12 @@
  "Shared radius": "Radio compartido",
  "Snap radius": "Ajustar radio",
  "Spacing %": "Espaciado %",
- "Stroke jitter %": "Jitter del trazo %"
+ "Stroke jitter %": "Jitter del trazo %",
+ "Accumulate": "Acumular",
+ "Area sample %": "Muestra de área %",
+ "Connected only": "Solo conectado",
+ "Depth mask": "Máscara de profundidad",
+ "Front faces only": "Solo caras frontales",
+ "Keep sharp edges": "Mantener bordes afilados",
+ "Same group only": "Solo mismo grupo de caras"
 }

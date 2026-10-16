@@ -856,5 +856,12 @@
  "Shared radius": "รัศมีร่วม",
  "Snap radius": "สแนปรัศมี",
  "Spacing %": "ระยะห่าง %",
- "Stroke jitter %": "จิตเตอร์เส้นพู่กัน %"
+ "Stroke jitter %": "จิตเตอร์เส้นพู่กัน %",
+ "Accumulate": "สะสม",
+ "Area sample %": "ตัวอย่างพื้นที่ %",
+ "Connected only": "เฉพาะส่วนที่เชื่อมต่อ",
+ "Depth mask": "มาสก์ความลึก",
+ "Front faces only": "เฉพาะด้านหน้า",
+ "Keep sharp edges": "คงขอบคม",
+ "Same group only": "เฉพาะกลุ่มหน้าเดียวกัน"
 }

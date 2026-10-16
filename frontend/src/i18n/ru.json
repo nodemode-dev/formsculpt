@@ -856,5 +856,12 @@
  "Shared radius": "Общий радиус",
  "Snap radius": "Шаг радиуса",
  "Spacing %": "Интервал %",
- "Stroke jitter %": "Дрожание штриха %"
+ "Stroke jitter %": "Дрожание штриха %",
+ "Accumulate": "Накопление",
+ "Area sample %": "Область выборки %",
+ "Connected only": "Только связанное",
+ "Depth mask": "Маска глубины",
+ "Front faces only": "Только лицевые грани",
+ "Keep sharp edges": "Сохранять острые края",
+ "Same group only": "Только та же группа граней"
 }

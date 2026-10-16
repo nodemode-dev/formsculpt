@@ -856,5 +856,12 @@
  "Shared radius": "공유 반경",
  "Snap radius": "반경 스냅",
  "Spacing %": "간격 %",
- "Stroke jitter %": "스트로크 지터 %"
+ "Stroke jitter %": "스트로크 지터 %",
+ "Accumulate": "누적",
+ "Area sample %": "영역 샘플 %",
+ "Connected only": "연결된 부분만",
+ "Depth mask": "깊이 마스크",
+ "Front faces only": "앞면만",
+ "Keep sharp edges": "날카로운 모서리 유지",
+ "Same group only": "같은 면 그룹만"
 }

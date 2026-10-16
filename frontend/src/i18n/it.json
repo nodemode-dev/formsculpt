@@ -856,5 +856,12 @@
  "Shared radius": "Raggio condiviso",
  "Snap radius": "Aggancia raggio",
  "Spacing %": "Spaziatura %",
- "Stroke jitter %": "Jitter del tratto %"
+ "Stroke jitter %": "Jitter del tratto %",
+ "Accumulate": "Accumula",
+ "Area sample %": "Campione area %",
+ "Connected only": "Solo connesso",
+ "Depth mask": "Maschera di profondità",
+ "Front faces only": "Solo facce frontali",
+ "Keep sharp edges": "Mantieni spigoli vivi",
+ "Same group only": "Solo stesso gruppo di facce"
 }

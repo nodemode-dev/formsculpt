@@ -856,5 +856,12 @@
  "Shared radius": "Ortak yarıçap",
  "Snap radius": "Yarıçap adımı",
  "Spacing %": "Aralık %",
- "Stroke jitter %": "Vuruş titreşimi %"
+ "Stroke jitter %": "Vuruş titreşimi %",
+ "Accumulate": "Biriktir",
+ "Area sample %": "Alan örneği %",
+ "Connected only": "Yalnızca bağlı",
+ "Depth mask": "Derinlik maskesi",
+ "Front faces only": "Yalnızca ön yüzler",
+ "Keep sharp edges": "Keskin kenarları koru",
+ "Same group only": "Yalnızca aynı yüz grubu"
 }

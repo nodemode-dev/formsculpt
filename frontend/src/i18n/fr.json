@@ -856,5 +856,12 @@
  "Shared radius": "Rayon partagé",
  "Snap radius": "Aimanter le rayon",
  "Spacing %": "Espacement %",
- "Stroke jitter %": "Jitter du trait %"
+ "Stroke jitter %": "Jitter du trait %",
+ "Accumulate": "Accumuler",
+ "Area sample %": "Échantillon de zone %",
+ "Connected only": "Connecté uniquement",
+ "Depth mask": "Masque de profondeur",
+ "Front faces only": "Faces avant uniquement",
+ "Keep sharp edges": "Garder les arêtes vives",
+ "Same group only": "Même groupe de faces uniquement"
 }

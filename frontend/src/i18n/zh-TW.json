@@ -856,5 +856,12 @@
  "Shared radius": "共用半徑",
  "Snap radius": "半徑吸附",
  "Spacing %": "間距 %",
- "Stroke jitter %": "筆觸抖動 %"
+ "Stroke jitter %": "筆觸抖動 %",
+ "Accumulate": "累積",
+ "Area sample %": "區域取樣 %",
+ "Connected only": "僅連通部分",
+ "Depth mask": "深度遮罩",
+ "Front faces only": "僅正面",
+ "Keep sharp edges": "保留銳邊",
+ "Same group only": "僅同一面組"
 }

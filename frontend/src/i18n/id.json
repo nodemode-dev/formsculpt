@@ -856,5 +856,12 @@
  "Shared radius": "Radius bersama",
  "Snap radius": "Radius snap",
  "Spacing %": "Jarak %",
- "Stroke jitter %": "Jitter goresan %"
+ "Stroke jitter %": "Jitter goresan %",
+ "Accumulate": "Akumulasi",
+ "Area sample %": "Sampel area %",
+ "Connected only": "Hanya terhubung",
+ "Depth mask": "Mask kedalaman",
+ "Front faces only": "Hanya sisi depan",
+ "Keep sharp edges": "Pertahankan tepi tajam",
+ "Same group only": "Hanya grup sisi yang sama"
 }

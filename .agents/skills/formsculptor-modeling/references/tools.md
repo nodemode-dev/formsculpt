@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.47.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.48.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -378,20 +378,26 @@ Note: removes or replaces (undoable); in the window: Delete.
 
 Run one brush stroke along a path of points on the surface of an object, as one undo step. Brushes: draw (build along the area normal), clay (build up to a plane), inflate (along each vertex normal), pinch, crease, flatten, smooth, grab (move the vertices around the first point by the offset to the last) and mask (paint the mask; masked vertices resist every other brush); also relax, planar, trim, snake_hook, noise, paint and smudge (drag the paint colour along the stroke); elastic (grab with a wide smooth Kelvinlet falloff), polish (hard-surface plane cut plus crease-keeping smoothing), layer (raise by at most height per vertex over the stroke), nudge (slide the surface along the stroke), stamp (one dab at the first point) and layer_reset (erase the active sculpt layer under the brush; the reply says no_active_layer when none is active). alpha shapes every dab with a gray stamp (a built-in or one from alpha_load), turned by alpha_angle; stroke dots keeps the stamp upright (alpha_up), roll turns it along the stroke, and a single point stamps it once. invert carves, deflates or erases. Points closer than radius times spacing are merged into dabs; space points about radius * 0.15 apart for an even stroke. Symmetry mirrors across the object's x, y or z planes through the origin and repeats radially around y.
 
+- `accumulate`: boolean; default true; When false, a vertex's displacement over one stroke is capped at the largest move any single dab gave it, so a long back-and-forth stroke does not pile up. Not used by grab, elastic, snake_hook, nudge, smooth, relax, layer or layer_reset.
 - `alpha`: string; A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp.
 - `alpha_angle`: number; default 0; range -360 to 360; Turns the alpha, in degrees.
 - `alpha_up`: array of number; The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up.
+- `area_sample`: number; default 1; range 0.1 to 2; The radius, as a share of the brush radius, over which each dab takes its area normal and plane (draw, clay, flatten, planar, trim, polish and the other brushes that read them). A small share follows fine detail, a large one a broad average.
 - `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise | smudge | elastic | polish | layer | nudge | stamp | layer_reset); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none.
 - `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
+- `connected_only`: boolean; default false; Only vertices joined by mesh edges to the vertex nearest the dab centre, without leaving the brush sphere, are affected, so a brush on one finger does not touch the next.
+- `depth`: number; default 0; range 0 to 10000; World units; 0 is off. Vertices more than this far below the dab's area plane (along minus the area normal) are untouched, easing over the last 20%, so a brush does not reach through a thin part. The plane is taken from the vertices under the dab whose normals agree with the nearest one's (so the far side of a thin part does not tilt it).
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `emissive`: number; range 0 to 1; Paint brush: paint this glow in the paint colour.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `falloff_curve`: array of number; A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring.
+- `front_facing`: boolean; default false; Only vertices whose normal faces the viewer are affected (dot of normal and minus view_dir above 0, easing in over 0 to 0.2), so a brush does not reach through to the back of a thin part. Uses view_dir; when that is absent in sculpt_stroke, the reverse of the surface normal at the stroke's first point (the nearest vertex's normal) stands in for the view (live strokes use each sample's ray direction).
 - `height`: number; default 0; range 0 to 10000; Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `invert`: boolean; default false; Carve instead of build, deflate, unpinch, erase mask.
 - `jitter`: object; Random variation per dab, deterministic for a seed and usable with any stroke mode including spray. Position is not used by snake_hook and nudge; strength is not used by snake_hook.; fields position, radius, seed, strength
+- `keep_sharp`: number; default 0; range 0 to 180; Degrees; 0 is off. Vertices on an edge whose dihedral angle exceeds this are held (weight 0), and their neighbours take half weight. The edges are found from the mesh as it was when the stroke began.
 - `lazy`: number; default 0; range 0 to 0.95; Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length.
 - `metalness`: number; range 0 to 1; Paint brush: paint this metalness.
 - `noise_scale`: number; default 0; range 0 to 10000; Noise brush: feature size in world units; a fifth of the radius when 0.
@@ -401,6 +407,8 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `pressure_gamma`: number; default 1; range 0.2 to 5; Pen pressure curve: pressure is raised to this power (above 1 needs a firmer press, below 1 a lighter one). Per-point pressure is the fourth number of a point.
 - `pressure_size`: boolean; default false; Pressure scales the radius (down to a tenth).
 - `pressure_strength`: boolean; default true; Pressure scales strength.
+- `protect_group`: boolean; default false; Only faces in the face group under the stroke's first hit are affected (each symmetry copy uses the group under its own first dab): a vertex is affected when any of its faces is in the group, and vertices on its border get half weight. Does nothing on a mesh without face groups.
+- `protect_groups`: array of integer; Face group ids that are protected: vertices whose faces all lie in these groups are untouched.
 - `radius`: number; default 0.2; range -inf to 10000; World units; compare with the object's bounds from get_scene.
 - `roughness`: number; range 0 to 1; Paint brush: paint this roughness (only the channels given are painted).
 - `snap_radius`: number; default 0; range 0 to 10000; When above 0, each dab's radius (after pressure and jitter) is rounded to the nearest multiple of this in world units, at least one step.
@@ -410,6 +418,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `strength`: number; default 0.5; range 0 to 1
 - `stroke`: string (dots | roll | spray); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly.
 - `symmetry`: object; fields radial, x, y, z
+- `view_dir`: array of number; The direction the viewer looks along, [x, y, z], for front_facing; mirrored with each symmetry copy. Absent in sculpt_stroke, the first point's normal approximates it.
 
 ## alpha_load
 

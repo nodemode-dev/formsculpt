@@ -856,5 +856,12 @@
  "Shared radius": "Delt radius",
  "Snap radius": "Snap-radius",
  "Spacing %": "Avstand %",
- "Stroke jitter %": "Strøk-jitter %"
+ "Stroke jitter %": "Strøk-jitter %",
+ "Accumulate": "Akkumuler",
+ "Area sample %": "Områdeprøve %",
+ "Connected only": "Kun tilkoblet",
+ "Depth mask": "Dybdemaske",
+ "Front faces only": "Kun forsider",
+ "Keep sharp edges": "Behold skarpe kanter",
+ "Same group only": "Kun samme flategruppe"
 }

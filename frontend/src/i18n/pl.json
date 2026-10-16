@@ -856,5 +856,12 @@
  "Shared radius": "Wspólny promień",
  "Snap radius": "Przyciąganie promienia",
  "Spacing %": "Odstęp %",
- "Stroke jitter %": "Jitter pociągnięcia %"
+ "Stroke jitter %": "Jitter pociągnięcia %",
+ "Accumulate": "Akumuluj",
+ "Area sample %": "Próbka obszaru %",
+ "Connected only": "Tylko połączone",
+ "Depth mask": "Maska głębokości",
+ "Front faces only": "Tylko ściany frontowe",
+ "Keep sharp edges": "Zachowaj ostre krawędzie",
+ "Same group only": "Tylko ta sama grupa ścian"
 }

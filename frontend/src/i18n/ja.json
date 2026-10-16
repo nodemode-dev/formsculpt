@@ -856,5 +856,12 @@
  "Shared radius": "共有半径",
  "Snap radius": "半径スナップ",
  "Spacing %": "間隔 %",
- "Stroke jitter %": "ストロークジッター %"
+ "Stroke jitter %": "ストロークジッター %",
+ "Accumulate": "蓄積",
+ "Area sample %": "エリアサンプル %",
+ "Connected only": "接続部分のみ",
+ "Depth mask": "深度マスク",
+ "Front faces only": "前面のみ",
+ "Keep sharp edges": "シャープなエッジを保持",
+ "Same group only": "同じフェースグループのみ"
 }

@@ -856,5 +856,12 @@
  "Shared radius": "Gedeelde straal",
  "Snap radius": "Straalstap",
  "Spacing %": "Tussenruimte %",
- "Stroke jitter %": "Streekjitter %"
+ "Stroke jitter %": "Streekjitter %",
+ "Accumulate": "Ophopen",
+ "Area sample %": "Gebiedsmonster %",
+ "Connected only": "Alleen verbonden",
+ "Depth mask": "Dieptemasker",
+ "Front faces only": "Alleen voorkant-vlakken",
+ "Keep sharp edges": "Scherpe randen behouden",
+ "Same group only": "Alleen dezelfde vlakgroep"
 }

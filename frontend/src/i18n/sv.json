@@ -856,5 +856,12 @@
  "Shared radius": "Delad radie",
  "Snap radius": "Snappa radie",
  "Spacing %": "Avstånd %",
- "Stroke jitter %": "Drag-jitter %"
+ "Stroke jitter %": "Drag-jitter %",
+ "Accumulate": "Ackumulera",
+ "Area sample %": "Områdesprov %",
+ "Connected only": "Endast sammanhängande",
+ "Depth mask": "Djupmask",
+ "Front faces only": "Endast framsidor",
+ "Keep sharp edges": "Behåll skarpa kanter",
+ "Same group only": "Endast samma ytgrupp"
 }

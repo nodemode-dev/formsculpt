@@ -856,5 +856,12 @@
  "Shared radius": "Sdílený poloměr",
  "Snap radius": "Krok poloměru",
  "Spacing %": "Rozestup %",
- "Stroke jitter %": "Jitter tahu %"
+ "Stroke jitter %": "Jitter tahu %",
+ "Accumulate": "Akumulovat",
+ "Area sample %": "Vzorek oblasti %",
+ "Connected only": "Pouze propojené",
+ "Depth mask": "Maska hloubky",
+ "Front faces only": "Pouze přivrácené stěny",
+ "Keep sharp edges": "Zachovat ostré hrany",
+ "Same group only": "Pouze stejná skupina stěn"
 }

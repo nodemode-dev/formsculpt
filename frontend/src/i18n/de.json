@@ -856,5 +856,12 @@
  "Shared radius": "Gemeinsamer Radius",
  "Snap radius": "Radius einrasten",
  "Spacing %": "Abstand %",
- "Stroke jitter %": "Strich-Jitter %"
+ "Stroke jitter %": "Strich-Jitter %",
+ "Accumulate": "Akkumulieren",
+ "Area sample %": "Bereichsstichprobe %",
+ "Connected only": "Nur verbundene Fläche",
+ "Depth mask": "Tiefenmaske",
+ "Front faces only": "Nur Vorderseiten",
+ "Keep sharp edges": "Scharfe Kanten behalten",
+ "Same group only": "Nur gleiche Flächengruppe"
 }

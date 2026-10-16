@@ -856,5 +856,12 @@
  "Shared radius": "Közös sugár",
  "Snap radius": "Sugár illesztése",
  "Spacing %": "Térköz %",
- "Stroke jitter %": "Vonás jitter %"
+ "Stroke jitter %": "Vonás jitter %",
+ "Accumulate": "Felhalmozás",
+ "Area sample %": "Területminta %",
+ "Connected only": "Csak összekötött",
+ "Depth mask": "Mélységi maszk",
+ "Front faces only": "Csak előlapok",
+ "Keep sharp edges": "Éles élek megtartása",
+ "Same group only": "Csak azonos lapcsoport"
 }
