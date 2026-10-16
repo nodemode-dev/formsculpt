@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.57.0 · 2026-10-16
+
+### Added
+
+- Creased edges: kept sharp by subdivision (`subdivide`, `multires_divide`, the smooth preview), carried through every level, and saved in projects. `zmodel_edge` and `zmodel_point` take `crease` and `uncrease` (an edge, or every edge at a corner); `zmodel_edge` insert and `zmodel_face` inset and extrude take `crease: true` (auto-crease); a loop that splits a creased edge keeps both halves creased; `poly_pick` reports whether the edge is creased.
+- Window: Crease and Uncrease for edges and points in ZModeler action, Auto-crease, a corner ring as the hover for point actions and a creased mark on the edge hover.
+
+### Fixed
+
+- The ten ZModeler action labels were not translated (their values held a colon the string extractor skips); they are now in every language. 985 interface strings in every language.
+
 ## 0.56.0 · 2026-10-16
 
 ### Added
