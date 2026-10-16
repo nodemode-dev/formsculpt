@@ -803,5 +803,18 @@
  "Automatic charts": "Automatiske kart",
  "Get UVs": "Hent UV-er",
  "UV Checker": "UV-sjakkbrett",
- "UV checker": "UV-sjakkbrett"
+ "UV checker": "UV-sjakkbrett",
+ "Island to tile": "Øy til flis",
+ "List tiles": "List opp fliser",
+ "List UV Tiles": "List opp UV-fliser",
+ "Move UV Island to Tile": "Flytt UV-øy til flis",
+ "Move UVs to Tile": "Flytt UV-er til flis",
+ "Pack UVs into Tiles": "Pakk UV-er i fliser",
+ "Tiles by group": "Fliser etter gruppe",
+ "Tiles by island": "Fliser etter øy",
+ "UV tile": "UV-flis",
+ "UV Tiles": "UV-fliser",
+ "UV Tiles by Face Group": "UV-fliser etter flategruppe",
+ "UV Tiles by Island": "UV-fliser etter øy",
+ "UV tiles in use: {list}": "UV-fliser i bruk: {list}"
 }

@@ -803,5 +803,18 @@
  "Automatic charts": "Automatische Bereiche",
  "Get UVs": "UVs abrufen",
  "UV Checker": "UV-Schachbrett",
- "UV checker": "UV-Schachbrett"
+ "UV checker": "UV-Schachbrett",
+ "Island to tile": "Insel in Kachel",
+ "List tiles": "Kacheln auflisten",
+ "List UV Tiles": "UV-Kacheln auflisten",
+ "Move UV Island to Tile": "UV-Insel in Kachel verschieben",
+ "Move UVs to Tile": "UVs in Kachel verschieben",
+ "Pack UVs into Tiles": "UVs in Kacheln packen",
+ "Tiles by group": "Kacheln nach Gruppe",
+ "Tiles by island": "Kacheln nach Insel",
+ "UV tile": "UV-Kachel",
+ "UV Tiles": "UV-Kacheln",
+ "UV Tiles by Face Group": "UV-Kacheln nach Flächengruppe",
+ "UV Tiles by Island": "UV-Kacheln nach Insel",
+ "UV tiles in use: {list}": "UV-Kacheln in Verwendung: {list}"
 }

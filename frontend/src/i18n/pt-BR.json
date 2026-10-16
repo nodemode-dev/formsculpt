@@ -803,5 +803,18 @@
  "Automatic charts": "Cartas automáticas",
  "Get UVs": "Obter UVs",
  "UV Checker": "Xadrez UV",
- "UV checker": "Xadrez UV"
+ "UV checker": "Xadrez UV",
+ "Island to tile": "Ilha para bloco",
+ "List tiles": "Listar blocos",
+ "List UV Tiles": "Listar blocos UV",
+ "Move UV Island to Tile": "Mover ilha UV para bloco",
+ "Move UVs to Tile": "Mover UVs para bloco",
+ "Pack UVs into Tiles": "Empacotar UVs em blocos",
+ "Tiles by group": "Blocos por grupo",
+ "Tiles by island": "Blocos por ilha",
+ "UV tile": "Bloco UV",
+ "UV Tiles": "Blocos UV",
+ "UV Tiles by Face Group": "Blocos UV por grupo de faces",
+ "UV Tiles by Island": "Blocos UV por ilha",
+ "UV tiles in use: {list}": "Blocos UV em uso: {list}"
 }

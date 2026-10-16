@@ -803,5 +803,18 @@
  "Automatic charts": "Otomatik haritalar",
  "Get UVs": "UV'leri Al",
  "UV Checker": "UV Dama Deseni",
- "UV checker": "UV dama deseni"
+ "UV checker": "UV dama deseni",
+ "Island to tile": "Adayı karoya",
+ "List tiles": "Karoları listele",
+ "List UV Tiles": "UV Karolarını Listele",
+ "Move UV Island to Tile": "UV Adasını Karoya Taşı",
+ "Move UVs to Tile": "UV'leri Karoya Taşı",
+ "Pack UVs into Tiles": "UV'leri Karolara Paketle",
+ "Tiles by group": "Gruba göre karolar",
+ "Tiles by island": "Adaya göre karolar",
+ "UV tile": "UV karosu",
+ "UV Tiles": "UV Karoları",
+ "UV Tiles by Face Group": "Yüz Grubuna Göre UV Karoları",
+ "UV Tiles by Island": "Adaya Göre UV Karoları",
+ "UV tiles in use: {list}": "Kullanılan UV karoları: {list}"
 }

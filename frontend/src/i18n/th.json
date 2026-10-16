@@ -803,5 +803,18 @@
  "Automatic charts": "ชาร์ตอัตโนมัติ",
  "Get UVs": "ดึง UV",
  "UV Checker": "ลายตาราง UV",
- "UV checker": "ลายตาราง UV"
+ "UV checker": "ลายตาราง UV",
+ "Island to tile": "ไอแลนด์ไปยังไทล์",
+ "List tiles": "แสดงรายการไทล์",
+ "List UV Tiles": "แสดงรายการไทล์ UV",
+ "Move UV Island to Tile": "ย้ายไอแลนด์ UV ไปยังไทล์",
+ "Move UVs to Tile": "ย้าย UV ไปยังไทล์",
+ "Pack UVs into Tiles": "แพ็ก UV เข้าไทล์",
+ "Tiles by group": "ไทล์ตามกลุ่ม",
+ "Tiles by island": "ไทล์ตามไอแลนด์",
+ "UV tile": "ไทล์ UV",
+ "UV Tiles": "ไทล์ UV",
+ "UV Tiles by Face Group": "ไทล์ UV ตามเฟซกรุ๊ป",
+ "UV Tiles by Island": "ไทล์ UV ตามไอแลนด์",
+ "UV tiles in use: {list}": "ไทล์ UV ที่ใช้อยู่: {list}"
 }

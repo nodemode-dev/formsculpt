@@ -803,5 +803,18 @@
  "Automatic charts": "Automatikus térképek",
  "Get UVs": "UV-k lekérése",
  "UV Checker": "UV-sakktábla",
- "UV checker": "UV-sakktábla"
+ "UV checker": "UV-sakktábla",
+ "Island to tile": "Sziget csempére",
+ "List tiles": "Csempék listázása",
+ "List UV Tiles": "UV-csempék listázása",
+ "Move UV Island to Tile": "UV sziget áthelyezése csempére",
+ "Move UVs to Tile": "UV-k áthelyezése csempére",
+ "Pack UVs into Tiles": "UV-k csomagolása csempékbe",
+ "Tiles by group": "Csempék csoportonként",
+ "Tiles by island": "Csempék szigetenként",
+ "UV tile": "UV-csempe",
+ "UV Tiles": "UV-csempék",
+ "UV Tiles by Face Group": "UV-csempék lapcsoportonként",
+ "UV Tiles by Island": "UV-csempék szigetenként",
+ "UV tiles in use: {list}": "Használt UV-csempék: {list}"
 }

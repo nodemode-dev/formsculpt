@@ -803,5 +803,18 @@
  "Automatic charts": "自动图块",
  "Get UVs": "获取 UV",
  "UV Checker": "UV 棋盘格",
- "UV checker": "UV 棋盘格"
+ "UV checker": "UV 棋盘格",
+ "Island to tile": "岛到瓦片",
+ "List tiles": "列出瓦片",
+ "List UV Tiles": "列出 UV 瓦片",
+ "Move UV Island to Tile": "移动 UV 岛到瓦片",
+ "Move UVs to Tile": "移动 UV 到瓦片",
+ "Pack UVs into Tiles": "将 UV 打包到瓦片",
+ "Tiles by group": "按组分瓦片",
+ "Tiles by island": "按岛分瓦片",
+ "UV tile": "UV 瓦片",
+ "UV Tiles": "UV 瓦片",
+ "UV Tiles by Face Group": "按面组分 UV 瓦片",
+ "UV Tiles by Island": "按岛分 UV 瓦片",
+ "UV tiles in use: {list}": "使用中的 UV 瓦片：{list}"
 }

@@ -803,5 +803,18 @@
  "Automatic charts": "Cartes automatiques",
  "Get UVs": "Obtenir les UV",
  "UV Checker": "Damier UV",
- "UV checker": "Damier UV"
+ "UV checker": "Damier UV",
+ "Island to tile": "Îlot vers tuile",
+ "List tiles": "Lister les tuiles",
+ "List UV Tiles": "Lister les tuiles UV",
+ "Move UV Island to Tile": "Déplacer l'îlot UV vers la tuile",
+ "Move UVs to Tile": "Déplacer les UV vers la tuile",
+ "Pack UVs into Tiles": "Empaqueter les UV dans les tuiles",
+ "Tiles by group": "Tuiles par groupe",
+ "Tiles by island": "Tuiles par îlot",
+ "UV tile": "Tuile UV",
+ "UV Tiles": "Tuiles UV",
+ "UV Tiles by Face Group": "Tuiles UV par groupe de faces",
+ "UV Tiles by Island": "Tuiles UV par îlot",
+ "UV tiles in use: {list}": "Tuiles UV utilisées : {list}"
 }

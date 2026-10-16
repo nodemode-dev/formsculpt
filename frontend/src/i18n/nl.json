@@ -803,5 +803,18 @@
  "Automatic charts": "Automatische kaarten",
  "Get UVs": "UV's ophalen",
  "UV Checker": "UV-dambord",
- "UV checker": "UV-dambord"
+ "UV checker": "UV-dambord",
+ "Island to tile": "Eiland naar tegel",
+ "List tiles": "Tegels weergeven",
+ "List UV Tiles": "UV-tegels weergeven",
+ "Move UV Island to Tile": "UV-eiland naar tegel verplaatsen",
+ "Move UVs to Tile": "UV's naar tegel verplaatsen",
+ "Pack UVs into Tiles": "UV's in tegels inpakken",
+ "Tiles by group": "Tegels per groep",
+ "Tiles by island": "Tegels per eiland",
+ "UV tile": "UV-tegel",
+ "UV Tiles": "UV-tegels",
+ "UV Tiles by Face Group": "UV-tegels per vlakgroep",
+ "UV Tiles by Island": "UV-tegels per eiland",
+ "UV tiles in use: {list}": "UV-tegels in gebruik: {list}"
 }

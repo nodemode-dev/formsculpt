@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.42.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.43.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.42.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -663,12 +663,13 @@ Drag UV vertices by hand: the UV point nearest at goes to to, or with radius eve
 
 ## get_uv_layout
 
-Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there. Use it to look before moving islands with uv_transform.
+Picture an unwrapped object's UV layout (each island in its own colour, v up) and list its islands' bounds, the share of the square in use and the angle distortion. Give at [u, v] to highlight the island there, and tile (a UDIM tile number, default 1001) to picture another tile, with at inside it. Use it to look before moving islands with uv_transform.
 
 - `at`: array of number; A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `island`: integer; range 0 to inf; An island's number to draw brighter, instead of at.
 - `size`: integer; default 512; range 64 to 2048; Width and height of the picture in pixels.
+- `tile`: integer; default 1001; range 1001 to 1100; The UDIM tile to draw (1001 is the unit square); at is then given inside that tile, 0 to 1.
 
 Note: read-only.
 
@@ -775,14 +776,41 @@ Turn a run of mesh edges into a UV seam. Give path as mesh vertex indices where 
 - `path`: array of integer; required; Mesh vertex indices along the cut; each consecutive pair must be a mesh edge. Repeat the first vertex at the end for a closed loop. The side to the right of the walking direction (seen from outside) is the one that comes loose.
 - `separate`: boolean; default true; Move each piece that comes loose away from the rest of its island so the cut is visible; false leaves the pieces in place with a hairline gap.
 
+## uv_tiles
+
+List the UDIM tiles an unwrapped object's UV islands sit in. A tile is numbered 1001 + floor(u) + 10 * floor(v) for u from 0 to 10 and v from 0 up, and an island belongs to the tile holding the centre of its UV bounding box. Returns tiles (tile, u, v, the island numbers, faces and coverage, the share of the tile's area covered by UV triangles), crossing (islands whose UVs span more than one tile) and outside (islands with a centre at u below 0, u of 10 or more, or v below 0). Refuses with no_uvs when the object is not unwrapped. Read-only.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: read-only.
+
+## uv_to_tile
+
+Move UV islands into a UDIM tile (tile, 1001 to 1100). Each chosen island (islands, numbered as get_uv_layout and uv_tiles number them; every island when omitted) moves by a whole number of tiles so its centre lands in the tile, keeping its position inside its tile. Returns moved (islands that actually shifted), the island count and the object summary. Refuses with no_uvs when the object is not unwrapped. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `islands`: array of integer; Island numbers from get_uv_layout or uv_tiles; every island when omitted.
+- `tile`: integer; required; range 1001 to 1100; The UDIM tile to move the islands into (1001 is u 0 to 1, v 0 to 1; 1002 is the next tile along u; 1011 starts the next row).
+
+## uv_pack_udim
+
+Spread UV islands over UDIM tiles and pack each tile's islands into its tile, keeping their shapes, turns and relative sizes within a tile. By group (the default) gives each face group one tile, in ascending group order, and an island goes to the group most of its faces belong to; by island shares the islands out over tiles (tiles, or 0 for enough that each holds about the UV area of the largest island) balancing UV area, largest first. Tiles start at start (default 1001), run along u and wrap to the next row after ten. Returns tiles (tile, island count, coverage) and the island total. Refuses with no_uvs, with no_groups for by group on an object without face groups, and with bad_arguments when the tiles would pass 1100. Clears baked maps. One undo step.
+
+- `by`: string (group | island); default "group"; group gives each face group its own tile (an island goes to the group most of its faces belong to; tiles follow ascending group number); island spreads the islands over tiles, balancing UV area.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `start`: integer; default 1001; range 1001 to 1100; The first tile number; tiles go along u and wrap to the next row after ten.
+- `tiles`: integer; default 0; range 0 to 100; With by island: how many tiles to use; 0 picks enough that each holds about the UV area of the largest island.
+
 ## bake_maps
 
-Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.
+Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. With tile (1001 to 1100) only that UDIM tile is baked, as if it were the unit square. With udim true (path needed) every tile that holds UV islands (see uv_tiles) is baked and written in the Mari naming, NAME_color.1001.png and so on, and the reply lists tiles; the object keeps the maps of tile 1001 (or of the given tile, or of the first tile) for GLB export, and covered and hit describe that tile. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.
 
 - `id`: integer; range 1 to inf; The object to bake onto (it needs UVs from uv_unwrap); the active object when omitted.
-- `path`: string; A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into.
+- `path`: string; A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set).
 - `size`: integer (256 | 512 | 1024 | 2048 | 4096); default 1024; Texture width and height in pixels.
 - `source_id`: integer; range 1 to inf; Bake detail from this object (a high-resolution sculpt) instead; by default the object's highest subdivision level, or the object itself.
+- `tile`: integer; range 1001 to 1100; Bake only this UDIM tile: the UVs are shifted by minus the tile's offset so the tile fills the texture, and texels outside the tile are left uncovered.
+- `udim`: boolean; default false; Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows). Needs path. Not together with tile.
 
 ## mask_invert
 

@@ -803,5 +803,18 @@
  "Automatic charts": "Bagan otomatis",
  "Get UVs": "Ambil UV",
  "UV Checker": "Kotak-kotak UV",
- "UV checker": "Kotak-kotak UV"
+ "UV checker": "Kotak-kotak UV",
+ "Island to tile": "Island ke ubin",
+ "List tiles": "Daftar ubin",
+ "List UV Tiles": "Daftar Ubin UV",
+ "Move UV Island to Tile": "Pindahkan Island UV ke Ubin",
+ "Move UVs to Tile": "Pindahkan UV ke Ubin",
+ "Pack UVs into Tiles": "Pack UV ke Ubin",
+ "Tiles by group": "Ubin per grup",
+ "Tiles by island": "Ubin per island",
+ "UV tile": "Ubin UV",
+ "UV Tiles": "Ubin UV",
+ "UV Tiles by Face Group": "Ubin UV per Face Group",
+ "UV Tiles by Island": "Ubin UV per Island",
+ "UV tiles in use: {list}": "Ubin UV yang dipakai: {list}"
 }

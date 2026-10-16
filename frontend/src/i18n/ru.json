@@ -803,5 +803,18 @@
  "Automatic charts": "Автоматические карты",
  "Get UVs": "Получить UV",
  "UV Checker": "UV-шахматка",
- "UV checker": "UV-шахматка"
+ "UV checker": "UV-шахматка",
+ "Island to tile": "Остров в тайл",
+ "List tiles": "Список тайлов",
+ "List UV Tiles": "Список UV-тайлов",
+ "Move UV Island to Tile": "Переместить UV-остров в тайл",
+ "Move UVs to Tile": "Переместить UV в тайл",
+ "Pack UVs into Tiles": "Упаковать UV в тайлы",
+ "Tiles by group": "Тайлы по группам",
+ "Tiles by island": "Тайлы по островам",
+ "UV tile": "UV-тайл",
+ "UV Tiles": "UV-тайлы",
+ "UV Tiles by Face Group": "UV-тайлы по группам граней",
+ "UV Tiles by Island": "UV-тайлы по островам",
+ "UV tiles in use: {list}": "Используемые UV-тайлы: {list}"
 }

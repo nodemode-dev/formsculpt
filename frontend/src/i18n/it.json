@@ -803,5 +803,18 @@
  "Automatic charts": "Carte automatiche",
  "Get UVs": "Ottieni UV",
  "UV Checker": "Scacchiera UV",
- "UV checker": "Scacchiera UV"
+ "UV checker": "Scacchiera UV",
+ "Island to tile": "Isola nel tile",
+ "List tiles": "Elenca i tile",
+ "List UV Tiles": "Elenca tile UV",
+ "Move UV Island to Tile": "Sposta isola UV nel tile",
+ "Move UVs to Tile": "Sposta UV nel tile",
+ "Pack UVs into Tiles": "Impacchetta UV nei tile",
+ "Tiles by group": "Tile per gruppo",
+ "Tiles by island": "Tile per isola",
+ "UV tile": "Tile UV",
+ "UV Tiles": "Tile UV",
+ "UV Tiles by Face Group": "Tile UV per gruppo di facce",
+ "UV Tiles by Island": "Tile UV per isola",
+ "UV tiles in use: {list}": "Tile UV in uso: {list}"
 }

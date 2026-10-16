@@ -803,5 +803,18 @@
  "Automatic charts": "Automatyczne mapy",
  "Get UVs": "Pobierz UV",
  "UV Checker": "Szachownica UV",
- "UV checker": "Szachownica UV"
+ "UV checker": "Szachownica UV",
+ "Island to tile": "Wyspa do kafelka",
+ "List tiles": "Wypisz kafelki",
+ "List UV Tiles": "Wypisz kafelki UV",
+ "Move UV Island to Tile": "Przesuń wyspę UV do kafelka",
+ "Move UVs to Tile": "Przesuń UV do kafelka",
+ "Pack UVs into Tiles": "Upakuj UV w kafelkach",
+ "Tiles by group": "Kafelki wg grupy",
+ "Tiles by island": "Kafelki wg wyspy",
+ "UV tile": "Kafelek UV",
+ "UV Tiles": "Kafelki UV",
+ "UV Tiles by Face Group": "Kafelki UV wg grupy ścian",
+ "UV Tiles by Island": "Kafelki UV wg wyspy",
+ "UV tiles in use: {list}": "Używane kafelki UV: {list}"
 }

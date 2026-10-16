@@ -803,5 +803,18 @@
  "Automatic charts": "Cartas automáticas",
  "Get UVs": "Obtener UV",
  "UV Checker": "Damero UV",
- "UV checker": "Damero UV"
+ "UV checker": "Damero UV",
+ "Island to tile": "Isla a tesela",
+ "List tiles": "Listar teselas",
+ "List UV Tiles": "Listar teselas UV",
+ "Move UV Island to Tile": "Mover isla UV a tesela",
+ "Move UVs to Tile": "Mover UV a tesela",
+ "Pack UVs into Tiles": "Empaquetar UV en teselas",
+ "Tiles by group": "Teselas por grupo",
+ "Tiles by island": "Teselas por isla",
+ "UV tile": "Tesela UV",
+ "UV Tiles": "Teselas UV",
+ "UV Tiles by Face Group": "Teselas UV por grupo de caras",
+ "UV Tiles by Island": "Teselas UV por isla",
+ "UV tiles in use: {list}": "Teselas UV en uso: {list}"
 }

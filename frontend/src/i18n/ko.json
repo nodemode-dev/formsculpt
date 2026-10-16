@@ -803,5 +803,18 @@
  "Automatic charts": "자동 차트",
  "Get UVs": "UV 가져오기",
  "UV Checker": "UV 체커",
- "UV checker": "UV 체커"
+ "UV checker": "UV 체커",
+ "Island to tile": "아일랜드를 타일로",
+ "List tiles": "타일 목록",
+ "List UV Tiles": "UV 타일 목록",
+ "Move UV Island to Tile": "UV 아일랜드를 타일로 이동",
+ "Move UVs to Tile": "UV를 타일로 이동",
+ "Pack UVs into Tiles": "UV를 타일로 패킹",
+ "Tiles by group": "그룹별 타일",
+ "Tiles by island": "아일랜드별 타일",
+ "UV tile": "UV 타일",
+ "UV Tiles": "UV 타일",
+ "UV Tiles by Face Group": "페이스 그룹별 UV 타일",
+ "UV Tiles by Island": "아일랜드별 UV 타일",
+ "UV tiles in use: {list}": "사용 중인 UV 타일: {list}"
 }

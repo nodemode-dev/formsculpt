@@ -803,5 +803,18 @@
  "Automatic charts": "自動チャート",
  "Get UVs": "UV を取得",
  "UV Checker": "UV チェッカー",
- "UV checker": "UV チェッカー"
+ "UV checker": "UV チェッカー",
+ "Island to tile": "アイランドをタイルへ",
+ "List tiles": "タイルを一覧",
+ "List UV Tiles": "UVタイルを一覧",
+ "Move UV Island to Tile": "UVアイランドをタイルへ移動",
+ "Move UVs to Tile": "UVをタイルへ移動",
+ "Pack UVs into Tiles": "UVをタイルにパック",
+ "Tiles by group": "グループ別タイル",
+ "Tiles by island": "アイランド別タイル",
+ "UV tile": "UVタイル",
+ "UV Tiles": "UVタイル",
+ "UV Tiles by Face Group": "フェイスグループ別UVタイル",
+ "UV Tiles by Island": "アイランド別UVタイル",
+ "UV tiles in use: {list}": "使用中のUVタイル: {list}"
 }

@@ -803,5 +803,18 @@
  "Automatic charts": "Automatické mapy",
  "Get UVs": "Získat UV",
  "UV Checker": "UV šachovnice",
- "UV checker": "UV šachovnice"
+ "UV checker": "UV šachovnice",
+ "Island to tile": "Ostrov do dlaždice",
+ "List tiles": "Vypsat dlaždice",
+ "List UV Tiles": "Vypsat dlaždice UV",
+ "Move UV Island to Tile": "Přesunout ostrov UV do dlaždice",
+ "Move UVs to Tile": "Přesunout UV do dlaždice",
+ "Pack UVs into Tiles": "Zabalit UV do dlaždic",
+ "Tiles by group": "Dlaždice podle skupiny",
+ "Tiles by island": "Dlaždice podle ostrova",
+ "UV tile": "Dlaždice UV",
+ "UV Tiles": "Dlaždice UV",
+ "UV Tiles by Face Group": "Dlaždice UV podle skupiny ploch",
+ "UV Tiles by Island": "Dlaždice UV podle ostrova",
+ "UV tiles in use: {list}": "Použité dlaždice UV: {list}"
 }

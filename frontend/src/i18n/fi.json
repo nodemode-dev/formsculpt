@@ -803,5 +803,18 @@
  "Automatic charts": "Automaattiset kartat",
  "Get UVs": "Hae UV:t",
  "UV Checker": "UV-ruudukko",
- "UV checker": "UV-ruudukko"
+ "UV checker": "UV-ruudukko",
+ "Island to tile": "Saareke laattaan",
+ "List tiles": "Luettele laatat",
+ "List UV Tiles": "Luettele UV-laatat",
+ "Move UV Island to Tile": "Siirrä UV-saareke laattaan",
+ "Move UVs to Tile": "Siirrä UV:t laattaan",
+ "Pack UVs into Tiles": "Pakkaa UV:t laattoihin",
+ "Tiles by group": "Laatat ryhmittäin",
+ "Tiles by island": "Laatat saarekkeittain",
+ "UV tile": "UV-laatta",
+ "UV Tiles": "UV-laatat",
+ "UV Tiles by Face Group": "UV-laatat pintaryhmittäin",
+ "UV Tiles by Island": "UV-laatat saarekkeittain",
+ "UV tiles in use: {list}": "Käytössä olevat UV-laatat: {list}"
 }

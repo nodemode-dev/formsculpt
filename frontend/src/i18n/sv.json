@@ -803,5 +803,18 @@
  "Automatic charts": "Automatiska kartor",
  "Get UVs": "Hämta UV:er",
  "UV Checker": "UV-schackmönster",
- "UV checker": "UV-schackmönster"
+ "UV checker": "UV-schackmönster",
+ "Island to tile": "Ö till kakel",
+ "List tiles": "Lista kakel",
+ "List UV Tiles": "Lista UV-kakel",
+ "Move UV Island to Tile": "Flytta UV-ö till kakel",
+ "Move UVs to Tile": "Flytta UV till kakel",
+ "Pack UVs into Tiles": "Packa UV i kakel",
+ "Tiles by group": "Kakel efter grupp",
+ "Tiles by island": "Kakel efter ö",
+ "UV tile": "UV-kakel",
+ "UV Tiles": "UV-kakel",
+ "UV Tiles by Face Group": "UV-kakel efter ytgrupp",
+ "UV Tiles by Island": "UV-kakel efter ö",
+ "UV tiles in use: {list}": "UV-kakel som används: {list}"
 }

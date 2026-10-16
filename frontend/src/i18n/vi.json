@@ -803,5 +803,18 @@
  "Automatic charts": "Biểu đồ tự động",
  "Get UVs": "Lấy UV",
  "UV Checker": "Ô bàn cờ UV",
- "UV checker": "Ô bàn cờ UV"
+ "UV checker": "Ô bàn cờ UV",
+ "Island to tile": "Island vào tile",
+ "List tiles": "Liệt kê tile",
+ "List UV Tiles": "Liệt kê tile UV",
+ "Move UV Island to Tile": "Di chuyển island UV vào tile",
+ "Move UVs to Tile": "Di chuyển UV vào tile",
+ "Pack UVs into Tiles": "Pack UV vào tile",
+ "Tiles by group": "Tile theo nhóm",
+ "Tiles by island": "Tile theo island",
+ "UV tile": "Tile UV",
+ "UV Tiles": "Tile UV",
+ "UV Tiles by Face Group": "Tile UV theo nhóm mặt",
+ "UV Tiles by Island": "Tile UV theo island",
+ "UV tiles in use: {list}": "Tile UV đang dùng: {list}"
 }
