@@ -23,6 +23,8 @@ mod sim_cmds;
 mod topo_cmds;
 mod uv_density_cmds;
 mod uv_relax_cmds;
+mod uv_seam_cmds;
+mod uv_straighten_cmds;
 mod vdm_cmds;
 mod view_cmds;
 
@@ -796,6 +798,17 @@ pub static COMMANDS: &[Command] = &[
         run: uv_relax_cmds::uv_relax,
     },
     Command {
+        id: "paint.uv_straighten",
+        mcp: "uv_straighten",
+        group: Group::Paint,
+        label: "Straighten UVs",
+        description: "Straighten a chain of mesh vertices (path, two or more vertex indices joined by mesh edges inside one UV island) into a straight line in UV space. Mode line spaces the points evenly by their 3D arc length on the segment from the first to the last point; axis snaps that segment to horizontal or vertical, whichever is closer, keeps the first point fixed and scales the length by the island's mean UV to 3D ratio. Then relax [passes, default 20] conformal passes let the island interior follow while the path and the island border stay put (0 skips it). Reports straightened (point count) and the angle distortion before and after (1 is none). Refuses with no_uvs, or bad_arguments for a path that is not a chain of edges, spans islands or has fewer than 2 points. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: uv_straighten_cmds::uv_straighten_schema,
+        run: uv_straighten_cmds::uv_straighten,
+    },
+    Command {
         id: "paint.uv_pack",
         mcp: "uv_pack",
         group: Group::Paint,
@@ -827,6 +840,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: uv_density_cmds::equalize_schema,
         run: uv_density_cmds::uv_equalize,
+    },
+    Command {
+        id: "paint.uv_sew",
+        mcp: "uv_sew",
+        group: Group::Paint,
+        label: "Sew UV Islands",
+        description: "Join two UV islands into one along the mesh edges they share. Give island_a (stays put) and island_b (moves), numbered as get_uv_layout numbers them. Island_b is turned, scaled evenly and moved so its shared edges land on island_a's as closely as possible, then the corners on those edges are set exactly equal so the islands count as one. Refuses with no_shared_edges when the islands touch nowhere and with needs_mirror when joining would need one island flipped. Returns welded (corners set equal), shared_edges and the island count before and after. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: uv_seam_cmds::uv_sew_schema,
+        run: uv_seam_cmds::uv_sew,
+    },
+    Command {
+        id: "paint.uv_cut",
+        mcp: "uv_cut",
+        group: Group::Paint,
+        label: "Cut UV Seam",
+        description: "Turn a run of mesh edges into a UV seam. Give path as mesh vertex indices where each neighbouring pair is a mesh edge (repeat the first vertex at the end for a closed loop). The corners on the right of the walking direction, seen from outside, come loose from the other side along the path. A closed loop splits the island in two and an open cut leaves the island whole but slit along the path. With separate true each loose piece is moved away from the rest by distance in UV units so the cut can be seen; false leaves it in place with a hairline gap. Refuses a path that is not mesh edges, and a path that separates nothing (an open cut of two vertices). Returns cut_edges and the island count before and after. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: uv_seam_cmds::uv_cut_schema,
+        run: uv_seam_cmds::uv_cut,
     },
     Command {
         id: "paint.bake",
