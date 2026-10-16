@@ -18,6 +18,113 @@ impl CurvePoint {
     }
 }
 
+fn follow(pts: &mut [Vec3], lens: &[f32]) {
+    for i in 1..pts.len() {
+        let d = (pts[i] - pts[i - 1]).try_normalize().unwrap_or(Vec3::X);
+        pts[i] = pts[i - 1] + d * lens[i - 1];
+    }
+}
+
+fn reach(pts: &mut [Vec3], lens: &[f32], target: Vec3, anchored: bool, iterations: usize, tolerance: f32) {
+    if !anchored {
+        pts[0] = target;
+        follow(pts, lens);
+        return;
+    }
+    let n = pts.len();
+    let anchor = pts[n - 1];
+    let to = target - anchor;
+    if to.length() >= lens.iter().sum::<f32>() {
+        let dir = to.try_normalize().unwrap_or(Vec3::X);
+        for i in (0..n - 1).rev() {
+            pts[i] = pts[i + 1] + dir * lens[i];
+        }
+        return;
+    }
+    for _ in 0..iterations {
+        if pts[0].distance(target) <= tolerance {
+            break;
+        }
+        pts[0] = target;
+        follow(pts, lens);
+        pts[n - 1] = anchor;
+        for i in (0..n - 1).rev() {
+            let d = (pts[i] - pts[i + 1]).try_normalize().unwrap_or(Vec3::X);
+            pts[i] = pts[i + 1] + d * lens[i];
+        }
+    }
+}
+
+/// FABRIK on the control points as an open chain of fixed-length segments (a closed curve is solved as open). Returns the new positions, whether the dragged point came within tolerance of the target, and its distance from the target. With both ends pinned, the two segments beside the dragged point match their lengths to within the tolerance.
+pub fn solve_ik(points: &[CurvePoint], index: usize, target: Vec3, pin_start: bool, pin_end: bool, iterations: usize, tolerance: f32) -> (Vec<Vec3>, bool, f32) {
+    let pos: Vec<Vec3> = points.iter().map(|p| p.pos).collect();
+    let n = pos.len();
+    if n < 2 || index >= n {
+        return (pos, false, f32::INFINITY);
+    }
+    let lens: Vec<f32> = pos.windows(2).map(|w| w[0].distance(w[1])).collect();
+    let mut t = target;
+    if (index == 0 && pin_start) || (index == n - 1 && pin_end) {
+        t = pos[index];
+    } else if pin_start && pin_end {
+        let (a, b) = (pos[0], pos[n - 1]);
+        let (ra, rb) = (lens[..index].iter().sum::<f32>(), lens[index..].iter().sum::<f32>());
+        let inside = |p: Vec3, c: Vec3, r: f32| p.distance(c) <= r;
+        if !(inside(t, a, ra) && inside(t, b, rb)) {
+            let on = |c: Vec3, r: f32| c + (t - c).try_normalize().unwrap_or(Vec3::X) * r;
+            let (ta, tb) = (on(a, ra), on(b, rb));
+            let span = b - a;
+            let d = span.length();
+            if !inside(t, a, ra) && inside(ta, b, rb) {
+                t = ta;
+            } else if !inside(t, b, rb) && inside(tb, a, ra) {
+                t = tb;
+            } else if d > 1e-9 {
+                let n = span / d;
+                let x = (d * d + ra * ra - rb * rb) / (2.0 * d);
+                let c = a + n * x;
+                let rho = (ra * ra - x * x).max(0.0).sqrt();
+                let v = t - c;
+                let flat = (v - n * v.dot(n)).try_normalize().unwrap_or_else(|| n.any_orthonormal_vector());
+                t = c + flat * rho;
+            }
+        }
+    }
+    let lower_pinned = pin_start && index > 0;
+    let upper_pinned = pin_end && index < n - 1;
+    let mut lo: Vec<Vec3> = pos[..=index].iter().rev().copied().collect();
+    let lo_lens: Vec<f32> = lens[..index].iter().rev().copied().collect();
+    let mut up: Vec<Vec3> = pos[index..].to_vec();
+    let up_lens: Vec<f32> = lens[index..].to_vec();
+    let mut kpos = t;
+    if lower_pinned {
+        reach(&mut lo, &lo_lens, t, true, iterations, tolerance);
+        kpos = lo[0];
+    }
+    if upper_pinned {
+        reach(&mut up, &up_lens, kpos, true, iterations, tolerance);
+        if !lower_pinned {
+            kpos = up[0];
+        }
+    }
+    if !lower_pinned && lo.len() > 1 {
+        reach(&mut lo, &lo_lens, kpos, false, iterations, tolerance);
+    }
+    if !upper_pinned && up.len() > 1 {
+        reach(&mut up, &up_lens, kpos, false, iterations, tolerance);
+    }
+    let mut out = pos;
+    for (i, p) in lo.iter().enumerate() {
+        out[index - i] = *p;
+    }
+    for (j, p) in up.iter().enumerate() {
+        out[index + j] = *p;
+    }
+    out[index] = kpos;
+    let error = kpos.distance(target);
+    (out, error <= tolerance, error)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Interp {
     #[default]

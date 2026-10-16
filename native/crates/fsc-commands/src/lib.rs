@@ -386,6 +386,17 @@ pub static COMMANDS: &[Command] = &[
         run: curve_cmds::sample,
     },
     Command {
+        id: "curve.ik",
+        mcp: "curve_ik",
+        group: Group::Object,
+        label: "Curve IK",
+        description: "Drag one control point of a curve to a target and let the rest follow, without changing the scene: the points are a chain of fixed-length segments (the lengths between neighbours are kept), solved with FABRIK. pin_start keeps the first point fixed (default on), pin_end keeps the last fixed; with neither pinned the chain trails behind the dragged point like a rope. If the target is out of reach the chain stretches straight toward it as far as it can and reached is false. Points use the same formats as sample_curve and come back with new positions and everything else (radius, twist, sharp, round) unchanged, plus error (distance left to the target) and the segment lengths. A closed curve is solved as open. Feed the result to curve_tube, sample_curve or edit_build.",
+        keys: &[],
+        hints: READ,
+        schema: curve_cmds::ik_schema,
+        run: curve_cmds::ik,
+    },
+    Command {
         id: "build.lathe",
         mcp: "lathe",
         group: Group::Object,

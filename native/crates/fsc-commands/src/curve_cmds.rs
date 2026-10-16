@@ -270,6 +270,69 @@ pub(crate) fn sample(_: &mut Session, args: &Value) -> Result<Value, CommandErro
     }))
 }
 
+pub(crate) fn ik_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": point_schema(3), "description": "The chain's control points, in the same formats as sample_curve. They are treated as an open chain of fixed-length segments; a closed curve is solved as open, so give the points without repeating the first at the end."},
+            "index": {"type": "integer", "minimum": 0, "description": "Which point to drag, counting from 0."},
+            "target": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "[x, y, z] to drag that point to."},
+            "pin_start": {"type": "boolean", "default": true, "description": "Keep the first point where it is."},
+            "pin_end": {"type": "boolean", "default": false, "description": "Keep the last point where it is."},
+            "iterations": {"type": "integer", "minimum": 1, "maximum": 200, "default": 32, "description": "Most FABRIK passes to run."}
+        },
+        "required": ["points", "index", "target"],
+        "additionalProperties": false
+    })
+}
+
+fn with_position(point: &Value, pos: Vec3) -> Value {
+    match point {
+        Value::Array(a) => {
+            let mut out = a.clone();
+            for (k, x) in [pos.x, pos.y, pos.z].into_iter().enumerate() {
+                out[k] = json!(x);
+            }
+            Value::Array(out)
+        }
+        other => {
+            let mut out = other.clone();
+            if let Some(o) = out.as_object_mut() {
+                o.insert("p".into(), json!([pos.x, pos.y, pos.z]));
+            }
+            out
+        }
+    }
+}
+
+pub(crate) fn ik(_: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let list = args.get("points").and_then(Value::as_array).ok_or_else(|| bad("points is required"))?;
+    let points = parse_points(list, 3, 1.0, false, "point")?;
+    if points.len() < 2 {
+        return Err(bad("the chain needs at least two points"));
+    }
+    let index = args.get("index").and_then(Value::as_u64).ok_or_else(|| bad("index is required: a whole number from 0"))? as usize;
+    if index >= points.len() {
+        return Err(bad(format!("index {index} is out of range for {} points", points.len())));
+    }
+    let target = position(args.get("target"), 3, "target")?;
+    let flag = |key: &str, default: bool| match args.get(key) {
+        None | Some(Value::Null) => Ok(default),
+        Some(v) => v.as_bool().ok_or_else(|| bad(format!("{key} must be true or false"))),
+    };
+    let (pin_start, pin_end) = (flag("pin_start", true)?, flag("pin_end", false)?);
+    let iterations = number(args, "iterations", 32.0, 1.0, 200.0)? as usize;
+    let lengths: Vec<f32> = points.windows(2).map(|w| w[0].pos.distance(w[1].pos)).collect();
+    let tolerance = (lengths.iter().sum::<f32>() * 1e-5).max(1e-6);
+    let (moved, reached, error) = fsc_core::curve::solve_ik(&points, index, target, pin_start, pin_end, iterations, tolerance);
+    Ok(json!({
+        "points": list.iter().zip(&moved).map(|(v, p)| with_position(v, *p)).collect::<Vec<_>>(),
+        "reached": reached,
+        "error": error,
+        "lengths": lengths
+    }))
+}
+
 pub(crate) fn warp_schema() -> Value {
     json!({
         "type": "object",
