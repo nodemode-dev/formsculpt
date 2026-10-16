@@ -838,6 +838,9 @@ function buildShell(root: HTMLElement): Shell {
       ['grow', 'Scale up'],
       ['shrink', 'Scale down'],
       ['refresh', 'Redraw'],
+      ['relax', 'Relax'],
+      ['equalize', 'Even density'],
+      ['density', 'Density'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -4130,11 +4133,34 @@ class SceneView {
         if (action === 'unwrap') void this.unwrapUvs(id);
         else if (action === 'pack') void this.uvRun('uv_pack', { id });
         else if (action === 'refresh') void this.drawUv(true);
+        else if (action === 'relax' || action === 'equalize' || action === 'density') void this.uvMeasure(id, action);
         else if (this.uvIsland === null) this.note('Click an island in the UV view first');
         else if (action === 'rotate') void this.uvRun('uv_transform', { id, island: this.uvIsland, rotate: 90 });
         else void this.uvRun('uv_transform', { id, island: this.uvIsland, scale: action === 'grow' ? 1.25 : 0.8 });
       }),
     );
+  }
+
+  /** Relax (conformal, borders held), Even density (equalize and repack), Density (a readout at the bake size). */
+  private async uvMeasure(id: number, action: 'relax' | 'equalize' | 'density'): Promise<void> {
+    const texture = Math.max(64, Math.min(16384, Number(this.shell.bakeSize.value) || 2048));
+    if (action === 'density') {
+      const r = await dispatch<{ islands: unknown[]; mean: number; min: number; max: number; spread: number }>('uv_density', { id, texture });
+      if (!r.ok) this.note(r.error.message);
+      else this.note(t('Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})').replace('{size}', String(texture)).replace('{mean}', r.result.mean.toFixed(0)).replace('{n}', String(r.result.islands.length)).replace('{min}', r.result.min.toFixed(0)).replace('{max}', r.result.max.toFixed(0)).replace('{spread}', r.result.spread.toFixed(2)));
+      return;
+    }
+    if (action === 'relax') {
+      const r = await dispatch<{ distortion_before: number; distortion_after: number }>('uv_relax', { id, mode: 'conformal', iterations: 60 });
+      if (!r.ok) this.note(r.error.message);
+      else this.note(t('UVs relaxed: stretch {before} to {after} (1 is none)').replace('{before}', r.result.distortion_before.toFixed(3)).replace('{after}', r.result.distortion_after.toFixed(3)));
+    } else {
+      const r = await dispatch<{ before: { spread: number }; after: { spread: number } }>('uv_equalize', { id });
+      if (!r.ok) this.note(r.error.message);
+      else this.note(t('Density evened: spread {before} to {after}').replace('{before}', r.result.before.spread.toFixed(2)).replace('{after}', r.result.after.spread.toFixed(2)));
+    }
+    await this.refresh();
+    void this.drawUv(true);
   }
 
   private async uvRun(name: string, args: Record<string, unknown>): Promise<void> {

@@ -465,3 +465,9 @@ ZBrush's Slice Curve and Trim Curve, from an open stroke. The stroke (thinned to
 - kind: rationale
 - logged: v0.39.0 · 2026-10-16
 With Live re-edit on (the default), Edit last stroke as curve undoes the stroke, applies the curve at once (so nothing visibly changes) and remembers that curve and the history position after it. Each handle move then undoes that application and applies again, so the stroke follows its handles and the history does not grow (measured: 9 steps after the stroke, 9 after the conversion, 9 after a move). Before undoing, the history position is compared with the one remembered; if anything else happened in between, the live link ends with a note instead of undoing someone else's step. Off, it behaves as in 0.35.0. Snake from mask and Bridge two groups call curve_bridge (Snake: the mask border scaled to Snake end size % at the far end; Bridge: two group numbers through the prompt dialog), along the waiting curve's handles when there is one, lifted by Surface offset.
+
+### UV section: Relax, Even density, Density
+- refers-to: app.ts :: uvMeasure, the UV buttons; ui/command-map.ts uv.relax_view, uv.equalize_view, uv.density_view; ui/menus.ts PAINT
+- kind: rationale
+- logged: v0.40.0 · 2026-10-16
+Three buttons over the engine's new UV commands. Relax runs uv_relax conformally for 60 passes with island borders held, and reports the stretch before and after. Even density runs uv_equalize (which repacks) and reports the spread before and after. Density reads uv_density at the Bake size, so the number matches the maps that will be baked. Notes are {name} templates through t(), filled after translation. Both changing actions refresh the scene and redraw the layout picture in place.

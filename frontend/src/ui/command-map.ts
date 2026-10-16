@@ -75,6 +75,9 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     grow: n('uv.scale_up', 'Scale UV Island Up'),
     shrink: n('uv.scale_down', 'Scale UV Island Down'),
     refresh: n('uv.redraw', 'Redraw UV View'),
+    relax: n('uv.relax_view', 'Relax UVs'),
+    equalize: n('uv.equalize_view', 'Even UV Density'),
+    density: n('uv.density_view', 'Show UV Density'),
   },
   action: {
     undo: c('history.undo', 'Undo', { keys: ['Mod+Z'], icon: 'undo' }),
