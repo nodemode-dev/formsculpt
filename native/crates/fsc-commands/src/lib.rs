@@ -22,6 +22,7 @@ mod selection_cmds;
 mod sim_cmds;
 mod topo_cmds;
 mod uv_density_cmds;
+mod uv_pick_cmds;
 mod uv_relax_cmds;
 mod uv_seam_cmds;
 mod uv_straighten_cmds;
@@ -774,6 +775,28 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: bake_cmds::uv_layout_schema,
         run: bake_cmds::uv_layout,
+    },
+    Command {
+        id: "paint.uv_pick",
+        mcp: "uv_pick",
+        group: Group::Paint,
+        label: "Pick UV Point",
+        description: "Find the mesh vertex whose UV point is nearest a spot in the UV view. Give at [u, v] and an optional radius (UV distance, default 0.02). Returns vertex (the mesh vertex index), uv ([u, v] of that corner), island (numbered as get_uv_layout numbers it) and distance, or vertex null when nothing lies within radius. The vertex can go in uv_relax's pinned list or be an end of a uv_path; refuses with no_uvs when the object is not unwrapped. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: uv_pick_cmds::uv_pick_schema,
+        run: uv_pick_cmds::uv_pick,
+    },
+    Command {
+        id: "paint.uv_path",
+        mcp: "uv_path",
+        group: Group::Paint,
+        label: "UV Edge Path",
+        description: "Find the shortest chain of mesh edges (by 3D length) from one vertex to another. Give from and to as mesh vertex indices, for instance from uv_pick. With island [a number from get_uv_layout] only edges of that UV island are walked, so the path stays inside one island; without it any mesh edge may be used. Returns path (vertex indices from start to end), length (3D) and edges. The path feeds uv_cut and uv_straighten as their path. Refuses with no_path when the vertices are not joined (inside the island), bad_arguments for an index out of range or from equal to to, and no_uvs when the object is not unwrapped. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: uv_pick_cmds::uv_path_schema,
+        run: uv_pick_cmds::uv_path,
     },
     Command {
         id: "paint.uv_transform",
