@@ -766,5 +766,15 @@
  "Snake from mask": "Serpiente desde máscara",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Algo más cambió desde entonces; Aplicar curva aplica la curva movida como un paso nuevo",
  "The stroke is a curve now: move a handle and it is applied again": "El trazo ahora es una curva: mueve un manejador y se vuelve a aplicar",
- "Two face group numbers": "Dos números de grupo de caras"
+ "Two face group numbers": "Dos números de grupo de caras",
+ "Density": "Densidad",
+ "Density evened: spread {before} to {after}": "Densidad igualada: dispersión {before} a {after}",
+ "Equalize UV Density": "Igualar densidad UV",
+ "Even density": "Igualar densidad",
+ "Even UV Density": "Igualar densidad UV",
+ "Relax UVs": "Relajar UV",
+ "Show UV Density": "Mostrar densidad UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Densidad de téxeles a {size} px: {mean} por unidad en {n} islas, de {min} a {max} (dispersión {spread})",
+ "UV Density": "Densidad UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV relajadas: estiramiento {before} a {after} (1 es ninguno)"
 }

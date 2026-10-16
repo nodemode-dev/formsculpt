@@ -766,5 +766,15 @@
  "Snake from mask": "Had z masky",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Mezitím se změnilo něco jiného; Použít křivku použije posunutou křivku jako nový krok",
  "The stroke is a curve now: move a handle and it is applied again": "Tah je teď křivka: posuňte úchyt a použije se znovu",
- "Two face group numbers": "Dvě čísla skupin ploch"
+ "Two face group numbers": "Dvě čísla skupin ploch",
+ "Density": "Hustota",
+ "Density evened: spread {before} to {after}": "Hustota vyrovnána: rozptyl {before} na {after}",
+ "Equalize UV Density": "Vyrovnat hustotu UV",
+ "Even density": "Vyrovnat hustotu",
+ "Even UV Density": "Vyrovnat hustotu UV",
+ "Relax UVs": "Uvolnit UV",
+ "Show UV Density": "Zobrazit hustotu UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Hustota texelů při {size} px: {mean} na jednotku v {n} ostrovech, {min} až {max} (rozptyl {spread})",
+ "UV Density": "Hustota UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV uvolněny: natažení {before} na {after} (1 znamená žádné)"
 }

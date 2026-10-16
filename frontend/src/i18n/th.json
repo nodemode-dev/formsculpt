@@ -766,5 +766,15 @@
  "Snake from mask": "งูจากมาสก์",
  "Something else changed since; Apply curve applies the moved curve as a new step": "มีการเปลี่ยนแปลงอื่นตั้งแต่นั้น ใช้เส้นโค้งจะใช้เส้นโค้งที่ย้ายแล้วเป็นขั้นตอนใหม่",
  "The stroke is a curve now: move a handle and it is applied again": "เส้นกลายเป็นเส้นโค้งแล้ว ย้ายจุดจับแล้วจะถูกใช้ใหม่",
- "Two face group numbers": "หมายเลขกลุ่มหน้าสองหมายเลข"
+ "Two face group numbers": "หมายเลขกลุ่มหน้าสองหมายเลข",
+ "Density": "ความหนาแน่น",
+ "Density evened: spread {before} to {after}": "ปรับความหนาแน่นให้เท่ากันแล้ว: การกระจาย {before} เป็น {after}",
+ "Equalize UV Density": "ปรับความหนาแน่น UV ให้เท่ากัน",
+ "Even density": "ปรับความหนาแน่นให้เท่ากัน",
+ "Even UV Density": "ปรับความหนาแน่น UV ให้เท่ากัน",
+ "Relax UVs": "คลาย UV",
+ "Show UV Density": "แสดงความหนาแน่น UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "ความหนาแน่นเท็กเซลที่ {size} px: {mean} ต่อหน่วยใน {n} เกาะ ตั้งแต่ {min} ถึง {max} (การกระจาย {spread})",
+ "UV Density": "ความหนาแน่น UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "คลาย UV แล้ว: การยืด {before} เป็น {after} (1 คือไม่มี)"
 }

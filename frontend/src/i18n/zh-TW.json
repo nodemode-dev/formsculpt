@@ -766,5 +766,15 @@
  "Snake from mask": "從遮罩產生蛇形",
  "Something else changed since; Apply curve applies the moved curve as a new step": "此後有其他變更；「套用曲線」會將移動後的曲線作為新步驟套用",
  "The stroke is a curve now: move a handle and it is applied again": "該筆現在是曲線：移動控制點即會重新套用",
- "Two face group numbers": "兩個面群組編號"
+ "Two face group numbers": "兩個面群組編號",
+ "Density": "密度",
+ "Density evened: spread {before} to {after}": "密度已均衡：離散度 {before} 變為 {after}",
+ "Equalize UV Density": "均衡 UV 密度",
+ "Even density": "均衡密度",
+ "Even UV Density": "均衡 UV 密度",
+ "Relax UVs": "鬆弛 UV",
+ "Show UV Density": "顯示 UV 密度",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px 下的紋素密度：{n} 個島平均每單位 {mean}，範圍 {min} 到 {max}（離散度 {spread}）",
+ "UV Density": "UV 密度",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 已鬆弛：拉伸 {before} 變為 {after}（1 表示無拉伸）"
 }

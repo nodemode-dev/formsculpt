@@ -766,5 +766,15 @@
  "Snake from mask": "Slange fra maske",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Noe annet er endret siden; Bruk kurve bruker den flyttede kurven som et nytt trinn",
  "The stroke is a curve now: move a handle and it is applied again": "Strøket er nå en kurve: flytt et håndtak, så brukes det på nytt",
- "Two face group numbers": "To flategruppenumre"
+ "Two face group numbers": "To flategruppenumre",
+ "Density": "Tetthet",
+ "Density evened: spread {before} to {after}": "Tetthet utjevnet: spredning {before} til {after}",
+ "Equalize UV Density": "Utjevn UV-tetthet",
+ "Even density": "Utjevn tetthet",
+ "Even UV Density": "Utjevn UV-tetthet",
+ "Relax UVs": "Avspenn UV-er",
+ "Show UV Density": "Vis UV-tetthet",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeltetthet ved {size} px: {mean} per enhet over {n} øyer, {min} til {max} (spredning {spread})",
+ "UV Density": "UV-tetthet",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV-er avspent: strekk {before} til {after} (1 er ingen)"
 }

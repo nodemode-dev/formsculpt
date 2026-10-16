@@ -766,5 +766,15 @@
  "Snake from mask": "Змія з маски",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Відтоді змінилося щось інше; «Застосувати криву» застосує зсунуту криву новим кроком",
  "The stroke is a curve now: move a handle and it is applied again": "Мазок став кривою: пересуньте маркер, і він застосується знову",
- "Two face group numbers": "Два номери груп граней"
+ "Two face group numbers": "Два номери груп граней",
+ "Density": "Щільність",
+ "Density evened: spread {before} to {after}": "Щільність вирівняно: розкид {before} до {after}",
+ "Equalize UV Density": "Вирівняти щільність UV",
+ "Even density": "Вирівняти щільність",
+ "Even UV Density": "Вирівняти щільність UV",
+ "Relax UVs": "Розслабити UV",
+ "Show UV Density": "Показати щільність UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Щільність текселів при {size} px: {mean} на одиницю по {n} островах, від {min} до {max} (розкид {spread})",
+ "UV Density": "Щільність UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV розслаблено: розтяг {before} до {after} (1 означає відсутність)"
 }

@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.39.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_relax`, `uv_pack`, `uv_density`, `uv_equalize`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -682,11 +682,40 @@ Move, turn or scale one UV island, chosen by a UV point on it (at) or its number
 - `scale`: number; range -inf to 100; Scale about the island's centre.
 - `translate`: array of number; Move by [du, dv].
 
+## uv_relax
+
+Smooth an unwrapped object's UVs to reduce stretch. Each point moves toward the average of its neighbours for a number of passes (iterations, strength). Mode conformal weights neighbours by the cotangents of the 3D triangles so UV angles follow the 3D shape; smooth is a plain average. Island borders stay put (keep_border) and so do the vertices in pinned; give island [a vertex index] to relax only the island holding that vertex. Reports the angle distortion before and after (1 is none) and how many vertices moved. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island`: integer; range 0 to inf; A vertex index: relax only the island or islands that vertex belongs to.
+- `iterations`: integer; default 30; range 1 to 500; Relaxation passes.
+- `keep_border`: boolean; default true; Keep the points on an island's border (seams and open edges) where they are.
+- `mode`: string (smooth | conformal); default "conformal"; smooth is a plain average over the mesh connectivity; conformal weights neighbours by the cotangents of the 3D triangles, which brings the UV angles toward the 3D shape.
+- `pinned`: array of integer; Vertex indices whose UVs stay put.
+- `strength`: number; default 0.5; range 0 to 1; How far each point moves toward the average of its neighbours on each pass.
+
 ## uv_pack
 
 Pack an object's UV islands back into the unit square keeping their shapes, turns and relative sizes, after islands were moved or scaled. Clears baked maps. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## uv_density
+
+Read the texel density of each UV island in pixels per world unit for a texture of a given size (texture, default 2048): the island's faces, density, UV area and surface area, plus the area-weighted mean, the lowest, the highest and their ratio (spread). A spread of 1 means every part of the model gets the same texture detail. Read-only; use uv_equalize to even it out.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `texture`: integer; default 2048; range 64 to 16384; Texture width and height in pixels that the density is measured for.
+
+Note: read-only.
+
+## uv_equalize
+
+Scale each UV island about its centre so every island has the same texel density: target in pixels per world unit for a 2048 pixel texture, or the area-weighted mean when omitted. Packs the islands into the unit square afterwards unless pack is false, which keeps their sizes relative to each other but can change all densities by one factor. Returns the density mean, min, max and spread before and after. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pack`: boolean; default true; Pack the islands into the unit square afterwards so they do not overlap. Packing keeps the islands' sizes relative to each other, so it can change all densities by the same factor.
+- `target`: number; range 0 to inf; Density to give every island, in pixels per world unit for a 2048 pixel texture; the area-weighted mean of the islands when omitted.
 
 ## bake_maps
 

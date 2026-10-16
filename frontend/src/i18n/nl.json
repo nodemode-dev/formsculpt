@@ -766,5 +766,15 @@
  "Snake from mask": "Slang uit masker",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Er is intussen iets anders veranderd; Curve toepassen past de verplaatste curve toe als nieuwe stap",
  "The stroke is a curve now: move a handle and it is applied again": "De streek is nu een curve: verplaats een handgreep en hij wordt opnieuw toegepast",
- "Two face group numbers": "Twee vlakgroepnummers"
+ "Two face group numbers": "Twee vlakgroepnummers",
+ "Density": "Dichtheid",
+ "Density evened: spread {before} to {after}": "Dichtheid gelijkgetrokken: spreiding {before} naar {after}",
+ "Equalize UV Density": "UV-dichtheid gelijktrekken",
+ "Even density": "Dichtheid gelijktrekken",
+ "Even UV Density": "UV-dichtheid gelijktrekken",
+ "Relax UVs": "UV's ontspannen",
+ "Show UV Density": "UV-dichtheid tonen",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeldichtheid bij {size} px: {mean} per eenheid over {n} eilanden, {min} tot {max} (spreiding {spread})",
+ "UV Density": "UV-dichtheid",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV's ontspannen: rek {before} naar {after} (1 is geen)"
 }

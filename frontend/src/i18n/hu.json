@@ -766,5 +766,15 @@
  "Snake from mask": "Kígyó maszkból",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Azóta más is változott; a Görbe alkalmazása új lépésként alkalmazza az elmozdított görbét",
  "The stroke is a curve now: move a handle and it is applied again": "A vonás most görbe: mozgass egy fogantyút, és újra alkalmazódik",
- "Two face group numbers": "Két lapcsoportszám"
+ "Two face group numbers": "Két lapcsoportszám",
+ "Density": "Sűrűség",
+ "Density evened: spread {before} to {after}": "Sűrűség kiegyenlítve: szórás {before} helyett {after}",
+ "Equalize UV Density": "UV-sűrűség kiegyenlítése",
+ "Even density": "Sűrűség kiegyenlítése",
+ "Even UV Density": "UV-sűrűség kiegyenlítése",
+ "Relax UVs": "UV-k lazítása",
+ "Show UV Density": "UV-sűrűség megjelenítése",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texelsűrűség {size} px-nél: {mean} egységenként {n} szigeten, {min} és {max} között (szórás {spread})",
+ "UV Density": "UV-sűrűség",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV-k lazítva: nyújtás {before} helyett {after} (1 a semmi)"
 }

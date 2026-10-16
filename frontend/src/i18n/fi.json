@@ -766,5 +766,15 @@
  "Snake from mask": "Käärme maskista",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Jokin muu on muuttunut sen jälkeen; Käytä käyrää lisää siirretyn käyrän uutena vaiheena",
  "The stroke is a curve now: move a handle and it is applied again": "Veto on nyt käyrä: siirrä kahvaa, niin se tehdään uudelleen",
- "Two face group numbers": "Kaksi pintaryhmän numeroa"
+ "Two face group numbers": "Kaksi pintaryhmän numeroa",
+ "Density": "Tiheys",
+ "Density evened: spread {before} to {after}": "Tiheys tasattu: hajonta {before} -> {after}",
+ "Equalize UV Density": "Tasaa UV-tiheys",
+ "Even density": "Tasaa tiheys",
+ "Even UV Density": "Tasaa UV-tiheys",
+ "Relax UVs": "Rentouta UV:t",
+ "Show UV Density": "Näytä UV-tiheys",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Tekselitiheys {size} px:llä: {mean} yksikköä kohden {n} saarella, {min} - {max} (hajonta {spread})",
+ "UV Density": "UV-tiheys",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV:t rentoutettu: venymä {before} -> {after} (1 on ei lainkaan)"
 }

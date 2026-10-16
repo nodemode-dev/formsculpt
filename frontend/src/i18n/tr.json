@@ -766,5 +766,15 @@
  "Snake from mask": "Maskeden yılan",
  "Something else changed since; Apply curve applies the moved curve as a new step": "O zamandan beri başka bir şey değişti; Eğriyi uygula taşınan eğriyi yeni bir adım olarak uygular",
  "The stroke is a curve now: move a handle and it is applied again": "Darbe artık bir eğri: bir tutamacı taşıyın, yeniden uygulanır",
- "Two face group numbers": "İki yüz grubu numarası"
+ "Two face group numbers": "İki yüz grubu numarası",
+ "Density": "Yoğunluk",
+ "Density evened: spread {before} to {after}": "Yoğunluk eşitlendi: yayılım {before} -> {after}",
+ "Equalize UV Density": "UV Yoğunluğunu Eşitle",
+ "Even density": "Yoğunluğu eşitle",
+ "Even UV Density": "UV Yoğunluğunu Eşitle",
+ "Relax UVs": "UV'leri Gevşet",
+ "Show UV Density": "UV Yoğunluğunu Göster",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px'te teksel yoğunluğu: {n} adada birim başına {mean}, {min} ile {max} arası (yayılım {spread})",
+ "UV Density": "UV Yoğunluğu",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV'ler gevşetildi: gerilme {before} -> {after} (1 hiç yok demek)"
 }

@@ -766,5 +766,15 @@
  "Snake from mask": "Rắn từ mặt nạ",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Đã có thay đổi khác kể từ đó; Áp dụng đường cong sẽ áp dụng đường cong đã di chuyển thành bước mới",
  "The stroke is a curve now: move a handle and it is applied again": "Nét giờ là đường cong: di chuyển tay nắm và nét được áp dụng lại",
- "Two face group numbers": "Hai số nhóm mặt"
+ "Two face group numbers": "Hai số nhóm mặt",
+ "Density": "Mật độ",
+ "Density evened: spread {before} to {after}": "Đã cân bằng mật độ: độ chênh {before} thành {after}",
+ "Equalize UV Density": "Cân bằng mật độ UV",
+ "Even density": "Cân bằng mật độ",
+ "Even UV Density": "Cân bằng mật độ UV",
+ "Relax UVs": "Thả lỏng UV",
+ "Show UV Density": "Hiện mật độ UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Mật độ texel ở {size} px: {mean} mỗi đơn vị trên {n} đảo, từ {min} đến {max} (độ chênh {spread})",
+ "UV Density": "Mật độ UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "Đã thả lỏng UV: độ giãn {before} thành {after} (1 là không có)"
 }

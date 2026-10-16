@@ -766,5 +766,15 @@
  "Snake from mask": "Wąż z maski",
  "Something else changed since; Apply curve applies the moved curve as a new step": "W międzyczasie zmieniło się coś innego; Zastosuj krzywą zastosuje przesuniętą krzywą jako nowy krok",
  "The stroke is a curve now: move a handle and it is applied again": "Pociągnięcie jest teraz krzywą: przesuń uchwyt, a zostanie zastosowane ponownie",
- "Two face group numbers": "Dwa numery grup ścian"
+ "Two face group numbers": "Dwa numery grup ścian",
+ "Density": "Gęstość",
+ "Density evened: spread {before} to {after}": "Gęstość wyrównana: rozrzut {before} do {after}",
+ "Equalize UV Density": "Wyrównaj gęstość UV",
+ "Even density": "Wyrównaj gęstość",
+ "Even UV Density": "Wyrównaj gęstość UV",
+ "Relax UVs": "Rozluźnij UV",
+ "Show UV Density": "Pokaż gęstość UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Gęstość tekseli przy {size} px: {mean} na jednostkę w {n} wyspach, od {min} do {max} (rozrzut {spread})",
+ "UV Density": "Gęstość UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV rozluźnione: rozciągnięcie {before} do {after} (1 to brak)"
 }

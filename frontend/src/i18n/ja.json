@@ -766,5 +766,15 @@
  "Snake from mask": "マスクからスネーク",
  "Something else changed since; Apply curve applies the moved curve as a new step": "その後ほかの変更がありました。カーブを適用で、動かしたカーブを新しいステップとして適用します",
  "The stroke is a curve now: move a handle and it is applied again": "ストロークはカーブになりました。ハンドルを動かすと再適用されます",
- "Two face group numbers": "2 つのフェースグループ番号"
+ "Two face group numbers": "2 つのフェースグループ番号",
+ "Density": "密度",
+ "Density evened: spread {before} to {after}": "密度を均一化: ばらつき {before} から {after}",
+ "Equalize UV Density": "UV 密度を均一化",
+ "Even density": "密度を均一化",
+ "Even UV Density": "UV 密度を均一化",
+ "Relax UVs": "UV をリラックス",
+ "Show UV Density": "UV 密度を表示",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px でのテクセル密度: {n} 個のアイランドで単位あたり {mean}、{min} から {max}（ばらつき {spread}）",
+ "UV Density": "UV 密度",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV をリラックス: 歪み {before} から {after}（1 は歪みなし）"
 }

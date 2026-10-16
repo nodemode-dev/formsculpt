@@ -766,5 +766,15 @@
  "Snake from mask": "Orm från mask",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Något annat har ändrats sedan dess; Tillämpa kurva tillämpar den flyttade kurvan som ett nytt steg",
  "The stroke is a curve now: move a handle and it is applied again": "Draget är nu en kurva: flytta ett handtag så tillämpas det igen",
- "Two face group numbers": "Två ytgruppsnummer"
+ "Two face group numbers": "Två ytgruppsnummer",
+ "Density": "Täthet",
+ "Density evened: spread {before} to {after}": "Täthet utjämnad: spridning {before} till {after}",
+ "Equalize UV Density": "Utjämna UV-täthet",
+ "Even density": "Utjämna täthet",
+ "Even UV Density": "Utjämna UV-täthet",
+ "Relax UVs": "Slappna av UV:er",
+ "Show UV Density": "Visa UV-täthet",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeltäthet vid {size} px: {mean} per enhet över {n} öar, {min} till {max} (spridning {spread})",
+ "UV Density": "UV-täthet",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV:er avslappnade: töjning {before} till {after} (1 är ingen)"
 }

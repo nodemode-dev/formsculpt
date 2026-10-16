@@ -766,5 +766,15 @@
  "Snake from mask": "마스크에서 스네이크",
  "Something else changed since; Apply curve applies the moved curve as a new step": "그 후 다른 변경이 있었습니다. 커브 적용은 옮긴 커브를 새 단계로 적용합니다",
  "The stroke is a curve now: move a handle and it is applied again": "스트로크가 이제 커브입니다. 핸들을 옮기면 다시 적용됩니다",
- "Two face group numbers": "면 그룹 번호 두 개"
+ "Two face group numbers": "면 그룹 번호 두 개",
+ "Density": "밀도",
+ "Density evened: spread {before} to {after}": "밀도 균일화: 편차 {before}에서 {after}",
+ "Equalize UV Density": "UV 밀도 균일화",
+ "Even density": "밀도 균일화",
+ "Even UV Density": "UV 밀도 균일화",
+ "Relax UVs": "UV 이완",
+ "Show UV Density": "UV 밀도 표시",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px 기준 텍셀 밀도: 아일랜드 {n}개에서 단위당 {mean}, {min}~{max} (편차 {spread})",
+ "UV Density": "UV 밀도",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 이완됨: 늘어남 {before}에서 {after} (1은 없음)"
 }

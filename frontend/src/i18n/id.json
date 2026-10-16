@@ -766,5 +766,15 @@
  "Snake from mask": "Ular dari masker",
  "Something else changed since; Apply curve applies the moved curve as a new step": "Ada perubahan lain sejak itu; Terapkan kurva menerapkan kurva yang dipindah sebagai langkah baru",
  "The stroke is a curve now: move a handle and it is applied again": "Goresan kini menjadi kurva: geser pegangan dan goresan diterapkan lagi",
- "Two face group numbers": "Dua nomor grup permukaan"
+ "Two face group numbers": "Dua nomor grup permukaan",
+ "Density": "Kepadatan",
+ "Density evened: spread {before} to {after}": "Kepadatan diratakan: sebaran {before} menjadi {after}",
+ "Equalize UV Density": "Ratakan Kepadatan UV",
+ "Even density": "Ratakan kepadatan",
+ "Even UV Density": "Ratakan Kepadatan UV",
+ "Relax UVs": "Kendurkan UV",
+ "Show UV Density": "Tampilkan Kepadatan UV",
+ "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Kepadatan texel pada {size} px: {mean} per unit di {n} pulau, {min} sampai {max} (sebaran {spread})",
+ "UV Density": "Kepadatan UV",
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV dikendurkan: regangan {before} menjadi {after} (1 berarti tidak ada)"
 }
