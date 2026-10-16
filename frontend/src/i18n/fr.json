@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler : arête",
  "ZModeler Face": "ZModeler : face",
  "ZModeler Point": "ZModeler : point",
- "Auto-crease": "Pli automatique"
+ "Auto-crease": "Pli automatique",
+ "Close hole": "Fermer le trou",
+ "Crease edge": "Plier l'arête",
+ "Crease point": "Plier le point",
+ "Delete face": "Supprimer la face",
+ "Extrude edge": "Extruder l'arête",
+ "Extrude face": "Extruder la face",
+ "Insert edge loop": "Insérer une boucle d'arêtes",
+ "Inset face": "Incruster la face",
+ "Uncrease edge": "Retirer le pli de l'arête",
+ "Uncrease point": "Retirer le pli du point"
 }

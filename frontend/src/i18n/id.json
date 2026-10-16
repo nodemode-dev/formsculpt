@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: tepi",
  "ZModeler Face": "ZModeler: muka",
  "ZModeler Point": "ZModeler: titik",
- "Auto-crease": "Lipatan otomatis"
+ "Auto-crease": "Lipatan otomatis",
+ "Close hole": "Tutup lubang",
+ "Crease edge": "Lipat tepi",
+ "Crease point": "Lipat titik",
+ "Delete face": "Hapus muka",
+ "Extrude edge": "Ekstrusi tepi",
+ "Extrude face": "Ekstrusi muka",
+ "Insert edge loop": "Sisipkan loop tepi",
+ "Inset face": "Inset muka",
+ "Uncrease edge": "Hapus lipatan tepi",
+ "Uncrease point": "Hapus lipatan titik"
 }

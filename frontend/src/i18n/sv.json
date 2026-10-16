@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: kant",
  "ZModeler Face": "ZModeler: yta",
  "ZModeler Point": "ZModeler: punkt",
- "Auto-crease": "Automatiskt veck"
+ "Auto-crease": "Automatiskt veck",
+ "Close hole": "Stäng hål",
+ "Crease edge": "Vecka kant",
+ "Crease point": "Vecka punkt",
+ "Delete face": "Ta bort yta",
+ "Extrude edge": "Extrudera kant",
+ "Extrude face": "Extrudera yta",
+ "Insert edge loop": "Infoga kantslinga",
+ "Inset face": "Infälld yta",
+ "Uncrease edge": "Ta bort kantveck",
+ "Uncrease point": "Ta bort punktveck"
 }

@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: エッジ",
  "ZModeler Face": "ZModeler: 面",
  "ZModeler Point": "ZModeler: 点",
- "Auto-crease": "自動クリース"
+ "Auto-crease": "自動クリース",
+ "Close hole": "穴を閉じる",
+ "Crease edge": "エッジをクリース",
+ "Crease point": "点をクリース",
+ "Delete face": "面を削除",
+ "Extrude edge": "エッジを押し出し",
+ "Extrude face": "面を押し出し",
+ "Insert edge loop": "エッジループを挿入",
+ "Inset face": "面を差し込み",
+ "Uncrease edge": "エッジのクリースを解除",
+ "Uncrease point": "点のクリースを解除"
 }

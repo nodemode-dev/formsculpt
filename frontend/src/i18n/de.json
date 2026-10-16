@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: Kante",
  "ZModeler Face": "ZModeler: Fläche",
  "ZModeler Point": "ZModeler: Punkt",
- "Auto-crease": "Automatische Kante"
+ "Auto-crease": "Automatische Kante",
+ "Close hole": "Loch schließen",
+ "Crease edge": "Kante schärfen",
+ "Crease point": "Punkt schärfen",
+ "Delete face": "Fläche löschen",
+ "Extrude edge": "Kante extrudieren",
+ "Extrude face": "Fläche extrudieren",
+ "Insert edge loop": "Kantenschleife einfügen",
+ "Inset face": "Fläche einsetzen",
+ "Uncrease edge": "Kantenschärfe entfernen",
+ "Uncrease point": "Punktschärfe entfernen"
 }

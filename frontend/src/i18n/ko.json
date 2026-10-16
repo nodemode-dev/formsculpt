@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: 엣지",
  "ZModeler Face": "ZModeler: 면",
  "ZModeler Point": "ZModeler: 점",
- "Auto-crease": "자동 크리스"
+ "Auto-crease": "자동 크리스",
+ "Close hole": "구멍 닫기",
+ "Crease edge": "엣지 크리스",
+ "Crease point": "점 크리스",
+ "Delete face": "면 삭제",
+ "Extrude edge": "엣지 돌출",
+ "Extrude face": "면 돌출",
+ "Insert edge loop": "엣지 루프 삽입",
+ "Inset face": "면 인셋",
+ "Uncrease edge": "엣지 크리스 해제",
+ "Uncrease point": "점 크리스 해제"
 }

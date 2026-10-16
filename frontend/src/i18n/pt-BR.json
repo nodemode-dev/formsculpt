@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: aresta",
  "ZModeler Face": "ZModeler: face",
  "ZModeler Point": "ZModeler: ponto",
- "Auto-crease": "Vinco automático"
+ "Auto-crease": "Vinco automático",
+ "Close hole": "Fechar buraco",
+ "Crease edge": "Vincar aresta",
+ "Crease point": "Vincar ponto",
+ "Delete face": "Excluir face",
+ "Extrude edge": "Extrudar aresta",
+ "Extrude face": "Extrudar face",
+ "Insert edge loop": "Inserir loop de arestas",
+ "Inset face": "Inserir face",
+ "Uncrease edge": "Remover vinco da aresta",
+ "Uncrease point": "Remover vinco do ponto"
 }

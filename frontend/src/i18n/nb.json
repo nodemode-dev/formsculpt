@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: kant",
  "ZModeler Face": "ZModeler: flate",
  "ZModeler Point": "ZModeler: punkt",
- "Auto-crease": "Automatisk fold"
+ "Auto-crease": "Automatisk fold",
+ "Close hole": "Lukk hull",
+ "Crease edge": "Fold kant",
+ "Crease point": "Fold punkt",
+ "Delete face": "Slett flate",
+ "Extrude edge": "Ekstruder kant",
+ "Extrude face": "Ekstruder flate",
+ "Insert edge loop": "Sett inn kantløkke",
+ "Inset face": "Senk flate",
+ "Uncrease edge": "Fjern fold fra kant",
+ "Uncrease point": "Fjern fold fra punkt"
 }

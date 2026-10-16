@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: spigolo",
  "ZModeler Face": "ZModeler: faccia",
  "ZModeler Point": "ZModeler: punto",
- "Auto-crease": "Piega automatica"
+ "Auto-crease": "Piega automatica",
+ "Close hole": "Chiudi foro",
+ "Crease edge": "Piega spigolo",
+ "Crease point": "Piega punto",
+ "Delete face": "Elimina faccia",
+ "Extrude edge": "Estrudi spigolo",
+ "Extrude face": "Estrudi faccia",
+ "Insert edge loop": "Inserisci loop di spigoli",
+ "Inset face": "Inserto faccia",
+ "Uncrease edge": "Togli piega allo spigolo",
+ "Uncrease point": "Togli piega al punto"
 }

@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: reuna",
  "ZModeler Face": "ZModeler: tahko",
  "ZModeler Point": "ZModeler: piste",
- "Auto-crease": "Automaattinen taite"
+ "Auto-crease": "Automaattinen taite",
+ "Close hole": "Sulje reikä",
+ "Crease edge": "Taita reuna",
+ "Crease point": "Taita piste",
+ "Delete face": "Poista tahko",
+ "Extrude edge": "Pursota reuna",
+ "Extrude face": "Pursota tahko",
+ "Insert edge loop": "Lisää reunasilmukka",
+ "Inset face": "Upota tahko",
+ "Uncrease edge": "Poista reunan taite",
+ "Uncrease point": "Poista pisteen taite"
 }

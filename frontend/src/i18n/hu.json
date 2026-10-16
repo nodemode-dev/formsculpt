@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: él",
  "ZModeler Face": "ZModeler: lap",
  "ZModeler Point": "ZModeler: pont",
- "Auto-crease": "Automatikus élesítés"
+ "Auto-crease": "Automatikus élesítés",
+ "Close hole": "Lyuk lezárása",
+ "Crease edge": "Él élesítése",
+ "Crease point": "Pont élesítése",
+ "Delete face": "Lap törlése",
+ "Extrude edge": "Él kihúzása",
+ "Extrude face": "Lap kihúzása",
+ "Insert edge loop": "Élhurok beszúrása",
+ "Inset face": "Lap besüllyesztése",
+ "Uncrease edge": "Él élesítésének törlése",
+ "Uncrease point": "Pont élesítésének törlése"
 }

@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: hrana",
  "ZModeler Face": "ZModeler: plocha",
  "ZModeler Point": "ZModeler: bod",
- "Auto-crease": "Automatické ostření"
+ "Auto-crease": "Automatické ostření",
+ "Close hole": "Uzavřít díru",
+ "Crease edge": "Zostřit hranu",
+ "Crease point": "Zostřit bod",
+ "Delete face": "Smazat plochu",
+ "Extrude edge": "Vytáhnout hranu",
+ "Extrude face": "Vytáhnout plochu",
+ "Insert edge loop": "Vložit smyčku hran",
+ "Inset face": "Vsadit plochu",
+ "Uncrease edge": "Zrušit ostření hrany",
+ "Uncrease point": "Zrušit ostření bodu"
 }

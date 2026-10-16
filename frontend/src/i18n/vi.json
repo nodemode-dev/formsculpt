@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: cạnh",
  "ZModeler Face": "ZModeler: mặt",
  "ZModeler Point": "ZModeler: điểm",
- "Auto-crease": "Tự động tạo nếp gấp"
+ "Auto-crease": "Tự động tạo nếp gấp",
+ "Close hole": "Đóng lỗ",
+ "Crease edge": "Gấp cạnh",
+ "Crease point": "Gấp điểm",
+ "Delete face": "Xóa mặt",
+ "Extrude edge": "Đùn cạnh",
+ "Extrude face": "Đùn mặt",
+ "Insert edge loop": "Chèn vòng cạnh",
+ "Inset face": "Thu mặt vào",
+ "Uncrease edge": "Bỏ gấp cạnh",
+ "Uncrease point": "Bỏ gấp điểm"
 }

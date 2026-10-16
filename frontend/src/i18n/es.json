@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: arista",
  "ZModeler Face": "ZModeler: cara",
  "ZModeler Point": "ZModeler: punto",
- "Auto-crease": "Pliegue automático"
+ "Auto-crease": "Pliegue automático",
+ "Close hole": "Cerrar agujero",
+ "Crease edge": "Plegar arista",
+ "Crease point": "Plegar punto",
+ "Delete face": "Eliminar cara",
+ "Extrude edge": "Extruir arista",
+ "Extrude face": "Extruir cara",
+ "Insert edge loop": "Insertar bucle de aristas",
+ "Inset face": "Insertar cara",
+ "Uncrease edge": "Quitar pliegue de arista",
+ "Uncrease point": "Quitar pliegue de punto"
 }

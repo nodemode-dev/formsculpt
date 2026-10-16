@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: ขอบ",
  "ZModeler Face": "ZModeler: หน้า",
  "ZModeler Point": "ZModeler: จุด",
- "Auto-crease": "รอยพับอัตโนมัติ"
+ "Auto-crease": "รอยพับอัตโนมัติ",
+ "Close hole": "ปิดรู",
+ "Crease edge": "พับขอบ",
+ "Crease point": "พับจุด",
+ "Delete face": "ลบหน้า",
+ "Extrude edge": "ดึงขอบออก",
+ "Extrude face": "ดึงหน้าออก",
+ "Insert edge loop": "แทรกลูปขอบ",
+ "Inset face": "แทรกหน้าด้านใน",
+ "Uncrease edge": "ยกเลิกการพับขอบ",
+ "Uncrease point": "ยกเลิกการพับจุด"
 }

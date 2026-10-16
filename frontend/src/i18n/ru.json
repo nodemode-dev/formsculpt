@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: ребро",
  "ZModeler Face": "ZModeler: грань",
  "ZModeler Point": "ZModeler: точка",
- "Auto-crease": "Автоматическая складка"
+ "Auto-crease": "Автоматическая складка",
+ "Close hole": "Закрыть отверстие",
+ "Crease edge": "Заострить ребро",
+ "Crease point": "Заострить точку",
+ "Delete face": "Удалить грань",
+ "Extrude edge": "Выдавить ребро",
+ "Extrude face": "Выдавить грань",
+ "Insert edge loop": "Вставить петлю рёбер",
+ "Inset face": "Вставить грань",
+ "Uncrease edge": "Снять заострение ребра",
+ "Uncrease point": "Снять заострение точки"
 }

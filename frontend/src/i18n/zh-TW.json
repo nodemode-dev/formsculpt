@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler：邊",
  "ZModeler Face": "ZModeler：面",
  "ZModeler Point": "ZModeler：點",
- "Auto-crease": "自動摺痕"
+ "Auto-crease": "自動摺痕",
+ "Close hole": "封閉孔洞",
+ "Crease edge": "邊摺痕",
+ "Crease point": "點摺痕",
+ "Delete face": "刪除面",
+ "Extrude edge": "擠出邊",
+ "Extrude face": "擠出面",
+ "Insert edge loop": "插入循環邊",
+ "Inset face": "內插面",
+ "Uncrease edge": "取消邊摺痕",
+ "Uncrease point": "取消點摺痕"
 }

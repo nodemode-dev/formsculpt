@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: kenar",
  "ZModeler Face": "ZModeler: yüz",
  "ZModeler Point": "ZModeler: nokta",
- "Auto-crease": "Otomatik kırışık"
+ "Auto-crease": "Otomatik kırışık",
+ "Close hole": "Deliği kapat",
+ "Crease edge": "Kenarı kırıştır",
+ "Crease point": "Noktayı kırıştır",
+ "Delete face": "Yüzü sil",
+ "Extrude edge": "Kenarı ekstrüde et",
+ "Extrude face": "Yüzü ekstrüde et",
+ "Insert edge loop": "Kenar döngüsü ekle",
+ "Inset face": "Yüzü içe al",
+ "Uncrease edge": "Kenar kırışığını kaldır",
+ "Uncrease point": "Nokta kırışığını kaldır"
 }

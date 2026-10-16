@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: rand",
  "ZModeler Face": "ZModeler: vlak",
  "ZModeler Point": "ZModeler: punt",
- "Auto-crease": "Automatische vouw"
+ "Auto-crease": "Automatische vouw",
+ "Close hole": "Gat dichten",
+ "Crease edge": "Rand vouwen",
+ "Crease point": "Punt vouwen",
+ "Delete face": "Vlak verwijderen",
+ "Extrude edge": "Rand extruderen",
+ "Extrude face": "Vlak extruderen",
+ "Insert edge loop": "Randlus invoegen",
+ "Inset face": "Vlak inzetten",
+ "Uncrease edge": "Randvouw opheffen",
+ "Uncrease point": "Puntvouw opheffen"
 }

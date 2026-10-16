@@ -973,5 +973,15 @@
  "ZModeler Edge": "ZModeler: krawędź",
  "ZModeler Face": "ZModeler: ściana",
  "ZModeler Point": "ZModeler: punkt",
- "Auto-crease": "Automatyczne zagięcie"
+ "Auto-crease": "Automatyczne zagięcie",
+ "Close hole": "Zamknij otwór",
+ "Crease edge": "Zagnij krawędź",
+ "Crease point": "Zagnij punkt",
+ "Delete face": "Usuń ścianę",
+ "Extrude edge": "Wyciągnij krawędź",
+ "Extrude face": "Wyciągnij ścianę",
+ "Insert edge loop": "Wstaw pętlę krawędzi",
+ "Inset face": "Wstaw ścianę",
+ "Uncrease edge": "Usuń zagięcie krawędzi",
+ "Uncrease point": "Usuń zagięcie punktu"
 }
