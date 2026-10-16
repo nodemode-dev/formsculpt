@@ -843,5 +843,11 @@
  "Scatter on Surface": "Разбросать по поверхности",
  "Scatter on surface": "Разбросать по поверхности",
  "Scattered {placed} of {requested} copies": "Разбросано копий: {placed} из {requested}",
- "Separate copies": "Отдельные копии"
+ "Separate copies": "Отдельные копии",
+ "Elastic": "Эластичный",
+ "Layer height %": "Высота слоя %",
+ "Layer reset": "Сброс слоя",
+ "Layer reset needs an active sculpt layer": "Для сброса слоя нужен активный слой скульптинга",
+ "Nudge": "Сдвиг",
+ "Polish": "Полировка"
 }

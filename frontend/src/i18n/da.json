@@ -843,5 +843,11 @@
  "Scatter on Surface": "Spred på overflade",
  "Scatter on surface": "Spred på overflade",
  "Scattered {placed} of {requested} copies": "Spredte {placed} af {requested} kopier",
- "Separate copies": "Separate kopier"
+ "Separate copies": "Separate kopier",
+ "Elastic": "Elastisk",
+ "Layer height %": "Laghøjde %",
+ "Layer reset": "Nulstil lag",
+ "Layer reset needs an active sculpt layer": "Nulstil lag kræver et aktivt sculpt-lag",
+ "Nudge": "Skub",
+ "Polish": "Polér"
 }

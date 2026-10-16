@@ -843,5 +843,11 @@
  "Scatter on Surface": "散佈到表面",
  "Scatter on surface": "散佈到表面",
  "Scattered {placed} of {requested} copies": "已散佈 {requested} 個複本中的 {placed} 個",
- "Separate copies": "獨立複本"
+ "Separate copies": "獨立複本",
+ "Elastic": "彈性",
+ "Layer height %": "圖層高度 %",
+ "Layer reset": "圖層重設",
+ "Layer reset needs an active sculpt layer": "圖層重設需要一個啟用中的雕刻圖層",
+ "Nudge": "推移",
+ "Polish": "拋光"
 }

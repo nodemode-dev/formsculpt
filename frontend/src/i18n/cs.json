@@ -843,5 +843,11 @@
  "Scatter on Surface": "Rozptýlit po povrchu",
  "Scatter on surface": "Rozptýlit po povrchu",
  "Scattered {placed} of {requested} copies": "Rozptýleno {placed} z {requested} kopií",
- "Separate copies": "Samostatné kopie"
+ "Separate copies": "Samostatné kopie",
+ "Elastic": "Elastický",
+ "Layer height %": "Výška vrstvy %",
+ "Layer reset": "Reset vrstvy",
+ "Layer reset needs an active sculpt layer": "Reset vrstvy vyžaduje aktivní vrstvu sochání",
+ "Nudge": "Postrčit",
+ "Polish": "Leštit"
 }

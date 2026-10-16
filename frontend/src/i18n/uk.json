@@ -843,5 +843,11 @@
  "Scatter on Surface": "Розсіяти по поверхні",
  "Scatter on surface": "Розсіяти по поверхні",
  "Scattered {placed} of {requested} copies": "Розсіяно копій: {placed} з {requested}",
- "Separate copies": "Окремі копії"
+ "Separate copies": "Окремі копії",
+ "Elastic": "Еластичний",
+ "Layer height %": "Висота шару %",
+ "Layer reset": "Скидання шару",
+ "Layer reset needs an active sculpt layer": "Для скидання шару потрібен активний шар скульптингу",
+ "Nudge": "Зсув",
+ "Polish": "Полірування"
 }

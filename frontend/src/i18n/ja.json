@@ -843,5 +843,11 @@
  "Scatter on Surface": "サーフェスに散布",
  "Scatter on surface": "サーフェスに散布",
  "Scattered {placed} of {requested} copies": "{requested} 個中 {placed} 個のコピーを散布しました",
- "Separate copies": "別々のコピー"
+ "Separate copies": "別々のコピー",
+ "Elastic": "エラスティック",
+ "Layer height %": "レイヤーの高さ %",
+ "Layer reset": "レイヤーリセット",
+ "Layer reset needs an active sculpt layer": "レイヤーリセットにはアクティブなスカルプトレイヤーが必要です",
+ "Nudge": "ナッジ",
+ "Polish": "ポリッシュ"
 }

@@ -843,5 +843,11 @@
  "Scatter on Surface": "Sprid på yta",
  "Scatter on surface": "Sprid på yta",
  "Scattered {placed} of {requested} copies": "Spred {placed} av {requested} kopior",
- "Separate copies": "Separata kopior"
+ "Separate copies": "Separata kopior",
+ "Elastic": "Elastisk",
+ "Layer height %": "Lagerhöjd %",
+ "Layer reset": "Återställ lager",
+ "Layer reset needs an active sculpt layer": "Återställ lager kräver ett aktivt skulptlager",
+ "Nudge": "Knuffa",
+ "Polish": "Polera"
 }

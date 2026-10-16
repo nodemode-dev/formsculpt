@@ -843,5 +843,11 @@
  "Scatter on Surface": "Verstrooien op oppervlak",
  "Scatter on surface": "Verstrooien op oppervlak",
  "Scattered {placed} of {requested} copies": "{placed} van {requested} kopieën verstrooid",
- "Separate copies": "Aparte kopieën"
+ "Separate copies": "Aparte kopieën",
+ "Elastic": "Elastisch",
+ "Layer height %": "Laaghoogte %",
+ "Layer reset": "Laag resetten",
+ "Layer reset needs an active sculpt layer": "Laag resetten vereist een actieve sculptlaag",
+ "Nudge": "Duwen",
+ "Polish": "Polijsten"
 }

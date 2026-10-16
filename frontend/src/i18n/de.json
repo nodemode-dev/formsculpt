@@ -843,5 +843,11 @@
  "Scatter on Surface": "Auf Oberfläche streuen",
  "Scatter on surface": "Auf Oberfläche streuen",
  "Scattered {placed} of {requested} copies": "{placed} von {requested} Kopien gestreut",
- "Separate copies": "Getrennte Kopien"
+ "Separate copies": "Getrennte Kopien",
+ "Elastic": "Elastisch",
+ "Layer height %": "Ebenenhöhe %",
+ "Layer reset": "Ebenen-Reset",
+ "Layer reset needs an active sculpt layer": "Ebenen-Reset benötigt eine aktive Sculpt-Ebene",
+ "Nudge": "Schieben",
+ "Polish": "Polieren"
 }

@@ -843,5 +843,11 @@
  "Scatter on Surface": "กระจายบนพื้นผิว",
  "Scatter on surface": "กระจายบนพื้นผิว",
  "Scattered {placed} of {requested} copies": "กระจายแล้ว {placed} จาก {requested} สำเนา",
- "Separate copies": "สำเนาแยก"
+ "Separate copies": "สำเนาแยก",
+ "Elastic": "อีลาสติก",
+ "Layer height %": "ความสูงเลเยอร์ %",
+ "Layer reset": "รีเซ็ตเลเยอร์",
+ "Layer reset needs an active sculpt layer": "การรีเซ็ตเลเยอร์ต้องมีเลเยอร์สคัลป์ที่ใช้งานอยู่",
+ "Nudge": "นัดจ์",
+ "Polish": "โพลิช"
 }

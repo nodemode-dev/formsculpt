@@ -843,5 +843,11 @@
  "Scatter on Surface": "Hajota pinnalle",
  "Scatter on surface": "Hajota pinnalle",
  "Scattered {placed} of {requested} copies": "Hajotettiin {placed} / {requested} kopiota",
- "Separate copies": "Erilliset kopiot"
+ "Separate copies": "Erilliset kopiot",
+ "Elastic": "Joustava",
+ "Layer height %": "Kerroksen korkeus %",
+ "Layer reset": "Kerroksen nollaus",
+ "Layer reset needs an active sculpt layer": "Kerroksen nollaus vaatii aktiivisen veistokerroksen",
+ "Nudge": "Työntö",
+ "Polish": "Kiillotus"
 }

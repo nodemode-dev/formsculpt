@@ -843,5 +843,11 @@
  "Scatter on Surface": "Sebar di Permukaan",
  "Scatter on surface": "Sebar di permukaan",
  "Scattered {placed} of {requested} copies": "{placed} dari {requested} salinan disebar",
- "Separate copies": "Salinan terpisah"
+ "Separate copies": "Salinan terpisah",
+ "Elastic": "Elastis",
+ "Layer height %": "Tinggi layer %",
+ "Layer reset": "Reset layer",
+ "Layer reset needs an active sculpt layer": "Reset layer memerlukan sculpt layer yang aktif",
+ "Nudge": "Geser",
+ "Polish": "Poles"
 }

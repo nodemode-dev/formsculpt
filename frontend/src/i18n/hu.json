@@ -843,5 +843,11 @@
  "Scatter on Surface": "Szórás felületre",
  "Scatter on surface": "Szórás felületre",
  "Scattered {placed} of {requested} copies": "{requested} másolatból {placed} szétszórva",
- "Separate copies": "Különálló másolatok"
+ "Separate copies": "Különálló másolatok",
+ "Elastic": "Rugalmas",
+ "Layer height %": "Réteg magassága %",
+ "Layer reset": "Réteg visszaállítása",
+ "Layer reset needs an active sculpt layer": "A réteg visszaállításához aktív szobrászréteg szükséges",
+ "Nudge": "Tolás",
+ "Polish": "Csiszolás"
 }

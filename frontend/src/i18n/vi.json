@@ -843,5 +843,11 @@
  "Scatter on Surface": "Rải lên bề mặt",
  "Scatter on surface": "Rải lên bề mặt",
  "Scattered {placed} of {requested} copies": "Đã rải {placed} trên {requested} bản sao",
- "Separate copies": "Bản sao riêng"
+ "Separate copies": "Bản sao riêng",
+ "Elastic": "Đàn hồi",
+ "Layer height %": "Chiều cao Layer %",
+ "Layer reset": "Reset Layer",
+ "Layer reset needs an active sculpt layer": "Reset Layer cần một sculpt layer đang hoạt động",
+ "Nudge": "Đẩy nhẹ",
+ "Polish": "Đánh bóng"
 }

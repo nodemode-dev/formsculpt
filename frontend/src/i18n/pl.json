@@ -843,5 +843,11 @@
  "Scatter on Surface": "Rozproś na powierzchni",
  "Scatter on surface": "Rozproś na powierzchni",
  "Scattered {placed} of {requested} copies": "Rozproszono {placed} z {requested} kopii",
- "Separate copies": "Osobne kopie"
+ "Separate copies": "Osobne kopie",
+ "Elastic": "Elastyczny",
+ "Layer height %": "Wysokość warstwy %",
+ "Layer reset": "Reset warstwy",
+ "Layer reset needs an active sculpt layer": "Reset warstwy wymaga aktywnej warstwy rzeźby",
+ "Nudge": "Przesunięcie",
+ "Polish": "Polerowanie"
 }

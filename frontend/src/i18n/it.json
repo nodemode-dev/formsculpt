@@ -843,5 +843,11 @@
  "Scatter on Surface": "Disperdi sulla superficie",
  "Scatter on surface": "Disperdi sulla superficie",
  "Scattered {placed} of {requested} copies": "Disperse {placed} copie su {requested}",
- "Separate copies": "Copie separate"
+ "Separate copies": "Copie separate",
+ "Elastic": "Elastico",
+ "Layer height %": "Altezza livello %",
+ "Layer reset": "Ripristina livello",
+ "Layer reset needs an active sculpt layer": "Ripristina livello richiede un livello di scultura attivo",
+ "Nudge": "Spingi",
+ "Polish": "Leviga"
 }

@@ -843,5 +843,11 @@
  "Scatter on Surface": "Yüzeye Saç",
  "Scatter on surface": "Yüzeye saç",
  "Scattered {placed} of {requested} copies": "{requested} kopyadan {placed} tanesi saçıldı",
- "Separate copies": "Ayrı kopyalar"
+ "Separate copies": "Ayrı kopyalar",
+ "Elastic": "Esnek",
+ "Layer height %": "Katman yüksekliği %",
+ "Layer reset": "Katman sıfırlama",
+ "Layer reset needs an active sculpt layer": "Katman sıfırlama için etkin bir heykel katmanı gerekir",
+ "Nudge": "İtme",
+ "Polish": "Parlatma"
 }

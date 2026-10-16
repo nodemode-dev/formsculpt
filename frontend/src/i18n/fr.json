@@ -843,5 +843,11 @@
  "Scatter on Surface": "Disperser sur la surface",
  "Scatter on surface": "Disperser sur la surface",
  "Scattered {placed} of {requested} copies": "{placed} copies sur {requested} dispersées",
- "Separate copies": "Copies séparées"
+ "Separate copies": "Copies séparées",
+ "Elastic": "Élastique",
+ "Layer height %": "Hauteur du calque %",
+ "Layer reset": "Réinitialisation du calque",
+ "Layer reset needs an active sculpt layer": "La réinitialisation du calque nécessite un calque de sculpture actif",
+ "Nudge": "Décaler",
+ "Polish": "Polir"
 }

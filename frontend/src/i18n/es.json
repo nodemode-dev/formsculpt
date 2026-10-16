@@ -843,5 +843,11 @@
  "Scatter on Surface": "Dispersar en superficie",
  "Scatter on surface": "Dispersar en superficie",
  "Scattered {placed} of {requested} copies": "Se dispersaron {placed} de {requested} copias",
- "Separate copies": "Copias separadas"
+ "Separate copies": "Copias separadas",
+ "Elastic": "Elástico",
+ "Layer height %": "Altura de capa %",
+ "Layer reset": "Reinicio de capa",
+ "Layer reset needs an active sculpt layer": "El reinicio de capa necesita una capa de escultura activa",
+ "Nudge": "Empujar",
+ "Polish": "Pulir"
 }

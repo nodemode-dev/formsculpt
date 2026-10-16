@@ -843,5 +843,11 @@
  "Scatter on Surface": "표면에 흩뿌리기",
  "Scatter on surface": "표면에 흩뿌리기",
  "Scattered {placed} of {requested} copies": "복사본 {requested}개 중 {placed}개를 흩뿌렸습니다",
- "Separate copies": "개별 복사본"
+ "Separate copies": "개별 복사본",
+ "Elastic": "엘라스틱",
+ "Layer height %": "레이어 높이 %",
+ "Layer reset": "레이어 리셋",
+ "Layer reset needs an active sculpt layer": "레이어 리셋에는 활성 스컬프트 레이어가 필요합니다",
+ "Nudge": "넛지",
+ "Polish": "폴리시"
 }
