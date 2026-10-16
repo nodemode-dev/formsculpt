@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.51.0 · 2026-10-16
+
+### Added
+
+- Selection shapes for `mask_shape`, `group_from_outline` and `cut_shape`: polygon, curve (a smooth closed outline), path (a band `stroke_width` wide), line (one side of a line) and `flip` on every shape; `hide_shape` (hide or show by shape) and `split_shape` (faces inside become a new object, closed with `close`).
+- `extract_mask` `mode`: shell (as before), balloon, extrude, splat and project; all closed and watertight.
+- Window: Selection shape, Selection action (mask, hide, show, new face group, split off), Flip selection and Path width for the Box and Lasso mask tools; Extract as.
+- 145 engine commands; 895 interface strings in every language.
+
 ## 0.50.0 · 2026-10-16
 
 ### Added
