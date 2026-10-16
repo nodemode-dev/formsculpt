@@ -126,6 +126,8 @@ interface Shell {
   uvImage: HTMLImageElement;
   uvEmpty: HTMLSpanElement;
   uvButtons: HTMLButtonElement[];
+  uvPathLine: SVGPolylineElement;
+  uvPinMarks: SVGPathElement;
   layout: PanelLayout;
   panelLeft: HTMLInputElement;
   uiSize: HTMLSelectElement;
@@ -827,7 +829,15 @@ function buildShell(root: HTMLElement): Shell {
   uvImage.draggable = false;
   uvImage.hidden = true;
   const uvEmpty = el('span', '', 'No UVs yet; Unwrap to make them');
-  uvView.append(uvImage, uvEmpty);
+  // Marks over the picture in UV space (0 to 100 each way): the path through Ctrl-clicked points and Alt-clicked pins.
+  const uvMarks = document.createElementNS(SVG, 'svg');
+  uvMarks.setAttribute('class', 'uv-marks');
+  uvMarks.setAttribute('viewBox', '0 0 100 100');
+  uvMarks.setAttribute('preserveAspectRatio', 'none');
+  const uvPathLine = document.createElementNS(SVG, 'polyline');
+  const uvPinMarks = document.createElementNS(SVG, 'path');
+  uvMarks.append(uvPathLine, uvPinMarks);
+  uvView.append(uvImage, uvEmpty, uvMarks);
   panel.append(uvView);
   const uvGrid = el('div', 'add-grid three after-fields');
   const uvButtons = (
@@ -842,6 +852,9 @@ function buildShell(root: HTMLElement): Shell {
       ['equalize', 'Even density'],
       ['density', 'Density'],
       ['sew', 'Sew to neighbour'],
+      ['cut_path', 'Cut along path'],
+      ['straighten_path', 'Straighten path'],
+      ['clear_marks', 'Clear points'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -852,6 +865,7 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(uvGrid);
   panel.append(el('p', 'panel-hint', 'Click an island to choose it; drag to move it.'));
+  panel.append(el('p', 'panel-hint', 'Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.'));
 
   panel.append(el('h2', 'gap', 'Edit'));
   const actionGrid = el('div', 'add-grid two');
@@ -1171,7 +1185,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvPathLine, uvPinMarks, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -4072,6 +4086,16 @@ class SceneView {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     const has = o?.uvs === true;
     const key = o && has ? `${o.id}:${o.revision}:${this.uvIsland ?? ''}` : '';
+    // Pins and the path name vertices of one object's layout as it stood; any change to it leaves them stale.
+    const markKey = o && has ? `${o.id}:${o.revision}` : '';
+    if (markKey !== this.uvMarksFor) {
+      this.uvMarksFor = markKey;
+      if (this.uvPins.size || this.uvPath) {
+        this.uvPins.clear();
+        this.uvPath = null;
+        this.drawUvMarks();
+      }
+    }
     if (!force && key === this.uvShown) return;
     this.uvShown = key;
     this.shell.uvEmpty.hidden = has;
@@ -4095,6 +4119,81 @@ class SceneView {
     return [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
   }
 
+  /** UV points marked in the UV view: pins for Relax (Alt-click) and a vertex path for Cut and Straighten (Ctrl-click). */
+  private uvPins = new Map<number, [number, number]>();
+  private uvMarksFor = '';
+  private uvPath: { vertices: number[]; marks: [number, number][]; island: number } | null = null;
+
+  private async uvMark(id: number, at: [number, number], kind: 'pin' | 'path'): Promise<void> {
+    const hit = await dispatch<{ vertex: number | null; uv?: [number, number]; island?: number }>('uv_pick', { id, at, radius: 0.03 });
+    if (!hit.ok) {
+      this.note(hit.error.message);
+      return;
+    }
+    const { vertex, uv, island } = hit.result;
+    if (vertex === null || !uv || island === undefined) {
+      this.note(t('No UV point there'));
+      return;
+    }
+    if (kind === 'pin') {
+      if (this.uvPins.has(vertex)) this.uvPins.delete(vertex);
+      else this.uvPins.set(vertex, uv);
+      this.note(t('{n} pinned points; Relax keeps them still').replace('{n}', String(this.uvPins.size)));
+    } else if (!this.uvPath || this.uvPath.island !== island) {
+      this.uvPath = { vertices: [vertex], marks: [uv], island };
+      this.note(t('Path started; Ctrl-click more points in the same island'));
+    } else {
+      const last = this.uvPath.vertices[this.uvPath.vertices.length - 1];
+      if (last === vertex) return;
+      const leg = await dispatch<{ path: number[] }>('uv_path', { id, from: last, to: vertex, island });
+      if (!leg.ok) {
+        this.note(leg.error.message);
+        return;
+      }
+      this.uvPath.vertices.push(...leg.result.path.slice(1));
+      this.uvPath.marks.push(uv);
+      this.note(t('Path of {n} points; Cut along path or Straighten path').replace('{n}', String(this.uvPath.vertices.length)));
+    }
+    this.drawUvMarks();
+  }
+
+  /** Pins as rings and the path through its clicked points, over the layout picture (v up). */
+  private drawUvMarks(): void {
+    const xy = ([u, v]: [number, number]): [number, number] => [u * 100, (1 - v) * 100];
+    const ring = ([x, y]: [number, number]): string => `M${(x - 1.6).toFixed(2)},${y.toFixed(2)}a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0`;
+    setAttr(this.shell.uvPinMarks, 'd', [...this.uvPins.values()].map((p) => ring(xy(p))).join(''));
+    setAttr(this.shell.uvPathLine, 'points', this.uvPath ? this.uvPath.marks.map((p) => xy(p).map((n) => n.toFixed(2)).join(',')).join(' ') : '');
+  }
+
+  private async uvPathAction(id: number, action: 'cut_path' | 'straighten_path' | 'clear_marks'): Promise<void> {
+    if (action === 'clear_marks') {
+      this.uvPins.clear();
+      this.uvPath = null;
+      this.drawUvMarks();
+      this.note('');
+      return;
+    }
+    const path = this.uvPath?.vertices ?? [];
+    if (path.length < 2) {
+      this.note(t('Ctrl-click two or more points of one island in the UV view first'));
+      return;
+    }
+    const reply =
+      action === 'cut_path'
+        ? await dispatch<{ islands_before: number; islands_after: number }>('uv_cut', { id, path })
+        : await dispatch<{ distortion_before: number; distortion_after: number }>('uv_straighten', { id, path });
+    if (!reply.ok) {
+      this.note(reply.error.message);
+      return;
+    }
+    this.uvPath = null;
+    this.uvPins.clear();
+    this.drawUvMarks();
+    await this.refresh();
+    void this.drawUv(true);
+    this.note(action === 'cut_path' ? t('Seam cut along the path') : t('Path straightened'));
+  }
+
   /** Click chooses the island under the pointer; a drag moves the island it started on by the drag, Shift-drag one UV point. */
   private wireUvView(): void {
     const view = this.shell.uvView;
@@ -4116,6 +4215,10 @@ class SceneView {
         else void this.uvRun('uv_transform', { id, at: from.uv, translate: [to[0] - from.uv[0], to[1] - from.uv[1]] });
         return;
       }
+      if (e.altKey || e.ctrlKey || e.metaKey) {
+        void this.uvMark(id, from.uv, e.altKey ? 'pin' : 'path');
+        return;
+      }
       void dispatch<{ selected: number | null }>('get_uv_layout', { id, size: 64, at: from.uv }).then((reply) => {
         if (!reply.ok) return;
         this.uvIsland = reply.result.selected;
@@ -4135,6 +4238,7 @@ class SceneView {
         else if (action === 'pack') void this.uvRun('uv_pack', { id });
         else if (action === 'refresh') void this.drawUv(true);
         else if (action === 'relax' || action === 'equalize' || action === 'density') void this.uvMeasure(id, action);
+        else if (action === 'cut_path' || action === 'straighten_path' || action === 'clear_marks') void this.uvPathAction(id, action);
         else if (this.uvIsland === null) this.note('Click an island in the UV view first');
         else if (action === 'sew') void this.uvSew(id, this.uvIsland);
         else if (action === 'rotate') void this.uvRun('uv_transform', { id, island: this.uvIsland, rotate: 90 });
@@ -4153,7 +4257,7 @@ class SceneView {
       return;
     }
     if (action === 'relax') {
-      const r = await dispatch<{ distortion_before: number; distortion_after: number }>('uv_relax', { id, mode: 'conformal', iterations: 60 });
+      const r = await dispatch<{ distortion_before: number; distortion_after: number }>('uv_relax', { id, mode: 'conformal', iterations: 60, ...(this.uvPins.size ? { pinned: [...this.uvPins.keys()] } : {}) });
       if (!r.ok) this.note(r.error.message);
       else this.note(t('UVs relaxed: stretch {before} to {after} (1 is none)').replace('{before}', r.result.distortion_before.toFixed(3)).replace('{after}', r.result.distortion_after.toFixed(3)));
     } else {

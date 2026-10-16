@@ -477,3 +477,9 @@ Three buttons over the engine's new UV commands. Relax runs uv_relax conformally
 - kind: rationale
 - logged: v0.41.0 · 2026-10-16
 The window has no way yet to name a second island or a vertex path, so cut and straighten stay agent and palette commands for now, and sewing takes the chosen island and tries uv_sew against each other island in turn (the chosen one moves), stopping at the first that shares mesh edges; any refusal other than no_shared_edges is shown and stops the search. Island numbers come from uv_density's list, which uses the same island numbering. The choice is cleared after a sew because the numbering changes.
+
+### UV view: pins and vertex paths
+- refers-to: app.ts :: uvMark, drawUvMarks, uvPathAction, uvPins, uvPath, uvMarksFor, drawUv, wireUvView; styles/shell.css .uv-marks
+- kind: rationale
+- logged: v0.42.0 · 2026-10-16
+Alt-click in the UV view pins the nearest UV point (uv_pick, radius 0.03; a second Alt-click unpins), and Relax sends the pins as uv_relax's pinned list. Ctrl-click starts a path at the nearest point and each further Ctrl-click in the same island extends it by uv_path's shortest edge path, so a few clicks give a long chain; a click in another island starts a new path. Cut along path and Straighten path send the chain to uv_cut and uv_straighten (clicking the first point again closes a loop for a cut). The marks are an SVG over the picture in UV space (0 to 100, v up) with pointer events off, drawn through the clicked points and pins only, not every vertex of the path. Pins and the path name vertices of the layout as it stood, so they are dropped whenever the active object or its revision changes.

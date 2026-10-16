@@ -61,6 +61,9 @@ button { font: inherit; color: inherit; }
 .uv-view { position: relative; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
 .uv-view img { display: block; width: 100%; height: 100%; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
 .uv-view [hidden] { display: none; }
+.uv-view .uv-marks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }
+.uv-view .uv-marks polyline { fill: none; stroke: var(--accent-color); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.uv-view .uv-marks path { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .uv-view span { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-2); text-align: center; color: var(--text-muted); font-size: 12px; pointer-events: none; }
 .panel h2.gap { margin-top: var(--space-5); }
 .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }

@@ -77,7 +77,7 @@ const OBJECT: MenuItem[] = [
 
 const PAINT: MenuItem[] = [
   ...tool('paint'), 'paint.fill', 'paint.clear', '-',
-  'paint.unwrap', 'paint.uv_pack', 'uv.unwrap', 'uv.rotate', 'uv.scale_up', 'uv.scale_down', 'uv.redraw', 'uv.relax_view', 'uv.equalize_view', 'uv.density_view', 'uv.sew_view', '-',
+  'paint.unwrap', 'paint.uv_pack', 'uv.unwrap', 'uv.rotate', 'uv.scale_up', 'uv.scale_down', 'uv.redraw', 'uv.relax_view', 'uv.equalize_view', 'uv.density_view', 'uv.sew_view', 'uv.cut_path', 'uv.straighten_path', 'uv.clear_marks', '-',
   'paint.bake', 'paint.download_maps', 'paint.project', 'paint.project_tile', '-',
   { label: 'Paint Layers', items: ['paint.layer_add', 'paint.layer_delete', 'paint.layer_merge', 'paint.layer_flatten', 'paint.layer_up', 'paint.layer_down'] },
 ];

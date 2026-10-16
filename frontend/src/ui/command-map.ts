@@ -79,6 +79,9 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     equalize: n('uv.equalize_view', 'Even UV Density'),
     density: n('uv.density_view', 'Show UV Density'),
     sew: n('uv.sew_view', 'Sew UV Island to a Neighbour'),
+    cut_path: n('uv.cut_path', 'Cut UV Seam Along Path'),
+    straighten_path: n('uv.straighten_path', 'Straighten UV Path'),
+    clear_marks: n('uv.clear_marks', 'Clear UV Pins and Path'),
   },
   action: {
     undo: c('history.undo', 'Undo', { keys: ['Mod+Z'], icon: 'undo' }),
