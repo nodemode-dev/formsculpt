@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "オブジェクトを横切る線をドラッグします。線の左側の部分が切り取られます（Ctrl で右側）",
  "Group From Outline": "輪郭からグループ",
  "Slice curve": "スライスカーブ",
- "Trim curve": "トリムカーブ"
+ "Trim curve": "トリムカーブ",
+ "Bridge two groups": "2 つのグループをブリッジ",
+ "Curve Bridge": "カーブブリッジ",
+ "Curve Bridge Between Two Groups": "2 つのグループ間のカーブブリッジ",
+ "Give two different face group numbers, such as 1 2": "1 2 のように、異なる 2 つのフェースグループ番号を入力してください",
+ "Live re-edit": "ライブ再編集",
+ "Snake Curve from Mask": "マスクからスネークカーブ",
+ "Snake end size %": "スネーク先端サイズ %",
+ "Snake from mask": "マスクからスネーク",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "その後ほかの変更がありました。カーブを適用で、動かしたカーブを新しいステップとして適用します",
+ "The stroke is a curve now: move a handle and it is applied again": "ストロークはカーブになりました。ハンドルを動かすと再適用されます",
+ "Two face group numbers": "2 つのフェースグループ番号"
 }

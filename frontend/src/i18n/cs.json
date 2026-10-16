@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Táhněte čáru přes objekt; část vlevo od ní se odřízne (Ctrl pro pravou)",
  "Group From Outline": "Skupina z obrysu",
  "Slice curve": "Dělicí křivka",
- "Trim curve": "Ořezová křivka"
+ "Trim curve": "Ořezová křivka",
+ "Bridge two groups": "Propojit dvě skupiny",
+ "Curve Bridge": "Most po křivce",
+ "Curve Bridge Between Two Groups": "Most po křivce mezi dvěma skupinami",
+ "Give two different face group numbers, such as 1 2": "Zadejte dvě různá čísla skupin ploch, například 1 2",
+ "Live re-edit": "Úprava naživo",
+ "Snake Curve from Mask": "Hadí křivka z masky",
+ "Snake end size %": "Velikost konce hada %",
+ "Snake from mask": "Had z masky",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Mezitím se změnilo něco jiného; Použít křivku použije posunutou křivku jako nový krok",
+ "The stroke is a curve now: move a handle and it is applied again": "Tah je teď křivka: posuňte úchyt a použije se znovu",
+ "Two face group numbers": "Dvě čísla skupin ploch"
 }

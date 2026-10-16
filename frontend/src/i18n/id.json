@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Seret garis melintasi objek; bagian di sebelah kirinya dipotong (Ctrl untuk kanan)",
  "Group From Outline": "Grup dari Garis Luar",
  "Slice curve": "Kurva iris",
- "Trim curve": "Kurva pangkas"
+ "Trim curve": "Kurva pangkas",
+ "Bridge two groups": "Jembatani dua grup",
+ "Curve Bridge": "Jembatan Kurva",
+ "Curve Bridge Between Two Groups": "Jembatan Kurva antara Dua Grup",
+ "Give two different face group numbers, such as 1 2": "Berikan dua nomor grup permukaan yang berbeda, misalnya 1 2",
+ "Live re-edit": "Edit ulang langsung",
+ "Snake Curve from Mask": "Kurva Ular dari Masker",
+ "Snake end size %": "Ukuran ujung ular %",
+ "Snake from mask": "Ular dari masker",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Ada perubahan lain sejak itu; Terapkan kurva menerapkan kurva yang dipindah sebagai langkah baru",
+ "The stroke is a curve now: move a handle and it is applied again": "Goresan kini menjadi kurva: geser pegangan dan goresan diterapkan lagi",
+ "Two face group numbers": "Dua nomor grup permukaan"
 }

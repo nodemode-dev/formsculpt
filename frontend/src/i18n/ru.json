@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Проведите линию через объект; часть слева от неё будет отрезана (с Ctrl справа)",
  "Group From Outline": "Группа по контуру",
  "Slice curve": "Кривая разделения",
- "Trim curve": "Кривая обрезки"
+ "Trim curve": "Кривая обрезки",
+ "Bridge two groups": "Соединить две группы",
+ "Curve Bridge": "Мост по кривой",
+ "Curve Bridge Between Two Groups": "Мост по кривой между двумя группами",
+ "Give two different face group numbers, such as 1 2": "Укажите два разных номера групп граней, например 1 2",
+ "Live re-edit": "Живая правка",
+ "Snake Curve from Mask": "Змеиная кривая из маски",
+ "Snake end size %": "Размер конца змеи %",
+ "Snake from mask": "Змея из маски",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "С тех пор изменилось что-то ещё; «Применить кривую» применит сдвинутую кривую новым шагом",
+ "The stroke is a curve now: move a handle and it is applied again": "Мазок стал кривой: передвиньте маркер, и он применится заново",
+ "Two face group numbers": "Два номера групп граней"
 }

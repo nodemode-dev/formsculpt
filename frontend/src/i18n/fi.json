@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Vedä viiva objektin yli; sen vasemmalla puolella oleva osa leikataan pois (Ctrl oikealle)",
  "Group From Outline": "Ryhmä ääriviivasta",
  "Slice curve": "Jakokäyrä",
- "Trim curve": "Leikkauskäyrä"
+ "Trim curve": "Leikkauskäyrä",
+ "Bridge two groups": "Yhdistä kaksi ryhmää",
+ "Curve Bridge": "Käyräsilta",
+ "Curve Bridge Between Two Groups": "Käyräsilta kahden ryhmän välille",
+ "Give two different face group numbers, such as 1 2": "Anna kaksi eri pintaryhmän numeroa, esimerkiksi 1 2",
+ "Live re-edit": "Muokkaus elävänä",
+ "Snake Curve from Mask": "Käärmekäyrä maskista",
+ "Snake end size %": "Käärmeen loppukoko %",
+ "Snake from mask": "Käärme maskista",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Jokin muu on muuttunut sen jälkeen; Käytä käyrää lisää siirretyn käyrän uutena vaiheena",
+ "The stroke is a curve now: move a handle and it is applied again": "Veto on nyt käyrä: siirrä kahvaa, niin se tehdään uudelleen",
+ "Two face group numbers": "Kaksi pintaryhmän numeroa"
 }

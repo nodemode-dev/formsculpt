@@ -7,7 +7,7 @@ Generated from the engine's command registry (formsculptor 0.38.0) by `./formscu
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -332,6 +332,21 @@ Turn the border of a set of faces into curve control points, without changing th
 - `source`: string (group | mask); default "group"; Which faces make the set: those in one face group, or those whose three vertices have a mean mask of 0.5 or more.
 
 Note: read-only.
+
+## curve_bridge
+
+Loft a cross-section loop along a path into a new object (ZBrush's Curve Bridge and Snake Curve) as one undo step. from is the start loop: the longest border of a face set, either one face group (source group, with group) or the masked faces (source mask). With to (same shape) the bridge ends on that second loop; the path is the straight line between the two loop centres, or the curve through points (same formats as sample_curve). Without to the end section is the start loop scaled about its centre by end_scale (default 0.3), and the path runs along the loop's average normal for length world units (default four times the loop's mean radius) unless points is given: a tapering snake out of a mask or group border. Both loops are cut into samples points (8 to 256, default 48), made to correspond (same winding, start index turned to the nearest fit), and swept along the path on rotation-minimising frames in sections rings (4 to 512, default 48), so the bridge meets each loop exactly at its ends. The result is an open triangle tube with both ends left open. offset lifts the loops along the surface normal. Returns the new object plus sections and samples. Refuses with no_border when a loop is missing and with bad_arguments when the border is open, since a bridge needs closed loops.
+
+- `end_scale`: number; default 0.3; range 0.001 to 100; Without to: the end section is the start loop scaled about its centre by this factor.
+- `from`: object; required; The start loop: the longest border of this face set.; fields group, source
+- `id`: integer; range 1 to inf; The source object; the active object when omitted.
+- `length`: number; range -inf to 1000000; Without to and points: how far to extrude along the normal, in world units. Four times the loop's mean radius when omitted.
+- `name`: string; Name for the new object; a default when omitted.
+- `offset`: number; default 0; Lift each loop along the surface normal by this distance, in world units.
+- `points`: array of value; The path between the loops, in the same point formats as sample_curve. Without it the path is the straight line between the two loop centres, or without to a straight line along the start loop's average normal.
+- `samples`: integer; default 48; range 8 to 256; Points around each loop.
+- `sections`: integer; default 48; range 4 to 512; Rings along the path.
+- `to`: object; The end loop: the longest border of this face set. Without it the end section is the start loop scaled by end_scale (a tapering extrusion).; fields group, source
 
 ## lathe
 

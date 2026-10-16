@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Kéo một đường ngang qua đối tượng; phần bên trái đường bị cắt bỏ (Ctrl cho bên phải)",
  "Group From Outline": "Nhóm từ đường viền",
  "Slice curve": "Đường cong chia nhóm",
- "Trim curve": "Đường cong cắt tỉa"
+ "Trim curve": "Đường cong cắt tỉa",
+ "Bridge two groups": "Nối hai nhóm",
+ "Curve Bridge": "Cầu đường cong",
+ "Curve Bridge Between Two Groups": "Cầu đường cong giữa hai nhóm",
+ "Give two different face group numbers, such as 1 2": "Nhập hai số nhóm mặt khác nhau, ví dụ 1 2",
+ "Live re-edit": "Sửa lại trực tiếp",
+ "Snake Curve from Mask": "Đường cong rắn từ mặt nạ",
+ "Snake end size %": "Kích thước đầu rắn %",
+ "Snake from mask": "Rắn từ mặt nạ",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Đã có thay đổi khác kể từ đó; Áp dụng đường cong sẽ áp dụng đường cong đã di chuyển thành bước mới",
+ "The stroke is a curve now: move a handle and it is applied again": "Nét giờ là đường cong: di chuyển tay nắm và nét được áp dụng lại",
+ "Two face group numbers": "Hai số nhóm mặt"
 }

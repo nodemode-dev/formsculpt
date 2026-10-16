@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "在物件上拖出一條線；線左側的部分被切除（按 Ctrl 取右側）",
  "Group From Outline": "從輪廓建立群組",
  "Slice curve": "切分曲線",
- "Trim curve": "修剪曲線"
+ "Trim curve": "修剪曲線",
+ "Bridge two groups": "橋接兩個群組",
+ "Curve Bridge": "曲線橋接",
+ "Curve Bridge Between Two Groups": "在兩個群組之間進行曲線橋接",
+ "Give two different face group numbers, such as 1 2": "請輸入兩個不同的面群組編號，例如 1 2",
+ "Live re-edit": "即時重新編輯",
+ "Snake Curve from Mask": "從遮罩產生蛇形曲線",
+ "Snake end size %": "蛇形末端大小 %",
+ "Snake from mask": "從遮罩產生蛇形",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "此後有其他變更；「套用曲線」會將移動後的曲線作為新步驟套用",
+ "The stroke is a curve now: move a handle and it is applied again": "該筆現在是曲線：移動控制點即會重新套用",
+ "Two face group numbers": "兩個面群組編號"
 }

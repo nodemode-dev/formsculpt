@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Húzz egy vonalat az objektumon át; a tőle balra eső rész levágódik (Ctrl a jobb oldalhoz)",
  "Group From Outline": "Csoport körvonalból",
  "Slice curve": "Szeletelő görbe",
- "Trim curve": "Vágó görbe"
+ "Trim curve": "Vágó görbe",
+ "Bridge two groups": "Két csoport összekötése",
+ "Curve Bridge": "Görbehíd",
+ "Curve Bridge Between Two Groups": "Görbehíd két csoport között",
+ "Give two different face group numbers, such as 1 2": "Adj meg két különböző lapcsoportszámot, például 1 2",
+ "Live re-edit": "Élő újraszerkesztés",
+ "Snake Curve from Mask": "Kígyógörbe maszkból",
+ "Snake end size %": "Kígyó végmérete %",
+ "Snake from mask": "Kígyó maszkból",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Azóta más is változott; a Görbe alkalmazása új lépésként alkalmazza az elmozdított görbét",
+ "The stroke is a curve now: move a handle and it is applied again": "A vonás most görbe: mozgass egy fogantyút, és újra alkalmazódik",
+ "Two face group numbers": "Két lapcsoportszám"
 }

@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Nesnenin üzerinden bir çizgi sürükleyin; solundaki kısım kesilip atılır (sağ için Ctrl)",
  "Group From Outline": "Dış Hattan Grup",
  "Slice curve": "Dilim eğrisi",
- "Trim curve": "Kırpma eğrisi"
+ "Trim curve": "Kırpma eğrisi",
+ "Bridge two groups": "İki grubu bağla",
+ "Curve Bridge": "Eğri Köprüsü",
+ "Curve Bridge Between Two Groups": "İki Grup Arasında Eğri Köprüsü",
+ "Give two different face group numbers, such as 1 2": "1 2 gibi iki farklı yüz grubu numarası verin",
+ "Live re-edit": "Canlı yeniden düzenleme",
+ "Snake Curve from Mask": "Maskeden Yılan Eğrisi",
+ "Snake end size %": "Yılan uç boyutu %",
+ "Snake from mask": "Maskeden yılan",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "O zamandan beri başka bir şey değişti; Eğriyi uygula taşınan eğriyi yeni bir adım olarak uygular",
+ "The stroke is a curve now: move a handle and it is applied again": "Darbe artık bir eğri: bir tutamacı taşıyın, yeniden uygulanır",
+ "Two face group numbers": "İki yüz grubu numarası"
 }

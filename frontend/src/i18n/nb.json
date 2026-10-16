@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Dra en linje over objektet; delen til venstre for den kuttes bort (Ctrl for høyre)",
  "Group From Outline": "Gruppe fra omriss",
  "Slice curve": "Delekurve",
- "Trim curve": "Trimmekurve"
+ "Trim curve": "Trimmekurve",
+ "Bridge two groups": "Bind sammen to grupper",
+ "Curve Bridge": "Kurvebro",
+ "Curve Bridge Between Two Groups": "Kurvebro mellom to grupper",
+ "Give two different face group numbers, such as 1 2": "Oppgi to forskjellige flategruppenumre, for eksempel 1 2",
+ "Live re-edit": "Live redigering",
+ "Snake Curve from Mask": "Slangekurve fra maske",
+ "Snake end size %": "Slangens sluttstørrelse %",
+ "Snake from mask": "Slange fra maske",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Noe annet er endret siden; Bruk kurve bruker den flyttede kurven som et nytt trinn",
+ "The stroke is a curve now: move a handle and it is applied again": "Strøket er nå en kurve: flytt et håndtak, så brukes det på nytt",
+ "Two face group numbers": "To flategruppenumre"
 }

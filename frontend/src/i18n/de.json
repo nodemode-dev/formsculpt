@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Eine Linie über das Objekt ziehen; der Teil links davon wird abgeschnitten (Strg für rechts)",
  "Group From Outline": "Gruppe aus Umriss",
  "Slice curve": "Schnittkurve",
- "Trim curve": "Trimmkurve"
+ "Trim curve": "Trimmkurve",
+ "Bridge two groups": "Zwei Gruppen verbinden",
+ "Curve Bridge": "Kurvenbrücke",
+ "Curve Bridge Between Two Groups": "Kurvenbrücke zwischen zwei Gruppen",
+ "Give two different face group numbers, such as 1 2": "Zwei verschiedene Flächengruppen-Nummern angeben, etwa 1 2",
+ "Live re-edit": "Live nachbearbeiten",
+ "Snake Curve from Mask": "Schlangenkurve aus Maske",
+ "Snake end size %": "Schlangen-Endgröße %",
+ "Snake from mask": "Schlange aus Maske",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Seitdem hat sich etwas anderes geändert; Kurve anwenden setzt die verschobene Kurve als neuen Schritt",
+ "The stroke is a curve now: move a handle and it is applied again": "Der Strich ist jetzt eine Kurve: einen Griff verschieben, dann wird er neu angewendet",
+ "Two face group numbers": "Zwei Flächengruppen-Nummern"
 }

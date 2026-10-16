@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "ลากเส้นผ่านวัตถุ ส่วนทางซ้ายของเส้นจะถูกตัดออก (Ctrl สำหรับด้านขวา)",
  "Group From Outline": "กลุ่มจากเส้นขอบ",
  "Slice curve": "เส้นโค้งแบ่งกลุ่ม",
- "Trim curve": "เส้นโค้งตัดแต่ง"
+ "Trim curve": "เส้นโค้งตัดแต่ง",
+ "Bridge two groups": "เชื่อมสองกลุ่ม",
+ "Curve Bridge": "สะพานเส้นโค้ง",
+ "Curve Bridge Between Two Groups": "สะพานเส้นโค้งระหว่างสองกลุ่ม",
+ "Give two different face group numbers, such as 1 2": "ใส่หมายเลขกลุ่มหน้าสองหมายเลขที่ต่างกัน เช่น 1 2",
+ "Live re-edit": "แก้ไขซ้ำแบบสด",
+ "Snake Curve from Mask": "เส้นโค้งงูจากมาสก์",
+ "Snake end size %": "ขนาดปลายงู %",
+ "Snake from mask": "งูจากมาสก์",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "มีการเปลี่ยนแปลงอื่นตั้งแต่นั้น ใช้เส้นโค้งจะใช้เส้นโค้งที่ย้ายแล้วเป็นขั้นตอนใหม่",
+ "The stroke is a curve now: move a handle and it is applied again": "เส้นกลายเป็นเส้นโค้งแล้ว ย้ายจุดจับแล้วจะถูกใช้ใหม่",
+ "Two face group numbers": "หมายเลขกลุ่มหน้าสองหมายเลข"
 }

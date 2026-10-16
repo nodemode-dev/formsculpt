@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Sleep een lijn over het object; het deel links ervan wordt weggesneden (Ctrl voor rechts)",
  "Group From Outline": "Groep uit omtrek",
  "Slice curve": "Snijcurve",
- "Trim curve": "Bijsnijcurve"
+ "Trim curve": "Bijsnijcurve",
+ "Bridge two groups": "Twee groepen verbinden",
+ "Curve Bridge": "Curvebrug",
+ "Curve Bridge Between Two Groups": "Curvebrug tussen twee groepen",
+ "Give two different face group numbers, such as 1 2": "Geef twee verschillende vlakgroepnummers, zoals 1 2",
+ "Live re-edit": "Live opnieuw bewerken",
+ "Snake Curve from Mask": "Slangcurve uit masker",
+ "Snake end size %": "Eindgrootte slang %",
+ "Snake from mask": "Slang uit masker",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Er is intussen iets anders veranderd; Curve toepassen past de verplaatste curve toe als nieuwe stap",
+ "The stroke is a curve now: move a handle and it is applied again": "De streek is nu een curve: verplaats een handgreep en hij wordt opnieuw toegepast",
+ "Two face group numbers": "Twee vlakgroepnummers"
 }

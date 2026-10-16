@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Przeciągnij linię przez obiekt; część po jej lewej stronie zostanie odcięta (Ctrl dla prawej)",
  "Group From Outline": "Grupa z obrysu",
  "Slice curve": "Krzywa podziału",
- "Trim curve": "Krzywa przycinania"
+ "Trim curve": "Krzywa przycinania",
+ "Bridge two groups": "Połącz dwie grupy",
+ "Curve Bridge": "Most z krzywej",
+ "Curve Bridge Between Two Groups": "Most z krzywej między dwiema grupami",
+ "Give two different face group numbers, such as 1 2": "Podaj dwa różne numery grup ścian, np. 1 2",
+ "Live re-edit": "Edycja na żywo",
+ "Snake Curve from Mask": "Krzywa węża z maski",
+ "Snake end size %": "Rozmiar końca węża %",
+ "Snake from mask": "Wąż z maski",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "W międzyczasie zmieniło się coś innego; Zastosuj krzywą zastosuje przesuniętą krzywą jako nowy krok",
+ "The stroke is a curve now: move a handle and it is applied again": "Pociągnięcie jest teraz krzywą: przesuń uchwyt, a zostanie zastosowane ponownie",
+ "Two face group numbers": "Dwa numery grup ścian"
 }

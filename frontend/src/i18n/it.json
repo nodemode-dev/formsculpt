@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Trascina una linea sull'oggetto; la parte alla sua sinistra viene tagliata (Ctrl per la destra)",
  "Group From Outline": "Gruppo da contorno",
  "Slice curve": "Curva di divisione",
- "Trim curve": "Curva di rifilatura"
+ "Trim curve": "Curva di rifilatura",
+ "Bridge two groups": "Collega due gruppi",
+ "Curve Bridge": "Ponte a curva",
+ "Curve Bridge Between Two Groups": "Ponte a curva tra due gruppi",
+ "Give two different face group numbers, such as 1 2": "Indica due numeri di gruppo di facce diversi, ad esempio 1 2",
+ "Live re-edit": "Rimodifica dal vivo",
+ "Snake Curve from Mask": "Curva serpente dalla maschera",
+ "Snake end size %": "Dimensione finale del serpente %",
+ "Snake from mask": "Serpente dalla maschera",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "Nel frattempo è cambiato altro; Applica curva applica la curva spostata come nuovo passo",
+ "The stroke is a curve now: move a handle and it is applied again": "Il tratto ora è una curva: sposta una maniglia e viene riapplicato",
+ "Two face group numbers": "Due numeri di gruppo di facce"
 }

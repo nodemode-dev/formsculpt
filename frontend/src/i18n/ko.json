@@ -755,5 +755,16 @@
  "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "개체를 가로지르는 선을 드래그하세요. 선 왼쪽 부분이 잘려 나갑니다(오른쪽은 Ctrl)",
  "Group From Outline": "윤곽에서 그룹",
  "Slice curve": "슬라이스 커브",
- "Trim curve": "트림 커브"
+ "Trim curve": "트림 커브",
+ "Bridge two groups": "두 그룹 연결",
+ "Curve Bridge": "커브 브리지",
+ "Curve Bridge Between Two Groups": "두 그룹 사이 커브 브리지",
+ "Give two different face group numbers, such as 1 2": "1 2처럼 서로 다른 면 그룹 번호 두 개를 입력하세요",
+ "Live re-edit": "실시간 재편집",
+ "Snake Curve from Mask": "마스크에서 스네이크 커브",
+ "Snake end size %": "스네이크 끝 크기 %",
+ "Snake from mask": "마스크에서 스네이크",
+ "Something else changed since; Apply curve applies the moved curve as a new step": "그 후 다른 변경이 있었습니다. 커브 적용은 옮긴 커브를 새 단계로 적용합니다",
+ "The stroke is a curve now: move a handle and it is applied again": "스트로크가 이제 커브입니다. 핸들을 옮기면 다시 적용됩니다",
+ "Two face group numbers": "면 그룹 번호 두 개"
 }
