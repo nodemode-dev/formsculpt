@@ -346,7 +346,7 @@ pub(crate) fn substance_sync_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "folder": {"type": "string", "description": "The folder send_to_substance wrote and Painter exported back into."},
-            "color": {"type": "string", "description": "The base colour PNG; <name>_BaseColor.png in folder when omitted."}
+            "color": {"type": "string", "description": "The base colour PNG; [name]_BaseColor.png in folder when omitted."}
         },
         "required": ["folder"],
         "additionalProperties": false

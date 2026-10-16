@@ -684,7 +684,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "substance_sync",
         group: Group::File,
         label: "Sync from Substance Painter",
-        description: "Bring textures exported from Substance 3D Painter back: <name>_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.",
+        description: "Bring textures exported from Substance 3D Painter back: [name]_BaseColor.png in the package folder (and _Roughness and _Metallic when beside it) is sampled at each vertex's UV into vertex paint, and the colour map replaces the baked colour map for GLB export. The round trip to send_to_substance. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: cut_cmds::substance_sync_schema,
