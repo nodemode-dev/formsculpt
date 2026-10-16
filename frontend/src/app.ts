@@ -127,6 +127,11 @@ interface Shell {
   alphaInvert: HTMLInputElement;
   toolPreset: HTMLSelectElement;
   brushRing: SVGCircleElement;
+  selectShape: HTMLSelectElement;
+  selectAction: HTMLSelectElement;
+  selectFlip: HTMLInputElement;
+  pathWidth: HTMLInputElement;
+  extractMode: HTMLSelectElement;
   presetButtons: HTMLButtonElement[];
   repeatStep: HTMLSelectElement;
   repeatResult: HTMLSelectElement;
@@ -967,7 +972,16 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(el('p', 'panel-hint', 'Alt-click a UV point to pin it for Relax; Ctrl-click points of one island to make a path.'));
 
   panel.append(el('h2', 'gap', 'Edit'));
-  const actionGrid = el('div', 'add-grid two');
+  // What the Box and Lasso mask tools do with their outline, and how the lasso's line is read.
+  const selectShape = choices('Selection shape', [['lasso', 'Freehand'], ['curve', 'Smooth curve'], ['path', 'Path band'], ['line', 'Line (one side)']]);
+  const selectAction = choices('Selection action', [['mask', 'Mask'], ['hide', 'Hide'], ['show', 'Show'], ['group', 'New face group'], ['split', 'Split off']]);
+  const selectFlip = input('checkbox', { 'aria-label': 'Flip selection' });
+  const pathWidth = input('number', { min: '2', max: '400', step: '2', value: '24', 'aria-label': 'Path width' });
+  const extractMode = choices('Extract as', [['shell', 'Shell'], ['balloon', 'Balloon'], ['extrude', 'Extrude'], ['splat', 'Splat'], ['project', 'Project']]);
+  const selectFields = el('div', 'fields');
+  selectFields.append(field('Selection shape', selectShape), field('Selection action', selectAction), field('Flip selection', selectFlip), field('Path width', pathWidth), field('Extract as', extractMode));
+  panel.append(selectFields);
+  const actionGrid = el('div', 'add-grid two after-fields');
   const actionButtons = ACTIONS.map(([name, label]) => {
     const b = el('button', 'btn', label);
     b.type = 'button';
@@ -1286,7 +1300,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1325,6 +1339,7 @@ class SceneView {
         const mapped = ACTION_CALLS[action];
         if (mapped) void this.run(mapped[0], mapped[1]);
         else if (action === 'mask_color') void this.run('mask_by_color', { color: shell.paintColor.value, tolerance: 0.2 });
+        else if (action === 'extract_mask') void this.run('extract_mask', shell.extractMode.value === 'shell' ? {} : { mode: shell.extractMode.value });
         else void this.run(action);
       }),
     );
@@ -1861,15 +1876,26 @@ class SceneView {
       return;
     }
     const box = shape?.kind === 'mask_box';
-    if (!shape || id === null || shape.pts.length < (box ? 2 : 3)) {
+    const kind = box ? 'box' : this.shell.selectShape.value;
+    const least = kind === 'box' || kind === 'line' || kind === 'path' ? 2 : 3;
+    if (!shape || id === null || shape.pts.length < least) {
       this.note(box ? 'Drag a box over the area to mask' : 'Draw around the area to mask');
       return;
     }
     const w = Math.max(1, this.shell.canvas.clientWidth);
     const h = Math.max(1, this.shell.canvas.clientHeight);
-    const points = shape.pts.map(([x, y]) => [x / w, y / h]);
-    const viewProj = Array.from(this.viewport.camera.viewProjection());
-    await this.run('mask_shape', { id, shape: box ? 'box' : 'lasso', points, view_proj: viewProj, op: shape.subtract ? 'subtract' : 'add' });
+    let pts = shape.pts;
+    // A smooth curve takes about a dozen control points from the freehand line; a line keeps its two ends.
+    if (kind === 'curve' && pts.length > 12) pts = pts.filter((_, i) => i % Math.ceil(pts.length / 12) === 0);
+    if (kind === 'line') pts = [pts[0], pts[pts.length - 1]];
+    const args: Record<string, unknown> = { id, shape: kind, points: pts.map(([x, y]) => [x / w, y / h]), view_proj: Array.from(this.viewport.camera.viewProjection()), width: w, height: h };
+    if (kind === 'path') args.stroke_width = Math.max(2, Number(this.shell.pathWidth.value) || 24);
+    if (this.shell.selectFlip.checked) args.flip = true;
+    const act = this.shell.selectAction.value;
+    if (act === 'hide' || act === 'show') await this.run('hide_shape', { ...args, ...(act === 'show' ? { show: true } : {}) });
+    else if (act === 'group') await this.run('group_from_outline', args);
+    else if (act === 'split') await this.run('split_shape', { ...args, close: true });
+    else await this.run('mask_shape', { ...args, op: shape.subtract ? 'subtract' : 'add' });
   }
 
   /** Drag stamp: one dab of the alpha where the drag began, as wide as the drag and turned to face it. */
