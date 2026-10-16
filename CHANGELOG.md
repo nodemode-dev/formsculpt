@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.59.0 · 2026-10-16
+
+### Added
+
+- Retopology patch library: `retopo_patch` lays a grid, strip, eye loop, mouth loop or disc (a quad fan whose centre can be a five-edge pole) onto the sculpt at a point, upright along a given direction, welded into the same retopology object as `retopo_face`. `get_wire`: an object's quad edges for drawing, with their visibility behind another object.
+- Window: a Retopo patch tool (Retopo patch, Patch size %, Patch columns, Patch rows), and the retopology object's wire drawn over the sculpt while Retopo quad or Retopo patch is the tool; until now a retopology object could not be seen on the sculpt.
+- 166 engine commands; 1001 interface strings in every language.
+
 ## 0.58.0 · 2026-10-16
 
 ### Added
