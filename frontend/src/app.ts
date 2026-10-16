@@ -676,7 +676,16 @@ function buildShell(root: HTMLElement): Shell {
     return b;
   });
   panel.append(pathGrid);
+  const makeGrid = el('div', 'add-grid two after-fields');
+  for (const [cmd, label] of [['curve.edit_last_stroke', 'Last stroke as curve'], ['curve.from_mask_edge', 'Curve from mask edge'], ['curve.from_group_border', 'Curve from group border']]) {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.cmd = cmd;
+    makeGrid.append(b);
+  }
+  panel.append(makeGrid);
   panel.append(el('p', 'panel-hint', 'Alt-click a curve handle to make it a corner; Corner round rounds the chosen or every sharp corner.'));
+  panel.append(el('p', 'panel-hint', 'Click on the object without dragging to add a curve point.'));
 
   panel.append(el('h2', 'gap', 'Paint'));
   const paintColor = input('color', { value: '#c8402f', 'aria-label': 'Paint colour' });
@@ -1474,11 +1483,17 @@ class SceneView {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
         else if (CLICK_TOOLS.has(this.brush)) void this.clickTool(ray, wpp, inv);
-        else if (this.scene.active !== null) this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure, tilt);
+        else if (this.scene.active !== null) {
+          this.lastStroke = this.brush === 'curve' ? null : { rays: [{ o: ray.origin, d: ray.dir }], wpp, brush: this.brush };
+          this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure, tilt);
+        }
       },
       move: (ray, pressure, tilt) => {
         if (this.tube) this.tubeMove(ray);
-        else if (!this.shape && !CLICK_TOOLS.has(this.brush)) this.strokes.move(ray.origin, ray.dir, pressure, tilt);
+        else if (!this.shape && !CLICK_TOOLS.has(this.brush)) {
+          if (this.lastStroke && this.lastStroke.rays.length < 4000) this.lastStroke.rays.push({ o: ray.origin, d: ray.dir });
+          this.strokes.move(ray.origin, ray.dir, pressure, tilt);
+        }
       },
       end: () => {
         if (this.tube) void this.tubeEnd();
@@ -1501,6 +1516,8 @@ class SceneView {
   private latticeDrag: { index: number; offset: Vec3 } | null = null;
   /** The brush a curve stroke applies: the last sculpting or painting brush chosen before the Curve tool. */
   private lastBrush = 'draw';
+  /** The rays of the last brush stroke, so it can be undone and brought back as an editable curve. */
+  private lastStroke: { rays: { o: Vec3; d: Vec3 }[]; wpp: number; brush: string } | null = null;
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
   private curve: { handles: Vec3[]; wpp: number; sharp: boolean[]; round: number[]; radius: number[]; twist: number[]; samples: Vec3[] | null } | null = null;
   /** The handle last clicked (Corner round sets its fillet), and whether Alt was held when a handle was pressed. */
@@ -2156,7 +2173,23 @@ class SceneView {
     let length = 0;
     for (let i = 1; i < pts.length; i++) length += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
     if (pts.length < 2 || length < 8) {
-      this.note('Drag across the object to draw a curve');
+      const at = pts[pts.length - 1] ? await pick(pts[pts.length - 1]) : null;
+      if (!at) {
+        this.note('Drag across the object to draw a curve');
+        return;
+      }
+      if (this.curve) {
+        const c = this.curve;
+        c.handles.push(at);
+        c.sharp.push(false);
+        c.round.push(0);
+        c.radius.push(1);
+        c.twist.push(0);
+      } else this.curve = { handles: [at], wpp, sharp: [false], round: [0], radius: [1], twist: [0], samples: null };
+      this.curvePick = this.curve.handles.length - 1;
+      this.drawCurve();
+      if (this.curve.handles.length > 1) void this.resample();
+      this.note(`Point ${this.curve.handles.length} added; keep clicking, or drag a handle`);
       return;
     }
     const count = Math.max(2, Math.min(32, Math.round(length / 40) + 1));
@@ -2206,6 +2239,59 @@ class SceneView {
     }
     reply.result.points.forEach((pt, i) => (c.handles[i] = pt.p));
     if (!reply.result.reached) this.note('The chain is too short to reach there; it stretched as far as it could');
+  }
+
+  /** Waits on a curve made outside the Curve tool's drag: switches to the Curve tool, keeping the brush it will apply. */
+  private adoptCurve(handles: Vec3[], wpp: number, closed: boolean, brush?: string): void {
+    this.shell.brushButtons.find((b) => b.dataset.brush === 'curve')?.click();
+    if (brush) this.lastBrush = brush;
+    this.shell.curveClosed.checked = closed;
+    this.curve = { handles, wpp, sharp: handles.map(() => false), round: handles.map(() => 0), radius: handles.map(() => 1), twist: handles.map(() => 0), samples: null };
+    this.curvePick = null;
+    this.drawCurve();
+    void this.resample();
+  }
+
+  /** Undoes the last brush stroke and brings its path back as curve handles on the restored surface, to move and apply again. */
+  private async editLastStroke(): Promise<void> {
+    const s = this.lastStroke;
+    const id = this.scene.active;
+    if (!s || id === null) {
+      this.note(t('Make a brush stroke first'));
+      return;
+    }
+    await this.run('undo');
+    const want = Math.max(2, Math.min(24, Math.round(s.rays.length / 6) + 2));
+    const rays = Array.from({ length: want }, (_, k) => s.rays[Math.round((k * (s.rays.length - 1)) / (want - 1))]);
+    const hits = await Promise.all(rays.map((r) => dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: r.o, direction: r.d })));
+    const handles = hits.flatMap((h) => (h.ok && h.result.hit && h.result.id === id && h.result.point ? [h.result.point] : []));
+    if (handles.length < 2) {
+      this.note(t('The stroke left too few points on the object to make a curve'));
+      return;
+    }
+    this.lastStroke = null;
+    this.adoptCurve(handles, s.wpp, false, s.brush);
+    this.note(t('The stroke is undone and waits as a curve: move its handles, then Apply curve'));
+  }
+
+  /** A curve along the mask's edge or a face group's border (curve_from_border), lifted by Surface offset. */
+  private async curveFromBorder(source: 'mask' | 'group'): Promise<void> {
+    const id = this.scene.active;
+    if (id === null) return;
+    const args: Record<string, unknown> = { id, source, points: 16, offset: Number(this.shell.curveOffset.value) || 0 };
+    if (source === 'group') {
+      const answer = await this.prompt.ask(t('Face group number'), '1');
+      if (answer === null) return;
+      args.group = Math.max(0, Math.round(Number(answer) || 0));
+    }
+    const reply = await dispatch<{ points: { p: Vec3 }[]; closed: boolean; loops: number }>('curve_from_border', args);
+    if (!reply.ok) {
+      this.note(reply.error.message);
+      return;
+    }
+    const wpp = this.viewport.camera.worldPerPixel(this.shell.canvas.clientHeight);
+    this.adoptCurve(reply.result.points.map((x) => x.p), wpp, reply.result.closed);
+    this.note(`Curve from the border: ${reply.result.points.length} handles, ${reply.result.closed ? 'closed' : 'open'} (${reply.result.loops} border${reply.result.loops === 1 ? '' : 's'} found, the longest taken)`);
   }
 
   /** Point radius % and Point twist write to the chosen handle. */
@@ -2544,6 +2630,12 @@ class SceneView {
       { id: 'selection.delete', label: 'Delete Selection Set', mutates: true, run: () => void this.selectionSet('delete') },
     );
     for (const id of ['selection.save', 'selection.restore', 'selection.delete']) NEEDS_OBJECT.add(id);
+    list.push(
+      { id: 'curve.edit_last_stroke', label: 'Edit Last Stroke as Curve', mutates: true, run: () => void this.editLastStroke(), enabled: () => this.lastStroke !== null },
+      { id: 'curve.from_mask_edge', label: 'Curve from Mask Edge', run: () => void this.curveFromBorder('mask') },
+      { id: 'curve.from_group_border', label: 'Curve from Group Border', run: () => void this.curveFromBorder('group') },
+    );
+    for (const id of ['curve.edit_last_stroke', 'curve.from_mask_edge', 'curve.from_group_border']) NEEDS_OBJECT.add(id);
     const channelVerbs: [string, string, string, string][] = [
       ['channel.copy_mask', 'Copy Mask', 'channel_copy', 'mask'], ['channel.paste_mask', 'Paste Mask', 'channel_paste', 'mask'], ['channel.clear_mask', 'Clear Mask Channel', 'channel_clear', 'mask'],
       ['channel.copy_groups', 'Copy Groups', 'channel_copy', 'groups'], ['channel.paste_groups', 'Paste Groups', 'channel_paste', 'groups'], ['channel.clear_groups', 'Clear Groups', 'channel_clear', 'groups'],
