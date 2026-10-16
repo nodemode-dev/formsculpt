@@ -1215,7 +1215,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "array_object",
         group: Group::Object,
         label: "Array",
-        description: "Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them.",
+        description: "Repeat an object in a line (offset per copy) or around an axis (radial, evenly over 360 degrees or over an angle): fence posts, teeth, petals, gear teeth, spines. Copies become separate objects, or one merged object with merge. They are copies, not live instances: editing the original later does not change them. Also along a curve (curve mode with points). scale_start and scale_end ramp a uniform scale from the first copy to the last, and jitter adds a repeatable random offset, turn and scale to each copy from a seed (position in world units, rotation in degrees, scale as a fraction); both are refused in mirror mode, and linked copies keep the ramp and jitter.",
         keys: &[],
         hints: WRITE,
         schema: place_cmds::array_schema,

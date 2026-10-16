@@ -78,6 +78,63 @@ fn add_object(s: &mut Session, name: &str, mesh: Mesh, record: bool) -> u32 {
     id
 }
 
+struct SplitMix(u64);
+
+impl SplitMix {
+    fn next(&mut self) -> u64 {
+        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        let mut z = self.0;
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        z ^ (z >> 31)
+    }
+
+    /// Uniform in [-1, 1).
+    fn signed(&mut self) -> f32 {
+        ((self.next() >> 40) as f32 / (1u64 << 24) as f32) * 2.0 - 1.0
+    }
+}
+
+struct Jitter {
+    position: f32,
+    rotation: f32,
+    scale: f32,
+    seed: u64,
+}
+
+fn number_in(obj: &Value, key: &str, lo: f64, hi: f64, default: f64) -> Result<f32, CommandError> {
+    match obj.get(key) {
+        None | Some(Value::Null) => Ok(default as f32),
+        Some(v) => match v.as_f64() {
+            Some(x) if x.is_finite() && (lo..=hi).contains(&x) => Ok(x as f32),
+            _ => Err(bad(format!("{key} must be a number from {lo} to {hi}"))),
+        },
+    }
+}
+
+fn parse_jitter(args: &Value) -> Result<Option<Jitter>, CommandError> {
+    let j = match args.get("jitter") {
+        None | Some(Value::Null) => return Ok(None),
+        Some(j @ Value::Object(m)) => {
+            if let Some(k) = m.keys().find(|k| !["position", "rotation", "scale", "seed"].contains(&k.as_str())) {
+                return Err(bad(format!("jitter has no field {k}; use position, rotation, scale and seed")));
+            }
+            j
+        }
+        Some(_) => return Err(bad("jitter is an object {position, rotation, scale, seed}")),
+    };
+    let seed = match j.get("seed") {
+        None | Some(Value::Null) => 1,
+        Some(v) => v.as_i64().map(|x| x as u64).or_else(|| v.as_u64()).ok_or_else(|| bad("jitter seed must be an integer"))?,
+    };
+    Ok(Some(Jitter {
+        position: number_in(j, "position", 0.0, 1.0e6, 0.0)?,
+        rotation: number_in(j, "rotation", 0.0, 180.0, 0.0)?,
+        scale: number_in(j, "scale", 0.0, 0.95, 0.0)?,
+        seed,
+    }))
+}
+
 pub(crate) fn array_schema() -> Value {
     json!({
         "type": "object",
@@ -94,7 +151,20 @@ pub(crate) fn array_schema() -> Value {
             "axis": {"type": "string", "enum": ["x", "y", "z"], "default": "y", "description": "Radial: the axis the copies turn around (through center)."},
             "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Radial: the point the axis passes through; the world origin when omitted."},
             "angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 360, "description": "Radial: the total turn in degrees; 360 spaces the copies evenly around the full circle."},
-            "merge": {"type": "boolean", "default": false, "description": "Join the copies with the original into one object instead of adding separate objects."}
+            "merge": {"type": "boolean", "default": false, "description": "Join the copies with the original into one object instead of adding separate objects."},
+            "scale_start": {"type": "number", "minimum": 0.01, "maximum": 100, "default": 1, "description": "Uniform scale of the first copy in the ramp (about the original's bounds centre). Not allowed with mirror."},
+            "scale_end": {"type": "number", "minimum": 0.01, "maximum": 100, "default": 1, "description": "Uniform scale of the last copy; copies in between ramp linearly. Not allowed with mirror."},
+            "jitter": {
+                "type": "object",
+                "description": "Deterministic random variation per copy (the original is untouched); the same seed gives the same result. Not allowed with mirror.",
+                "properties": {
+                    "position": {"type": "number", "minimum": 0, "default": 0, "description": "Each copy moves by up to this many world units either way on each axis."},
+                    "rotation": {"type": "number", "minimum": 0, "maximum": 180, "default": 0, "description": "Each copy turns about a random axis by up to this many degrees either way."},
+                    "scale": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0, "description": "Each copy's uniform scale is multiplied by 1 plus or minus up to this fraction."},
+                    "seed": {"type": "integer", "default": 1, "description": "The random seed."}
+                },
+                "additionalProperties": false
+            }
         },
         "required": [],
         "additionalProperties": false
@@ -123,7 +193,16 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
     };
     // Each copy is the original under one transform (kept for linked copies, which follow the original).
     let mut transforms: Vec<Mat4> = Vec::new();
-    match args.get("mode").and_then(Value::as_str).unwrap_or("linear") {
+    let mode = args.get("mode").and_then(Value::as_str).unwrap_or("linear");
+    let scale_start = number_in(args, "scale_start", 0.01, 100.0, 1.0)?;
+    let scale_end = number_in(args, "scale_end", 0.01, 100.0, 1.0)?;
+    let jitter = parse_jitter(args)?;
+    let shaped = ["scale_start", "scale_end", "jitter"].iter().any(|k| !matches!(args.get(*k), None | Some(Value::Null)));
+    if mode == "mirror" && shaped {
+        return Err(bad("scale_start, scale_end and jitter do not apply to mirror mode"));
+    }
+    let mut first_k = 1usize;
+    match mode {
         "linear" => {
             let step = vec3(args, "offset")?.unwrap_or(Vec3::new(b.extent().x * 1.2, 0.0, 0.0));
             for k in 1..count {
@@ -162,6 +241,7 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
                 return Err(bad("the curve has no length"));
             }
             let c = b.center();
+            first_k = 0;
             for k in 0..count {
                 let want = total * k as f32 / (count - 1) as f32;
                 let mut walked = 0.0;
@@ -178,6 +258,24 @@ pub(crate) fn array_object(s: &mut Session, args: &Value) -> Result<Value, Comma
             }
         }
         other => return Err(bad(format!("unknown mode {other}; use linear, radial, mirror or curve"))),
+    }
+    if shaped {
+        let c = b.center();
+        let mut rng = jitter.as_ref().map(|j| SplitMix(j.seed));
+        for (i, m) in transforms.iter_mut().enumerate() {
+            let t = (first_k + i) as f32 / (count - 1) as f32;
+            let mut scale = scale_start + (scale_end - scale_start) * t;
+            let mut turn = Quat::IDENTITY;
+            let mut shift = Vec3::ZERO;
+            if let (Some(j), Some(r)) = (&jitter, rng.as_mut()) {
+                shift = Vec3::new(r.signed(), r.signed(), r.signed()) * j.position;
+                let axis = Vec3::new(r.signed(), r.signed(), r.signed()).normalize_or(Vec3::Y);
+                turn = Quat::from_axis_angle(axis, (r.signed() * j.rotation).to_radians());
+                scale *= 1.0 + r.signed() * j.scale;
+            }
+            let local = Mat4::from_translation(c) * Mat4::from_quat(turn) * Mat4::from_scale(Vec3::splat(scale)) * Mat4::from_translation(-c);
+            *m = Mat4::from_translation(shift) * *m * local;
+        }
     }
     let copies: Vec<Mesh> = transforms.iter().map(|m| transformed(&o.mesh, *m)).collect();
     let linked = args.get("linked").and_then(Value::as_bool).unwrap_or(false);
