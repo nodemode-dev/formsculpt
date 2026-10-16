@@ -507,3 +507,9 @@ All tiles asks get_uv_layout for its overview (the smallest square of tiles hold
 - kind: rationale
 - logged: v0.46.0 · 2026-10-16
 Add repeater step reads the existing Array copies, Array jitter % and Jitter seed fields rather than new ones, so a step is set up exactly like a plain array; the stack lives in the window until Apply repeater sends it to repeat_object, innermost first, and Repeater result picks merge, separate or linked. A line step's gap grows with each earlier line step so a second line step lays rows out rather than stacking on the first. The stack is shown in one hint line that is always present and rewritten in place only when its text changes. Scatter on surface follows the Live boolean convention: the object chosen before is scattered over the active one; spacing is 0.9 of the source's size, the offset a quarter of it so copies sit on the surface rather than half sunk, and the jitter share widens the scale range.
+
+### Elastic, Polish, Layer, Nudge and Layer reset in the brush rail
+- refers-to: app.ts :: BRUSHES, brushState (layerHeight), brushArgs (height), strokes.onEnd; engine/stroke-client.ts :: BrushState.layerHeight, StrokeResult.no_active_layer, begin; ui/menus.ts :: SCULPT
+- kind: rationale
+- logged: v0.47.0 · 2026-10-16
+The five join BRUSHES, so they get buttons, tool.brush commands, palette entries and the Sculpt menu the same way the others do. The engine's stamp brush is left out of the rail: the window already has Drag stamp, which turns and scales the alpha with the drag and so does more than the engine's one-dab stamp; agents can still call stamp. Layer height % is a share of the brush radius, turned into world units where the radius is (stroke-client for live strokes, brushArgs for sent ones), so the cap follows the brush size as the view zooms; it is only sent with the Layer brush. A Layer reset stroke with no active sculpt layer says so on the status line instead of silently doing nothing.

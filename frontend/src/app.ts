@@ -105,6 +105,7 @@ interface Shell {
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
+  layerHeight: HTMLInputElement;
   repeatStep: HTMLSelectElement;
   repeatResult: HTMLSelectElement;
   scatterCount: HTMLInputElement;
@@ -269,6 +270,11 @@ const BRUSHES: [string, string][] = [
   ['snake_hook', 'Snake hook'],
   ['noise', 'Noise'],
   ['smudge', 'Smudge'],
+  ['elastic', 'Elastic'],
+  ['polish', 'Polish'],
+  ['layer', 'Layer'],
+  ['nudge', 'Nudge'],
+  ['layer_reset', 'Layer reset'],
   ['stamp', 'Drag stamp'],
   ['dragdot', 'Drag dot'],
   ['curve', 'Curve stroke'],
@@ -637,6 +643,7 @@ function buildShell(root: HTMLElement): Shell {
     detailMode.append(option);
   }
   const lazy = input('range', { min: '0', max: '95', value: '0', 'aria-label': 'Lazy mouse' });
+  const layerHeight = input('range', { min: '1', max: '100', value: '10', 'aria-label': 'Layer height %' });
   const alpha = choices('Alpha', ALPHAS);
   const alphaAngle = input('number', { min: '-360', max: '360', step: '5', value: '0', 'aria-label': 'Alpha angle' });
   const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)'], ['spray', 'Spray (scattered)']]);
@@ -649,7 +656,7 @@ function buildShell(root: HTMLElement): Shell {
   pressureStrength.checked = true;
   const pressureSize = input('checkbox', { 'aria-label': 'Pressure sets size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Layer height %', layerHeight));
   panel.append(fields);
   // The falloff curve: five weights from the centre (left) to the rim (right), dragged up and down; always shown, so
   // choosing a preset or drawing never changes the panel's height.
@@ -1212,7 +1219,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1333,6 +1340,7 @@ class SceneView {
     this.strokes.onEnd = (r) => {
       // Under the preview the revision stays behind, so the refresh fetches the smoothed result.
       if (r && !this.smoothPreview) this.viewport.renderer.setRevision(r.id, r.revision);
+      if (r?.no_active_layer) this.note(t('Layer reset needs an active sculpt layer'));
       void this.refresh();
     };
     this.strokes.onError = (m) => this.note(m);
@@ -1804,6 +1812,7 @@ class SceneView {
       pressure_gamma: s.pressure.gamma,
       pressure_strength: s.pressure.strength,
       pressure_size: s.pressure.size,
+      ...(this.lastBrush === 'layer' ? { height: radius * s.layerHeight } : {}),
     };
   }
 
@@ -3474,6 +3483,7 @@ class SceneView {
       falloffCurve: s.falloff.value === 'custom' ? this.falloffSent() : null,
       stroke: s.strokeMode.value,
       pressure: { gamma: Math.max(0.2, Math.min(5, Number(s.pressureGamma.value) || 1)), strength: s.pressureStrength.checked, size: s.pressureSize.checked },
+      layerHeight: Math.max(0.01, Math.min(1, Number(s.layerHeight.value) / 100)),
       lazy: Number(s.lazy.value) / 100,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
