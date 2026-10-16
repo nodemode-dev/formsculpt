@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.50.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.51.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -15,7 +15,7 @@ Generated from the engine's command registry (formsculptor 0.50.0) by `./formscu
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`, `hide_shape`
-- Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
+- Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`, `layer_set`, `layer_offset`, `layer_bake`, `layer_extract`
 
 ## get_engine_info
 
@@ -486,18 +486,20 @@ Paint an image onto the surface: from a view like a slide projector (only onto s
 
 ## paint_layer_add
 
-Add a paint layer above the active one and paint into it from now on: the paint brush, paint_fill and smudge go to the active paint layer (invert erases it), paint_clear empties it. Each layer has a blend (normal, multiply, screen, overlay, add) and an opacity, and is composited over the base and the layers below, so a pattern, dirt or tint can be changed or removed later without touching the rest. The first layer turns the existing paint into the base. A change of topology (remesh, dyntopo, subdivide) flattens the stack.
+Add a paint layer above the active one and paint into it from now on: the paint brush, paint_fill and smudge go to the active paint layer (invert erases it), paint_clear empties it. Each layer has a blend (normal, multiply, screen, overlay, add, darken, lighten, color_dodge, color_burn, linear_burn, linear_light, vivid_light, pin_light, hard_light, soft_light, difference, exclusion, subtract, divide, hue, saturation, color, luminosity; the last four act on colour only) and an opacity, and optionally channel_blend (a blend per channel: color, roughness, metalness, opacity, emissive), and is composited over the base and the layers below, so a pattern, dirt or tint can be changed or removed later without touching the rest. The first layer turns the existing paint into the base. A change of topology (remesh, dyntopo, subdivide) flattens the stack.
 
-- `blend`: string (normal | multiply | screen | overlay | add); default "normal"
+- `blend`: string (normal | multiply | screen | overlay | add | darken | lighten | color_dodge | color_burn | linear_burn | linear_light | vivid_light | pin_light | hard_light | soft_light | difference | exclusion | subtract | divide | hue | saturation | color | luminosity); default "normal"; How the layer mixes with what lies below. hue, saturation, color and luminosity work on the colour only; on roughness, metalness, opacity and emissive they act as normal.
+- `channel_blend`: ['object', 'null']; Blend per paint channel (color, roughness, metalness, opacity, emissive), replacing the layer's earlier overrides. A named channel uses its mode; color falls back to blend and the rest to normal. null or {} clears the overrides.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `name`: string
 - `opacity`: number; default 1; range 0 to 1
 
 ## paint_layer_set
 
-Change a paint layer: name, blend, opacity, visibility, or move it up or down the stack. get_scene lists each object's paint_layers (bottom first) and active_paint_layer (null is the base).
+Change a paint layer: name, blend (any of the 23 modes, see the schema), channel_blend (a blend per paint channel color, roughness, metalness, opacity or emissive; null or {} clears), opacity, visibility, or move it up or down the stack. get_scene lists each object's paint_layers (bottom first) and active_paint_layer (null is the base).
 
-- `blend`: string (normal | multiply | screen | overlay | add)
+- `blend`: string (normal | multiply | screen | overlay | add | darken | lighten | color_dodge | color_burn | linear_burn | linear_light | vivid_light | pin_light | hard_light | soft_light | difference | exclusion | subtract | divide | hue | saturation | color | luminosity); How the layer mixes with what lies below (colour; the other channels mix normally unless channel_blend names them). hue, saturation, color and luminosity work on the colour only.
+- `channel_blend`: ['object', 'null']; Blend per paint channel (color, roughness, metalness, opacity, emissive), replacing the layer's earlier overrides. A named channel uses its mode; color falls back to blend and the rest to normal. null or {} clears the overrides.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `index`: integer; range 0 to inf; Layer number from the bottom (0); the active layer when omitted.
 - `move`: string (up | down); Move the layer one place up or down the stack.
@@ -1342,6 +1344,42 @@ Bake a layer into the mesh at its current strength and remove it. While an objec
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `index`: integer; required; range 0 to inf; Layer position, 0 first; get_scene lists each object's layers.
+
+## layer_set
+
+Change a sculpt layer: strength (-1 to 2), a shape_factor, paint_factor and mask_factor (each -2 to 2, default 1) that multiply the strength per channel, and its name. A layer records the shape, paint and mask changes of strokes and paint fills made while it is active, so paint_factor 0 gives back the base paint and shape_factor -1 inverts the sculpt. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `layer`: integer; required; range 0 to inf; Layer position, 0 first; get_scene lists each object's layers.
+- `mask_factor`: number; range -2 to 2; Scales the layer's mask on top of strength; 0 gives back the base mask.
+- `name`: string
+- `paint_factor`: number; range -2 to 2; Scales the layer's paint on top of strength; 0 gives back the base paint.
+- `shape_factor`: number; range -2 to 2; Scales the layer's shape on top of strength; 1 is as recorded, -1 inverts the sculpt.
+- `strength`: number; range -1 to 2; 0 hides the layer, 1 is as sculpted, negative inverts it; multiplies the three factors.
+
+## layer_offset
+
+Move vertices by distance (world units) along their normals into the active sculpt layer, so the layer's strength can fade it later. All vertices, or with masked_only only the masked ones, each by its mask value. One undo step.
+
+- `distance`: number; required; range -10000 to 10000; How far every vertex moves along its normal, in world units; negative moves inward.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `masked_only`: boolean; default false; Move only the masked vertices, each by its mask value; otherwise every vertex moves and the mask is ignored.
+
+## layer_bake
+
+Bake a sculpt layer's current effect (strength times factors) on shape, paint and mask into the object and delete the layer. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `layer`: integer; required; range 0 to inf; Layer position, 0 first; get_scene lists each object's layers.
+
+## layer_extract
+
+Make a new object from a sculpt layer. mode difference (default): the base mesh with only this layer applied at full strength; mask: a copy of the mesh whose mask is the layer's mask delta; displaced_only: only the vertices the layer moves, as a shell. The original is unchanged.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `layer`: integer; required; range 0 to inf; Layer position, 0 first; get_scene lists each object's layers.
+- `mode`: string (difference | mask | displaced_only); default "difference"; difference: the base mesh (all layers taken off) with only this layer applied at full strength, with its paint and mask. mask: a copy of the current mesh whose mask is the layer's mask delta (positive part). displaced_only: only the vertices this layer moves, thickened into a shell (as extract_mask does) from the current mesh.
+- `thickness`: number; range -10000 to 10000; displaced_only: shell thickness in world units; 2 percent of the object's size when omitted.
 
 ## save_project
 
