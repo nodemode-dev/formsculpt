@@ -54,6 +54,10 @@ button { font: inherit; color: inherit; }
 .falloff-editor { display: block; width: 100%; height: 64px; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); cursor: ns-resize; touch-action: none; }
 .falloff-editor polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .falloff-editor path { fill: var(--accent-color); stroke: none; }
+.profile-editor { display: block; width: 160px; height: 160px; margin: var(--space-3) auto 0; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); cursor: crosshair; touch-action: none; }
+.profile-editor .profile-axes { fill: none; stroke: var(--border-light); stroke-width: 1; }
+.profile-editor polygon { fill: var(--accent-color-dim); stroke: var(--accent-color); stroke-width: 2; stroke-linejoin: round; }
+.profile-editor path:not(.profile-axes) { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 1.5; }
 .uv-view { position: relative; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
 .uv-view img { display: block; width: 100%; height: 100%; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
 .uv-view [hidden] { display: none; }

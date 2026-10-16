@@ -147,6 +147,11 @@ interface Shell {
   curveChain: HTMLInputElement;
   setPick: HTMLSelectElement;
   tubeProfile: HTMLSelectElement;
+  curveIntensity: HTMLSelectElement;
+  profileEditor: SVGSVGElement;
+  profileLine: SVGPolygonElement;
+  profileDots: SVGPathElement;
+  profileButtons: HTMLButtonElement[];
   tubeCap: HTMLSelectElement;
   tubeHole: HTMLInputElement;
   tubeSpiral: HTMLInputElement;
@@ -343,6 +348,7 @@ const FILE_ACTIONS: [string, string][] = [
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
 const BACKDROP_KEY = 'formsculptor.backdrop';
+const PROFILES_KEY = 'formsculptor.profiles';
 
 const OBJECT_ACTIONS: [string, string][] = [
   ['duplicate', 'Duplicate'],
@@ -646,7 +652,7 @@ function buildShell(root: HTMLElement): Shell {
   const curveInterp = choices('Path shape', [['catmull_rom', 'Smooth'], ['bspline', 'Softer'], ['linear', 'Straight']]);
   const curveClosed = input('checkbox', { 'aria-label': 'Closed path' });
   const curveRound = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Corner round' });
-  const tubeProfile = choices('Tube profile', [['circle', 'Circle'], ['square', 'Square'], ['triangle', 'Triangle'], ['star', 'Star'], ['flat', 'Flat strap']]);
+  const tubeProfile = choices('Tube profile', [['circle', 'Circle'], ['square', 'Square'], ['triangle', 'Triangle'], ['star', 'Star'], ['flat', 'Flat strap'], ['custom', 'Drawn below']]);
   const tubeCap = choices('Tube ends', [['flat', 'Flat'], ['round', 'Round'], ['none', 'Open']]);
   const tubeHole = input('number', { min: '0', max: '1', step: '0.005', value: '0', 'aria-label': 'Pipe wall' });
   const tubeSpiral = input('number', { min: '0', max: '64', step: '0.5', value: '0', 'aria-label': 'Spiral turns' });
@@ -658,8 +664,37 @@ function buildShell(root: HTMLElement): Shell {
   const curveOffset = input('number', { min: '-1', max: '1', step: '0.005', value: '0', 'aria-label': 'Surface offset' });
   const curveGrid = input('number', { min: '0', max: '10', step: '0.05', value: '0', 'aria-label': 'Grid snap' });
   const curveChain = input('checkbox', { 'aria-label': 'Drag as chain' });
-  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Surface offset', curveOffset), field('Grid snap', curveGrid), field('Drag as chain', curveChain), field('Tube profile', tubeProfile), field('Radius along path', radiusMode), field('End radius %', radiusEnd), field('Point radius %', pointRadius), field('Point twist', pointTwist), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
+  const curveIntensity = choices('Intensity along curve', [['even', 'Even'], ['fade_in', 'Fade in'], ['fade_out', 'Fade out'], ['fade_both', 'Fade both ends'], ['pulse', 'Pulse']]);
+  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Surface offset', curveOffset), field('Grid snap', curveGrid), field('Drag as chain', curveChain), field('Intensity along curve', curveIntensity), field('Tube profile', tubeProfile), field('Radius along path', radiusMode), field('End radius %', radiusEnd), field('Point radius %', pointRadius), field('Point twist', pointTwist), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
   panel.append(pathFields);
+  // The tube profile editor: a closed outline in units of the tube radius, always shown at a fixed size.
+  const profileEditor = document.createElementNS(SVG, 'svg');
+  profileEditor.setAttribute('class', 'profile-editor');
+  profileEditor.setAttribute('viewBox', '0 0 200 200');
+  profileEditor.setAttribute('role', 'img');
+  profileEditor.setAttribute('aria-label', 'Tube profile, drag the points');
+  const profileAxes = document.createElementNS(SVG, 'path');
+  profileAxes.setAttribute('class', 'profile-axes');
+  profileAxes.setAttribute('d', 'M100,8V192M8,100H192');
+  const profileLine = document.createElementNS(SVG, 'polygon');
+  const profileDots = document.createElementNS(SVG, 'path');
+  profileEditor.append(profileAxes, profileLine, profileDots);
+  panel.append(profileEditor);
+  const profileGrid = el('div', 'add-grid two after-fields');
+  const profileButtons = (
+    [
+      ['profile_save', 'Save profile'],
+      ['profile_delete', 'Delete saved profile'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    profileGrid.append(b);
+    return b;
+  });
+  panel.append(profileGrid);
+  panel.append(el('p', 'panel-hint', 'Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.'));
   const pathGrid = el('div', 'add-grid two after-fields');
   const pathButtons = (
     [
@@ -1101,6 +1136,7 @@ function buildShell(root: HTMLElement): Shell {
   tag(buildButtons, 'build', action);
   tag(curveButtons, 'curve', action);
   tag(pathButtons, 'curve', action);
+  tag(profileButtons, 'curve', action);
   tag(paintButtons, 'paint', action);
   tag(paintLayerButtons, 'paintLayer', action);
   tag(uvButtons, 'uv', action);
@@ -1117,7 +1153,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, tubeProfile, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1324,6 +1360,10 @@ class SceneView {
       const o = this.scene.objects.find((x) => x.id === this.scene.active);
       return o && o.editable_build === kind ? o.id : null;
     };
+    this.wireProfile(() => {
+      const id = editable('tube');
+      if (id !== null) void this.run('edit_build', { id, profile: this.tubeArgs().profile });
+    });
     shell.tubeRadius.addEventListener('change', () => {
       const id = editable('tube');
       if (id !== null) void this.run('edit_build', { id, radius: Math.max(0.005, Math.min(1, Number(shell.tubeRadius.value) || 0.05)) });
@@ -1838,7 +1878,7 @@ class SceneView {
       radius,
       radius_mode: s.radiusMode.value,
       radius_end: radius * Math.max(0.05, Number(s.radiusEnd.value) / 100),
-      profile: s.tubeProfile.value,
+      profile: s.tubeProfile.value === 'custom' || s.tubeProfile.value.startsWith('saved:') ? this.profilePts.map((q) => ({ p: q.p, sharp: q.sharp })) : s.tubeProfile.value,
       cap: s.tubeCap.value,
       hole: Math.max(0, Number(s.tubeHole.value) || 0),
       spiral: Math.max(0, Number(s.tubeSpiral.value) || 0),
@@ -2294,6 +2334,149 @@ class SceneView {
     this.note(`Curve from the border: ${reply.result.points.length} handles, ${reply.result.closed ? 'closed' : 'open'} (${reply.result.loops} border${reply.result.loops === 1 ? '' : 's'} found, the longest taken)`);
   }
 
+  /** The drawn tube profile, in units of the tube radius; starts as a rounded-off square with smooth sides. */
+  private profilePts: { p: [number, number]; sharp: boolean }[] = [
+    { p: [0.8, 0.8], sharp: true },
+    { p: [-0.8, 0.8], sharp: true },
+    { p: [-0.8, -0.8], sharp: true },
+    { p: [0.8, -0.8], sharp: true },
+  ];
+  private profileDrag: number | null = null;
+
+  private drawProfile(): void {
+    const xy = (q: [number, number]): [number, number] => [100 + q[0] * 76, 100 - q[1] * 76];
+    const pts = this.profilePts.map((q) => xy(q.p));
+    setAttr(this.shell.profileLine, 'points', pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '));
+    setAttr(
+      this.shell.profileDots,
+      'd',
+      pts.map(([x, y], i) => (this.profilePts[i].sharp ? `M${x - 4},${y - 4}h8v8h-8z` : `M${x - 4},${y}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`)).join(''),
+    );
+  }
+
+  private savedProfiles(): Record<string, { p: [number, number]; sharp: boolean }[]> {
+    try {
+      return JSON.parse(localStorage.getItem(PROFILES_KEY) ?? '{}') as Record<string, { p: [number, number]; sharp: boolean }[]>;
+    } catch {
+      return {};
+    }
+  }
+
+  private storeProfiles(all: Record<string, { p: [number, number]; sharp: boolean }[]>): void {
+    try {
+      localStorage.setItem(PROFILES_KEY, JSON.stringify(all));
+    } catch {
+      this.note(t('Profiles cannot be saved in this browser; this one lasts for the session'));
+    }
+  }
+
+  /** Saved profiles appear in Tube profile after the presets, as saved:Name options. */
+  private listProfiles(): void {
+    const pick = this.shell.tubeProfile;
+    const names = Object.keys(this.savedProfiles()).sort();
+    for (const o of Array.from(pick.options)) if (o.value.startsWith('saved:') && !names.includes(o.value.slice(6))) o.remove();
+    for (const name of names) {
+      if (Array.from(pick.options).some((o) => o.value === `saved:${name}`)) continue;
+      const o = el('option', '', name);
+      o.value = `saved:${name}`;
+      pick.append(o);
+    }
+  }
+
+  private wireProfile(changed: () => void): void {
+    const s = this.shell;
+    const at = (e: PointerEvent): [number, number] => {
+      const box = s.profileEditor.getBoundingClientRect();
+      const x = ((e.clientX - box.left) / Math.max(1, box.width)) * 200;
+      const y = ((e.clientY - box.top) / Math.max(1, box.height)) * 200;
+      return [Math.max(-1.2, Math.min(1.2, (x - 100) / 76)), Math.max(-1.2, Math.min(1.2, (100 - y) / 76))];
+    };
+    const touched = (): void => {
+      if (!s.tubeProfile.value.startsWith('saved:')) s.tubeProfile.value = 'custom';
+      this.drawProfile();
+    };
+    s.profileEditor.addEventListener('pointerdown', (e) => {
+      const q = at(e);
+      const pts = this.profilePts;
+      const near = pts.findIndex((v) => Math.hypot(v.p[0] - q[0], v.p[1] - q[1]) < 0.09);
+      if (near >= 0 && e.shiftKey) {
+        if (pts.length > 3) pts.splice(near, 1);
+        else this.note(t('A profile needs at least three points'));
+        touched();
+        changed();
+        return;
+      }
+      if (near >= 0 && e.altKey) {
+        pts[near].sharp = !pts[near].sharp;
+        touched();
+        changed();
+        return;
+      }
+      let index = near;
+      if (index < 0) {
+        let best = 0;
+        let bestD = Infinity;
+        for (let i = 0; i < pts.length; i++) {
+          const [a, b] = [pts[i].p, pts[(i + 1) % pts.length].p];
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          const t0 = Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / Math.max(1e-9, dx * dx + dy * dy)));
+          const d = Math.hypot(a[0] + dx * t0 - q[0], a[1] + dy * t0 - q[1]);
+          if (d < bestD) [best, bestD] = [i, d];
+        }
+        pts.splice(best + 1, 0, { p: q, sharp: false });
+        index = best + 1;
+      }
+      this.profileDrag = index;
+      s.profileEditor.setPointerCapture(e.pointerId);
+      touched();
+    });
+    s.profileEditor.addEventListener('pointermove', (e) => {
+      if (this.profileDrag === null || !s.profileEditor.hasPointerCapture(e.pointerId)) return;
+      this.profilePts[this.profileDrag].p = at(e);
+      this.drawProfile();
+    });
+    s.profileEditor.addEventListener('pointerup', () => {
+      if (this.profileDrag === null) return;
+      this.profileDrag = null;
+      changed();
+    });
+    s.tubeProfile.addEventListener('change', () => {
+      const v = s.tubeProfile.value;
+      if (!v.startsWith('saved:')) return;
+      const saved = this.savedProfiles()[v.slice(6)];
+      if (saved && saved.length >= 3) this.profilePts = saved.map((q) => ({ p: [q.p[0], q.p[1]], sharp: q.sharp }));
+      this.drawProfile();
+    });
+    for (const b of s.profileButtons) {
+      this.on(b, () => void this.profileAction(b.dataset.action ?? ''));
+    }
+    this.listProfiles();
+    this.drawProfile();
+  }
+
+  private async profileAction(action: string): Promise<void> {
+    const all = this.savedProfiles();
+    const current = this.shell.tubeProfile.value.startsWith('saved:') ? this.shell.tubeProfile.value.slice(6) : '';
+    if (action === 'profile_delete') {
+      if (!current) {
+        this.note(t('Choose a saved profile in Tube profile first'));
+        return;
+      }
+      delete all[current];
+      this.storeProfiles(all);
+      this.shell.tubeProfile.value = 'custom';
+      this.listProfiles();
+      return;
+    }
+    const name = await this.prompt.ask(t('Save profile'), current || `Profile ${Object.keys(all).length + 1}`);
+    if (!name) return;
+    all[name] = this.profilePts.map((q) => ({ p: q.p, sharp: q.sharp }));
+    this.storeProfiles(all);
+    this.listProfiles();
+    this.shell.tubeProfile.value = `saved:${name}`;
+  }
+
   /** Point radius % and Point twist write to the chosen handle. */
   private setPointShape(): void {
     const c = this.curve;
@@ -2324,7 +2507,18 @@ class SceneView {
     let points = sampled.ok && sampled.result.positions.length > 1 ? sampled.result.positions : SceneView.spline(c.handles, per);
     if (sampled.ok && this.shell.curveClosed.checked && points.length > 2) points = [...points, points[0]];
     if (points.length > 4096) points = points.filter((_, i) => i % Math.ceil(points.length / 4096) === 0);
-    await this.run('sculpt_stroke', { ...this.brushArgs(radius, false), id, points });
+    const shape = this.shell.curveIntensity.value;
+    const last = Math.max(1, points.length - 1);
+    const weigh = (i: number): number => {
+      const u = i / last;
+      if (shape === 'fade_in') return 0.1 + 0.9 * u;
+      if (shape === 'fade_out') return 1 - 0.9 * u;
+      if (shape === 'fade_both') return 0.1 + 0.9 * Math.sin(Math.PI * u);
+      if (shape === 'pulse') return 0.55 + 0.45 * Math.cos(u * Math.PI * 8);
+      return 1;
+    };
+    const weighted = shape === 'even' ? points : points.map((p, i) => [p[0], p[1], p[2], weigh(i)]);
+    await this.run('sculpt_stroke', { ...this.brushArgs(radius, false), ...(shape === 'even' ? {} : { pressure_strength: true }), id, points: weighted });
   }
 
   private clearCurve(): void {

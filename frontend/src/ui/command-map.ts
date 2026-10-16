@@ -48,6 +48,8 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     all_sharp: c('curve.all_sharp', 'Make Every Curve Point a Corner'),
     all_smooth: c('curve.all_smooth', 'Make Every Curve Point Smooth'),
     tube_curve: c('build.tube_from_curve', 'Tube from Curve'),
+    profile_save: c('curve.profile_save', 'Save Tube Profile'),
+    profile_delete: c('curve.profile_delete', 'Delete Saved Tube Profile'),
   },
   paint: {
     paint_fill: n('paint.fill', 'Fill Object'),
