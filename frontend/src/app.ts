@@ -106,6 +106,13 @@ interface Shell {
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
   layerHeight: HTMLInputElement;
+  spacing: HTMLInputElement;
+  evenDeposit: HTMLInputElement;
+  brushOffset: HTMLInputElement;
+  strokeJitter: HTMLInputElement;
+  snapRadius: HTMLInputElement;
+  constantRadius: HTMLInputElement;
+  sharedRadius: HTMLInputElement;
   repeatStep: HTMLSelectElement;
   repeatResult: HTMLSelectElement;
   scatterCount: HTMLInputElement;
@@ -644,6 +651,14 @@ function buildShell(root: HTMLElement): Shell {
   }
   const lazy = input('range', { min: '0', max: '95', value: '0', 'aria-label': 'Lazy mouse' });
   const layerHeight = input('range', { min: '1', max: '100', value: '10', 'aria-label': 'Layer height %' });
+  const spacing = input('range', { min: '2', max: '200', value: '15', 'aria-label': 'Spacing %' });
+  const evenDeposit = input('checkbox', { 'aria-label': 'Even deposit' });
+  const brushOffset = input('range', { min: '-100', max: '100', value: '0', 'aria-label': 'Brush offset %' });
+  const strokeJitter = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Stroke jitter %' });
+  const snapRadius = input('number', { min: '0', max: '10', step: '0.01', value: '0', 'aria-label': 'Snap radius' });
+  const constantRadius = input('checkbox', { 'aria-label': 'Constant 3D radius' });
+  const sharedRadius = input('checkbox', { 'aria-label': 'Shared radius' });
+  sharedRadius.checked = true;
   const alpha = choices('Alpha', ALPHAS);
   const alphaAngle = input('number', { min: '-360', max: '360', step: '5', value: '0', 'aria-label': 'Alpha angle' });
   const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)'], ['spray', 'Spray (scattered)']]);
@@ -656,7 +671,7 @@ function buildShell(root: HTMLElement): Shell {
   pressureStrength.checked = true;
   const pressureSize = input('checkbox', { 'aria-label': 'Pressure sets size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Layer height %', layerHeight));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Layer height %', layerHeight), field('Spacing %', spacing), field('Even deposit', evenDeposit), field('Brush offset %', brushOffset), field('Stroke jitter %', strokeJitter), field('Snap radius', snapRadius), field('Constant 3D radius', constantRadius), field('Shared radius', sharedRadius));
   panel.append(fields);
   // The falloff curve: five weights from the centre (left) to the rim (right), dragged up and down; always shown, so
   // choosing a preset or drawing never changes the panel's height.
@@ -1219,7 +1234,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1234,7 +1249,19 @@ class SceneView {
     shell.addButtons.forEach((b) => this.on(b, () => void this.add(b.dataset.kind ?? 'sphere')));
     shell.brushButtons.forEach((b) =>
       this.on(b, () => {
-        this.brush = b.dataset.brush ?? 'draw';
+        const next = b.dataset.brush ?? 'draw';
+        // With Shared radius off, each brush keeps the radius and strength it was last used with.
+        if (!shell.sharedRadius.checked && next !== this.brush) {
+          this.perBrush.set(this.brush, { radius: shell.radius.value, strength: shell.strength.value });
+          const kept = this.perBrush.get(next);
+          if (kept) {
+            shell.radius.value = kept.radius;
+            shell.strength.value = kept.strength;
+            shell.radius.dispatchEvent(new Event('input', { bubbles: true }));
+            shell.strength.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+        this.brush = next;
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         this.drawTools();
         scheduleChrome();
@@ -1337,7 +1364,13 @@ class SceneView {
     this.strokes.onUpdate = (u) => {
       if (!this.smoothPreview) this.viewport.patchMesh(u);
     };
+    const holdRadius = (): void => {
+      if (shell.constantRadius.checked) this.worldRadius = Number(shell.radius.value) * this.viewport.camera.worldPerPixel(shell.canvas.clientHeight);
+    };
+    shell.constantRadius.addEventListener('change', holdRadius);
+    shell.radius.addEventListener('input', holdRadius);
     this.strokes.onEnd = (r) => {
+      this.strokeSeed += 1;
       // Under the preview the revision stays behind, so the refresh fetches the smoothed result.
       if (r && !this.smoothPreview) this.viewport.renderer.setRevision(r.id, r.revision);
       if (r?.no_active_layer) this.note(t('Layer reset needs an active sculpt layer'));
@@ -1813,7 +1846,32 @@ class SceneView {
       pressure_strength: s.pressure.strength,
       pressure_size: s.pressure.size,
       ...(this.lastBrush === 'layer' ? { height: radius * s.layerHeight } : {}),
+      ...s.options,
     };
+  }
+
+  /** The world radius Constant 3D radius holds, taken from the Radius slider at the current zoom when it is turned on or the slider moves. */
+  private worldRadius = 0.1;
+  /** A seed per stroke, so jittered strokes differ from each other but each one is reproducible from its seed. */
+  private strokeSeed = 1;
+  /** Each brush's own radius and strength while Shared radius is off. */
+  private perBrush = new Map<string, { radius: string; strength: string }>();
+
+  /** Spacing, Even deposit, Brush offset, Stroke jitter and Snap radius as sculpt_stroke arguments (left out at their defaults). */
+  private strokeOptions(): Record<string, unknown> {
+    const s = this.shell;
+    const out: Record<string, unknown> = {};
+    const spacing = Math.max(0.02, Math.min(2, Number(s.spacing.value) / 100));
+    if (spacing !== 0.15) out.spacing = spacing;
+    if (s.evenDeposit.checked) out.spacing_compensation = true;
+    const offset = Math.max(-1, Math.min(1, Number(s.brushOffset.value) / 100));
+    if (offset !== 0) out.offset = offset;
+    const j = Math.max(0, Math.min(1, Number(s.strokeJitter.value) / 100));
+    // One share drives all three: the centre wanders up to one radius, radius and strength vary by up to half.
+    if (j > 0) out.jitter = { position: j, radius: j * 0.5, strength: j * 0.5, seed: this.strokeSeed };
+    const snap = Math.max(0, Number(s.snapRadius.value) || 0);
+    if (snap > 0) out.snap_radius = snap;
+    return out;
   }
 
   /** Where each curve handle falls on the canvas now, or null behind the camera. */
@@ -3484,6 +3542,8 @@ class SceneView {
       stroke: s.strokeMode.value,
       pressure: { gamma: Math.max(0.2, Math.min(5, Number(s.pressureGamma.value) || 1)), strength: s.pressureStrength.checked, size: s.pressureSize.checked },
       layerHeight: Math.max(0.01, Math.min(1, Number(s.layerHeight.value) / 100)),
+      options: this.strokeOptions(),
+      worldRadius: s.constantRadius.checked ? this.worldRadius : null,
       lazy: Number(s.lazy.value) / 100,
       symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,

@@ -23,6 +23,10 @@ export interface BrushState {
   pressure: { gamma: number; strength: boolean; size: boolean };
   /** The Layer brush's height cap as a share of the brush radius. */
   layerHeight: number;
+  /** Stroke options sent to the engine as they are: spacing, spacing_compensation, offset, jitter, snap_radius. */
+  options: Record<string, unknown>;
+  /** A world radius that holds whatever the zoom (Constant 3D radius), or null to size the brush in pixels. */
+  worldRadius: number | null;
 }
 
 export interface StrokeResult {
@@ -137,12 +141,12 @@ export class StrokeClient {
     this.miss = false;
     this.live = true;
     this.objectId = objectId;
-    const radius = Math.max(1e-4, brush.radiusPx * worldPerPixel);
+    const radius = Math.max(1e-4, brush.worldRadius ?? brush.radiusPx * worldPerPixel);
     const size = brush.dyntopoScreenPx !== null ? Math.max(1e-5, brush.dyntopoScreenPx * worldPerPixel) : brush.dyntopoSize;
     this.send({
       type: 'begin',
       id: objectId,
-      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}), ...(brush.alpha ?? {}), stroke: brush.stroke, ...(brush.falloffCurve ? { falloff_curve: brush.falloffCurve } : {}), pressure_gamma: brush.pressure.gamma, pressure_strength: brush.pressure.strength, pressure_size: brush.pressure.size, ...(brush.brush === 'layer' ? { height: radius * brush.layerHeight } : {}) },
+      brush: { brush: brush.brush, radius, strength: brush.strength, invert: brush.invert !== invert, falloff: brush.falloff, lazy: brush.lazy, symmetry: brush.symmetry, dyntopo: brush.dyntopo, dyntopo_size: size, ...(brush.paint ?? {}), ...(brush.alpha ?? {}), stroke: brush.stroke, ...(brush.falloffCurve ? { falloff_curve: brush.falloffCurve } : {}), pressure_gamma: brush.pressure.gamma, pressure_strength: brush.pressure.strength, pressure_size: brush.pressure.size, ...(brush.brush === 'layer' ? { height: radius * brush.layerHeight } : {}), ...brush.options },
     });
     this.firstSeq = ++this.seq;
     this.send({ type: 'sample', seq: this.firstSeq, origin, dir, pressure, tilt });
