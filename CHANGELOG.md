@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.40.0 · 2026-10-16
+
+### Added
+
+- `uv_density` (texel density per UV island at a texture size, with mean, min, max and spread), `uv_equalize` (every island to one density, repacked, one undo step) and `uv_relax` (conformal or plain relaxing of UVs with borders and chosen vertices pinned, stretch reported before and after).
+- UV section: Relax, Even density and Density.
+- 132 engine commands; 778 interface strings in every language.
+
 ## 0.39.0 · 2026-10-16
 
 ### Added
