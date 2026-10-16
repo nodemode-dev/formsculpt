@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.53.0 · 2026-10-16
+
+### Added
+
+- Painting straight into a texture: `texture_create` (blank or baked from vertex paint, 256 to 4096), `texture_clear`, `get_texture`, and `target: "texture"` on `sculpt_stroke` and `paint_fill`, finer than the mesh; GLB export and `bake_maps` use the texture; saved in projects.
+- `pick_paint`: the paint at a surface point, from the texture or the vertex paint.
+- Window: painted textures drawn in the viewport, Paint into texture, Make texture and Drop texture, an Eyedropper tool and Material presets (clay, gold, silver, copper, chrome, red plastic, rubber, bone, skin, stone).
+- 153 engine commands; 948 interface strings in every language.
+
 ## 0.52.0 · 2026-10-16
 
 ### Added
