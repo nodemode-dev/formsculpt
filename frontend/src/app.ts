@@ -273,6 +273,8 @@ const BRUSHES: [string, string][] = [
   ['vdm', 'VDM stamp'],
   ['cut', 'Lasso cut'],
   ['trim_shape', 'Lasso trim'],
+  ['slice_curve', 'Slice curve'],
+  ['trim_curve', 'Trim curve'],
   ['insert_brush', 'Insert brush'],
   ['group_brush', 'Group brush'],
   ['retopo', 'Retopo quad'],
@@ -286,7 +288,7 @@ const BRUSHES: [string, string][] = [
 ];
 
 /** Window-side tools that draw or click instead of streaming a stroke to the engine. */
-const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette', 'cut', 'trim_shape', 'insert_brush', 'group_brush']);
+const SHAPE_TOOLS = new Set(['mask_box', 'mask_lasso', 'stamp', 'dragdot', 'curve', 'gizmo', 'lattice', 'silhouette', 'cut', 'trim_shape', 'slice_curve', 'trim_curve', 'insert_brush', 'group_brush']);
 
 /** A #rrggbb colour as linear 0..1 light, normalised so its brightest channel is 1 (strength is set apart). */
 function hexToLinear(hex: string): [number, number, number] {
@@ -1681,6 +1683,10 @@ class SceneView {
       await this.strokeTool(shape.pts, shape.wpp, shape.kind);
       return;
     }
+    if (shape?.kind === 'slice_curve' || shape?.kind === 'trim_curve') {
+      await this.curveSideEnd(shape.pts, shape.kind === 'trim_curve', shape.subtract);
+      return;
+    }
     if (shape?.kind === 'cut' || shape?.kind === 'trim_shape') {
       await this.cutEnd(shape.pts, shape.kind === 'trim_shape');
       return;
@@ -1975,6 +1981,51 @@ class SceneView {
   }
 
   /** Lasso cut or trim: the outline, taken onto the plane through the orbit centre facing the view, cut straight through the active object along the view. */
+  /**
+   * Slice curve and Trim curve: an open stroke becomes the edge of a half-plane on screen. Its ends are carried far past
+   * the view and the outline closes on the stroke's left (its right with Ctrl). Slice puts the faces on that side in a
+   * new face group (group_from_outline); Trim cuts that side away (cut_shape, keeping the rest).
+   */
+  private async curveSideEnd(pts: [number, number][], trim: boolean, flip: boolean): Promise<void> {
+    const id = this.scene.active;
+    const thin: [number, number][] = [];
+    for (const p of pts) if (!thin.length || Math.hypot(p[0] - thin[thin.length - 1][0], p[1] - thin[thin.length - 1][1]) > 3) thin.push(p);
+    if (id === null || thin.length < 2) {
+      this.note(trim ? t('Drag a line across the object; the part on its left is cut away (Ctrl for the right)') : t('Drag a line across the object; the faces on its left become a new group (Ctrl for the right)'));
+      return;
+    }
+    const w = Math.max(1, this.shell.canvas.clientWidth);
+    const h = Math.max(1, this.shell.canvas.clientHeight);
+    // Far enough to clear the object's projected box from either end, no farther: a cut is built over the outline's extent.
+    const o = this.scene.objects.find((x) => x.id === id);
+    const project = this.projector();
+    const corners = o?.bounds
+      ? [0, 1, 2, 3, 4, 5, 6, 7].map((k) => project([k & 1 ? o.bounds.max[0] : o.bounds.min[0], k & 2 ? o.bounds.max[1] : o.bounds.min[1], k & 4 ? o.bounds.max[2] : o.bounds.min[2]])).filter((q): q is [number, number] => q !== null)
+      : [];
+    const reach = (p: [number, number]): number => Math.max(0, ...corners.map((q) => Math.hypot(q[0] - p[0], q[1] - p[1])));
+    const far = corners.length ? Math.max(reach(pts[0]), reach(pts[pts.length - 1])) + 24 : 4 * Math.hypot(w, h);
+    const unit = (a: [number, number], b: [number, number]): [number, number] => {
+      const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [(b[0] - a[0]) / d, (b[1] - a[1]) / d];
+    };
+    const n = thin.length;
+    const head = unit(thin[1], thin[0]);
+    const tail = unit(thin[n - 2], thin[n - 1]);
+    const chord = unit(thin[0], thin[n - 1]);
+    const side: [number, number] = flip ? [-chord[1], chord[0]] : [chord[1], -chord[0]];
+    const start: [number, number] = [thin[0][0] + head[0] * far, thin[0][1] + head[1] * far];
+    const end: [number, number] = [thin[n - 1][0] + tail[0] * far, thin[n - 1][1] + tail[1] * far];
+    const outline: [number, number][] = [start, ...thin, end, [end[0] + side[0] * far, end[1] + side[1] * far], [start[0] + side[0] * far, start[1] + side[1] * far]];
+    if (!trim) {
+      const viewProj = Array.from(this.viewport.camera.viewProjection());
+      await this.run('group_from_outline', { id, shape: 'lasso', points: outline.map(([x, y]) => [x / w, y / h]), view_proj: viewProj });
+      this.shell.showGroups.checked = true;
+      this.shell.showGroups.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    await this.cutEnd(outline, false);
+  }
+
   private async cutEnd(pts: [number, number][], keepInside: boolean): Promise<void> {
     const id = this.scene.active;
     if (id === null || pts.length < 3) {

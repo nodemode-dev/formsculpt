@@ -54,7 +54,7 @@ const SCULPT: MenuItem[] = [
 const MASK: MenuItem[] = [
   ...tool('mask', 'mask_box', 'mask_lasso', 'mask_topo', 'mask_group'), '-',
   'mask.invert', 'mask.clear', 'mask.blur', 'mask.sharpen', 'mask.grow', 'mask.shrink', 'mask.cavity', 'mask.peaks', 'mask.color', '-',
-  'group.from_mask', 'group.auto', 'group.by_paint', 'group.by_uv', ...tool('group_brush'), '-',
+  'group.from_mask', 'group.auto', 'group.by_paint', 'group.by_uv', ...tool('group_brush', 'slice_curve'), '-',
   'faces.hide_masked', 'faces.invert_hidden', 'faces.show', ...tool('hide_group'), '-',
   'mask.extract', 'mask.extrude', 'mask.inset', '-',
   { label: 'Selection Sets', items: ['selection.save', 'selection.restore', 'selection.delete'] },
@@ -62,7 +62,7 @@ const MASK: MenuItem[] = [
 
 const TOPOLOGY: MenuItem[] = [
   'topo.subdivide', 'topo.remesh_voxel', 'topo.decimate', 'topo.fill_holes', 'topo.quad_remesh', 'topo.delete_faces', 'topo.bridge', 'topo.bevel', 'topo.project', 'topo.check', '-',
-  ...tool('retopo', 'edge_loop', 'bevel_edge', 'clip', 'cut', 'trim_shape', 'zsphere'), '-',
+  ...tool('retopo', 'edge_loop', 'bevel_edge', 'clip', 'cut', 'trim_shape', 'trim_curve', 'zsphere'), '-',
   { label: 'Multires', items: ['multires.divide', 'multires.higher', 'multires.lower', 'multires.delete_lower', 'multires.delete_higher', 'multires.reconstruct'] },
 ];
 
