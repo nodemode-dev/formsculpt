@@ -863,5 +863,17 @@
  "Depth mask": "Dieptemasker",
  "Front faces only": "Alleen voorkant-vlakken",
  "Keep sharp edges": "Scherpe randen behouden",
- "Same group only": "Alleen dezelfde vlakgroep"
+ "Same group only": "Alleen dezelfde vlakgroep",
+ "Alpha mid %": "Alpha-midden %",
+ "Alpha rotation": "Alpha-rotatie",
+ "Alpha stretch": "Alpha-rek",
+ "Alpha tiles": "Alpha-tegels",
+ "Choose a tool preset first": "Kies eerst een gereedschapspreset",
+ "Delete tool preset": "Gereedschapspreset verwijderen",
+ "Delete Tool Preset": "Gereedschapspreset verwijderen",
+ "Invert alpha": "Alpha omkeren",
+ "Save Tool Preset": "Gereedschapspreset opslaan",
+ "Save tool preset": "Gereedschapspreset opslaan",
+ "Tool preset": "Gereedschapspreset",
+ "Tool presets cannot be saved in this browser": "Gereedschapspresets kunnen in deze browser niet worden opgeslagen"
 }

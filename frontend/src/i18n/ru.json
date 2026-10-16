@@ -863,5 +863,17 @@
  "Depth mask": "Маска глубины",
  "Front faces only": "Только лицевые грани",
  "Keep sharp edges": "Сохранять острые края",
- "Same group only": "Только та же группа граней"
+ "Same group only": "Только та же группа граней",
+ "Alpha mid %": "Середина альфы %",
+ "Alpha rotation": "Поворот альфы",
+ "Alpha stretch": "Растяжение альфы",
+ "Alpha tiles": "Повторы альфы",
+ "Choose a tool preset first": "Сначала выберите пресет инструмента",
+ "Delete tool preset": "Удалить пресет инструмента",
+ "Delete Tool Preset": "Удалить пресет инструмента",
+ "Invert alpha": "Инвертировать альфу",
+ "Save Tool Preset": "Сохранить пресет инструмента",
+ "Save tool preset": "Сохранить пресет инструмента",
+ "Tool preset": "Пресет инструмента",
+ "Tool presets cannot be saved in this browser": "Пресеты инструментов нельзя сохранить в этом браузере"
 }

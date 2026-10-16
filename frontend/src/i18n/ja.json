@@ -863,5 +863,17 @@
  "Depth mask": "深度マスク",
  "Front faces only": "前面のみ",
  "Keep sharp edges": "シャープなエッジを保持",
- "Same group only": "同じフェースグループのみ"
+ "Same group only": "同じフェースグループのみ",
+ "Alpha mid %": "アルファ中間値 %",
+ "Alpha rotation": "アルファ回転",
+ "Alpha stretch": "アルファ引き伸ばし",
+ "Alpha tiles": "アルファタイル数",
+ "Choose a tool preset first": "先にツールプリセットを選択してください",
+ "Delete tool preset": "ツールプリセットを削除",
+ "Delete Tool Preset": "ツールプリセットを削除",
+ "Invert alpha": "アルファを反転",
+ "Save Tool Preset": "ツールプリセットを保存",
+ "Save tool preset": "ツールプリセットを保存",
+ "Tool preset": "ツールプリセット",
+ "Tool presets cannot be saved in this browser": "このブラウザーではツールプリセットを保存できません"
 }

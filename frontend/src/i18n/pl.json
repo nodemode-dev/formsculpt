@@ -863,5 +863,17 @@
  "Depth mask": "Maska głębokości",
  "Front faces only": "Tylko ściany frontowe",
  "Keep sharp edges": "Zachowaj ostre krawędzie",
- "Same group only": "Tylko ta sama grupa ścian"
+ "Same group only": "Tylko ta sama grupa ścian",
+ "Alpha mid %": "Środek alfy %",
+ "Alpha rotation": "Obrót alfy",
+ "Alpha stretch": "Rozciągnięcie alfy",
+ "Alpha tiles": "Powtórzenia alfy",
+ "Choose a tool preset first": "Najpierw wybierz preset narzędzia",
+ "Delete tool preset": "Usuń preset narzędzia",
+ "Delete Tool Preset": "Usuń preset narzędzia",
+ "Invert alpha": "Odwróć alfę",
+ "Save Tool Preset": "Zapisz preset narzędzia",
+ "Save tool preset": "Zapisz preset narzędzia",
+ "Tool preset": "Preset narzędzia",
+ "Tool presets cannot be saved in this browser": "Presety narzędzi nie mogą być zapisywane w tej przeglądarce"
 }

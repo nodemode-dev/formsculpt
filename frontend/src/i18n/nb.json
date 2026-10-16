@@ -863,5 +863,17 @@
  "Depth mask": "Dybdemaske",
  "Front faces only": "Kun forsider",
  "Keep sharp edges": "Behold skarpe kanter",
- "Same group only": "Kun samme flategruppe"
+ "Same group only": "Kun samme flategruppe",
+ "Alpha mid %": "Alfamidtpunkt %",
+ "Alpha rotation": "Alfarotasjon",
+ "Alpha stretch": "Alfastrekk",
+ "Alpha tiles": "Alfarepetisjoner",
+ "Choose a tool preset first": "Velg en verktøyforhåndsinnstilling først",
+ "Delete tool preset": "Slett verktøyforhåndsinnstilling",
+ "Delete Tool Preset": "Slett verktøyforhåndsinnstilling",
+ "Invert alpha": "Inverter alfa",
+ "Save Tool Preset": "Lagre verktøyforhåndsinnstilling",
+ "Save tool preset": "Lagre verktøyforhåndsinnstilling",
+ "Tool preset": "Verktøyforhåndsinnstilling",
+ "Tool presets cannot be saved in this browser": "Verktøyforhåndsinnstillinger kan ikke lagres i denne nettleseren"
 }

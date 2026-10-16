@@ -863,5 +863,17 @@
  "Depth mask": "Mélységi maszk",
  "Front faces only": "Csak előlapok",
  "Keep sharp edges": "Éles élek megtartása",
- "Same group only": "Csak azonos lapcsoport"
+ "Same group only": "Csak azonos lapcsoport",
+ "Alpha mid %": "Alfa középérték %",
+ "Alpha rotation": "Alfa elforgatása",
+ "Alpha stretch": "Alfa nyújtása",
+ "Alpha tiles": "Alfa ismétlései",
+ "Choose a tool preset first": "Először válasszon eszköz-előbeállítást",
+ "Delete tool preset": "Eszköz-előbeállítás törlése",
+ "Delete Tool Preset": "Eszköz-előbeállítás törlése",
+ "Invert alpha": "Alfa megfordítása",
+ "Save Tool Preset": "Eszköz-előbeállítás mentése",
+ "Save tool preset": "Eszköz-előbeállítás mentése",
+ "Tool preset": "Eszköz-előbeállítás",
+ "Tool presets cannot be saved in this browser": "Az eszköz-előbeállítások nem menthetők ebben a böngészőben"
 }

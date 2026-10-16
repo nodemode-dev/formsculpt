@@ -863,5 +863,17 @@
  "Depth mask": "深度遮罩",
  "Front faces only": "仅正面",
  "Keep sharp edges": "保留锐边",
- "Same group only": "仅同一面组"
+ "Same group only": "仅同一面组",
+ "Alpha mid %": "Alpha 中灰 %",
+ "Alpha rotation": "Alpha 旋转",
+ "Alpha stretch": "Alpha 拉伸",
+ "Alpha tiles": "Alpha 平铺次数",
+ "Choose a tool preset first": "请先选择工具预设",
+ "Delete tool preset": "删除工具预设",
+ "Delete Tool Preset": "删除工具预设",
+ "Invert alpha": "反转 Alpha",
+ "Save Tool Preset": "保存工具预设",
+ "Save tool preset": "保存工具预设",
+ "Tool preset": "工具预设",
+ "Tool presets cannot be saved in this browser": "此浏览器无法保存工具预设"
 }

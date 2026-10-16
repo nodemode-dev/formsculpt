@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.48.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.49.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -381,6 +381,11 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `accumulate`: boolean; default true; When false, a vertex's displacement over one stroke is capped at the largest move any single dab gave it, so a long back-and-forth stroke does not pile up. Not used by grab, elastic, snake_hook, nudge, smooth, relax, layer or layer_reset.
 - `alpha`: string; A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp.
 - `alpha_angle`: number; default 0; range -360 to 360; Turns the alpha, in degrees.
+- `alpha_invert`: boolean; default false; Inverts the alpha (1 minus its value) before alpha_mid.
+- `alpha_mid`: number; default 0; range 0 to 1; Mid value of the alpha: values above it raise and values below it carve (rescaled to -1..1), so a grey-is-zero alpha does both. Carving applies to draw, inflate, noise and stamp; the other brushes treat below-mid as 0. 0 is off.
+- `alpha_rotation`: number; default 0; range -360 to 360; Degrees added on top of alpha_angle and, with the roll stroke, on top of the along-stroke direction.
+- `alpha_stretch`: number; default 1; range 0.1 to 10; Y stretch: the alpha's v is divided by this, so above 1 the stamp grows longer along its up direction (below 1 shorter).
+- `alpha_tile`: integer; default 1; range 1 to 16; The alpha repeats this many times across the dab in each direction.
 - `alpha_up`: array of number; The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up.
 - `area_sample`: number; default 1; range 0.1 to 2; The radius, as a share of the brush radius, over which each dab takes its area normal and plane (draw, clay, flatten, planar, trim, polish and the other brushes that read them). A small share follows fine detail, a large one a broad average.
 - `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise | smudge | elastic | polish | layer | nudge | stamp | layer_reset); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none.

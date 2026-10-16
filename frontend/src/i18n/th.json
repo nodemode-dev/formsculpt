@@ -863,5 +863,17 @@
  "Depth mask": "มาสก์ความลึก",
  "Front faces only": "เฉพาะด้านหน้า",
  "Keep sharp edges": "คงขอบคม",
- "Same group only": "เฉพาะกลุ่มหน้าเดียวกัน"
+ "Same group only": "เฉพาะกลุ่มหน้าเดียวกัน",
+ "Alpha mid %": "ค่ากลางอัลฟา %",
+ "Alpha rotation": "การหมุนอัลฟา",
+ "Alpha stretch": "การยืดอัลฟา",
+ "Alpha tiles": "จำนวนการซ้ำอัลฟา",
+ "Choose a tool preset first": "เลือกพรีเซ็ตเครื่องมือก่อน",
+ "Delete tool preset": "ลบพรีเซ็ตเครื่องมือ",
+ "Delete Tool Preset": "ลบพรีเซ็ตเครื่องมือ",
+ "Invert alpha": "กลับค่าอัลฟา",
+ "Save Tool Preset": "บันทึกพรีเซ็ตเครื่องมือ",
+ "Save tool preset": "บันทึกพรีเซ็ตเครื่องมือ",
+ "Tool preset": "พรีเซ็ตเครื่องมือ",
+ "Tool presets cannot be saved in this browser": "ไม่สามารถบันทึกพรีเซ็ตเครื่องมือในเบราว์เซอร์นี้ได้"
 }

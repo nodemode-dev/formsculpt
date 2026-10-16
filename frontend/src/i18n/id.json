@@ -863,5 +863,17 @@
  "Depth mask": "Mask kedalaman",
  "Front faces only": "Hanya sisi depan",
  "Keep sharp edges": "Pertahankan tepi tajam",
- "Same group only": "Hanya grup sisi yang sama"
+ "Same group only": "Hanya grup sisi yang sama",
+ "Alpha mid %": "Titik tengah alpha %",
+ "Alpha rotation": "Rotasi alpha",
+ "Alpha stretch": "Regangan alpha",
+ "Alpha tiles": "Ubin alpha",
+ "Choose a tool preset first": "Pilih preset alat terlebih dahulu",
+ "Delete tool preset": "Hapus preset alat",
+ "Delete Tool Preset": "Hapus preset alat",
+ "Invert alpha": "Balikkan alpha",
+ "Save Tool Preset": "Simpan preset alat",
+ "Save tool preset": "Simpan preset alat",
+ "Tool preset": "Preset alat",
+ "Tool presets cannot be saved in this browser": "Preset alat tidak dapat disimpan di browser ini"
 }

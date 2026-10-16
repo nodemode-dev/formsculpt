@@ -863,5 +863,17 @@
  "Depth mask": "Máscara de profundidad",
  "Front faces only": "Solo caras frontales",
  "Keep sharp edges": "Mantener bordes afilados",
- "Same group only": "Solo mismo grupo de caras"
+ "Same group only": "Solo mismo grupo de caras",
+ "Alpha mid %": "Nivel medio del alfa %",
+ "Alpha rotation": "Rotación del alfa",
+ "Alpha stretch": "Estiramiento del alfa",
+ "Alpha tiles": "Repeticiones del alfa",
+ "Choose a tool preset first": "Elige primero un preajuste de herramienta",
+ "Delete tool preset": "Eliminar preajuste de herramienta",
+ "Delete Tool Preset": "Eliminar preajuste de herramienta",
+ "Invert alpha": "Invertir alfa",
+ "Save Tool Preset": "Guardar preajuste de herramienta",
+ "Save tool preset": "Guardar preajuste de herramienta",
+ "Tool preset": "Preajuste de herramienta",
+ "Tool presets cannot be saved in this browser": "Los preajustes de herramienta no se pueden guardar en este navegador"
 }

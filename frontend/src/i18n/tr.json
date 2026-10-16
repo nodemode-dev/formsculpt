@@ -863,5 +863,17 @@
  "Depth mask": "Derinlik maskesi",
  "Front faces only": "Yalnızca ön yüzler",
  "Keep sharp edges": "Keskin kenarları koru",
- "Same group only": "Yalnızca aynı yüz grubu"
+ "Same group only": "Yalnızca aynı yüz grubu",
+ "Alpha mid %": "Alfa orta düzey %",
+ "Alpha rotation": "Alfa dönüşü",
+ "Alpha stretch": "Alfa esnetme",
+ "Alpha tiles": "Alfa tekrarı",
+ "Choose a tool preset first": "Önce bir araç ön ayarı seçin",
+ "Delete tool preset": "Araç ön ayarını sil",
+ "Delete Tool Preset": "Araç ön ayarını sil",
+ "Invert alpha": "Alfayı ters çevir",
+ "Save Tool Preset": "Araç ön ayarını kaydet",
+ "Save tool preset": "Araç ön ayarını kaydet",
+ "Tool preset": "Araç ön ayarı",
+ "Tool presets cannot be saved in this browser": "Araç ön ayarları bu tarayıcıda kaydedilemiyor"
 }

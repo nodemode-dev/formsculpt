@@ -863,5 +863,17 @@
  "Depth mask": "Maska hloubky",
  "Front faces only": "Pouze přivrácené stěny",
  "Keep sharp edges": "Zachovat ostré hrany",
- "Same group only": "Pouze stejná skupina stěn"
+ "Same group only": "Pouze stejná skupina stěn",
+ "Alpha mid %": "Střed alfy %",
+ "Alpha rotation": "Rotace alfy",
+ "Alpha stretch": "Natažení alfy",
+ "Alpha tiles": "Opakování alfy",
+ "Choose a tool preset first": "Nejprve vyberte předvolbu nástroje",
+ "Delete tool preset": "Smazat předvolbu nástroje",
+ "Delete Tool Preset": "Smazat předvolbu nástroje",
+ "Invert alpha": "Invertovat alfu",
+ "Save Tool Preset": "Uložit předvolbu nástroje",
+ "Save tool preset": "Uložit předvolbu nástroje",
+ "Tool preset": "Předvolba nástroje",
+ "Tool presets cannot be saved in this browser": "Předvolby nástrojů nelze v tomto prohlížeči ukládat"
 }

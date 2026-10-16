@@ -863,5 +863,17 @@
  "Depth mask": "깊이 마스크",
  "Front faces only": "앞면만",
  "Keep sharp edges": "날카로운 모서리 유지",
- "Same group only": "같은 면 그룹만"
+ "Same group only": "같은 면 그룹만",
+ "Alpha mid %": "알파 중간값 %",
+ "Alpha rotation": "알파 회전",
+ "Alpha stretch": "알파 늘이기",
+ "Alpha tiles": "알파 타일 수",
+ "Choose a tool preset first": "먼저 툴 프리셋을 선택하세요",
+ "Delete tool preset": "툴 프리셋 삭제",
+ "Delete Tool Preset": "툴 프리셋 삭제",
+ "Invert alpha": "알파 반전",
+ "Save Tool Preset": "툴 프리셋 저장",
+ "Save tool preset": "툴 프리셋 저장",
+ "Tool preset": "툴 프리셋",
+ "Tool presets cannot be saved in this browser": "이 브라우저에서는 툴 프리셋을 저장할 수 없습니다"
 }

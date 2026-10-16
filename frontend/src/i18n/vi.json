@@ -863,5 +863,17 @@
  "Depth mask": "Mask độ sâu",
  "Front faces only": "Chỉ mặt trước",
  "Keep sharp edges": "Giữ cạnh sắc",
- "Same group only": "Chỉ cùng nhóm mặt"
+ "Same group only": "Chỉ cùng nhóm mặt",
+ "Alpha mid %": "Mức giữa alpha %",
+ "Alpha rotation": "Xoay alpha",
+ "Alpha stretch": "Kéo giãn alpha",
+ "Alpha tiles": "Số lần lặp alpha",
+ "Choose a tool preset first": "Hãy chọn một cài đặt sẵn công cụ trước",
+ "Delete tool preset": "Xóa cài đặt sẵn công cụ",
+ "Delete Tool Preset": "Xóa cài đặt sẵn công cụ",
+ "Invert alpha": "Đảo alpha",
+ "Save Tool Preset": "Lưu cài đặt sẵn công cụ",
+ "Save tool preset": "Lưu cài đặt sẵn công cụ",
+ "Tool preset": "Cài đặt sẵn công cụ",
+ "Tool presets cannot be saved in this browser": "Không thể lưu cài đặt sẵn công cụ trong trình duyệt này"
 }

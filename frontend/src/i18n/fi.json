@@ -863,5 +863,17 @@
  "Depth mask": "Syvyysmaski",
  "Front faces only": "Vain etupuolen tahkot",
  "Keep sharp edges": "Säilytä terävät reunat",
- "Same group only": "Vain sama tahkoryhmä"
+ "Same group only": "Vain sama tahkoryhmä",
+ "Alpha mid %": "Alpha-keskitaso %",
+ "Alpha rotation": "Alpha-kierto",
+ "Alpha stretch": "Alpha-venytys",
+ "Alpha tiles": "Alpha-laatat",
+ "Choose a tool preset first": "Valitse ensin työkalun esiasetus",
+ "Delete tool preset": "Poista työkalun esiasetus",
+ "Delete Tool Preset": "Poista työkalun esiasetus",
+ "Invert alpha": "Käännä alpha",
+ "Save Tool Preset": "Tallenna työkalun esiasetus",
+ "Save tool preset": "Tallenna työkalun esiasetus",
+ "Tool preset": "Työkalun esiasetus",
+ "Tool presets cannot be saved in this browser": "Työkalun esiasetuksia ei voi tallentaa tässä selaimessa"
 }
