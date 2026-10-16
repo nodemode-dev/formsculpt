@@ -85,6 +85,7 @@ in vec2 vFx;
 uniform vec3 uBase;
 uniform float uOrtho;
 uniform float uPainted;
+uniform float uChecker;
 uniform float uLit;
 uniform vec4 uCap;
 uniform vec3 uTint;
@@ -144,6 +145,11 @@ void main() {
   vec3 v = uOrtho > 0.5 ? vec3(0.0, 0.0, 1.0) : normalize(-vViewPos);
   if (dot(n, v) < 0.0) n = -n;
   vec3 albedo = uPainted > 0.5 ? vCol : uBase;
+  if (uChecker > 0.5) {
+    vec2 cell = floor(fract(vCol.xy) * 16.0);
+    albedo = mod(cell.x + cell.y, 2.0) < 0.5 ? vec3(0.86, 0.86, 0.84) : vec3(0.18, 0.2, 0.24);
+    if (vCol.x < 0.0 || vCol.x > 1.0 || vCol.y < 0.0 || vCol.y > 1.0) albedo = vec3(0.85, 0.25, 0.2);
+  }
   vec3 col;
   if (uLit > 0.5) {
     float rough = clamp(vMat.x, 0.05, 1.0);
@@ -245,6 +251,8 @@ interface GpuMesh {
   drawnTris: Uint32Array;
   /** De-indexed copy for showing face groups: an indexed mesh cannot give each triangle its own colour. */
   expanded: Expanded | null;
+  /** A per-corner copy carrying UVs for the checker view, or null. */
+  checker: Expanded | null;
   /** Bounds at upload, for fitting the shadow map (strokes move vertices only a little). */
   lo: [number, number, number];
   hi: [number, number, number];
@@ -439,7 +447,7 @@ export class GlRenderer {
         if (x > hi[c]) hi[c] = x;
       }
     }
-    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, lo, hi };
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, lo, hi };
     this.meshes.set(mesh.id, gpu);
     if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
   }
@@ -455,14 +463,16 @@ export class GlRenderer {
     }
   }
 
-  private expand(m: GpuMesh): Expanded {
+  private expand(m: GpuMesh, given?: Float32Array): Expanded {
     const gl = this.gl;
     const corners = m.drawn.length;
-    const col = new Float32Array(corners * 3);
-    const groups = m.cpu.groups as Uint32Array;
-    for (let k = 0; k < m.drawnTris.length; k++) {
-      const c = groupColor(groups[m.drawnTris[k]]);
-      for (let j = 0; j < 3; j++) col.set(c, (k * 3 + j) * 3);
+    const col = given ?? new Float32Array(corners * 3);
+    if (!given) {
+      const groups = m.cpu.groups as Uint32Array;
+      for (let k = 0; k < m.drawnTris.length; k++) {
+        const c = groupColor(groups[m.drawnTris[k]]);
+        for (let j = 0; j < 3; j++) col.set(c, (k * 3 + j) * 3);
+      }
     }
     const ex: Expanded = { vao: gl.createVertexArray(), buffers: [], corners, pos: new Float32Array(corners * 3), nrm: new Float32Array(corners * 3), msk: new Float32Array(corners) };
     gl.bindVertexArray(ex.vao);
@@ -498,24 +508,56 @@ export class GlRenderer {
   }
 
   private refreshExpanded(m: GpuMesh): void {
-    const ex = m.expanded;
-    if (!ex) return;
     const gl = this.gl;
-    this.fillExpanded(m, ex);
-    const [pos, nrm, msk] = ex.buffers;
-    gl.bindBuffer(gl.ARRAY_BUFFER, pos);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.pos);
-    gl.bindBuffer(gl.ARRAY_BUFFER, nrm);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.nrm);
-    gl.bindBuffer(gl.ARRAY_BUFFER, msk);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.msk);
+    for (const ex of [m.expanded, m.checker]) {
+      if (!ex) continue;
+      this.fillExpanded(m, ex);
+      const [pos, nrm, msk] = ex.buffers;
+      gl.bindBuffer(gl.ARRAY_BUFFER, pos);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.pos);
+      gl.bindBuffer(gl.ARRAY_BUFFER, nrm);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.nrm);
+      gl.bindBuffer(gl.ARRAY_BUFFER, msk);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, ex.msk);
+    }
   }
 
   private dropExpanded(m: GpuMesh): void {
+    if (m.checker) this.dropChecker(m);
     if (!m.expanded) return;
     m.expanded.buffers.forEach((b) => this.gl.deleteBuffer(b));
     this.gl.deleteVertexArray(m.expanded.vao);
     m.expanded = null;
+  }
+
+  private dropChecker(m: GpuMesh): void {
+    if (!m.checker) return;
+    m.checker.buffers.forEach((b) => this.gl.deleteBuffer(b));
+    this.gl.deleteVertexArray(m.checker.vao);
+    m.checker = null;
+  }
+
+  /**
+   * UV checker on one object: per-corner UVs (two floats per triangle corner, in index order, as get_uvs returns them)
+   * ride in the colour attribute of a per-corner copy and the fragment shader draws a 16 by 16 checker from them.
+   * Null turns it off. Only the revision the UVs came from is drawn; a new upload drops the checker.
+   */
+  setChecker(id: number, uvs: Float32Array | null): boolean {
+    const m = this.meshes.get(id);
+    if (!m) return false;
+    this.dropChecker(m);
+    if (!uvs) return true;
+    if (uvs.length < m.drawnTris.length * 6) return false;
+    const col = new Float32Array(m.drawn.length * 3);
+    for (let k = 0; k < m.drawnTris.length; k++) {
+      const tri = m.drawnTris[k];
+      for (let j = 0; j < 3; j++) {
+        col[(k * 3 + j) * 3] = uvs[(tri * 3 + j) * 2];
+        col[(k * 3 + j) * 3 + 1] = uvs[(tri * 3 + j) * 2 + 1];
+      }
+    }
+    m.checker = this.expand(m, col);
+    return true;
   }
 
   private paintBuffer(paint: Float32Array): WebGLBuffer {
@@ -698,11 +740,13 @@ export class GlRenderer {
     }
     if (this.backdrop.grid) this.drawFloor(camera, vp);
     gl.useProgram(this.meshProgram);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uChecker'), 0);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uViewProj'), false, vp);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uView'), false, camera.view());
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uOrtho'), camera.orthographic ? 1 : 0);
     const base = gl.getUniformLocation(this.meshProgram, 'uBase');
     const painted = gl.getUniformLocation(this.meshProgram, 'uPainted');
+    const checker = gl.getUniformLocation(this.meshProgram, 'uChecker');
     const lit = gl.getUniformLocation(this.meshProgram, 'uLit');
     const cap = gl.getUniformLocation(this.meshProgram, 'uCap');
     const tint = gl.getUniformLocation(this.meshProgram, 'uTint');
@@ -767,6 +811,16 @@ export class GlRenderer {
       gl.bindTexture(gl.TEXTURE_2D, tex ?? this.blank);
       if (id === this.active) gl.uniform3f(base, 0.86, 0.74, 0.66);
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
+      if (m.checker) {
+        gl.uniform1f(painted, 1);
+        gl.uniform1f(checker, 1);
+        gl.bindVertexArray(m.checker.vao);
+        gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
+        gl.vertexAttrib2f(5, 1, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, m.checker.corners);
+        gl.uniform1f(checker, 0);
+        continue;
+      }
       if (this.showGroups && m.expanded) {
         gl.uniform1f(painted, 1);
         gl.bindVertexArray(m.expanded.vao);

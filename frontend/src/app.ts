@@ -100,6 +100,7 @@ interface Shell {
   lazy: HTMLInputElement;
   fov: HTMLInputElement;
   showGroups: HTMLInputElement;
+  uvChecker: HTMLInputElement;
   trackball: HTMLInputElement;
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
@@ -818,7 +819,7 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(paintLayerGrid);
 
   panel.append(el('h2', 'gap', 'UV'));
-  const uvSeams = choices('UV seams', [['direction', 'By facing'], ['groups', 'Along face groups']]);
+  const uvSeams = choices('UV seams', [['direction', 'By facing'], ['groups', 'Along face groups'], ['charts', 'Automatic charts']]);
   const uvFields = el('div', 'fields');
   uvFields.append(field('Seams', uvSeams));
   panel.append(uvFields);
@@ -983,6 +984,7 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(el('h2', 'gap', 'View'));
   const fov = input('range', { min: '15', max: '100', value: '40', 'aria-label': 'Field of view' });
   const showGroups = input('checkbox', { 'aria-label': 'Show face groups' });
+  const uvChecker = input('checkbox', { 'aria-label': 'UV checker' });
   const trackball = input('checkbox', { 'aria-label': 'Trackball rotation' });
   const referenceOpacity = input('range', { min: '5', max: '100', value: '45', 'aria-label': 'Reference opacity' });
   const referenceInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a reference image' });
@@ -1008,7 +1010,7 @@ function buildShell(root: HTMLElement): Shell {
   langPick.value = language();
   langPick.addEventListener('change', () => { if (isLang(langPick.value)) void setLanguage(langPick.value); });
   const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -1185,7 +1187,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvPathLine, uvPinMarks, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvPathLine, uvPinMarks, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1291,6 +1293,7 @@ class SceneView {
       this.viewport.renderer.setShowGroups(shell.showGroups.checked);
       this.viewport.invalidate();
     });
+    shell.uvChecker.addEventListener('change', () => void this.syncChecker());
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     this.wireBackdrop();
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
@@ -2955,6 +2958,7 @@ class SceneView {
       { id: 'view.ortho', label: 'Toggle Orthographic', keys: ['5'], run: () => this.viewport.toggleOrtho() },
       { id: 'view.frame', label: 'Frame Active Object', keys: ['F'], icon: 'frame', run: () => this.frameActive(), enabled: () => this.scene.active !== null },
       { id: 'view.groups', label: 'Show Face Groups', run: () => toggle(s.showGroups), checked: () => s.showGroups.checked },
+      { id: 'view.uv_checker', label: 'UV Checker', run: () => toggle(s.uvChecker), checked: () => s.uvChecker.checked },
       { id: 'view.trackball', label: 'Trackball Rotation', run: () => toggle(s.trackball), checked: () => s.trackball.checked },
       { id: 'view.floor_grid', label: 'Floor Grid', keys: ['Shift+P'], run: () => toggle(s.floorGrid), checked: () => s.floorGrid.checked },
       { id: 'view.backdrop_gradient', label: 'Gradient Background', run: () => { s.backdropMode.value = s.backdropMode.value === 'gradient' ? 'color' : 'gradient'; s.backdropMode.dispatchEvent(new Event('change', { bubbles: true })); }, checked: () => s.backdropMode.value === 'gradient' },
@@ -3395,6 +3399,32 @@ class SceneView {
     const history = await dispatch<{ steps: string[]; done: number }>('get_history');
     if (history.ok) this.patchHistory(history.result.steps, history.result.done);
     await this.patchSets();
+    if (this.shell.uvChecker.checked || this.checkerFor) await this.syncChecker();
+  }
+
+  /** What the UV checker shows: the active object's id and revision, or '' when off. */
+  private checkerFor = '';
+
+  /** The UV checker on the active object (get_uvs), off on every other one; refetched only when the object or its revision changes. */
+  private async syncChecker(): Promise<void> {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    const want = this.shell.uvChecker.checked && o?.uvs ? `${o.id}:${o.revision}` : '';
+    if (want === this.checkerFor) return;
+    const [oldId] = this.checkerFor.split(':');
+    if (oldId) this.viewport.renderer.setChecker(Number(oldId), null);
+    this.checkerFor = want;
+    if (!want || !o) {
+      if (this.shell.uvChecker.checked && o && !o.uvs) this.note(t('No UVs yet; Unwrap to make them'));
+      this.viewport.invalidate();
+      return;
+    }
+    const reply = await dispatch<{ uvs: string; revision: number }>('get_uvs', { id: o.id });
+    if (!reply.ok || this.checkerFor !== want) return;
+    const raw = atob(reply.result.uvs);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    if (!this.viewport.renderer.setChecker(o.id, new Float32Array(bytes.buffer))) this.checkerFor = '';
+    this.viewport.invalidate();
   }
 
   /** The Selection Sets list for the active object; options are reused and only their text changes. */

@@ -483,3 +483,9 @@ The window has no way yet to name a second island or a vertex path, so cut and s
 - kind: rationale
 - logged: v0.42.0 · 2026-10-16
 Alt-click in the UV view pins the nearest UV point (uv_pick, radius 0.03; a second Alt-click unpins), and Relax sends the pins as uv_relax's pinned list. Ctrl-click starts a path at the nearest point and each further Ctrl-click in the same island extends it by uv_path's shortest edge path, so a few clicks give a long chain; a click in another island starts a new path. Cut along path and Straighten path send the chain to uv_cut and uv_straighten (clicking the first point again closes a loop for a cut). The marks are an SVG over the picture in UV space (0 to 100, v up) with pointer events off, drawn through the clicked points and pins only, not every vertex of the path. Pins and the path name vertices of the layout as it stood, so they are dropped whenever the active object or its revision changes.
+
+### UV checker in the viewport; Automatic charts
+- refers-to: viewport/gl-renderer.ts :: setChecker, dropChecker, expand (given colours), refreshExpanded, uChecker in the mesh shader; app.ts :: syncChecker, checkerFor, refresh; UV seams choices
+- kind: rationale
+- logged: v0.43.0 · 2026-10-16
+UVs are per triangle corner and the viewport draws indexed vertices, so the checker reuses the per-corner copy the face-group view already builds (expand), with the corner's UV in the colour attribute instead of a group colour; the fragment shader turns it into a 16 by 16 checker and paints anything outside 0..1 red. The copy follows sculpting through refreshExpanded like the group copy, is dropped with the mesh on any re-upload, and the window refetches get_uvs only when the active object or its revision changes (checkerFor). It draws for the active object only and wins over the group colours while on. UV seams gains Automatic charts (uv_unwrap seams charts at its default 45 degrees).
