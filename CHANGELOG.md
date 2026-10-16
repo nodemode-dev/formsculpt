@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.35.0 · 2026-10-16
+
+### Added
+
+- `curve_from_border`: curve control points along the border of a face group or of the mask, longest border first, evenly spaced, optionally lifted off the surface; read-only.
+- Making curves in the window: click with the Curve tool to add points one at a time; Edit Last Stroke as Curve undoes the last brush stroke and brings its path back as handles to move and apply again; Curve from Mask Edge and Curve from Group Border (Sculpt menu and the panel).
+- 127 engine commands; 732 interface strings in every language.
+
 ## 0.34.0 · 2026-10-16
 
 ### Added
