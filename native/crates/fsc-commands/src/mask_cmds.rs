@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 use fsc_core::{Aabb, Object};
-use glam::{Mat4, Vec3, Vec4};
+use glam::{Mat4, Vec2, Vec3, Vec4};
 use serde_json::{json, Value};
 
 use crate::sculpt_cmds::{mask_edit, parse_color, target};
@@ -299,7 +299,9 @@ pub(crate) fn shape_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "shape": {"type": "string", "enum": ["box", "ellipse", "lasso"], "default": "box", "description": "box and ellipse take two corner points; lasso takes the outline, three points or more."},
+            "shape": {"type": "string", "enum": ["box", "ellipse", "lasso", "polygon", "curve", "path", "line"], "default": "box", "description": "box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline (a Catmull-Rom spline through them); path takes an open polyline of two points or more and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen)."},
+            "stroke_width": {"type": "number", "exclusiveMinimum": 0, "maximum": 8192, "default": 20, "description": "path only: the stroke's full width in screen pixels of the width by height picture."},
+            "flip": {"type": "boolean", "default": false, "description": "Invert the inside test of any shape: everything the shape does not cover is taken."},
             "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "Picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height."},
             "view": {"type": "string", "enum": ["three_quarter", "front", "back", "right", "left", "top", "bottom"], "default": "front", "description": "The get_view camera the points refer to (framing every visible object, as get_view does by default)."},
             "yaw": {"type": "number", "minimum": -360, "maximum": 360, "description": "Degrees; overrides view, as in get_view."},
@@ -325,6 +327,134 @@ pub(crate) fn inside_polygon(x: f32, y: f32, poly: &[[f32; 2]]) -> bool {
         j = i;
     }
     inside
+}
+
+/// Samples a closed Catmull-Rom spline through the control points, eight samples per span.
+pub(crate) fn catmull_rom_closed(c: &[[f32; 2]]) -> Vec<[f32; 2]> {
+    let n = c.len();
+    let mut out = Vec::with_capacity(n * 8);
+    for i in 0..n {
+        let (p0, p1, p2, p3) = (c[(i + n - 1) % n], c[i], c[(i + 1) % n], c[(i + 2) % n]);
+        for k in 0..8 {
+            let t = k as f32 / 8.0;
+            let (t2, t3) = (t * t, t * t * t);
+            let f = |a: usize| 0.5 * (2.0 * p1[a] + (p2[a] - p0[a]) * t + (2.0 * p0[a] - 5.0 * p1[a] + 4.0 * p2[a] - p3[a]) * t2 + (3.0 * p1[a] - p0[a] - 3.0 * p2[a] + p3[a]) * t3);
+            out.push([f(0), f(1)]);
+        }
+    }
+    out
+}
+
+/// The outline of a thick open polyline: both sides offset by `half`, with mitred joins limited to twice `half`.
+pub(crate) fn stroke_polygon(pts: &[[f32; 2]], half: f32) -> Vec<[f32; 2]> {
+    let n = pts.len();
+    let dir = |i: usize| Vec2::new(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]).try_normalize().unwrap_or(Vec2::X);
+    let (mut left, mut right) = (Vec::with_capacity(n), Vec::with_capacity(n));
+    for (i, p) in pts.iter().enumerate() {
+        let (d0, d1) = (dir(i.saturating_sub(1)), dir(i.min(n - 2)));
+        let (n0, n1) = (Vec2::new(-d0.y, d0.x), Vec2::new(-d1.y, d1.x));
+        let mut m = (n0 + n1) / (1.0 + n0.dot(n1)).max(1e-3);
+        if m.length() > 2.0 {
+            m = m.normalize() * 2.0;
+        }
+        left.push([p[0] + m.x * half, p[1] + m.y * half]);
+        right.push([p[0] - m.x * half, p[1] - m.y * half]);
+    }
+    right.reverse();
+    left.extend(right);
+    left
+}
+
+enum Region {
+    Box([f32; 4]),
+    Ellipse([f32; 4]),
+    Poly(Vec<[f32; 2]>),
+    Path { points: Vec<[f32; 2]>, scale: [f32; 2], half: f32 },
+    Line([f32; 2], [f32; 2]),
+}
+
+/// A screen-space selection shape (box, ellipse, lasso, polygon, curve, path or line) with an optional flip of its inside test.
+pub(crate) struct Outline {
+    region: Region,
+    flip: bool,
+}
+
+impl Outline {
+    /// Reads shape, points, stroke_width, flip and the picture size from the arguments; `default` names the shape when omitted.
+    pub(crate) fn from_args(args: &Value, default: &str) -> Result<Outline, CommandError> {
+        let shape = args.get("shape").and_then(Value::as_str).unwrap_or(default);
+        let points = picture_points(args)?;
+        let flip = match args.get("flip") {
+            None | Some(Value::Null) => false,
+            Some(Value::Bool(b)) => *b,
+            Some(_) => return Err(bad("flip is true or false")),
+        };
+        let corners = |p: &[[f32; 2]]| [p[0][0].min(p[1][0]), p[0][0].max(p[1][0]), p[0][1].min(p[1][1]), p[0][1].max(p[1][1])];
+        let region = match shape {
+            "box" | "ellipse" if points.len() < 2 => return Err(bad("box and ellipse take two corner points")),
+            "box" => Region::Box(corners(&points)),
+            "ellipse" => Region::Ellipse(corners(&points)),
+            "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
+            "polygon" if points.len() < 3 => return Err(bad("a polygon needs at least three points")),
+            "curve" if points.len() < 3 => return Err(bad("a curve needs at least three control points")),
+            "lasso" | "polygon" => Region::Poly(points),
+            "curve" => Region::Poly(catmull_rom_closed(&points)),
+            "path" if points.len() < 2 => return Err(bad("a path needs at least two points")),
+            "path" => {
+                let w = number(args, "width", 640.0, 1.0, 8192.0)?;
+                let h = number(args, "height", 640.0, 1.0, 8192.0)?;
+                let stroke = number(args, "stroke_width", 20.0, 1e-3, 8192.0)?;
+                Region::Path { points, scale: [w, h], half: stroke * 0.5 }
+            }
+            "line" if points.len() != 2 => return Err(bad("a line takes exactly two points")),
+            "line" => Region::Line(points[0], points[1]),
+            other => return Err(bad(format!("unknown shape {other}; use box, ellipse, lasso, polygon, curve, path or line"))),
+        };
+        Ok(Outline { region, flip })
+    }
+
+    /// Whether the picture point is inside, after the flip.
+    pub(crate) fn contains(&self, x: f32, y: f32) -> bool {
+        let inside = match &self.region {
+            Region::Box([x0, x1, y0, y1]) => x >= *x0 && x <= *x1 && y >= *y0 && y <= *y1,
+            Region::Ellipse([x0, x1, y0, y1]) => {
+                let (cx, cy, rx, ry) = ((x0 + x1) * 0.5, (y0 + y1) * 0.5, ((x1 - x0) * 0.5).max(1e-9), ((y1 - y0) * 0.5).max(1e-9));
+                ((x - cx) / rx).powi(2) + ((y - cy) / ry).powi(2) <= 1.0
+            }
+            Region::Poly(poly) => inside_polygon(x, y, poly),
+            Region::Path { points, scale, half } => {
+                let q = Vec2::new(x * scale[0], y * scale[1]);
+                points.windows(2).any(|w| {
+                    let (a, b) = (Vec2::new(w[0][0] * scale[0], w[0][1] * scale[1]), Vec2::new(w[1][0] * scale[0], w[1][1] * scale[1]));
+                    let ab = b - a;
+                    let t = if ab.length_squared() > 1e-12 { ((q - a).dot(ab) / ab.length_squared()).clamp(0.0, 1.0) } else { 0.0 };
+                    (q - (a + ab * t)).length() <= *half
+                })
+            }
+            Region::Line(a, b) => (x - a[0]) * (b[1] - a[1]) - (y - a[1]) * (b[0] - a[0]) > 0.0,
+        };
+        inside != self.flip
+    }
+
+    /// The undo label for a mask made with this shape.
+    pub(crate) fn label(&self) -> &'static str {
+        match self.region {
+            Region::Box(_) => "Box",
+            Region::Ellipse(_) => "Ellipse",
+            Region::Poly(_) => "Lasso",
+            Region::Path { .. } => "Path",
+            Region::Line(..) => "Line",
+        }
+    }
+}
+
+/// For each face of the object, whether its centre projects inside the outline (false when behind the camera).
+pub(crate) fn faces_inside(s: &Session, id: u32, args: &Value, outline: &Outline) -> Result<Vec<bool>, CommandError> {
+    let mesh = &s.scene.get(id).expect("checked").mesh;
+    let faces = mesh.triangle_count();
+    let centres: Vec<[f32; 3]> = (0..faces).map(|t| (mesh.triangle(t).iter().map(|&v| mesh.position(v)).sum::<Vec3>() / 3.0).to_array()).collect();
+    let screen = project_to_picture(s, args, &centres)?;
+    Ok(screen.into_iter().map(|q| q.is_some_and(|[x, y]| outline.contains(x, y))).collect())
 }
 
 pub(crate) fn picture_points(args: &Value) -> Result<Vec<[f32; 2]>, CommandError> {
@@ -377,38 +507,21 @@ pub(crate) fn project_to_picture(s: &Session, args: &Value, positions: &[[f32; 3
 }
 
 pub(crate) fn mask_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("box").to_string();
-    let points = picture_points(args)?;
-    match shape.as_str() {
-        "box" | "ellipse" if points.len() < 2 => return Err(bad("box and ellipse take two corner points")),
-        "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
-        "box" | "ellipse" | "lasso" => {}
-        other => return Err(bad(format!("unknown shape {other}; use box, ellipse or lasso"))),
-    }
+    let outline = Outline::from_args(args, "box")?;
     let op = op(args, "add")?;
     let id = target(s, args)?;
     let screen = project_to_picture(s, args, &s.scene.get(id).expect("checked").mesh.positions)?;
-    let (x0, x1) = (points[0][0].min(points[1][0]), points[0][0].max(points[1][0]));
-    let (y0, y1) = (points[0][1].min(points[1][1]), points[0][1].max(points[1][1]));
     let new: Vec<f32> = screen
         .iter()
         .map(|q| {
             let Some([x, y]) = *q else { return 0.0 };
-            let inside = match shape.as_str() {
-                "box" => x >= x0 && x <= x1 && y >= y0 && y <= y1,
-                "ellipse" => {
-                    let (cx, cy, rx, ry) = ((x0 + x1) * 0.5, (y0 + y1) * 0.5, ((x1 - x0) * 0.5).max(1e-9), ((y1 - y0) * 0.5).max(1e-9));
-                    ((x - cx) / rx).powi(2) + ((y - cy) / ry).powi(2) <= 1.0
-                }
-                _ => inside_polygon(x, y, &points),
-            };
-            if inside {
+            if outline.contains(x, y) {
                 1.0
             } else {
                 0.0
             }
         })
         .collect();
-    let label = format!("Mask {}", match shape.as_str() { "box" => "Box", "ellipse" => "Ellipse", _ => "Lasso" });
+    let label = format!("Mask {}", outline.label());
     mask_edit(s, args, &label, |_, old| combine(op, old, &new))
 }

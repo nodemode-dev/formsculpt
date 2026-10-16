@@ -98,7 +98,9 @@ pub(crate) fn from_outline_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": ID},
             "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "The outline in picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height."},
-            "shape": {"type": "string", "enum": ["box", "lasso"], "default": "lasso", "description": "box takes two corner points; lasso takes the outline, three points or more."},
+            "shape": {"type": "string", "enum": ["box", "ellipse", "lasso", "polygon", "curve", "path", "line"], "default": "lasso", "description": "box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline; path takes an open polyline and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen)."},
+            "stroke_width": {"type": "number", "exclusiveMinimum": 0, "maximum": 8192, "default": 20, "description": "path only: the stroke's full width in screen pixels of the width by height picture."},
+            "flip": {"type": "boolean", "default": false, "description": "Invert the inside test of any shape."},
             "view": {"type": "string", "enum": ["three_quarter", "front", "back", "right", "left", "top", "bottom"], "default": "front", "description": "The get_view camera the points refer to (framing every visible object, as get_view does by default)."},
             "yaw": {"type": "number", "minimum": -360, "maximum": 360, "description": "Degrees; overrides view, as in get_view."},
             "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees; overrides view, as in get_view."},
@@ -115,14 +117,7 @@ pub(crate) fn from_outline_schema() -> Value {
 
 /// Slice Curve: puts the faces whose middle falls inside a screen-space outline into one face group, as one undo step.
 pub(crate) fn group_from_outline(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("lasso");
-    let points = crate::mask_cmds::picture_points(args)?;
-    match shape {
-        "box" if points.len() < 2 => return Err(bad("a box takes two corner points")),
-        "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
-        "box" | "lasso" => {}
-        other => return Err(bad(format!("unknown shape {other}; use box or lasso"))),
-    }
+    let outline = crate::mask_cmds::Outline::from_args(args, "lasso")?;
     let front_only = match args.get("front_only") {
         None | Some(Value::Null) => false,
         Some(Value::Bool(b)) => *b,
@@ -143,12 +138,10 @@ pub(crate) fn group_from_outline(s: &mut Session, args: &Value) -> Result<Value,
     }
     let screen = crate::mask_cmds::project_to_picture(s, args, &probe)?;
     let base = mesh.positions.len();
-    let (x0, x1) = (points[0][0].min(points[1][0]), points[0][0].max(points[1][0]));
-    let (y0, y1) = (points[0][1].min(points[1][1]), points[0][1].max(points[1][1]));
     let sel: Vec<bool> = (0..faces)
         .map(|t| {
             let Some([x, y]) = screen[base + t] else { return false };
-            let inside = if shape == "box" { x >= x0 && x <= x1 && y >= y0 && y <= y1 } else { crate::mask_cmds::inside_polygon(x, y, &points) };
+            let inside = outline.contains(x, y);
             if !inside || !front_only {
                 return inside;
             }
@@ -537,6 +530,41 @@ pub(crate) fn hide_faces(s: &mut Session, args: &Value) -> Result<Value, Command
     };
     let object = commit(s, id, label, mesh);
     Ok(json!({"object": object, "hidden_faces": hidden}))
+}
+
+/// The mask_shape arguments without op, plus show.
+pub(crate) fn hide_shape_schema() -> Value {
+    let mut schema = crate::mask_cmds::shape_schema();
+    let props = schema["properties"].as_object_mut().expect("properties");
+    props.remove("op");
+    props.insert("show".into(), json!({"type": "boolean", "default": false, "description": "Show the faces inside the shape again instead of hiding them."}));
+    schema
+}
+
+/// Hides (or with show true, shows) the faces whose centre projects inside a screen shape, as one undo step.
+pub(crate) fn hide_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let outline = crate::mask_cmds::Outline::from_args(args, "box")?;
+    let show = match args.get("show") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(bad("show is true or false")),
+    };
+    let id = target(s, args)?;
+    let chosen = crate::mask_cmds::faces_inside(s, id, args, &outline)?;
+    if !chosen.iter().any(|&c| c) {
+        return Err(CommandError::new("nothing_inside", "no face has its middle inside the shape; check the points and the view they refer to"));
+    }
+    let o = s.scene.get(id).expect("checked");
+    let current: Vec<bool> = (0..chosen.len()).map(|t| o.mesh.face_hidden(t)).collect();
+    let next: Vec<bool> = current.iter().zip(&chosen).map(|(&h, &c)| if show { h && !c } else { h || c }).collect();
+    if next.iter().all(|&h| h) {
+        return Err(CommandError::new("all_hidden", "that would hide every face; show some first, or use set_visibility to hide the whole object"));
+    }
+    let hidden = next.iter().filter(|&&h| h).count();
+    let mut mesh = o.mesh.clone();
+    mesh.hidden = if hidden == 0 { Vec::new() } else { next };
+    let object = commit(s, id, if show { "Show Faces" } else { "Hide Faces" }, mesh);
+    Ok(json!({"object": object, "faces": chosen.iter().filter(|&&c| c).count(), "hidden_faces": hidden}))
 }
 
 pub(crate) fn group_count(mesh: &Mesh) -> usize {

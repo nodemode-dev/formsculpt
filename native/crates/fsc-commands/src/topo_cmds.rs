@@ -207,7 +207,10 @@ pub(crate) fn cut_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "outline": {"type": "array", "minItems": 3, "maxItems": 2048, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "A closed outline as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count)."},
+            "outline": {"type": "array", "minItems": 2, "maxItems": 2048, "items": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}, "description": "The shape's points as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count). Three or more for lasso, polygon and curve, two or more for path, exactly two for line."},
+            "shape": {"type": "string", "enum": ["lasso", "polygon", "curve", "path", "line"], "default": "lasso", "description": "lasso and polygon: the points are the corners of a closed outline. curve: control points of a closed smooth outline (Catmull-Rom, 8 samples per span). path: an open polyline thickened to stroke_width (keep bends gentle; a very sharp turn can overlap itself). line: the half-plane on the left of the direction from point 0 to point 1, in the plane across the view where the first axis runs to the screen's right and the second down for a front view (y down); it is clipped to the object's extent."},
+            "stroke_width": {"type": "number", "exclusiveMinimum": 0, "maximum": 100000, "description": "path only: the stroke's full width in world units; 5 percent of the object's largest side when omitted."},
+            "flip": {"type": "boolean", "default": false, "description": "Invert the shape: swaps what keep outside and keep inside take."},
             "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The way the outline is seen, from the eye into the scene; the cut goes all the way through the object along it."},
             "keep": {"type": "string", "enum": ["outside", "inside"], "default": "outside", "description": "outside removes what the outline covers (a lasso cut, a hole, a notch); inside keeps only what it covers (trimming a block to a profile)."},
             "round": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Rounds the cut edges by this many world units; 0 leaves them sharp."},
@@ -231,14 +234,24 @@ pub(crate) fn cut_shape(s: &mut Session, args: &Value) -> Result<Value, CommandE
     };
     let d = args.get("direction").and_then(vec3).filter(|d| d.length_squared() > 1e-12).ok_or_else(|| bad("direction is [x, y, z], not zero"))?.normalize();
     let pts: Vec<Vec3> = args.get("outline").and_then(Value::as_array).ok_or_else(|| bad("outline is a list of [x, y, z] points"))?.iter().map(|p| vec3(p).ok_or_else(|| bad("each outline point is [x, y, z]"))).collect::<Result<_, _>>()?;
-    if pts.len() < 3 {
-        return Err(bad("outline needs at least three points"));
+    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("lasso");
+    match shape {
+        "lasso" | "polygon" | "curve" if pts.len() < 3 => return Err(bad("outline needs at least three points")),
+        "path" if pts.len() < 2 => return Err(bad("a path needs at least two points")),
+        "line" if pts.len() != 2 => return Err(bad("a line takes exactly two points")),
+        "lasso" | "polygon" | "curve" | "path" | "line" => {}
+        other => return Err(bad(format!("unknown shape {other}; use lasso, polygon, curve, path or line"))),
     }
+    let flip = match args.get("flip") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(bad("flip is true or false")),
+    };
     let inside = match args.get("keep").and_then(Value::as_str).unwrap_or("outside") {
         "outside" => false,
         "inside" => true,
         other => return Err(bad(format!("keep must be outside or inside, not {other}"))),
-    };
+    } != flip;
     let round = args.get("round").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 100.0) as f32;
     let resolution = args.get("resolution").and_then(Value::as_u64).unwrap_or(192);
     if !(32..=320).contains(&resolution) {
@@ -248,13 +261,56 @@ pub(crate) fn cut_shape(s: &mut Session, args: &Value) -> Result<Value, CommandE
     let seed = if d.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
     let u = (seed - d * seed.dot(d)).normalize();
     let v = d.cross(u);
-    let flat: Vec<Vec2> = pts.iter().map(|p| Vec2::new(p.dot(u), p.dot(v))).collect();
+    let base: Vec<[f32; 2]> = pts.iter().map(|p| [p.dot(u), p.dot(v)]).collect();
     let object = s.scene.get(id).expect("checked");
     let b = object.mesh.bounds();
     let corners = (0..8).map(|i| Vec3::new(if i & 1 == 0 { b.min.x } else { b.max.x }, if i & 2 == 0 { b.min.y } else { b.max.y }, if i & 4 == 0 { b.min.z } else { b.max.z }).dot(d));
     let (near, far) = corners.fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), x| (lo.min(x), hi.max(x)));
     let size = (b.max - b.min).max_element().max(1e-4);
     let depth = (far - near) + size * 0.5;
+    let flat: Vec<Vec2> = match shape {
+        "curve" => crate::mask_cmds::catmull_rom_closed(&base).into_iter().map(|p| Vec2::new(p[0], p[1])).collect(),
+        "path" => {
+            let width = match args.get("stroke_width") {
+                None | Some(Value::Null) => size * 0.05,
+                Some(w) => w.as_f64().filter(|w| *w > 0.0 && *w <= 1e5).ok_or_else(|| bad("stroke_width must be above 0 and at most 100000"))? as f32,
+            };
+            crate::mask_cmds::stroke_polygon(&base, width * 0.5).into_iter().map(|p| Vec2::new(p[0], p[1])).collect()
+        }
+        "line" => {
+            let (a, c) = (Vec2::new(base[0][0], base[0][1]), Vec2::new(base[1][0], base[1][1]));
+            if (c - a).length_squared() < 1e-12 {
+                return Err(bad("the two line points must differ"));
+            }
+            let (mut lo, mut hi) = (Vec2::splat(f32::INFINITY), Vec2::splat(f32::NEG_INFINITY));
+            for i in 0..8 {
+                let q = Vec3::new(if i & 1 == 0 { b.min.x } else { b.max.x }, if i & 2 == 0 { b.min.y } else { b.max.y }, if i & 4 == 0 { b.min.z } else { b.max.z });
+                let q = Vec2::new(q.dot(u), q.dot(v));
+                lo = lo.min(q);
+                hi = hi.max(q);
+            }
+            let margin = Vec2::splat(size * 0.25);
+            let (lo, hi) = (lo - margin, hi + margin);
+            let side = |q: Vec2| (q.x - a.x) * (c.y - a.y) - (q.y - a.y) * (c.x - a.x);
+            let rect = [lo, Vec2::new(hi.x, lo.y), hi, Vec2::new(lo.x, hi.y)];
+            let mut out = Vec::new();
+            for k in 0..4 {
+                let (p, q) = (rect[k], rect[(k + 1) % 4]);
+                let (fp, fq) = (side(p), side(q));
+                if fp > 0.0 {
+                    out.push(p);
+                }
+                if (fp > 0.0) != (fq > 0.0) {
+                    out.push(p + (q - p) * (fp / (fp - fq)));
+                }
+            }
+            if out.len() < 3 {
+                return Err(CommandError::new("empty_result", "the line does not cross the object's view"));
+            }
+            out
+        }
+        _ => base.iter().map(|p| Vec2::new(p[0], p[1])).collect(),
+    };
     let mut cutter = fsc_topo::extrude_shape(&[flat], depth, 0.0, Some(resolution.min(256) as u32)).map_err(|e| CommandError::new("cut_failed", e))?;
     let middle = (near + far) * 0.5;
     for p in cutter.positions.iter_mut() {

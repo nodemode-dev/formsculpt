@@ -282,6 +282,15 @@ pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError
     Ok(summary(s.scene.get(ids[0]).expect("checked")))
 }
 
+/// The mask_shape arguments without op, plus close.
+pub(crate) fn split_shape_schema() -> Value {
+    let mut schema = crate::mask_cmds::shape_schema();
+    let props = schema["properties"].as_object_mut().expect("properties");
+    props.remove("op");
+    props.insert("close".into(), json!({"type": "boolean", "default": false, "description": "Fill the holes along the cut on both pieces; false leaves the cut edge open."}));
+    schema
+}
+
 pub(crate) fn split(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     guard(s, id, "Split")?;
@@ -309,6 +318,93 @@ pub(crate) fn split(s: &mut Session, args: &Value) -> Result<Value, CommandError
     }
     drop(removed);
     Ok(json!({"parts": ids.len(), "ids": ids}))
+}
+
+fn faces_to_mesh(mesh: &Mesh, inside: &[bool], want: bool) -> (Mesh, Vec<u32>) {
+    let mut local = vec![u32::MAX; mesh.vertex_count()];
+    let (mut old, mut positions, mut indices, mut groups, mut hidden) = (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    for t in (0..mesh.triangle_count()).filter(|&t| inside[t] == want) {
+        for v in mesh.triangle(t) {
+            if local[v as usize] == u32::MAX {
+                local[v as usize] = positions.len() as u32;
+                positions.push(mesh.positions[v as usize]);
+                old.push(v);
+            }
+            indices.push(local[v as usize]);
+        }
+        groups.push(if mesh.has_groups() { mesh.groups[t] } else { 0 });
+        hidden.push(mesh.face_hidden(t));
+    }
+    let mut out = Mesh::new(positions, indices);
+    if mesh.has_paint() {
+        out.paint = old.iter().map(|&v| mesh.paint[v as usize]).collect();
+    }
+    if mesh.uvs.len() == mesh.vertex_count() {
+        out.uvs = old.iter().map(|&v| mesh.uvs[v as usize]).collect();
+    }
+    if mesh.has_groups() {
+        out.groups = groups;
+    }
+    if hidden.iter().any(|&h| h) {
+        out.hidden = hidden;
+    }
+    (out, old)
+}
+
+fn closed_piece(piece: Mesh, mask: &mut Vec<f32>) -> Mesh {
+    let (mut filled, _) = fsc_topo::fill_holes(&piece);
+    if piece.has_paint() {
+        filled.paint = piece.paint.clone();
+        filled.paint.resize(filled.vertex_count(), fsc_core::DEFAULT_PAINT);
+    }
+    if piece.uvs.len() == piece.vertex_count() {
+        filled.uvs = piece.uvs.clone();
+        filled.uvs.resize(filled.vertex_count(), [0.0; 2]);
+    }
+    if piece.has_groups() {
+        let extra = filled.triangle_count() - piece.triangle_count();
+        filled.groups = piece.groups.iter().copied().chain(std::iter::repeat_n(piece.groups.last().copied().unwrap_or(0), extra)).collect();
+    }
+    mask.resize(filled.vertex_count(), 0.0);
+    filled
+}
+
+/// Moves the faces whose centre projects inside a screen shape into a new object, as one undo step; close fills the holes on both pieces.
+pub(crate) fn split_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let outline = crate::mask_cmds::Outline::from_args(args, "box")?;
+    let close = match args.get("close") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(bad("close is true or false")),
+    };
+    let id = target(s, args)?;
+    guard(s, id, "Split")?;
+    let inside = crate::mask_cmds::faces_inside(s, id, args, &outline)?;
+    let count = inside.iter().filter(|&&b| b).count();
+    if count == 0 {
+        return Err(CommandError::new("nothing_inside", "no face has its middle inside the shape; check the points and the view they refer to"));
+    }
+    if count == inside.len() {
+        return Err(CommandError::new("everything_inside", "every face is inside the shape; nothing would be left behind"));
+    }
+    let object = s.scene.get(id).expect("checked");
+    let (mut piece, taken) = faces_to_mesh(&object.mesh, &inside, true);
+    let (mut rest, kept) = faces_to_mesh(&object.mesh, &inside, false);
+    let mut piece_mask: Vec<f32> = taken.iter().map(|&v| object.mask[v as usize]).collect();
+    let mut rest_mask: Vec<f32> = kept.iter().map(|&v| object.mask[v as usize]).collect();
+    if close {
+        piece = closed_piece(piece, &mut piece_mask);
+        rest = closed_piece(rest, &mut rest_mask);
+    }
+    let name = s.scene.unique_name(&format!("{} split", object.name));
+    snapshot(s, "Split Shape");
+    let at = s.scene.index_of(id).expect("checked");
+    s.scene.get_mut(id).expect("checked").replace_mesh(rest, rest_mask);
+    let new_id = s.scene.add(name, piece);
+    let mut o = s.scene.remove(new_id).expect("added");
+    o.mask = piece_mask;
+    s.scene.insert(at + 1, o);
+    Ok(json!({"id": id, "new_id": new_id, "faces_moved": count, "faces_left": inside.len() - count, "closed": close}))
 }
 
 pub(crate) fn boolean_schema() -> Value {

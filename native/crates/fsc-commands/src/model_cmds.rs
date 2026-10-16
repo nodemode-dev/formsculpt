@@ -101,7 +101,9 @@ pub(crate) fn extract_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "thickness": {"type": "number", "minimum": -10000, "maximum": 10000, "description": "Shell thickness along the surface normal, in world units; 2 percent of the object's size when omitted. Negative grows inward."}
+            "thickness": {"type": "number", "minimum": -10000, "maximum": 10000, "description": "Thickness in world units (a shell's offset along the surface normal, a balloon's dome height, an extrusion's or badge's depth); 2 percent of the object's size when omitted. Negative grows the other way."},
+            "mode": {"type": "string", "enum": ["shell", "balloon", "extrude", "splat", "project"], "default": "shell", "description": "shell: the patch and a copy offset outward along the normals, joined at the border. balloon: a copy of the patch pushed out along the normals by thickness times a dome profile (1 in the middle, 0 at the border, from the distance along the surface to the border), welded to the original border, with the unmoved patch as the back. extrude: the patch moved straight along its area-weighted average normal by thickness, with side walls. splat: like shell, but the back is flat, on the plane perpendicular to the patch's average normal touching its lowest point (shell is already outward-only with its back on the surface), and the front is the surface offset by thickness. project: the patch flattened onto the plane through its centroid perpendicular to direction, then extruded by thickness along it, a flat badge in the mask's outline."},
+            "direction": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "project only: the projection direction as [x, y, z], not zero; the patch's average normal when omitted."}
         },
         "required": [],
         "additionalProperties": false
@@ -112,7 +114,35 @@ pub(crate) fn extract(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     let id = target(s, args)?;
     let object = s.scene.get(id).expect("checked");
     let thickness = args.get("thickness").and_then(Value::as_f64).map(|t| t as f32).unwrap_or_else(|| object.mesh.bounds().extent().length() * 0.02);
-    let mesh = fsc_topo::extract_shell(&object.mesh, &object.mask, thickness).ok_or_else(no_mask)?;
+    let direction = match args.get("direction") {
+        None | Some(Value::Null) => None,
+        Some(Value::Array(a)) if a.len() == 3 => {
+            let f: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+            let d = Vec3::new(f[0], f[1], f[2]);
+            if !d.is_finite() || d.length_squared() < 1e-12 {
+                return Err(bad("direction is [x, y, z], not zero"));
+            }
+            Some(d)
+        }
+        Some(_) => return Err(bad("direction is [x, y, z]")),
+    };
+    let patch = match args.get("mode").and_then(Value::as_str).unwrap_or("shell") {
+        "shell" => None,
+        "balloon" => Some(fsc_topo::PatchMode::Balloon),
+        "extrude" => Some(fsc_topo::PatchMode::Extrude),
+        "splat" => Some(fsc_topo::PatchMode::Splat),
+        "project" => Some(fsc_topo::PatchMode::Project),
+        other => return Err(bad(format!("unknown mode {other}; use shell, balloon, extrude, splat or project"))),
+    };
+    let mesh = match patch {
+        None => fsc_topo::extract_shell(&object.mesh, &object.mask, thickness).ok_or_else(no_mask)?,
+        Some(mode) => {
+            if !fsc_topo::region_faces(&object.mesh, &object.mask).iter().any(|&x| x) {
+                return Err(no_mask());
+            }
+            fsc_topo::extract_patch(&object.mesh, &object.mask, mode, thickness, direction).map_err(|e| CommandError::new("extract_failed", e))?
+        }
+    };
     let name = s.scene.unique_name(&format!("{} extract", object.name));
     let new_id = s.scene.add(name, mesh);
     let index = s.scene.index_of(new_id).expect("added");
