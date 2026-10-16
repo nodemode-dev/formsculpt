@@ -20,7 +20,8 @@ pub(crate) fn unwrap_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "method": {"type": "string", "enum": ["conformal", "project"], "default": "conformal", "description": "conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle)."},
-            "seams": {"type": "string", "enum": ["direction", "groups"], "default": "direction", "description": "Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction)."}
+            "seams": {"type": "string", "enum": ["direction", "groups", "charts"], "default": "direction", "description": "Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction); charts grows disc-shaped charts over the faces automatically (see chart_angle), merges tiny ones and cuts along their borders without touching the face groups."},
+            "chart_angle": {"type": "number", "minimum": 5, "maximum": 89, "default": 45, "description": "With seams charts: a face joins a chart while its normal is within this many degrees of the chart's average normal. Smaller gives more, flatter charts."}
         },
         "required": [],
         "additionalProperties": false
@@ -33,10 +34,17 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         "project" => fsc_paint::Flatten::Project,
         other => return Err(bad(format!("unknown method {other}; conformal or project"))),
     };
-    let charts = match args.get("seams").and_then(Value::as_str).unwrap_or("direction") {
+    let seams = args.get("seams").and_then(Value::as_str).unwrap_or("direction");
+    let auto = seams == "charts";
+    let charts = match seams {
         "direction" => fsc_paint::Charts::Direction,
         "groups" => fsc_paint::Charts::Groups,
-        other => return Err(bad(format!("unknown seams {other}; direction or groups"))),
+        "charts" => fsc_paint::Charts::Direction,
+        other => return Err(bad(format!("unknown seams {other}; direction, groups or charts"))),
+    };
+    let angle = match args.get("chart_angle") {
+        None | Some(Value::Null) => 45.0,
+        Some(v) => v.as_f64().filter(|a| (5.0..=89.0).contains(a)).ok_or_else(|| bad("chart_angle must be 5 to 89"))?,
     };
     let id = target(s, args)?;
     let started = Instant::now();
@@ -44,7 +52,12 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     if charts == fsc_paint::Charts::Groups && !object.mesh.has_groups() {
         return Err(CommandError::new("no_groups", "the object has no face groups; paint some with the Group brush or run group_auto, or use seams direction"));
     }
-    let result = fsc_paint::unwrap_charts(&object.mesh, 4.0 / 1024.0, flatten, charts);
+    let result = if auto {
+        let seg = fsc_paint::segment(&object.mesh, angle as f32);
+        fsc_paint::unwrap_keyed(&object.mesh, 4.0 / 1024.0, flatten, charts, Some(&seg.keys))
+    } else {
+        fsc_paint::unwrap_charts(&object.mesh, 4.0 / 1024.0, flatten, charts)
+    };
     let (mean, worst) = fsc_paint::stretch(&object.mesh, &result.uvs);
     let mut mesh = object.mesh.clone();
     mesh.uvs = result.uvs;
@@ -54,7 +67,11 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
-    Ok(json!({"object": after, "charts": result.charts, "coverage": result.coverage, "stretch": {"mean": round(mean), "max": round(worst)}, "ms": started.elapsed().as_millis()}))
+    let mut out = json!({"object": after, "charts": result.charts, "coverage": result.coverage, "stretch": {"mean": round(mean), "max": round(worst)}, "ms": started.elapsed().as_millis()});
+    if auto {
+        out["chart_angle"] = json!(angle);
+    }
+    Ok(out)
 }
 
 fn uv_point(args: &Value, key: &str) -> Result<Option<[f32; 2]>, CommandError> {

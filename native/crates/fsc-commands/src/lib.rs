@@ -21,6 +21,7 @@ mod sculpt_cmds;
 mod selection_cmds;
 mod sim_cmds;
 mod topo_cmds;
+mod uv_data_cmds;
 mod uv_density_cmds;
 mod uv_pick_cmds;
 mod uv_relax_cmds;
@@ -605,7 +606,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "uv_unwrap",
         group: Group::Paint,
         label: "Unwrap UVs",
-        description: "Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.",
+        description: "Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. seams groups cuts along face groups and seams charts grows disc-shaped charts automatically (chart_angle, default 45 degrees; tiny charts are merged). Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: bake_cmds::unwrap_schema,
@@ -786,6 +787,17 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: uv_pick_cmds::uv_pick_schema,
         run: uv_pick_cmds::uv_pick,
+    },
+    Command {
+        id: "paint.get_uvs",
+        mcp: "get_uvs",
+        group: Group::Paint,
+        label: "Get UVs",
+        description: "Read an unwrapped object's UV coordinates, one pair per triangle corner in index order. Returns object, revision (changes whenever the mesh does), corners (triangle corners, three per triangle) and uvs. With format base64 (default) uvs is a base64 string of little-endian f32 pairs u, v, so corners times 8 bytes; with format array it is a list of [u, v] pairs and is refused with bad_arguments above 200000 corners. The window uses it to draw a UV checker in the viewport. Refuses with no_uvs when the object is not unwrapped. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: uv_data_cmds::get_uvs_schema,
+        run: uv_data_cmds::get_uvs,
     },
     Command {
         id: "paint.uv_path",

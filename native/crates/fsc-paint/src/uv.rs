@@ -110,6 +110,12 @@ fn projected(mesh: &Mesh, members: &[u32], label: u8) -> HashMap<u32, Vec2> {
 }
 
 pub fn unwrap_charts(mesh: &Mesh, padding: f32, flatten: Flatten, by: Charts) -> Unwrap {
+    unwrap_keyed(mesh, padding, flatten, by, None)
+}
+
+/// Like [`unwrap_charts`] with Groups, but the chart keys come from `keys` (one per triangle) instead of the mesh's
+/// face groups, which are left alone.
+pub fn unwrap_keyed(mesh: &Mesh, padding: f32, flatten: Flatten, by: Charts, keys: Option<&[u32]>) -> Unwrap {
     let tris = mesh.triangle_count();
     let normals: Vec<Vec3> = mesh.face_normals().into_iter().map(|n| n.normalize_or(Vec3::Y)).collect();
     let mut labels: Vec<u8> = normals.iter().map(|&n| label_of(n)).collect();
@@ -148,12 +154,13 @@ pub fn unwrap_charts(mesh: &Mesh, padding: f32, flatten: Flatten, by: Charts) ->
     }
     let all: Vec<u32> = (0..tris as u32).collect();
     let label_key: Vec<u32> = labels.iter().map(|&l| u32::from(l)).collect();
-    let by_groups = by == Charts::Groups && mesh.has_groups();
+    let by_groups = keys.is_some() || (by == Charts::Groups && mesh.has_groups());
+    let group_of: &[u32] = keys.unwrap_or(&mesh.groups);
     // A projected group still has to face one way, so projection splits groups by direction from the start.
     let start_key: Vec<u32> = match (by_groups, flatten) {
         (false, _) => label_key.clone(),
-        (true, Flatten::Conformal) => mesh.groups.clone(),
-        (true, Flatten::Project) => mesh.groups.iter().zip(&labels).map(|(&g, &l)| g.wrapping_mul(6).wrapping_add(u32::from(l))).collect(),
+        (true, Flatten::Conformal) => group_of.to_vec(),
+        (true, Flatten::Project) => group_of.iter().zip(&labels).map(|(&g, &l)| g.wrapping_mul(6).wrapping_add(u32::from(l))).collect(),
     };
     // Each chart's faces and flat coordinates per mesh vertex (a seam vertex has one in each chart it borders).
     let mut charts: Vec<Vec<u32>> = Vec::new();
@@ -161,7 +168,20 @@ pub fn unwrap_charts(mesh: &Mesh, padding: f32, flatten: Flatten, by: Charts) ->
     for members in components(&all, &start_key, &neighbors, tris) {
         let label = if by_groups { chart_label(mesh, &members) } else { labels[members[0] as usize] };
         let mut at = projected(mesh, &members, label);
-        if flatten == Flatten::Conformal && !conformal(mesh, &members, &mut at) && by_groups {
+        let mut flat_ok = flatten != Flatten::Conformal || conformal(mesh, &members, &mut at);
+        if flat_ok && keys.is_some() && flatten == Flatten::Conformal {
+            let mut uvs = vec![[0.0f32; 2]; mesh.indices.len()];
+            for &t in &members {
+                for k in 0..3 {
+                    uvs[3 * t as usize + k] = at[&mesh.indices[3 * t as usize + k]].to_array();
+                }
+            }
+            if stretch(mesh, &uvs).1 > 8.0 {
+                flat_ok = false;
+                at = projected(mesh, &members, label);
+            }
+        }
+        if !flat_ok && by_groups {
             let pieces = components(&members, &label_key, &neighbors, tris);
             if pieces.len() > 1 {
                 for piece in pieces {
