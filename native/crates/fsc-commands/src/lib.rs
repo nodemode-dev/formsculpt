@@ -14,6 +14,7 @@ mod model_cmds;
 mod multires_cmds;
 mod object_cmds;
 mod paint_layer_cmds;
+mod patch_cmds;
 mod place_cmds;
 mod repeat_cmds;
 mod rig_cmds;
@@ -772,6 +773,17 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sim_cmds::retopo_schema,
         run: sim_cmds::retopo_face,
+    },
+    Command {
+        id: "topo.retopo_patch",
+        mcp: "retopo_patch",
+        group: Group::Topo,
+        label: "Retopology Patch",
+        description: "Retopology patch library: lay a ready-made quad patch onto the sculpt in one step instead of face by face. grid (columns by rows), strip (one row), eye_loop (rings of quads around an almond opening), mouth_loop (rings around a wider, flatter opening) and disc (rings closed by a fan of quads; 10 points around make a five-edge pole). The patch is centred at center, half as wide as size (15 percent of the target's size by default), its top toward up (world up by default; the window sends the screen's up) and turned by angle; each point drops onto the surface along the normal and welds to retopology vertices already within weld, so patches and retopo_face quads join into one object, and every quad faces out. The first call makes the object; pass its id as into after that. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: patch_cmds::patch_schema,
+        run: patch_cmds::retopo_patch,
     },
     Command {
         id: "topo.edge_loop",

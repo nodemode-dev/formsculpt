@@ -1,0 +1,163 @@
+use fsc_core::{Mesh, ObjectId};
+use glam::Vec3;
+use serde_json::{json, Value};
+
+use crate::history::Edit;
+use crate::scene_cmds::summary;
+use crate::{CommandError, Session};
+
+fn bad(msg: impl Into<String>) -> CommandError {
+    CommandError::new("bad_arguments", msg)
+}
+
+fn vec3_of(v: &Value, what: &str) -> Result<Vec3, CommandError> {
+    let a = v.as_array().filter(|a| a.len() == 3).ok_or_else(|| bad(format!("{what} is [x, y, z]")))?;
+    let n = |i: usize| a[i].as_f64().filter(|x| x.is_finite()).map(|x| x as f32).ok_or_else(|| bad(format!("{what} is [x, y, z] of numbers")));
+    Ok(Vec3::new(n(0)?, n(1)?, n(2)?))
+}
+
+pub(crate) fn patch_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "target": {"type": "integer", "minimum": 1, "description": "The sculpt to retopologize; the patch is laid onto its surface."},
+            "into": {"type": "integer", "minimum": 1, "description": "The retopology object to add to (from retopo_face or an earlier patch); a new one when omitted."},
+            "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS, "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole)."},
+            "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near the target's surface where the patch's middle goes."},
+            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "Half the patch's width in world units; 15 percent of the target's size when omitted."},
+            "up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Which way the patch's top points, flattened onto the surface (the window sends the screen's up); world up when omitted."},
+            "angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "A further turn about the surface normal, in degrees."},
+            "columns": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid and strip: quads across (default 4). Loops and disc: points around (even, default 12)."},
+            "rows": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid: quads up (default 4). Loops and disc: rings (default 3)."},
+            "weld": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "Patch points within this distance of an existing retopology vertex reuse it, so patches join; when omitted, 1.5 percent of the target's size or a quarter of the patch's shortest edge, whichever is smaller."}
+        },
+        "required": ["target", "patch", "center"],
+        "additionalProperties": false
+    })
+}
+
+/// Lays a patch from the library onto the target's surface: the flat layout is placed in the tangent plane at the
+/// centre (turned by up and angle), each point is dropped onto the surface along the normal, points weld to existing
+/// retopology vertices, and each quad is turned to face out. One undo step.
+pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let target_id = args.get("target").and_then(Value::as_u64).ok_or_else(|| bad("target is required"))? as ObjectId;
+    let target = s.scene.get(target_id).ok_or_else(|| CommandError::new("not_found", format!("no object {target_id}")))?;
+    let kind = args.get("patch").and_then(Value::as_str).ok_or_else(|| bad("patch is required"))?;
+    let loops = kind != "grid" && kind != "strip";
+    let count = |k: &str, d: u64| -> Result<usize, CommandError> {
+        match args.get(k) {
+            None | Some(Value::Null) => Ok(d as usize),
+            Some(v) => v.as_u64().filter(|n| (1..=64).contains(n)).map(|n| n as usize).ok_or_else(|| bad(format!("{k} is an integer from 1 to 64"))),
+        }
+    };
+    let flat = fsc_topo::patch(kind, count("columns", if loops { 12 } else { 4 })?, count("rows", if loops { 3 } else { 4 })?).map_err(bad)?;
+    let m = &target.mesh;
+    let bsize = m.bounds().extent().length().max(1e-4);
+    let num = |k: &str, d: f32, lo: f32, hi: f32| -> Result<f32, CommandError> {
+        match args.get(k) {
+            None | Some(Value::Null) => Ok(d),
+            Some(v) => v.as_f64().map(|x| x as f32).filter(|x| x.is_finite() && *x >= lo && *x <= hi).ok_or_else(|| bad(format!("{k} must be a number from {lo} to {hi}"))),
+        }
+    };
+    let size = num("size", bsize * 0.15, 1e-6, 1000.0)?;
+    // By default a quarter of the patch's shortest edge at most, so a fine patch never welds onto itself.
+    let shortest = flat.quads.iter().flat_map(|q| (0..4).map(move |k| (q[k], q[(k + 1) % 4]))).map(|(a, b)| {
+        let (p, q) = (flat.points[a as usize], flat.points[b as usize]);
+        ((p[0] - q[0]).powi(2) + (p[1] - q[1]).powi(2)).sqrt()
+    }).fold(f32::MAX, f32::min) * size;
+    let weld = num("weld", (bsize * 0.015).min(shortest * 0.25), 1e-6, 100.0)?;
+    let angle = num("angle", 0.0, -360.0, 360.0)?.to_radians();
+    let center = vec3_of(args.get("center").ok_or_else(|| bad("center is required"))?, "center")?;
+    let (c, n, _) = fsc_topo::nearest_point(&target.bvh, m, center, bsize).ok_or_else(|| bad("center is too far from the target's surface"))?;
+    let n = n.try_normalize().ok_or_else(|| bad("the surface has no normal there"))?;
+    let up = match args.get("up").filter(|v| !v.is_null()) {
+        Some(v) => vec3_of(v, "up")?,
+        None => Vec3::Y,
+    };
+    // The patch's y axis: up flattened onto the tangent plane (world x when up runs along the normal), then turned.
+    let mut y = (up - n * up.dot(n)).try_normalize().unwrap_or_else(|| (Vec3::X - n * n.x).normalize_or_zero());
+    let x0 = y.cross(n);
+    let (sin, cos) = angle.sin_cos();
+    let x = x0 * cos + y * sin;
+    y = n.cross(x);
+    let mut dropped = Vec::with_capacity(flat.points.len());
+    let mut normals = Vec::with_capacity(flat.points.len());
+    for p in &flat.points {
+        let w = c + x * (p[0] * size) + y * (p[1] * size);
+        // Straight down onto the surface along the normal, else the nearest surface point.
+        let hit = target.bvh.raycast(m, w + n * size, -n).filter(|h| h.t < size * 2.5);
+        let (q, qn) = match hit {
+            Some(h) => {
+                let [a, b, cc] = m.triangle(h.triangle as usize).map(|v| m.position(v));
+                (h.point, (b - a).cross(cc - a).normalize_or_zero())
+            }
+            None => {
+                let (q, qn, _) = fsc_topo::nearest_point(&target.bvh, m, w, bsize).ok_or_else(|| bad("the patch reaches past the target's surface"))?;
+                (q, qn)
+            }
+        };
+        dropped.push(q);
+        normals.push(qn);
+    }
+    let into = args.get("into").and_then(Value::as_u64).map(|v| v as ObjectId);
+    let mut mesh = match into {
+        Some(id) => s.scene.get(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?.mesh.clone(),
+        None => Mesh::new(Vec::new(), Vec::new()),
+    };
+    let was_quads = mesh.quads || mesh.indices.is_empty();
+    let before = mesh.vertex_count();
+    let mut index = Vec::with_capacity(dropped.len());
+    for q in &dropped {
+        let found = mesh.positions.iter().position(|&p| Vec3::from(p).distance(*q) <= weld);
+        index.push(match found {
+            Some(v) => v as u32,
+            None => {
+                mesh.positions.push(q.to_array());
+                mesh.positions.len() as u32 - 1
+            }
+        });
+    }
+    let welded = dropped.len() - (mesh.vertex_count() - before);
+    let mut faces = 0;
+    for quad in &flat.quads {
+        let mut f = quad.map(|k| index[k as usize]);
+        let mut u = f.to_vec();
+        u.sort_unstable();
+        u.dedup();
+        if u.len() < 4 {
+            return Err(bad("two patch points welded onto one vertex; make the patch larger or lower weld"));
+        }
+        let p = quad.map(|k| dropped[k as usize]);
+        let surface: Vec3 = quad.iter().map(|&k| normals[k as usize]).sum();
+        if (p[2] - p[0]).cross(p[3] - p[1]).dot(surface) < 0.0 {
+            f.reverse();
+        }
+        mesh.indices.extend_from_slice(&[f[0], f[1], f[2], f[0], f[2], f[3]]);
+        faces += 1;
+    }
+    let positions = std::mem::take(&mut mesh.positions);
+    let indices = std::mem::take(&mut mesh.indices);
+    let mut rebuilt = Mesh::new(positions, indices);
+    rebuilt.quads = was_quads;
+    let total = if rebuilt.quads { rebuilt.triangle_count() / 2 } else { rebuilt.triangle_count() };
+    let id = match into {
+        Some(id) => {
+            let object = s.scene.get_mut(id).expect("checked");
+            let mask = vec![0.0; rebuilt.vertex_count()];
+            let (old_mesh, old_mask) = object.replace_mesh(rebuilt, mask);
+            s.history.push(Edit::Topology { label: "Retopology Patch".into(), object: id, mesh: old_mesh, mask: old_mask });
+            id
+        }
+        None => {
+            let name = s.scene.unique_name(&format!("{} retopo", target.name));
+            let id = s.scene.add(name, rebuilt);
+            let index = s.scene.index_of(id).expect("just added");
+            s.history.push(Edit::Add { id, index, parked: None });
+            id
+        }
+    };
+    // The sculpt stays active so the next clicks land on it.
+    s.scene.active = Some(target_id);
+    let object = s.scene.get(id).expect("exists");
+    Ok(json!({"object": summary(object), "id": id, "patch": kind, "faces_added": faces, "faces": total, "points_welded": welded, "quads": object.mesh.quads}))
+}
