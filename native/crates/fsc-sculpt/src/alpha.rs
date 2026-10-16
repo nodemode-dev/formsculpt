@@ -99,6 +99,27 @@ impl Alpha {
         a + (b - a) * ty
     }
 
+    /// The signed stamp weight at alpha-space (x, y): v divided by `stretch`, repeated `tile` times, sampled, inverted, then split at `mid`; 0 outside the alpha.
+    pub fn stamp(&self, x: f32, y: f32, stretch: f32, tile: u32, invert: bool, mid: f32) -> f32 {
+        let (mut x, mut y) = (x, y / stretch);
+        if !(-1.0..=1.0).contains(&x) || !(-1.0..=1.0).contains(&y) {
+            return 0.0;
+        }
+        if tile > 1 {
+            let n = tile as f32;
+            x = ((x + 1.0) * 0.5 * n).rem_euclid(1.0) * 2.0 - 1.0;
+            y = ((y + 1.0) * 0.5 * n).rem_euclid(1.0) * 2.0 - 1.0;
+        }
+        let mut a = self.sample(x, y);
+        if invert {
+            a = 1.0 - a;
+        }
+        if mid > 0.0 {
+            a = (if a > mid { (a - mid) / (1.0 - mid) } else { (a - mid) / mid }).clamp(-1.0, 1.0);
+        }
+        a
+    }
+
     /// An alpha from 8-bit grayscale (or the mean of RGB) pixels, resampled to a square of `size`.
     pub fn from_pixels(width: usize, height: usize, gray: &[u8], size: usize) -> Result<Alpha, String> {
         if width == 0 || height == 0 || gray.len() != width * height {

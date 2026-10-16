@@ -155,6 +155,16 @@ pub struct BrushSettings {
     /// `alpha_angle` radians; with `roll` the alpha's top follows the stroke's direction instead.
     pub alpha_up: [f32; 3],
     pub alpha_angle: f32,
+    /// Alpha Y stretch: the alpha's v is divided by it, so above 1 the stamp lengthens along its up direction.
+    pub alpha_stretch: f32,
+    /// Rotation offset in radians added to `alpha_angle` and to the roll direction.
+    pub alpha_rotation: f32,
+    /// The alpha repeats this many times across the dab in each direction.
+    pub alpha_tile: u32,
+    /// Mid value: samples below it carve (negative weight) and samples above it raise, rescaled to -1..1.
+    pub alpha_mid: f32,
+    /// Inverts the sampled alpha (1 - a) before the mid value.
+    pub alpha_invert: bool,
     pub roll: bool,
     /// Spray: each dab lands up to `spray` radii from the path, turned at random and at a random share of the
     /// strength (0 is an ordinary stroke).
@@ -230,6 +240,11 @@ impl Default for BrushSettings {
             noise_scale: 0.0,
             alpha_up: [0.0, 1.0, 0.0],
             alpha_angle: 0.0,
+            alpha_stretch: 1.0,
+            alpha_rotation: 0.0,
+            alpha_tile: 1,
+            alpha_mid: 0.0,
+            alpha_invert: false,
             roll: false,
             spray: 0.0,
             pressure_gamma: 1.0,

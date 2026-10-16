@@ -733,6 +733,7 @@ impl Stroke {
         let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * self.jitter.1 * self.dab_mul.1 * compensation;
         // The alpha lies in the plane of the area under the brush. Its top points along `alpha_up` (mirrored with the
         // copy), or with roll along the stroke's direction since the previous dab, then turns by `alpha_angle`.
+        let signed = s.alpha_mid > 0.0 && matches!(s.kind, BrushKind::Draw | BrushKind::Stamp | BrushKind::Inflate | BrushKind::Noise);
         let prev = self.prev_dab[copy].replace(center);
         if let Some(alpha) = &self.alpha {
             let m = self.transforms[copy];
@@ -744,8 +745,9 @@ impl Stroke {
             let x_axis = y_axis.cross(area_n);
             for (k, &v) in found.iter().enumerate() {
                 let d = object.mesh.position(v) - center;
-                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle + self.jitter.0 + self.tilt);
-                weights[k] *= alpha.sample(x, y);
+                let (x, y) = crate::alpha::turn(d.dot(x_axis) / r, d.dot(y_axis) / r, s.alpha_angle + self.jitter.0 + self.tilt + s.alpha_rotation);
+                let a = alpha.stamp(x, y, s.alpha_stretch, s.alpha_tile, s.alpha_invert, s.alpha_mid);
+                weights[k] *= if signed { a } else { a.max(0.0) };
             }
         }
         if let Some(mult) = self.filter(object, copy, &found, center, r) {
@@ -881,7 +883,7 @@ impl Stroke {
             let noise_scale = if s.noise_scale > 0.0 { s.noise_scale } else { r * 0.2 };
             for (k, &v) in found.iter().enumerate() {
                 let w = weights[k] * amount * free(object, v, hid);
-                if w <= 0.0 {
+                if w == 0.0 || (w < 0.0 && !signed) {
                     continue;
                 }
                 let p = object.mesh.position(v);
