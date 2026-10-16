@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.39.0 · 2026-10-16
+
+### Added
+
+- `curve_bridge`: a loft between two face-set borders (a group's or the mask's) along a path, or (Snake Curve) a tapering extrusion out of one border; a new open tube object in one undo step.
+- Live stroke re-edit: Edit Last Stroke as Curve re-applies the stroke as its handles move (Live re-edit, on by default), as one replaced step.
+- Snake from mask and Bridge two groups in the panel and the Sculpt menu, with Snake end size %.
+- 129 engine commands; 768 interface strings in every language.
+
 ## 0.38.0 · 2026-10-16
 
 ### Added
