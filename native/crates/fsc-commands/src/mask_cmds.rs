@@ -314,7 +314,7 @@ pub(crate) fn shape_schema() -> Value {
     })
 }
 
-fn inside_polygon(x: f32, y: f32, poly: &[[f32; 2]]) -> bool {
+pub(crate) fn inside_polygon(x: f32, y: f32, poly: &[[f32; 2]]) -> bool {
     let mut inside = false;
     let mut j = poly.len() - 1;
     for i in 0..poly.len() {
@@ -327,10 +327,8 @@ fn inside_polygon(x: f32, y: f32, poly: &[[f32; 2]]) -> bool {
     inside
 }
 
-pub(crate) fn mask_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("box").to_string();
-    let points: Vec<[f32; 2]> = args
-        .get("points")
+pub(crate) fn picture_points(args: &Value) -> Result<Vec<[f32; 2]>, CommandError> {
+    args.get("points")
         .and_then(Value::as_array)
         .ok_or_else(|| bad("points is required"))?
         .iter()
@@ -339,15 +337,10 @@ pub(crate) fn mask_shape(s: &mut Session, args: &Value) -> Result<Value, Command
             let (x, y) = (a[0].as_f64().ok_or_else(|| bad("points are numbers"))?, a[1].as_f64().ok_or_else(|| bad("points are numbers"))?);
             Ok([x as f32, y as f32])
         })
-        .collect::<Result<_, CommandError>>()?;
-    match shape.as_str() {
-        "box" | "ellipse" if points.len() < 2 => return Err(bad("box and ellipse take two corner points")),
-        "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
-        "box" | "ellipse" | "lasso" => {}
-        other => return Err(bad(format!("unknown shape {other}; use box, ellipse or lasso"))),
-    }
-    let op = op(args, "add")?;
-    let id = target(s, args)?;
+        .collect()
+}
+
+pub(crate) fn project_to_picture(s: &Session, args: &Value, positions: &[[f32; 3]]) -> Result<Vec<Option<[f32; 2]>>, CommandError> {
     let matrix = match args.get("view_proj") {
         Some(Value::Array(a)) if a.len() == 16 => {
             let m: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
@@ -371,19 +364,30 @@ pub(crate) fn mask_shape(s: &mut Session, args: &Value) -> Result<Value, Command
             frame.grow(Vec3::from(p));
         }
     }
-    let object = s.scene.get(id).expect("checked");
-    let screen: Vec<Option<[f32; 2]>> = match matrix {
-        Some(m) => object
-            .mesh
-            .positions
+    Ok(match matrix {
+        Some(m) => positions
             .iter()
             .map(|&p| {
                 let c = m * Vec4::new(p[0], p[1], p[2], 1.0);
                 (c.w > 1e-9).then(|| [(c.x / c.w) * 0.5 + 0.5, 0.5 - (c.y / c.w) * 0.5])
             })
             .collect(),
-        None => fsc_paint::view_coordinates(frame, yaw.to_radians(), pitch.to_radians(), aspect, &object.mesh.positions).into_iter().map(Some).collect(),
-    };
+        None => fsc_paint::view_coordinates(frame, yaw.to_radians(), pitch.to_radians(), aspect, positions).into_iter().map(Some).collect(),
+    })
+}
+
+pub(crate) fn mask_shape(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("box").to_string();
+    let points = picture_points(args)?;
+    match shape.as_str() {
+        "box" | "ellipse" if points.len() < 2 => return Err(bad("box and ellipse take two corner points")),
+        "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
+        "box" | "ellipse" | "lasso" => {}
+        other => return Err(bad(format!("unknown shape {other}; use box, ellipse or lasso"))),
+    }
+    let op = op(args, "add")?;
+    let id = target(s, args)?;
+    let screen = project_to_picture(s, args, &s.scene.get(id).expect("checked").mesh.positions)?;
     let (x0, x1) = (points[0][0].min(points[1][0]), points[0][0].max(points[1][0]));
     let (y0, y1) = (points[0][1].min(points[1][1]), points[0][1].max(points[1][1]));
     let new: Vec<f32> = screen

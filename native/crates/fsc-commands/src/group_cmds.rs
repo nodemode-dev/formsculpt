@@ -92,6 +92,90 @@ pub(crate) fn group_from_mask(s: &mut Session, args: &Value) -> Result<Value, Co
     Ok(json!({"object": object, "group": new, "faces": n}))
 }
 
+pub(crate) fn from_outline_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": ID},
+            "points": {"type": "array", "minItems": 2, "maxItems": 4096, "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "description": "The outline in picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height."},
+            "shape": {"type": "string", "enum": ["box", "lasso"], "default": "lasso", "description": "box takes two corner points; lasso takes the outline, three points or more."},
+            "view": {"type": "string", "enum": ["three_quarter", "front", "back", "right", "left", "top", "bottom"], "default": "front", "description": "The get_view camera the points refer to (framing every visible object, as get_view does by default)."},
+            "yaw": {"type": "number", "minimum": -360, "maximum": 360, "description": "Degrees; overrides view, as in get_view."},
+            "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees; overrides view, as in get_view."},
+            "width": {"type": "integer", "minimum": 1, "maximum": 8192, "default": 640, "description": "The picture's width, for its aspect; as in get_view."},
+            "height": {"type": "integer", "minimum": 1, "maximum": 8192, "default": 640},
+            "view_proj": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16, "description": "Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates."},
+            "front_only": {"type": "boolean", "default": false, "description": "Take only faces that face the camera; false takes every face inside the outline, through the whole object."},
+            "group": {"type": "integer", "minimum": 0, "description": "The group number to give the faces; one above the highest existing group when omitted."}
+        },
+        "required": ["points"],
+        "additionalProperties": false
+    })
+}
+
+/// Slice Curve: puts the faces whose middle falls inside a screen-space outline into one face group, as one undo step.
+pub(crate) fn group_from_outline(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let shape = args.get("shape").and_then(Value::as_str).unwrap_or("lasso");
+    let points = crate::mask_cmds::picture_points(args)?;
+    match shape {
+        "box" if points.len() < 2 => return Err(bad("a box takes two corner points")),
+        "lasso" if points.len() < 3 => return Err(bad("a lasso needs at least three points")),
+        "box" | "lasso" => {}
+        other => return Err(bad(format!("unknown shape {other}; use box or lasso"))),
+    }
+    let front_only = match args.get("front_only") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(b)) => *b,
+        Some(_) => return Err(bad("front_only is true or false")),
+    };
+    let given = match args.get("group") {
+        None | Some(Value::Null) => None,
+        Some(v) => Some(v.as_u64().filter(|g| *g <= u32::MAX as u64).ok_or_else(|| bad("group is a whole number from 0"))? as u32),
+    };
+    let id = target(s, args)?;
+    let o = s.scene.get(id).expect("checked");
+    let mesh = &o.mesh;
+    let faces = mesh.triangle_count();
+    let mut probe: Vec<[f32; 3]> = mesh.positions.clone();
+    for t in 0..faces {
+        let c = mesh.triangle(t).iter().map(|&v| mesh.position(v)).sum::<Vec3>() / 3.0;
+        probe.push(c.to_array());
+    }
+    let screen = crate::mask_cmds::project_to_picture(s, args, &probe)?;
+    let base = mesh.positions.len();
+    let (x0, x1) = (points[0][0].min(points[1][0]), points[0][0].max(points[1][0]));
+    let (y0, y1) = (points[0][1].min(points[1][1]), points[0][1].max(points[1][1]));
+    let sel: Vec<bool> = (0..faces)
+        .map(|t| {
+            let Some([x, y]) = screen[base + t] else { return false };
+            let inside = if shape == "box" { x >= x0 && x <= x1 && y >= y0 && y <= y1 } else { crate::mask_cmds::inside_polygon(x, y, &points) };
+            if !inside || !front_only {
+                return inside;
+            }
+            let [a, b, c] = mesh.triangle(t);
+            match (screen[a as usize], screen[b as usize], screen[c as usize]) {
+                (Some(a), Some(b), Some(c)) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0.0,
+                _ => false,
+            }
+        })
+        .collect();
+    let n = sel.iter().filter(|&&b| b).count();
+    if n == 0 {
+        return Err(CommandError::new("nothing_inside", "no face has its middle inside the outline; check the points and the view they refer to"));
+    }
+    let mut groups = groups_of(mesh);
+    let group = given.unwrap_or_else(|| groups.iter().max().copied().unwrap_or(0) + 1);
+    for (t, &on) in sel.iter().enumerate() {
+        if on {
+            groups[t] = group;
+        }
+    }
+    let mut mesh = mesh.clone();
+    mesh.groups = groups;
+    let object = commit(s, id, "Group From Outline", mesh);
+    Ok(json!({"object": object, "group": group, "faces": n}))
+}
+
 pub(crate) fn paint_schema() -> Value {
     json!({
         "type": "object",

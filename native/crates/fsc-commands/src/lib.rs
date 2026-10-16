@@ -903,6 +903,17 @@ pub static COMMANDS: &[Command] = &[
         run: group_cmds::group_from_mask,
     },
     Command {
+        id: "group.from_outline",
+        mcp: "group_from_outline",
+        group: Group::Group,
+        label: "Group From Outline",
+        description: "Slice Curve: put the faces inside a screen-space outline into a face group (a new one, or `group`), so a face group can be cut along a curve drawn on a view. A face is inside when the middle of the face falls inside the outline; the others keep their groups, and a mesh without groups starts with every face in group 0. Shape is lasso (the outline, three points or more) or box (two corners). Points are in the coordinates of the get_view picture for the same view, width and height, or give view_proj for the window's camera. With front_only true only faces turned toward the camera are taken, otherwise the outline goes through the whole object. Returns the group number used and how many faces went in; refuses with nothing_inside when no face is inside. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: group_cmds::from_outline_schema,
+        run: group_cmds::group_from_outline,
+    },
+    Command {
         id: "group.paint",
         mcp: "group_paint",
         group: Group::Group,
