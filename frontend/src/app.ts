@@ -1055,7 +1055,8 @@ function buildShell(root: HTMLElement): Shell {
   const resolution = input('number', { min: '8', max: '320', value: '128', 'aria-label': 'Voxel resolution' });
   const topoFields = el('div', 'fields');
   const quadTarget = input('number', { min: '100', max: '400000', value: '4000', 'aria-label': 'Target quads' });
-  const zmodelAction = choices('ZModeler action', [['edge:insert', 'Insert edge loop'], ['edge:extrude', 'Extrude edge'], ['edge:close', 'Close hole'], ['face:inset', 'Inset face'], ['face:extrude', 'Extrude face'], ['face:delete', 'Delete face'], ['edge:crease', 'Crease edge'], ['edge:uncrease', 'Uncrease edge'], ['point:crease', 'Crease point'], ['point:uncrease', 'Uncrease point']]);
+  // Values are target.action, in the characters the string extractor reads as option values, so the labels translate.
+  const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point']]);
   const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
   const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
   topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Auto-crease', zmodelCrease));
@@ -2424,7 +2425,7 @@ class SceneView {
   /** ZModeler: the action chosen in the panel, applied at the clicked point (edge actions to its nearest edge, face
    * actions to the face under it). */
   private async zmodel(id: number, point: Vec3): Promise<void> {
-    const [target, action] = this.shell.zmodelAction.value.split(':');
+    const [target, action] = this.shell.zmodelAction.value.split('.');
     const args: Record<string, unknown> = { id, point, action };
     if (action === 'insert') args.at = Math.max(5, Math.min(95, Number(this.shell.zmodelAt.value) || 50)) / 100;
     // Auto-crease applies where the engine takes it: a new edge loop, and a face inset or extrude.
@@ -2474,8 +2475,8 @@ class SceneView {
       return;
     }
     const project = this.projector();
-    const face = this.shell.zmodelAction.value.startsWith('face:');
-    const point = this.shell.zmodelAction.value.startsWith('point:');
+    const face = this.shell.zmodelAction.value.startsWith('face.');
+    const point = this.shell.zmodelAction.value.startsWith('point.');
     const pts = (face ? h.face_corners : point ? [h.vertex_point] : h.edge_points).map(project);
     if (pts.some((q) => q === null)) {
       setAttr(path, 'visibility', 'hidden');
