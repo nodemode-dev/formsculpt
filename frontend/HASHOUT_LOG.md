@@ -471,3 +471,9 @@ With Live re-edit on (the default), Edit last stroke as curve undoes the stroke,
 - kind: rationale
 - logged: v0.40.0 · 2026-10-16
 Three buttons over the engine's new UV commands. Relax runs uv_relax conformally for 60 passes with island borders held, and reports the stretch before and after. Even density runs uv_equalize (which repacks) and reports the spread before and after. Density reads uv_density at the Bake size, so the number matches the maps that will be baked. Notes are {name} templates through t(), filled after translation. Both changing actions refresh the scene and redraw the layout picture in place.
+
+### UV section: Sew to neighbour
+- refers-to: app.ts :: uvSew, the UV buttons; ui/command-map.ts uv.sew_view; ui/menus.ts PAINT
+- kind: rationale
+- logged: v0.41.0 · 2026-10-16
+The window has no way yet to name a second island or a vertex path, so cut and straighten stay agent and palette commands for now, and sewing takes the chosen island and tries uv_sew against each other island in turn (the chosen one moves), stopping at the first that shares mesh edges; any refusal other than no_shared_edges is shown and stops the search. Island numbers come from uv_density's list, which uses the same island numbering. The choice is cleared after a sew because the numbering changes.

@@ -841,6 +841,7 @@ function buildShell(root: HTMLElement): Shell {
       ['relax', 'Relax'],
       ['equalize', 'Even density'],
       ['density', 'Density'],
+      ['sew', 'Sew to neighbour'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -4135,6 +4136,7 @@ class SceneView {
         else if (action === 'refresh') void this.drawUv(true);
         else if (action === 'relax' || action === 'equalize' || action === 'density') void this.uvMeasure(id, action);
         else if (this.uvIsland === null) this.note('Click an island in the UV view first');
+        else if (action === 'sew') void this.uvSew(id, this.uvIsland);
         else if (action === 'rotate') void this.uvRun('uv_transform', { id, island: this.uvIsland, rotate: 90 });
         else void this.uvRun('uv_transform', { id, island: this.uvIsland, scale: action === 'grow' ? 1.25 : 0.8 });
       }),
@@ -4161,6 +4163,28 @@ class SceneView {
     }
     await this.refresh();
     void this.drawUv(true);
+  }
+
+  /** Sew the chosen island onto the first island it shares mesh edges with (uv_sew moves the chosen one onto it). */
+  private async uvSew(id: number, chosen: number): Promise<void> {
+    const layout = await dispatch<{ islands?: unknown[] }>('uv_density', { id });
+    const count = layout.ok ? (layout.result.islands ?? []).length : 0;
+    for (let other = 0; other < count; other++) {
+      if (other === chosen) continue;
+      const r = await dispatch<{ welded: number; islands_after: number }>('uv_sew', { id, island_a: other, island_b: chosen });
+      if (r.ok) {
+        this.uvIsland = null;
+        this.note(t('Sewn: {welded} corners joined, {n} islands now').replace('{welded}', String(r.result.welded)).replace('{n}', String(r.result.islands_after)));
+        await this.refresh();
+        void this.drawUv(true);
+        return;
+      }
+      if (r.error.code !== 'no_shared_edges') {
+        this.note(r.error.message);
+        return;
+      }
+    }
+    this.note(t('This island shares no edge with another island'));
   }
 
   private async uvRun(name: string, args: Record<string, unknown>): Promise<void> {

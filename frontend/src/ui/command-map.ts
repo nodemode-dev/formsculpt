@@ -78,6 +78,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     relax: n('uv.relax_view', 'Relax UVs'),
     equalize: n('uv.equalize_view', 'Even UV Density'),
     density: n('uv.density_view', 'Show UV Density'),
+    sew: n('uv.sew_view', 'Sew UV Island to a Neighbour'),
   },
   action: {
     undo: c('history.undo', 'Undo', { keys: ['Mod+Z'], icon: 'undo' }),
