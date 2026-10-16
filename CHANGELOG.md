@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.58.0 · 2026-10-16
+
+### Added
+
+- `zmodel_edge` align (an open edge loop straightened between its ends, a closed one flattened onto its plane) and slide (the loop moved toward the aimed face's side by amount); both keep UVs. `get_creases`: the creased edges as segments, with their visibility from a camera position.
+- Window: creases drawn while ZModeler is the tool, Align edge loop, Slide edge loop with Slide amount %, and Slide point by drag.
+- 164 engine commands; 990 interface strings in every language.
+
 ## 0.57.0 · 2026-10-16
 
 ### Added
