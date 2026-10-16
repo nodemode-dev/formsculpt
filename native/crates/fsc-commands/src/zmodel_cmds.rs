@@ -46,6 +46,64 @@ fn crease_step(s: &mut Session, id: ObjectId, label: &str, creases: Vec<(u32, u3
     after
 }
 
+/// Moves vertices to new positions as one vertex edit (normals and BVH refreshed, UVs kept, an active sculpt layer
+/// records it); nothing is pushed when nothing moves.
+fn move_vertices(s: &mut Session, id: ObjectId, label: &str, moves: &[(u32, Vec3)]) -> Value {
+    let object = s.scene.get_mut(id).expect("checked");
+    let mut edit = VertexEdit::default();
+    for &(v, q) in moves {
+        edit.indices.push(v);
+        edit.before.push(object.mesh.positions[v as usize]);
+        edit.after.push(q.to_array());
+        edit.mask_before.push(object.mask[v as usize]);
+        edit.mask_after.push(object.mask[v as usize]);
+    }
+    if edit.indices.is_empty() {
+        return summary(object);
+    }
+    edit.apply(object, true);
+    let after = summary(object);
+    push_vertices(s, id, label.into(), edit);
+    after
+}
+
+pub(crate) fn creases_schema() -> Value {
+    json!({"type": "object", "properties": {
+        "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+        "eye": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A camera position; each crease then says whether the object hides its middle from there."}
+    }, "required": [], "additionalProperties": false})
+}
+
+/// The creased edges as segments, for drawing them: each with its two end points and, given an eye, whether it is in
+/// view. Read-only.
+pub(crate) fn get_creases(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let eye = match args.get("eye").filter(|v| !v.is_null()) {
+        Some(v) => Some(vec3_of(v, "eye")?),
+        None => None,
+    };
+    let object = s.scene.get(id).expect("checked");
+    let m = &object.mesh;
+    let edges: std::collections::HashSet<(u32, u32)> = (0..m.triangle_count()).flat_map(|t| {
+        let [a, b, c] = m.triangle(t);
+        [(a.min(b), a.max(b)), (b.min(c), b.max(c)), (c.min(a), c.max(a))]
+    }).collect();
+    let size = m.bounds().extent().length().max(1e-6);
+    let segments: Vec<Value> = m.creases.iter().filter(|e| edges.contains(e)).map(|&(a, b)| {
+        let (pa, pb) = (m.position(a), m.position(b));
+        let visible = eye.map(|e| {
+            let mid = (pa + pb) * 0.5;
+            let d = mid.distance(e);
+            match object.bvh.raycast(m, e, (mid - e) / d.max(1e-9)) {
+                Some(h) => h.t >= d - size * 2e-3,
+                None => true,
+            }
+        });
+        json!({"a": pa.to_array(), "b": pb.to_array(), "visible": visible})
+    }).collect();
+    Ok(json!({"id": id, "revision": object.revision, "creases": segments}))
+}
+
 fn aim_props() -> serde_json::Map<String, Value> {
     json!({
         "id": {"type": "integer", "minimum": 1, "description": "A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted."},
@@ -128,7 +186,8 @@ fn aimed(s: &mut Session, args: &Value, what: &str) -> Result<(ObjectId, PolyHit
 
 pub(crate) fn edge_schema() -> Value {
     let mut p = aim_props();
-    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "extrude", "close", "crease", "uncrease"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it."}));
+    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "extrude", "close", "crease", "uncrease", "align", "slide"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount."}));
+    p.insert("amount".into(), json!({"type": "number", "minimum": 0, "maximum": 0.95, "default": 0.25, "description": "slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge."}));
     p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "insert: crease the new loop's edges (auto-crease)."}));
     p.insert("at".into(), json!({"type": "number", "minimum": 0.02, "maximum": 0.98, "default": 0.5, "description": "insert: where the loop crosses each quad, from one side of the ring to the other."}));
     p.insert("distance".into(), json!({"type": "number", "minimum": -1000, "maximum": 1000, "description": "extrude: how far, in world units; the edge's own length when omitted."}));
@@ -144,6 +203,13 @@ pub(crate) fn zmodel_edge(s: &mut Session, args: &Value) -> Result<Value, Comman
         let (list, changed) = fsc_topo::set_creases(mesh, &hit, false, action == "crease").map_err(|e| CommandError::new("not_quads", e))?;
         let after = crease_step(s, id, if action == "crease" { "Crease Edge" } else { "Uncrease Edge" }, list);
         return Ok(json!({"object": after, "action": action, "edge": [hit.edge.0, hit.edge.1], "edges_changed": changed}));
+    }
+    if action == "align" || action == "slide" {
+        let amount = num(args, "amount", 0.25, 0.0, 0.95)?;
+        let moves = fsc_topo::loop_moves(mesh, &hit, action == "align", amount).map_err(|e| CommandError::new("not_quads", e))?;
+        let n = moves.len();
+        let after = move_vertices(s, id, if action == "align" { "Align Edge Loop" } else { "Slide Edge Loop" }, &moves);
+        return Ok(json!({"object": after, "action": action, "edge": [hit.edge.0, hit.edge.1], "vertices_moved": n}));
     }
     let (out, extra) = match action {
         "insert" => {

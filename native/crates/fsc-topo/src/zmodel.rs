@@ -315,6 +315,109 @@ pub fn set_creases(mesh: &Mesh, hit: &PolyHit, around_point: bool, on: bool) -> 
     Ok((list, changed))
 }
 
+/// An edge loop's vertices in order, each one's neighbour on the picked side, and whether it closes.
+pub type EdgeLoop = (Vec<u32>, Vec<Option<u32>>, bool);
+
+/// The edge loop through the picked edge: its vertices in order, each one's neighbour on the side of the picked face
+/// (None where the loop leaves that side), and whether the loop closes. The walk goes through four-edge vertices and
+/// stops at a pole (any other count), at an open border, or where it would repeat.
+pub fn edge_loop(mesh: &Mesh, hit: &PolyHit) -> Result<EdgeLoop, String> {
+    let quads = quads_of(mesh)?;
+    let mut by_edge: HashMap<(u32, u32), Vec<usize>> = HashMap::new();
+    let mut ring: HashMap<u32, HashSet<u32>> = HashMap::new();
+    for (q, f) in quads.iter().enumerate() {
+        for k in 0..4 {
+            let (a, b) = (f[k], f[(k + 1) % 4]);
+            by_edge.entry(key(a, b)).or_default().push(q);
+            ring.entry(a).or_default().insert(b);
+            ring.entry(b).or_default().insert(a);
+        }
+    }
+    // The neighbour of v in quad q that is not `not`.
+    let adj = |q: usize, v: u32, not: u32| -> Option<u32> {
+        let f = quads[q];
+        let i = f.iter().position(|&x| x == v)?;
+        [f[(i + 1) % 4], f[(i + 3) % 4]].into_iter().find(|&x| x != not)
+    };
+    let (a, b) = hit.edge;
+    let mut side: HashMap<u32, u32> = HashMap::new();
+    side.insert(a, adj(hit.quad, a, b).ok_or("the face is broken")?);
+    side.insert(b, adj(hit.quad, b, a).ok_or("the face is broken")?);
+    // One direction of the walk from `v` (reached from `prev` across the side quad `q`); returns the vertices added.
+    let walk = |start: u32, from: u32, q0: usize, side: &mut HashMap<u32, u32>, stop: u32| -> (Vec<u32>, bool) {
+        let (mut v, mut prev, mut q) = (start, from, q0);
+        let mut added = Vec::new();
+        loop {
+            if ring.get(&v).map_or(0, |r| r.len()) != 4 {
+                return (added, false);
+            }
+            let Some(&sv) = side.get(&v) else { return (added, false) };
+            let Some(&q2) = by_edge.get(&key(v, sv)).and_then(|l| l.iter().find(|&&o| o != q)) else { return (added, false) };
+            let Some(c) = adj(q2, v, sv) else { return (added, false) };
+            if c == prev {
+                return (added, false);
+            }
+            if c == stop {
+                return (added, true);
+            }
+            if side.contains_key(&c) {
+                return (added, false);
+            }
+            let Some(sc) = adj(q2, c, v) else { return (added, false) };
+            side.insert(c, sc);
+            added.push(c);
+            prev = v;
+            v = c;
+            q = q2;
+        }
+    };
+    let (forward, closed) = walk(b, a, hit.quad, &mut side, a);
+    let mut order = vec![a, b];
+    order.extend(forward);
+    if !closed {
+        let (back, _) = walk(a, b, hit.quad, &mut side, b);
+        let mut front: Vec<u32> = back.into_iter().rev().collect();
+        front.extend(order);
+        order = front;
+    }
+    let sides = order.iter().map(|v| side.get(v).copied()).collect();
+    Ok((order, sides, closed))
+}
+
+/// New positions for the picked edge loop: `align` puts an open loop on the straight line between its ends and a
+/// closed loop on its best-fit plane; `slide` moves each vertex toward its neighbour on the picked face's side by
+/// `amount` (0 to 0.95). Returns (vertex, new position) pairs for the vertices that move.
+pub fn loop_moves(mesh: &Mesh, hit: &PolyHit, align: bool, amount: f32) -> Result<Vec<(u32, Vec3)>, String> {
+    let (order, sides, closed) = edge_loop(mesh, hit)?;
+    let p: Vec<Vec3> = order.iter().map(|&v| mesh.position(v)).collect();
+    let mut out = Vec::new();
+    if align {
+        if closed {
+            let c = p.iter().copied().sum::<Vec3>() / p.len() as f32;
+            // Newell's normal of the loop polygon.
+            let n = (0..p.len()).map(|i| (p[i] - c).cross(p[(i + 1) % p.len()] - c)).sum::<Vec3>().try_normalize().ok_or("the loop is flat to a line")?;
+            for (i, &v) in order.iter().enumerate() {
+                out.push((v, p[i] - n * (p[i] - c).dot(n)));
+            }
+        } else {
+            let (s, e) = (p[0], p[p.len() - 1]);
+            let dir = (e - s).try_normalize().ok_or("the loop's ends meet")?;
+            for (i, &v) in order.iter().enumerate() {
+                out.push((v, s + dir * (p[i] - s).dot(dir)));
+            }
+        }
+    } else {
+        let t = amount.clamp(0.0, 0.95);
+        for (i, &v) in order.iter().enumerate() {
+            if let Some(s) = sides[i] {
+                out.push((v, p[i].lerp(mesh.position(s), t)));
+            }
+        }
+    }
+    out.retain(|(v, q)| mesh.position(*v).distance(*q) > 1e-9);
+    Ok(out)
+}
+
 /// Deletes the picked face, opening the mesh there.
 pub fn delete_face(mesh: &Mesh, hit: &PolyHit) -> Result<Mesh, String> {
     let quads = quads_of(mesh)?;
