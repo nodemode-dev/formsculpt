@@ -10,7 +10,7 @@ interface LayoutPrefs {
   collapsed: string[];
   panelLeft: boolean;
   size: string;
-  /** Panel buttons pinned to the tool rail, as "Section/Label". */
+  /** Panel buttons pinned to the tool rail, as command ids (older saves hold "Section/Label" and are migrated on load). */
   rail: string[];
 }
 
@@ -109,7 +109,6 @@ export class PanelLayout {
   }
 
   private sources = new Map<string, HTMLButtonElement>();
-  private watchers: MutationObserver[] = [];
   private railEl: HTMLElement | null = null;
 
   /**
@@ -117,29 +116,55 @@ export class PanelLayout {
    * panel button pins it to the rail or takes it off, and a rail button presses the panel button it stands for, so it
    * does exactly what that button does and shows the same pressed and disabled state.
    */
+  onPinMenu: ((id: string, x: number, y: number) => void) | null = null;
+  onDraw: (() => void) | null = null;
+  private told: (text: string) => void = () => undefined;
+
   attachRail(rail: HTMLElement, told: (text: string) => void): void {
     this.railEl = rail;
+    this.told = told;
     let section = '';
+    const moved = new Map<string, string>();
     for (const n of this.panel.children) {
       if (n.tagName === 'H2') {
         section = n.textContent ?? '';
         continue;
       }
       for (const b of n.tagName === 'BUTTON' ? [n as HTMLButtonElement] : [...n.querySelectorAll('button')]) {
-        const key = `${section}/${b.textContent ?? ''}`;
-        if (this.sources.has(key)) continue;
-        this.sources.set(key, b);
+        const id = b.dataset.cmd;
+        if (!id || this.sources.has(id)) continue;
+        moved.set(`${section}/${b.textContent ?? ''}`, id);
+        this.sources.set(id, b);
         b.addEventListener('contextmenu', (e) => {
           e.preventDefault();
-          const pinned = this.prefs.rail.includes(key);
-          this.prefs.rail = pinned ? this.prefs.rail.filter((k) => k !== key) : [...this.prefs.rail, key];
-          save(this.prefs);
-          this.drawRail();
-          told(pinned ? `${b.textContent} taken off the rail` : `${b.textContent} pinned to the rail`);
+          if (this.onPinMenu) this.onPinMenu(id, e.clientX, e.clientY);
+          else this.togglePin(id);
         });
       }
     }
+    const migrated = [...new Set(this.prefs.rail.map((k) => moved.get(k) ?? k))];
+    if (migrated.some((k, i) => k !== this.prefs.rail[i]) || migrated.length !== this.prefs.rail.length) {
+      this.prefs.rail = migrated;
+      save(this.prefs);
+    }
     this.drawRail();
+  }
+
+  isPinned(id: string): boolean {
+    return this.prefs.rail.includes(id);
+  }
+
+  togglePin(id: string): void {
+    const pinned = this.isPinned(id);
+    this.prefs.rail = pinned ? this.prefs.rail.filter((k) => k !== id) : [...this.prefs.rail, id];
+    save(this.prefs);
+    this.drawRail();
+    const label = this.sources.get(id)?.textContent ?? id;
+    this.told(pinned ? `${label} taken off the rail` : `${label} pinned to the rail`);
+  }
+
+  canPin(id: string): boolean {
+    return this.sources.has(id);
   }
 
   get pinned(): number {
@@ -155,8 +180,6 @@ export class PanelLayout {
   private drawRail(): void {
     const rail = this.railEl;
     if (!rail) return;
-    for (const w of this.watchers) w.disconnect();
-    this.watchers = [];
     rail.replaceChildren();
     for (const key of this.prefs.rail) {
       const source = this.sources.get(key);
@@ -166,19 +189,8 @@ export class PanelLayout {
       b.type = 'button';
       b.className = 'rail-btn';
       b.textContent = short(label);
-      b.title = `${label} (${key.split('/')[0]})`;
+      b.dataset.cmd = key;
       b.setAttribute('aria-label', label);
-      const mirror = (): void => {
-        b.disabled = source.disabled;
-        const pressed = source.getAttribute('aria-pressed');
-        if (pressed === null) b.removeAttribute('aria-pressed');
-        else b.setAttribute('aria-pressed', pressed);
-      };
-      mirror();
-      const watch = new MutationObserver(mirror);
-      watch.observe(source, { attributes: true, attributeFilter: ['aria-pressed', 'disabled'] });
-      this.watchers.push(watch);
-      b.addEventListener('click', () => source.click());
       b.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         this.prefs.rail = this.prefs.rail.filter((k) => k !== key);
@@ -187,5 +199,6 @@ export class PanelLayout {
       });
       rail.append(b);
     }
+    this.onDraw?.();
   }
 }

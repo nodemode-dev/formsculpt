@@ -20,7 +20,17 @@ import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './
 import { LATHES, SKELETONS } from './ui/presets';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
-import { comboOf, commandActions, Hotkeys, WINDOW_ACTIONS, type CatalogueCommand } from './ui/hotkeys';
+import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
+import { commands, comboOf, normalizeCombo, type Command, type CommandParam } from './ui/commands';
+import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
+import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
+import { overlayOpen } from './ui/dialog';
+import { AboutDialog, PromptDialog, ShortcutsDialog } from './ui/app-dialogs';
+import { CommandPalette } from './ui/command-palette';
+import { MenuBar, PopupMenu } from './ui/menu';
+import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
+import { scheduleChrome } from './ui/chrome';
+import { t } from './ui/i18n';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { PanelLayout } from './ui/layout';
 import { SpaceMouse } from './ui/spacemouse';
@@ -111,9 +121,10 @@ interface Shell {
   uvImage: HTMLImageElement;
   uvEmpty: HTMLSpanElement;
   uvButtons: HTMLButtonElement[];
-  keyAction: HTMLSelectElement;
-  keyCombo: HTMLInputElement;
-  keyButtons: HTMLButtonElement[];
+  layout: PanelLayout;
+  panelLeft: HTMLInputElement;
+  uiSize: HTMLSelectElement;
+  menubar: HTMLElement;
   falloff: HTMLSelectElement;
   falloffCurve: SVGSVGElement;
   falloffLine: SVGPolylineElement;
@@ -406,7 +417,8 @@ function buildShell(root: HTMLElement): Shell {
   const brand = el('div', 'brand');
   brand.innerHTML = ICONS.mark;
   brand.append(el('span', '', 'formsculptor'), el('span', 'ver', `v${VERSION}`));
-  bar.append(brand, el('div', 'spacer'));
+  const menubar = el('div', 'fs-menubar');
+  bar.append(brand, menubar, el('div', 'spacer'));
 
   const rail = el('nav', 'rail');
   rail.setAttribute('aria-label', 'Tools');
@@ -905,25 +917,11 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(lightGrid);
 
   panel.append(el('h2', 'gap', 'Keys'));
-  const keyAction = choices('Key action', []);
-  const keyCombo = input('text', { readonly: '', placeholder: 'Click, then press keys', 'aria-label': 'Shortcut', spellcheck: 'false' });
-  const keyFields = el('div', 'fields');
-  keyFields.append(field('Action', keyAction), field('Shortcut', keyCombo));
-  panel.append(keyFields);
-  const keyGrid = el('div', 'add-grid three after-fields');
-  const keyButtons = (
-    [
-      ['set', 'Set key'],
-      ['clear', 'Clear key'],
-      ['reset', 'Reset keys'],
-    ] as const
-  ).map(([action, label]) => {
-    const b = el('button', 'btn', label);
-    b.type = 'button';
-    b.dataset.action = action;
-    keyGrid.append(b);
-    return b;
-  });
+  const keyGrid = el('div', 'add-grid two');
+  const keysButton = el('button', 'btn', 'Keyboard shortcuts');
+  keysButton.type = 'button';
+  keysButton.dataset.cmd = 'app.shortcuts';
+  keyGrid.append(keysButton);
   panel.append(keyGrid);
 
   panel.append(el('h2', 'gap', 'Plugins'));
@@ -994,12 +992,34 @@ function buildShell(root: HTMLElement): Shell {
   uiSize.value = layout.size;
   panelLeft.addEventListener('change', () => layout.setSide(panelLeft.checked));
   uiSize.addEventListener('change', () => layout.setSize(uiSize.value));
+  const tag = (list: HTMLButtonElement[], group: string, by: (b: HTMLButtonElement) => string | undefined): void => {
+    for (const b of list) {
+      const spec = PANEL_CMDS[group][by(b) ?? ''];
+      if (spec) b.dataset.cmd = spec.id;
+    }
+  };
+  const action = (b: HTMLButtonElement): string | undefined => b.dataset.action;
+  tag(fileButtons, 'file', action);
+  tag(addButtons, 'add', (b) => b.dataset.kind);
+  tag(buildButtons, 'build', action);
+  tag(curveButtons, 'curve', action);
+  tag(paintButtons, 'paint', action);
+  tag(paintLayerButtons, 'paintLayer', action);
+  tag(uvButtons, 'uv', action);
+  tag(actionButtons, 'action', action);
+  tag(topoButtons, 'topo', (b) => b.textContent ?? '');
+  tag(objectButtons, 'object', action);
+  tag(layerButtons, 'layer', action);
+  tag(viewButtons, 'view', action);
+  tag(pluginButtons, 'plugin', action);
+  for (const b of brushButtons) b.dataset.cmd = `tool.brush.${b.dataset.brush ?? ''}`;
+  envLoad.dataset.cmd = 'light.load_hdri';
+  lightAdd.dataset.cmd = 'light.add';
+  lightRemove.dataset.cmd = 'light.remove';
+  primApply.dataset.cmd = 'add.apply_primitive';
+  clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  clearRail.addEventListener('click', () => {
-    layout.clearRail();
-    setText(message, 'Rail cleared');
-  });
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, keyAction, keyCombo, keyButtons, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1011,18 +1031,17 @@ class SceneView {
       const row = (e.target as HTMLElement).closest('li');
       if (row?.dataset.id) void this.run('select_object', { id: Number(row.dataset.id) });
     });
-    shell.addButtons.forEach((b) => b.addEventListener('click', () => void this.add(b.dataset.kind ?? 'sphere')));
-    shell.canvas.addEventListener('keydown', (e) => this.key(e));
+    shell.addButtons.forEach((b) => this.on(b, () => void this.add(b.dataset.kind ?? 'sphere')));
     shell.brushButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         this.brush = b.dataset.brush ?? 'draw';
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
-        shell.brushButtons.forEach((x) => setAttr(x, 'aria-pressed', x === b ? 'true' : 'false'));
         this.drawTools();
+        scheduleChrome();
       }),
     );
     shell.actionButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         const action = b.dataset.action ?? 'undo';
         const mapped = ACTION_CALLS[action];
         if (mapped) void this.run(mapped[0], mapped[1]);
@@ -1060,7 +1079,7 @@ class SceneView {
       this.note(`Reference: ${file.name}`);
     });
     shell.viewButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         const action = b.dataset.action ?? 'show_all';
         if (action === 'reference') {
           shell.referenceInput.click();
@@ -1124,7 +1143,7 @@ class SceneView {
     this.strokes.onError = (m) => this.note(m);
     this.strokes.onTopology = (id) => this.refetch(id);
     shell.topoButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         const args = JSON.parse(b.dataset.args ?? '{}') as Record<string, unknown>;
         if (b.dataset.action === 'remesh_voxel') args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
         if (b.dataset.action === 'quad_remesh') args.faces = Math.max(100, Math.min(400000, Number(shell.quadTarget.value) || 4000));
@@ -1132,7 +1151,7 @@ class SceneView {
       }),
     );
     shell.paintButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         const id = this.scene.active;
         if (id === null) return;
         const action = b.dataset.action;
@@ -1165,7 +1184,7 @@ class SceneView {
     for (const c of [shell.keyAzimuth, shell.keyElevation, shell.keyIntensity, shell.keyColor]) c.addEventListener('input', editLight);
     shell.keyFollows.addEventListener('change', editLight);
     shell.lightPick.addEventListener('change', () => this.showLight());
-    shell.lightAdd.addEventListener('click', () => {
+    this.on(shell.lightAdd, () => {
       if (this.lightSpecs.length >= 4) {
         this.note('Up to four lights: the key and three more');
         return;
@@ -1176,7 +1195,7 @@ class SceneView {
       this.patchLightList(this.lightSpecs.length - 1);
       this.applyLighting();
     });
-    shell.lightRemove.addEventListener('click', () => {
+    this.on(shell.lightRemove, () => {
       const i = Number(shell.lightPick.value);
       if (i <= 0) return;
       this.lightSpecs.splice(i, 1);
@@ -1184,10 +1203,10 @@ class SceneView {
       this.applyLighting();
     });
     for (const c of [shell.tone, shell.envBackground, shell.postSsao, shell.postBloom, shell.postDof, shell.postVignette, shell.postGrain]) c.addEventListener('change', () => this.applyLighting());
-    shell.envLoad.addEventListener('click', () => shell.envInput.click());
-    shell.primApply.addEventListener('click', () => void this.applyPrimitive());
+    this.on(shell.envLoad, () => shell.envInput.click());
+    this.on(shell.primApply, () => void this.applyPrimitive());
     shell.projectInput.addEventListener('change', () => void this.projectImage());
-    shell.pluginButtons.forEach((b) => b.addEventListener('click', () => void (b.dataset.action === 'run' ? this.runPlugin() : this.loadPlugins())));
+    shell.pluginButtons.forEach((b) => this.on(b, () => void (b.dataset.action === 'run' ? this.runPlugin() : this.loadPlugins())));
     shell.pluginPick.addEventListener('change', () => this.drawPluginParams());
     // Subsurface and transmission belong to the object (saved with it); they show in lit (PBR) shading.
     for (const [control, key] of [[shell.subsurface, 'subsurface'], [shell.transmission, 'transmission']] as const) {
@@ -1217,7 +1236,7 @@ class SceneView {
     });
     void this.loadPlugins();
     shell.envInput.addEventListener('change', () => void this.loadEnvironment());
-    shell.paintLayerButtons.forEach((b) => b.addEventListener('click', () => this.paintLayerAction(b.dataset.action ?? '')));
+    shell.paintLayerButtons.forEach((b) => this.on(b, () => this.paintLayerAction(b.dataset.action ?? '')));
     shell.paintLayer.addEventListener('change', () => {
       const id = this.scene.active;
       if (id !== null) void this.run('paint_layer_select', { id, index: shell.paintLayer.value === '' ? null : Number(shell.paintLayer.value) });
@@ -1230,7 +1249,7 @@ class SceneView {
     shell.paintOpacity.addEventListener('change', () => layerSetting({ opacity: Number(shell.paintOpacity.value) / 100 }));
     shell.paintVisible.addEventListener('change', () => layerSetting({ visible: shell.paintVisible.checked }));
     shell.curveButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         if (b.dataset.action === 'alpha') shell.alphaInput.click();
         else if (b.dataset.action === 'apply_curve') void this.applyCurve();
         else this.clearCurve();
@@ -1261,18 +1280,8 @@ class SceneView {
     this.drawFalloff();
     shell.alphaInput.addEventListener('change', () => void this.loadAlpha());
     shell.matcapInput.addEventListener('change', () => void this.loadMatcap());
-    shell.keyAction.addEventListener('change', () => this.showKeys());
-    shell.keyCombo.addEventListener('keydown', (e) => {
-      const combo = comboOf(e);
-      e.preventDefault();
-      e.stopPropagation();
-      if (!combo) return;
-      this.keyPending = combo;
-      shell.keyCombo.value = combo;
-    });
-    shell.keyButtons.forEach((b) => b.addEventListener('click', () => this.keyButton(b.dataset.action ?? '')));
     void this.loadCatalogue();
-    shell.fileButtons.forEach((b) => b.addEventListener('click', () => void this.fileAction(b.dataset.action ?? '')));
+    shell.fileButtons.forEach((b) => this.on(b, () => void this.fileAction(b.dataset.action ?? '')));
     if (this.host.embedded) {
       const send = shell.fileButtons.find((b) => b.dataset.action === 'nodemode');
       if (send) setText(send, 'Send to canvas');
@@ -1287,8 +1296,8 @@ class SceneView {
       }
     });
     shell.fileInput.addEventListener('change', () => void this.uploadChosen());
-    shell.objectButtons.forEach((b) => b.addEventListener('click', () => this.objectAction(b.dataset.action ?? '')));
-    shell.layerButtons.forEach((b) => b.addEventListener('click', () => this.layerAction(b.dataset.action ?? '')));
+    shell.objectButtons.forEach((b) => this.on(b, () => this.objectAction(b.dataset.action ?? '')));
+    shell.layerButtons.forEach((b) => this.on(b, () => this.layerAction(b.dataset.action ?? '')));
     shell.layerSelect.addEventListener('change', () => {
       const id = this.scene.active;
       if (id === null) return;
@@ -1300,7 +1309,7 @@ class SceneView {
       if (!o || o.active_layer === null) return;
       void this.run('layer_set_strength', { id: o.id, index: o.active_layer, strength: Number(shell.layerStrength.value) / 100 });
     });
-    shell.buildButtons.forEach((b) => b.addEventListener('click', () => void this.build(b.dataset.action ?? '')));
+    shell.buildButtons.forEach((b) => this.on(b, () => void this.build(b.dataset.action ?? '')));
     const trace = (e: PointerEvent): void => {
       if (this.shape) {
         const p: [number, number] = [e.offsetX, e.offsetY];
@@ -1383,9 +1392,16 @@ class SceneView {
   private lastBrush = 'draw';
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
   private curve: { handles: Vec3[]; wpp: number } | null = null;
-  private hotkeys = new Hotkeys();
   private catalogue: CatalogueCommand[] = [];
-  private keyPending: string | null = null;
+  private handlers = new Map<string, () => void>();
+  private contextEvent: MouseEvent | null = null;
+  private pinTarget = '';
+  private readonly prompt = new PromptDialog();
+
+  private on(button: HTMLButtonElement, fn: () => void): void {
+    const id = button.dataset.cmd;
+    if (id) this.handlers.set(id, fn);
+  }
 
   stroking(): boolean {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
@@ -1942,8 +1958,7 @@ class SceneView {
     s.keyIntensity.value = String(Math.round(spec.intensity * 100));
     s.keyColor.value = spec.hex;
     s.keyFollows.checked = spec.followsView;
-    const removable = i > 0;
-    if (s.lightRemove.disabled === removable) s.lightRemove.disabled = !removable;
+    scheduleChrome();
   }
 
   /** Environments loaded from files this session, by their select value. */
@@ -2068,62 +2083,208 @@ class SceneView {
     // With the engine unreachable the window's own keys still work.
     const found = await fetchCatalogue<{ commands: CatalogueCommand[] }>();
     if (found) this.catalogue = found.commands;
-    this.hotkeys.addCatalogue(this.catalogue);
-    const actions = [...WINDOW_ACTIONS, ...BRUSHES.map(([k, label]) => ({ id: `brush:${k}`, label: `Tool: ${label}` })), ...commandActions(this.catalogue)];
-    for (const a of actions) {
-      const option = el('option', '', a.label);
-      option.value = a.id;
-      this.shell.keyAction.append(option);
-    }
-    this.showKeys();
+    this.registerCatalogue();
   }
 
-  private showKeys(): void {
-    this.keyPending = null;
-    this.shell.keyCombo.value = this.hotkeys.combosFor(this.shell.keyAction.value).join(' or ');
-  }
-
-  private keyButton(action: string): void {
-    const target = this.shell.keyAction.value;
-    if (action === 'reset') {
-      this.hotkeys.reset();
-      this.note('Keys reset to the defaults');
-    } else if (action === 'clear' && target) {
-      this.hotkeys.clear(target);
-    } else if (action === 'set' && target) {
-      if (!this.keyPending) {
-        this.note('Click the Shortcut box and press the keys first');
-        return;
+  private registerCatalogue(): void {
+    const fresh: Command[] = [];
+    for (const c of this.catalogue) {
+      const props = c.inputSchema?.properties ?? {};
+      const takesId = 'id' in props;
+      const needsId = takesId && (c.inputSchema?.required ?? []).includes('id');
+      if (needsId) NEEDS_OBJECT.add(c.id);
+      const have = commands.get(c.id);
+      if (have) {
+        have.group ??= c.group;
+        have.description ??= c.description;
+        have.mutates ??= !c.annotations?.readOnlyHint;
+        continue;
       }
-      const before = this.hotkeys.action(this.keyPending);
-      this.hotkeys.bind(this.keyPending, target);
-      this.note(before && before !== target ? `${this.keyPending} moved from ${before}` : `${this.keyPending} set`);
+      const params: Record<string, CommandParam> = {};
+      for (const [name, p] of Object.entries(props)) {
+        if (p.type !== 'string' && p.type !== 'number' && p.type !== 'integer' && p.type !== 'boolean' && p.type !== 'array' && p.type !== 'object') continue;
+        params[name] = { type: p.type, required: (c.inputSchema?.required ?? []).includes(name), enum: p.enum, min: p.minimum, max: p.maximum, description: p.description };
+      }
+      fresh.push({
+        id: c.id,
+        label: c.label,
+        keys: c.id === 'multires.set_level' ? [] : c.keys,
+        group: c.group,
+        description: c.description,
+        params,
+        mutates: !c.annotations?.readOnlyHint,
+        risky: c.annotations?.destructiveHint === true,
+        run: (p) => {
+          const args: Record<string, unknown> = { ...p };
+          if (takesId && args.id === undefined && this.scene.active !== null) args.id = this.scene.active;
+          return this.run(c.name, args);
+        },
+      });
     }
-    this.showKeys();
+    commands.add(...fresh);
+    applyShortcuts(commands);
+    const legacy = Object.entries(takeLegacyKeys());
+    for (const [raw, action] of legacy) {
+      const combo = normalizeCombo(raw);
+      if (!action) {
+        const held = commands.forCombo(combo);
+        if (held) commands.setKeys(held.id, (held.keys ?? []).filter((k) => k !== combo));
+        continue;
+      }
+      const id = legacyTarget(action, this.catalogue);
+      const target = id ? commands.get(id) : undefined;
+      if (target) commands.setKeys(target.id, [...(target.keys ?? []).filter((k) => k !== combo), combo]);
+    }
+    if (legacy.length) persistShortcuts(commands);
+    commands.notify();
   }
 
-  /** Runs the action a shortcut is bound to; false when it is bound to nothing. */
-  private runAction(action: string): boolean {
-    const [kind, name, step] = action.split(':');
-    if (kind === 'view') {
-      if (name === 'ortho') this.viewport.toggleOrtho();
-      else if (name === 'frame') this.frameActive();
-      else this.viewport.snap(name as ViewName);
-    } else if (kind === 'file') void this.fileAction(name);
-    else if (kind === 'brush') {
-      const b = this.shell.brushButtons.find((x) => x.dataset.brush === name);
-      if (!b) return false;
-      b.click();
-    } else if (kind === 'cmd') {
-      const command = this.catalogue.find((c) => c.name === name);
-      const args: Record<string, unknown> = {};
-      const takesId = command ? 'id' in (command.inputSchema?.properties ?? {}) : name === 'delete_object';
-      if (takesId && this.scene.active !== null) args.id = this.scene.active;
-      if (takesId && command?.inputSchema?.required?.includes('id') && args.id === undefined) return true;
-      if (step) args.step = step;
-      void this.run(name, args);
-    } else return false;
-    return true;
+  /** Every window action: the panel buttons through their handlers, then views, toggles and object actions. */
+  registerCommands(): void {
+    const s = this.shell;
+    const list: Command[] = [];
+    const toggle = (box: HTMLInputElement): void => {
+      box.checked = !box.checked;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const layers = (): boolean => (this.activeObject()?.paint_layers?.length ?? 0) > 0;
+    const special: Record<string, () => boolean> = {
+      'paint.layer_delete': layers,
+      'paint.layer_merge': layers,
+      'paint.layer_flatten': layers,
+      'paint.layer_up': layers,
+      'paint.layer_down': layers,
+      'add.apply_primitive': () => !!this.scene.objects.find((o) => o.id === this.scene.active)?.primitive,
+      'light.remove': () => Number(s.lightPick.value) > 0,
+    };
+    for (const table of Object.values(PANEL_CMDS)) {
+      for (const spec of Object.values(table)) {
+        list.push({ id: spec.id, label: spec.label, keys: spec.keys, icon: spec.icon, run: () => this.handlers.get(spec.id)?.(), enabled: special[spec.id] });
+      }
+    }
+    list.push({ id: 'add.apply_primitive', label: 'Apply to Primitive', run: () => this.handlers.get('add.apply_primitive')?.(), enabled: special['add.apply_primitive'] });
+    for (const [kind, label] of BRUSHES) {
+      list.push({ id: `tool.brush.${kind}`, label, icon: 'brush', run: () => this.handlers.get(`tool.brush.${kind}`)?.(), checked: () => this.brush === kind });
+    }
+    const views: [ViewName, string, string][] = [['front', 'Front', '1'], ['back', 'Back', 'Mod+1'], ['right', 'Right', '3'], ['left', 'Left', 'Mod+3'], ['top', 'Top', '7'], ['bottom', 'Bottom', 'Mod+7']];
+    for (const [name, label, key] of views) list.push({ id: `view.${name}`, label: `View ${label}`, keys: [key], icon: 'cube', run: () => this.viewport.snap(name) });
+    list.push(
+      { id: 'view.ortho', label: 'Toggle Orthographic', keys: ['5'], run: () => this.viewport.toggleOrtho() },
+      { id: 'view.frame', label: 'Frame Active Object', keys: ['F'], icon: 'frame', run: () => this.frameActive(), enabled: () => this.scene.active !== null },
+      { id: 'view.groups', label: 'Show Face Groups', run: () => toggle(s.showGroups), checked: () => s.showGroups.checked },
+      { id: 'view.trackball', label: 'Trackball Rotation', run: () => toggle(s.trackball), checked: () => s.trackball.checked },
+      { id: 'sculpt.mirror_x', label: 'Mirror X', run: () => toggle(s.symX), checked: () => s.symX.checked },
+      { id: 'sculpt.invert', label: 'Invert Brush', run: () => toggle(s.invert), checked: () => s.invert.checked },
+      { id: 'sculpt.dyntopo', label: 'Dynamic Topology', run: () => toggle(s.dyntopo), checked: () => s.dyntopo.checked, enabled: () => !s.dyntopo.disabled },
+      { id: 'view.panel_left', label: 'Panel on the Left', run: () => toggle(s.panelLeft), checked: () => s.layout.panelLeft },
+      {
+        id: 'view.set_pivot',
+        label: 'Set Pivot Here',
+        run: () => {
+          const e = this.contextEvent;
+          if (e) void this.pivot(new MouseEvent('dblclick', { clientX: e.clientX, clientY: e.clientY, altKey: true }));
+        },
+        enabled: () => this.contextEvent !== null,
+      },
+      {
+        id: 'object.rename',
+        label: 'Rename Object',
+        run: () => void this.rename(),
+      },
+      {
+        id: 'object.delete',
+        label: 'Delete Object',
+        keys: ['Delete', 'Backspace'],
+        icon: 'trash',
+        mutates: true,
+        risky: true,
+        run: () => void this.run('delete_object', { id: this.scene.active }),
+      },
+    );
+    NEEDS_OBJECT.add('object.rename');
+    NEEDS_OBJECT.add('object.delete');
+    for (const size of ['small', 'normal', 'large']) {
+      list.push({ id: `view.ui_${size}`, label: `Interface Size ${size[0].toUpperCase()}${size.slice(1)}`, run: () => this.setUiSize(size), checked: () => s.layout.size === size });
+    }
+    for (const n of [0, 1, 2, 3]) {
+      list.push({
+        id: `view.smooth_${n}`,
+        label: n === 0 ? 'Smooth Preview Off' : `Smooth Preview ${n} Level${n > 1 ? 's' : ''}`,
+        run: () => {
+          s.smoothPick.value = String(n);
+          this.setSmoothPreview(n);
+        },
+        checked: () => this.smoothPreview === n,
+      });
+    }
+    for (const format of Array.from(s.exportFormat.options, (o) => o.value)) {
+      list.push({
+        id: `file.export.${format}`,
+        label: `Export ${format.toUpperCase()}`,
+        run: () => {
+          s.exportFormat.value = format;
+          void this.fileAction('export');
+        },
+      });
+    }
+    commands.blocked = (cmd) => (NEEDS_OBJECT.has(cmd.id) && this.scene.active === null ? t('Select an object first') : '');
+    commands.add(...list);
+    s.layout.onDraw = scheduleChrome;
+    scheduleChrome();
+  }
+
+  private setUiSize(size: string): void {
+    this.shell.layout.setSize(size);
+    this.shell.uiSize.value = size;
+  }
+
+  private async rename(): Promise<void> {
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (!o) return;
+    const name = await this.prompt.ask(t('Rename Object'), o.name);
+    if (name && name !== o.name) await this.run('rename_object', { id: o.id, name });
+  }
+
+  /** Right-click menus: the viewport's, the object rows' and the pin menu of every panel button. */
+  wireContextMenus(): void {
+    const s = this.shell;
+    const standalone = (): PopupMenu => {
+      const menu = new PopupMenu(commands, null, true, 'context');
+      menu.onClose = () => window.setTimeout(() => (this.contextEvent = null), 0);
+      return menu;
+    };
+    const stage = standalone();
+    const rows = standalone();
+    const pin = standalone();
+    let down = { x: 0, y: 0 };
+    s.canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
+    s.canvas.addEventListener('contextmenu', (e) => {
+      if (this.stroking() || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return;
+      this.contextEvent = e;
+      stage.setItems(tidy(VIEWPORT_MENU));
+      stage.openAt(e.clientX, e.clientY);
+    });
+    s.objectList.addEventListener('contextmenu', (e) => {
+      const row = (e.target as HTMLElement).closest('li');
+      if (!row?.dataset.id) return;
+      e.preventDefault();
+      const { clientX, clientY } = e;
+      void this.run('select_object', { id: Number(row.dataset.id) }).then(() => {
+        rows.setItems(tidy(OBJECT_ROW_MENU));
+        rows.openAt(clientX, clientY);
+      });
+    });
+    commands.add({
+      id: 'rail.pin',
+      label: () => (s.layout.isPinned(this.pinTarget) ? 'Take off tool rail' : 'Pin to tool rail'),
+      run: () => s.layout.togglePin(this.pinTarget),
+    });
+    s.layout.onPinMenu = (id, x, y) => {
+      if (!commands.get(id)) return;
+      this.pinTarget = id;
+      pin.setItems(tidy(PIN_MENU(id)));
+      pin.openAt(x, y);
+    };
   }
 
   /** Tools that act once on the clicked point: topology mask, group mask, hide group, insert. */
@@ -2451,6 +2612,7 @@ class SceneView {
     if (restyled) this.viewport.invalidate();
     if (next.active !== this.scene.active && this.scene.active !== null) this.previous = this.scene.active;
     this.scene = next;
+    scheduleChrome();
   }
 
   private previous: number | null = null;
@@ -2503,10 +2665,6 @@ class SceneView {
     if (select.value !== value) select.value = value;
     const none = pick === null || !layers[pick];
     for (const c of [s.paintBlend, s.paintOpacity, s.paintVisible]) if (c.disabled !== none) c.disabled = none;
-    s.paintLayerButtons.forEach((b) => {
-      const off = b.dataset.action !== 'paint_layer_add' && layers.length === 0;
-      if (b.disabled !== off) b.disabled = off;
-    });
     if (!none) {
       const l = layers[pick];
       if (s.paintBlend.value !== l.blend) s.paintBlend.value = l.blend;
@@ -2912,7 +3070,7 @@ class SceneView {
     const s = this.shell;
     const p = active?.primitive ?? null;
     const off = p === null;
-    for (const c of [s.primSize, s.primDetail, s.primHeight, s.primApply]) if (c.disabled !== off) c.disabled = off;
+    for (const c of [s.primSize, s.primDetail, s.primHeight]) if (c.disabled !== off) c.disabled = off;
     if (!p) return;
     const set = (c: HTMLInputElement, v: unknown, d: number): void => {
       const text = String(typeof v === 'number' ? v : d);
@@ -3120,7 +3278,7 @@ class SceneView {
       start = null;
     });
     this.shell.uvButtons.forEach((b) =>
-      b.addEventListener('click', () => {
+      this.on(b, () => {
         const id = this.scene.active;
         if (id === null) return;
         const action = b.dataset.action;
@@ -3169,13 +3327,6 @@ class SceneView {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     if (o) this.viewport.frameBounds(o.bounds.min, o.bounds.max);
   }
-
-  private key(e: KeyboardEvent): void {
-    const combo = comboOf(e);
-    const action = combo ? this.hotkeys.action(combo) : null;
-    if (!action || !this.runAction(action)) return;
-    e.preventDefault();
-  }
 }
 
 async function poll(shell: Shell): Promise<void> {
@@ -3208,8 +3359,58 @@ async function chooseEngine(): Promise<void> {
   if (engine) useBrowserEngine(engine);
 }
 
+const NO_TYPING = new Set(['checkbox', 'radio', 'range', 'button', 'file', 'color', 'submit', 'reset']);
+
+function typingIn(target: HTMLElement | null): boolean {
+  if (!target) return false;
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
+  return target instanceof HTMLInputElement && !NO_TYPING.has(target.type);
+}
+
+function wireChrome(root: HTMLElement, shell: Shell): void {
+  const shortcuts = new ShortcutsDialog(commands);
+  const about = new AboutDialog();
+  const palette = new CommandPalette(commands, menuDefs);
+  commands.add(
+    { id: 'app.shortcuts', label: 'Keyboard Shortcuts', keys: ['Mod+/'], icon: 'keyboard', run: () => shortcuts.show() },
+    { id: 'app.palette', label: 'Command Palette', keys: ['Mod+K'], icon: 'search', run: () => palette.show() },
+    { id: 'app.about', label: 'About formsculptor', icon: 'info', run: () => about.show() },
+    {
+      id: 'view.clear_rail',
+      label: 'Clear Tool Rail',
+      run: () => {
+        shell.layout.clearRail();
+        setText(shell.message, 'Rail cleared');
+      },
+    },
+  );
+  const bar = new MenuBar(shell.menubar, commands, menuDefs());
+  root.addEventListener('click', (e) => {
+    const node = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
+    if (node && !(node as HTMLButtonElement).disabled) commands.run(node.dataset.cmd ?? '');
+  });
+  root.addEventListener('change', scheduleChrome);
+  commands.onChange(() => {
+    applyShortcuts(commands);
+    scheduleChrome();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.defaultPrevented || e.isComposing || e.repeat) return;
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    if (target?.closest('.xterm, .dock')) return;
+    if (overlayOpen() || bar.isOpen) return;
+    const cmd = commands.forEvent(e);
+    if (!cmd) return;
+    const combo = comboOf(e);
+    if (typingIn(target) && (!combo.includes('Mod+') || /Mod\+[ZYXCVA]$/.test(combo))) return;
+    if (commands.run(cmd.id)) e.preventDefault();
+  });
+  scheduleChrome();
+}
+
 export function start(root: HTMLElement): void {
   const shell = buildShell(root);
+  wireChrome(root, shell);
   document.body.classList.add('app-ready');
   void boot(shell);
 }
@@ -3220,6 +3421,8 @@ async function boot(shell: Shell): Promise<void> {
     const viewport = new Viewport(shell.canvas);
     setText(shell.statRenderer, viewport.renderer.kind);
     const view = new SceneView(shell, viewport);
+    view.registerCommands();
+    view.wireContextMenus();
     viewport.onFrame = (s) => {
       setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
       view.drawCurve();
