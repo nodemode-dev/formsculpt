@@ -776,5 +776,12 @@
  "Show UV Density": "แสดงความหนาแน่น UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "ความหนาแน่นเท็กเซลที่ {size} px: {mean} ต่อหน่วยใน {n} เกาะ ตั้งแต่ {min} ถึง {max} (การกระจาย {spread})",
  "UV Density": "ความหนาแน่น UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "คลาย UV แล้ว: การยืด {before} เป็น {after} (1 คือไม่มี)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "คลาย UV แล้ว: การยืด {before} เป็น {after} (1 คือไม่มี)",
+ "Cut UV Seam": "ตัดตะเข็บ UV",
+ "Sew to neighbour": "เย็บเข้ากับเกาะข้างเคียง",
+ "Sew UV Island to a Neighbour": "เย็บเกาะ UV เข้ากับเกาะข้างเคียง",
+ "Sew UV Islands": "เย็บเกาะ UV",
+ "Sewn: {welded} corners joined, {n} islands now": "เย็บแล้ว: เชื่อม {welded} มุม ตอนนี้มี {n} เกาะ",
+ "Straighten UVs": "ปรับ UV ให้ตรง",
+ "This island shares no edge with another island": "เกาะนี้ไม่มีขอบร่วมกับเกาะอื่น"
 }

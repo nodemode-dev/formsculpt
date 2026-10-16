@@ -776,5 +776,12 @@
  "Show UV Density": "UV-sűrűség megjelenítése",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texelsűrűség {size} px-nél: {mean} egységenként {n} szigeten, {min} és {max} között (szórás {spread})",
  "UV Density": "UV-sűrűség",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV-k lazítva: nyújtás {before} helyett {after} (1 a semmi)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV-k lazítva: nyújtás {before} helyett {after} (1 a semmi)",
+ "Cut UV Seam": "UV-varrat vágása",
+ "Sew to neighbour": "Varrás a szomszédhoz",
+ "Sew UV Island to a Neighbour": "UV-sziget varrása egy szomszédhoz",
+ "Sew UV Islands": "UV-szigetek varrása",
+ "Sewn: {welded} corners joined, {n} islands now": "Varrva: {welded} sarok összekötve, most {n} sziget",
+ "Straighten UVs": "UV-k kiegyenesítése",
+ "This island shares no edge with another island": "Ennek a szigetnek nincs közös éle másik szigettel"
 }

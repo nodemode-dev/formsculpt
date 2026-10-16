@@ -776,5 +776,12 @@
  "Show UV Density": "UV Yoğunluğunu Göster",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px'te teksel yoğunluğu: {n} adada birim başına {mean}, {min} ile {max} arası (yayılım {spread})",
  "UV Density": "UV Yoğunluğu",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV'ler gevşetildi: gerilme {before} -> {after} (1 hiç yok demek)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV'ler gevşetildi: gerilme {before} -> {after} (1 hiç yok demek)",
+ "Cut UV Seam": "UV Dikişi Kes",
+ "Sew to neighbour": "Komşuya dik",
+ "Sew UV Island to a Neighbour": "UV Adasını Bir Komşuya Dik",
+ "Sew UV Islands": "UV Adalarını Dik",
+ "Sewn: {welded} corners joined, {n} islands now": "Dikildi: {welded} köşe birleşti, şimdi {n} ada",
+ "Straighten UVs": "UV'leri Düzleştir",
+ "This island shares no edge with another island": "Bu ada başka bir adayla kenar paylaşmıyor"
 }

@@ -776,5 +776,12 @@
  "Show UV Density": "Zobrazit hustotu UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Hustota texelů při {size} px: {mean} na jednotku v {n} ostrovech, {min} až {max} (rozptyl {spread})",
  "UV Density": "Hustota UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV uvolněny: natažení {before} na {after} (1 znamená žádné)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV uvolněny: natažení {before} na {after} (1 znamená žádné)",
+ "Cut UV Seam": "Rozříznout šev UV",
+ "Sew to neighbour": "Sešít se sousedem",
+ "Sew UV Island to a Neighbour": "Sešít ostrov UV se sousedem",
+ "Sew UV Islands": "Sešít ostrovy UV",
+ "Sewn: {welded} corners joined, {n} islands now": "Sešito: spojeno rohů {welded}, nyní ostrovů {n}",
+ "Straighten UVs": "Narovnat UV",
+ "This island shares no edge with another island": "Tento ostrov nesdílí žádnou hranu s jiným ostrovem"
 }

@@ -776,5 +776,12 @@
  "Show UV Density": "UV-dichtheid tonen",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeldichtheid bij {size} px: {mean} per eenheid over {n} eilanden, {min} tot {max} (spreiding {spread})",
  "UV Density": "UV-dichtheid",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV's ontspannen: rek {before} naar {after} (1 is geen)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV's ontspannen: rek {before} naar {after} (1 is geen)",
+ "Cut UV Seam": "UV-naad knippen",
+ "Sew to neighbour": "Aan buur naaien",
+ "Sew UV Island to a Neighbour": "UV-eiland aan een buur naaien",
+ "Sew UV Islands": "UV-eilanden naaien",
+ "Sewn: {welded} corners joined, {n} islands now": "Genaaid: {welded} hoeken verbonden, nu {n} eilanden",
+ "Straighten UVs": "UV's rechttrekken",
+ "This island shares no edge with another island": "Dit eiland deelt geen rand met een ander eiland"
 }

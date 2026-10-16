@@ -776,5 +776,12 @@
  "Show UV Density": "UV-Dichte anzeigen",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeldichte bei {size} px: {mean} pro Einheit über {n} Inseln, {min} bis {max} (Spanne {spread})",
  "UV Density": "UV-Dichte",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UVs entspannt: Verzerrung {before} auf {after} (1 ist keine)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UVs entspannt: Verzerrung {before} auf {after} (1 ist keine)",
+ "Cut UV Seam": "UV-Naht schneiden",
+ "Sew to neighbour": "An Nachbarn nähen",
+ "Sew UV Island to a Neighbour": "UV-Insel an einen Nachbarn nähen",
+ "Sew UV Islands": "UV-Inseln nähen",
+ "Sewn: {welded} corners joined, {n} islands now": "Genäht: {welded} Ecken verbunden, jetzt {n} Inseln",
+ "Straighten UVs": "UVs begradigen",
+ "This island shares no edge with another island": "Diese Insel teilt keine Kante mit einer anderen Insel"
 }

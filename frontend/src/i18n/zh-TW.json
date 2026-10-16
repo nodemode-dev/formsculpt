@@ -776,5 +776,12 @@
  "Show UV Density": "顯示 UV 密度",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px 下的紋素密度：{n} 個島平均每單位 {mean}，範圍 {min} 到 {max}（離散度 {spread}）",
  "UV Density": "UV 密度",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 已鬆弛：拉伸 {before} 變為 {after}（1 表示無拉伸）"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 已鬆弛：拉伸 {before} 變為 {after}（1 表示無拉伸）",
+ "Cut UV Seam": "切開 UV 接縫",
+ "Sew to neighbour": "縫合到相鄰島",
+ "Sew UV Island to a Neighbour": "將 UV 島縫合到相鄰島",
+ "Sew UV Islands": "縫合 UV 島",
+ "Sewn: {welded} corners joined, {n} islands now": "已縫合：連接了 {welded} 個角，現在共 {n} 個島",
+ "Straighten UVs": "拉直 UV",
+ "This island shares no edge with another island": "此島與其他島沒有共用的邊"
 }

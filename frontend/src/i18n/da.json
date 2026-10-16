@@ -776,5 +776,12 @@
  "Show UV Density": "Vis UV-tæthed",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Texeltæthed ved {size} px: {mean} pr. enhed over {n} øer, {min} til {max} (spredning {spread})",
  "UV Density": "UV-tæthed",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV'er afslappet: strækning {before} til {after} (1 er ingen)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV'er afslappet: strækning {before} til {after} (1 er ingen)",
+ "Cut UV Seam": "Klip UV-søm",
+ "Sew to neighbour": "Sy til nabo",
+ "Sew UV Island to a Neighbour": "Sy UV-ø til en nabo",
+ "Sew UV Islands": "Sy UV-øer",
+ "Sewn: {welded} corners joined, {n} islands now": "Syet: {welded} hjørner samlet, nu {n} øer",
+ "Straighten UVs": "Ret UV'er ud",
+ "This island shares no edge with another island": "Denne ø deler ingen kant med en anden ø"
 }

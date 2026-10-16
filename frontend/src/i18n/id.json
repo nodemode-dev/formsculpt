@@ -776,5 +776,12 @@
  "Show UV Density": "Tampilkan Kepadatan UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Kepadatan texel pada {size} px: {mean} per unit di {n} pulau, {min} sampai {max} (sebaran {spread})",
  "UV Density": "Kepadatan UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV dikendurkan: regangan {before} menjadi {after} (1 berarti tidak ada)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV dikendurkan: regangan {before} menjadi {after} (1 berarti tidak ada)",
+ "Cut UV Seam": "Potong Kampuh UV",
+ "Sew to neighbour": "Jahit ke tetangga",
+ "Sew UV Island to a Neighbour": "Jahit Pulau UV ke Tetangga",
+ "Sew UV Islands": "Jahit Pulau UV",
+ "Sewn: {welded} corners joined, {n} islands now": "Dijahit: {welded} sudut disatukan, kini {n} pulau",
+ "Straighten UVs": "Luruskan UV",
+ "This island shares no edge with another island": "Pulau ini tidak berbagi tepi dengan pulau lain"
 }

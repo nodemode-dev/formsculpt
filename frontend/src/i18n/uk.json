@@ -776,5 +776,12 @@
  "Show UV Density": "Показати щільність UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Щільність текселів при {size} px: {mean} на одиницю по {n} островах, від {min} до {max} (розкид {spread})",
  "UV Density": "Щільність UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV розслаблено: розтяг {before} до {after} (1 означає відсутність)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV розслаблено: розтяг {before} до {after} (1 означає відсутність)",
+ "Cut UV Seam": "Розрізати шов UV",
+ "Sew to neighbour": "Зшити з сусіднім",
+ "Sew UV Island to a Neighbour": "Зшити UV-острів із сусіднім",
+ "Sew UV Islands": "Зшити UV-острови",
+ "Sewn: {welded} corners joined, {n} islands now": "Зшито: з'єднано кутів {welded}, тепер островів {n}",
+ "Straighten UVs": "Випрямити UV",
+ "This island shares no edge with another island": "Цей острів не має спільних ребер з іншим островом"
 }

@@ -776,5 +776,12 @@
  "Show UV Density": "Näytä UV-tiheys",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Tekselitiheys {size} px:llä: {mean} yksikköä kohden {n} saarella, {min} - {max} (hajonta {spread})",
  "UV Density": "UV-tiheys",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV:t rentoutettu: venymä {before} -> {after} (1 on ei lainkaan)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV:t rentoutettu: venymä {before} -> {after} (1 on ei lainkaan)",
+ "Cut UV Seam": "Leikkaa UV-sauma",
+ "Sew to neighbour": "Ompele naapuriin",
+ "Sew UV Island to a Neighbour": "Ompele UV-saari naapuriin",
+ "Sew UV Islands": "Ompele UV-saaret",
+ "Sewn: {welded} corners joined, {n} islands now": "Ommeltu: {welded} kulmaa yhdistetty, nyt {n} saarta",
+ "Straighten UVs": "Suorista UV:t",
+ "This island shares no edge with another island": "Tällä saarella ei ole yhteistä reunaa toisen saaren kanssa"
 }

@@ -776,5 +776,12 @@
  "Show UV Density": "UV 密度を表示",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px でのテクセル密度: {n} 個のアイランドで単位あたり {mean}、{min} から {max}（ばらつき {spread}）",
  "UV Density": "UV 密度",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV をリラックス: 歪み {before} から {after}（1 は歪みなし）"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV をリラックス: 歪み {before} から {after}（1 は歪みなし）",
+ "Cut UV Seam": "UV シームをカット",
+ "Sew to neighbour": "隣に縫い合わせる",
+ "Sew UV Island to a Neighbour": "UV アイランドを隣に縫い合わせる",
+ "Sew UV Islands": "UV アイランドを縫い合わせる",
+ "Sewn: {welded} corners joined, {n} islands now": "縫い合わせ完了: {welded} 個の角を結合、現在 {n} 個のアイランド",
+ "Straighten UVs": "UV をまっすぐにする",
+ "This island shares no edge with another island": "このアイランドはほかのアイランドと辺を共有していません"
 }

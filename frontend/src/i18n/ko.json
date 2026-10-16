@@ -776,5 +776,12 @@
  "Show UV Density": "UV 밀도 표시",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "{size} px 기준 텍셀 밀도: 아일랜드 {n}개에서 단위당 {mean}, {min}~{max} (편차 {spread})",
  "UV Density": "UV 밀도",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 이완됨: 늘어남 {before}에서 {after} (1은 없음)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV 이완됨: 늘어남 {before}에서 {after} (1은 없음)",
+ "Cut UV Seam": "UV 이음매 자르기",
+ "Sew to neighbour": "이웃에 꿰매기",
+ "Sew UV Island to a Neighbour": "UV 아일랜드를 이웃에 꿰매기",
+ "Sew UV Islands": "UV 아일랜드 꿰매기",
+ "Sewn: {welded} corners joined, {n} islands now": "꿰맴: 모서리 {welded}개 연결, 이제 아일랜드 {n}개",
+ "Straighten UVs": "UV 곧게 펴기",
+ "This island shares no edge with another island": "이 아일랜드는 다른 아일랜드와 공유하는 가장자리가 없습니다"
 }

@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.40.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_relax`, `uv_pack`, `uv_density`, `uv_equalize`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -694,6 +694,15 @@ Smooth an unwrapped object's UVs to reduce stretch. Each point moves toward the 
 - `pinned`: array of integer; Vertex indices whose UVs stay put.
 - `strength`: number; default 0.5; range 0 to 1; How far each point moves toward the average of its neighbours on each pass.
 
+## uv_straighten
+
+Straighten a chain of mesh vertices (path, two or more vertex indices joined by mesh edges inside one UV island) into a straight line in UV space. Mode line spaces the points evenly by their 3D arc length on the segment from the first to the last point; axis snaps that segment to horizontal or vertical, whichever is closer, keeps the first point fixed and scales the length by the island's mean UV to 3D ratio. Then relax [passes, default 20] conformal passes let the island interior follow while the path and the island border stay put (0 skips it). Reports straightened (point count) and the angle distortion before and after (1 is none). Refuses with no_uvs, or bad_arguments for a path that is not a chain of edges, spans islands or has fewer than 2 points. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `mode`: string (line | axis); default "line"; line puts the path on the straight UV segment from its first to its last point; axis snaps that segment to horizontal or vertical, keeps the first point fixed and scales the length to the island's mean UV to 3D ratio.
+- `path`: array of integer; required; Mesh vertex indices forming a chain of mesh edges inside one UV island, in order.
+- `relax`: integer; default 20; range 0 to 500; Conformal relax passes afterwards, with the path and the island border held, so the island interior follows the straightened path.
+
 ## uv_pack
 
 Pack an object's UV islands back into the unit square keeping their shapes, turns and relative sizes, after islands were moved or scaled. Clears baked maps. One undo step.
@@ -716,6 +725,23 @@ Scale each UV island about its centre so every island has the same texel density
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `pack`: boolean; default true; Pack the islands into the unit square afterwards so they do not overlap. Packing keeps the islands' sizes relative to each other, so it can change all densities by the same factor.
 - `target`: number; range 0 to inf; Density to give every island, in pixels per world unit for a 2048 pixel texture; the area-weighted mean of the islands when omitted.
+
+## uv_sew
+
+Join two UV islands into one along the mesh edges they share. Give island_a (stays put) and island_b (moves), numbered as get_uv_layout numbers them. Island_b is turned, scaled evenly and moved so its shared edges land on island_a's as closely as possible, then the corners on those edges are set exactly equal so the islands count as one. Refuses with no_shared_edges when the islands touch nowhere and with needs_mirror when joining would need one island flipped. Returns welded (corners set equal), shared_edges and the island count before and after. Clears baked maps. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `island_a`: integer; required; range 0 to inf; The island that stays where it is, by its number from get_uv_layout.
+- `island_b`: integer; required; range 0 to inf; The island that is turned, scaled and moved onto island_a, by its number from get_uv_layout.
+
+## uv_cut
+
+Turn a run of mesh edges into a UV seam. Give path as mesh vertex indices where each neighbouring pair is a mesh edge (repeat the first vertex at the end for a closed loop). The corners on the right of the walking direction, seen from outside, come loose from the other side along the path. A closed loop splits the island in two and an open cut leaves the island whole but slit along the path. With separate true each loose piece is moved away from the rest by distance in UV units so the cut can be seen; false leaves it in place with a hairline gap. Refuses a path that is not mesh edges, and a path that separates nothing (an open cut of two vertices). Returns cut_edges and the island count before and after. Clears baked maps. One undo step.
+
+- `distance`: number; default 0.02; range 0.0005 to 0.5; How far a loose piece moves, in UV units, when separate is true.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `path`: array of integer; required; Mesh vertex indices along the cut; each consecutive pair must be a mesh edge. Repeat the first vertex at the end for a closed loop. The side to the right of the walking direction (seen from outside) is the one that comes loose.
+- `separate`: boolean; default true; Move each piece that comes loose away from the rest of its island so the cut is visible; false leaves the pieces in place with a hairline gap.
 
 ## bake_maps
 

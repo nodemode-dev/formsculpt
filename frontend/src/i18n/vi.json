@@ -776,5 +776,12 @@
  "Show UV Density": "Hiện mật độ UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Mật độ texel ở {size} px: {mean} mỗi đơn vị trên {n} đảo, từ {min} đến {max} (độ chênh {spread})",
  "UV Density": "Mật độ UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "Đã thả lỏng UV: độ giãn {before} thành {after} (1 là không có)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "Đã thả lỏng UV: độ giãn {before} thành {after} (1 là không có)",
+ "Cut UV Seam": "Cắt đường may UV",
+ "Sew to neighbour": "May vào đảo kề",
+ "Sew UV Island to a Neighbour": "May đảo UV vào đảo kề",
+ "Sew UV Islands": "May các đảo UV",
+ "Sewn: {welded} corners joined, {n} islands now": "Đã may: nối {welded} góc, giờ có {n} đảo",
+ "Straighten UVs": "Làm thẳng UV",
+ "This island shares no edge with another island": "Đảo này không chung cạnh nào với đảo khác"
 }

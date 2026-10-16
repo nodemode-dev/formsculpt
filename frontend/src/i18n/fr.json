@@ -776,5 +776,12 @@
  "Show UV Density": "Afficher la densité UV",
  "Texel density at {size} px: {mean} per unit across {n} islands, {min} to {max} (spread {spread})": "Densité de texels à {size} px : {mean} par unité sur {n} îlots, de {min} à {max} (écart {spread})",
  "UV Density": "Densité UV",
- "UVs relaxed: stretch {before} to {after} (1 is none)": "UV détendues : étirement {before} à {after} (1 = aucun)"
+ "UVs relaxed: stretch {before} to {after} (1 is none)": "UV détendues : étirement {before} à {after} (1 = aucun)",
+ "Cut UV Seam": "Couper une couture UV",
+ "Sew to neighbour": "Coudre à la voisine",
+ "Sew UV Island to a Neighbour": "Coudre l'îlot UV à un voisin",
+ "Sew UV Islands": "Coudre des îlots UV",
+ "Sewn: {welded} corners joined, {n} islands now": "Cousu : {welded} coins joints, {n} îlots désormais",
+ "Straighten UVs": "Redresser les UV",
+ "This island shares no edge with another island": "Cet îlot ne partage aucune arête avec un autre îlot"
 }
