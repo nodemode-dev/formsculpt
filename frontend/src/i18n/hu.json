@@ -799,5 +799,9 @@
  "Straighten path": "Útvonal kiegyenesítése",
  "Straighten UV Path": "UV-útvonal kiegyenesítése",
  "UV Edge Path": "UV-élútvonal",
- "{n} pinned points; Relax keeps them still": "{n} rögzített pont; a lazítás nem mozdítja őket"
+ "{n} pinned points; Relax keeps them still": "{n} rögzített pont; a lazítás nem mozdítja őket",
+ "Automatic charts": "Automatikus térképek",
+ "Get UVs": "UV-k lekérése",
+ "UV Checker": "UV-sakktábla",
+ "UV checker": "UV-sakktábla"
 }

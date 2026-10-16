@@ -799,5 +799,9 @@
  "Straighten path": "Làm thẳng đường dẫn",
  "Straighten UV Path": "Làm thẳng đường dẫn UV",
  "UV Edge Path": "Đường dẫn cạnh UV",
- "{n} pinned points; Relax keeps them still": "{n} điểm đã ghim; Thả lỏng giữ yên chúng"
+ "{n} pinned points; Relax keeps them still": "{n} điểm đã ghim; Thả lỏng giữ yên chúng",
+ "Automatic charts": "Biểu đồ tự động",
+ "Get UVs": "Lấy UV",
+ "UV Checker": "Ô bàn cờ UV",
+ "UV checker": "Ô bàn cờ UV"
 }

@@ -799,5 +799,9 @@
  "Straighten path": "パスをまっすぐにする",
  "Straighten UV Path": "UV パスをまっすぐにする",
  "UV Edge Path": "UV エッジパス",
- "{n} pinned points; Relax keeps them still": "固定ポイント {n} 個。リラックスでは動きません"
+ "{n} pinned points; Relax keeps them still": "固定ポイント {n} 個。リラックスでは動きません",
+ "Automatic charts": "自動チャート",
+ "Get UVs": "UV を取得",
+ "UV Checker": "UV チェッカー",
+ "UV checker": "UV チェッカー"
 }

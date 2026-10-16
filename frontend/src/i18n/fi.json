@@ -799,5 +799,9 @@
  "Straighten path": "Suorista polku",
  "Straighten UV Path": "Suorista UV-polku",
  "UV Edge Path": "UV-reunapolku",
- "{n} pinned points; Relax keeps them still": "{n} kiinnitettyä pistettä; Rentoutus pitää ne paikallaan"
+ "{n} pinned points; Relax keeps them still": "{n} kiinnitettyä pistettä; Rentoutus pitää ne paikallaan",
+ "Automatic charts": "Automaattiset kartat",
+ "Get UVs": "Hae UV:t",
+ "UV Checker": "UV-ruudukko",
+ "UV checker": "UV-ruudukko"
 }

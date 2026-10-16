@@ -799,5 +799,9 @@
  "Straighten path": "Enderezar camino",
  "Straighten UV Path": "Enderezar camino UV",
  "UV Edge Path": "Camino de aristas UV",
- "{n} pinned points; Relax keeps them still": "{n} puntos fijados; Relajar los mantiene quietos"
+ "{n} pinned points; Relax keeps them still": "{n} puntos fijados; Relajar los mantiene quietos",
+ "Automatic charts": "Cartas automáticas",
+ "Get UVs": "Obtener UV",
+ "UV Checker": "Damero UV",
+ "UV checker": "Damero UV"
 }

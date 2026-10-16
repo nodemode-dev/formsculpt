@@ -799,5 +799,9 @@
  "Straighten path": "Pfad begradigen",
  "Straighten UV Path": "UV-Pfad begradigen",
  "UV Edge Path": "UV-Kantenpfad",
- "{n} pinned points; Relax keeps them still": "{n} fixierte Punkte; Entspannen lässt sie stehen"
+ "{n} pinned points; Relax keeps them still": "{n} fixierte Punkte; Entspannen lässt sie stehen",
+ "Automatic charts": "Automatische Bereiche",
+ "Get UVs": "UVs abrufen",
+ "UV Checker": "UV-Schachbrett",
+ "UV checker": "UV-Schachbrett"
 }

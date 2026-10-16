@@ -799,5 +799,9 @@
  "Straighten path": "Yolu düzleştir",
  "Straighten UV Path": "UV Yolunu Düzleştir",
  "UV Edge Path": "UV Kenar Yolu",
- "{n} pinned points; Relax keeps them still": "{n} sabit nokta; Gevşetme onları yerinde tutar"
+ "{n} pinned points; Relax keeps them still": "{n} sabit nokta; Gevşetme onları yerinde tutar",
+ "Automatic charts": "Otomatik haritalar",
+ "Get UVs": "UV'leri Al",
+ "UV Checker": "UV Dama Deseni",
+ "UV checker": "UV dama deseni"
 }

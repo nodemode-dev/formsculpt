@@ -799,5 +799,9 @@
  "Straighten path": "Narovnat cestu",
  "Straighten UV Path": "Narovnat cestu UV",
  "UV Edge Path": "Cesta po hranách UV",
- "{n} pinned points; Relax keeps them still": "Připíchnutých bodů: {n}; Uvolnění je nechá na místě"
+ "{n} pinned points; Relax keeps them still": "Připíchnutých bodů: {n}; Uvolnění je nechá na místě",
+ "Automatic charts": "Automatické mapy",
+ "Get UVs": "Získat UV",
+ "UV Checker": "UV šachovnice",
+ "UV checker": "UV šachovnice"
 }

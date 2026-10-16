@@ -799,5 +799,9 @@
  "Straighten path": "Rett ut bane",
  "Straighten UV Path": "Rett ut UV-bane",
  "UV Edge Path": "UV-kantbane",
- "{n} pinned points; Relax keeps them still": "{n} festede punkter; Avspenn holder dem i ro"
+ "{n} pinned points; Relax keeps them still": "{n} festede punkter; Avspenn holder dem i ro",
+ "Automatic charts": "Automatiske kart",
+ "Get UVs": "Hent UV-er",
+ "UV Checker": "UV-sjakkbrett",
+ "UV checker": "UV-sjakkbrett"
 }

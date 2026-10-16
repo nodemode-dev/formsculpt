@@ -799,5 +799,9 @@
  "Straighten path": "Wyprostuj ścieżkę",
  "Straighten UV Path": "Wyprostuj ścieżkę UV",
  "UV Edge Path": "Ścieżka krawędzi UV",
- "{n} pinned points; Relax keeps them still": "Przypiętych punktów: {n}; Rozluźnienie ich nie ruszy"
+ "{n} pinned points; Relax keeps them still": "Przypiętych punktów: {n}; Rozluźnienie ich nie ruszy",
+ "Automatic charts": "Automatyczne mapy",
+ "Get UVs": "Pobierz UV",
+ "UV Checker": "Szachownica UV",
+ "UV checker": "Szachownica UV"
 }

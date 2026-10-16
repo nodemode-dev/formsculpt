@@ -799,5 +799,9 @@
  "Straighten path": "Redresser le chemin",
  "Straighten UV Path": "Redresser le chemin UV",
  "UV Edge Path": "Chemin d'arêtes UV",
- "{n} pinned points; Relax keeps them still": "{n} points épinglés ; Détendre les laisse en place"
+ "{n} pinned points; Relax keeps them still": "{n} points épinglés ; Détendre les laisse en place",
+ "Automatic charts": "Cartes automatiques",
+ "Get UVs": "Obtenir les UV",
+ "UV Checker": "Damier UV",
+ "UV checker": "Damier UV"
 }

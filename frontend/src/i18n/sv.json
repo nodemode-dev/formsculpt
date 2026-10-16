@@ -799,5 +799,9 @@
  "Straighten path": "Räta ut bana",
  "Straighten UV Path": "Räta ut UV-bana",
  "UV Edge Path": "UV-kantbana",
- "{n} pinned points; Relax keeps them still": "{n} fastnålade punkter; Slappna av håller dem stilla"
+ "{n} pinned points; Relax keeps them still": "{n} fastnålade punkter; Slappna av håller dem stilla",
+ "Automatic charts": "Automatiska kartor",
+ "Get UVs": "Hämta UV:er",
+ "UV Checker": "UV-schackmönster",
+ "UV checker": "UV-schackmönster"
 }

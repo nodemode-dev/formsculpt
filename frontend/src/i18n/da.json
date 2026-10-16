@@ -799,5 +799,9 @@
  "Straighten path": "Ret sti ud",
  "Straighten UV Path": "Ret UV-sti ud",
  "UV Edge Path": "UV-kantsti",
- "{n} pinned points; Relax keeps them still": "{n} fastgjorte punkter; Afslap holder dem stille"
+ "{n} pinned points; Relax keeps them still": "{n} fastgjorte punkter; Afslap holder dem stille",
+ "Automatic charts": "Automatiske kort",
+ "Get UVs": "Hent UV'er",
+ "UV Checker": "UV-skakbræt",
+ "UV checker": "UV-skakbræt"
 }

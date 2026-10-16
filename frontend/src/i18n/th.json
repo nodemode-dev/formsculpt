@@ -799,5 +799,9 @@
  "Straighten path": "ปรับเส้นทางให้ตรง",
  "Straighten UV Path": "ปรับเส้นทาง UV ให้ตรง",
  "UV Edge Path": "เส้นทางขอบ UV",
- "{n} pinned points; Relax keeps them still": "ปักไว้ {n} จุด การคลายจะไม่ขยับจุดเหล่านี้"
+ "{n} pinned points; Relax keeps them still": "ปักไว้ {n} จุด การคลายจะไม่ขยับจุดเหล่านี้",
+ "Automatic charts": "ชาร์ตอัตโนมัติ",
+ "Get UVs": "ดึง UV",
+ "UV Checker": "ลายตาราง UV",
+ "UV checker": "ลายตาราง UV"
 }

@@ -799,5 +799,9 @@
  "Straighten path": "Pad rechttrekken",
  "Straighten UV Path": "UV-pad rechttrekken",
  "UV Edge Path": "UV-randpad",
- "{n} pinned points; Relax keeps them still": "{n} vastgepinde punten; Ontspannen laat ze staan"
+ "{n} pinned points; Relax keeps them still": "{n} vastgepinde punten; Ontspannen laat ze staan",
+ "Automatic charts": "Automatische kaarten",
+ "Get UVs": "UV's ophalen",
+ "UV Checker": "UV-dambord",
+ "UV checker": "UV-dambord"
 }

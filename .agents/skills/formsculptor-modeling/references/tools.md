@@ -9,7 +9,7 @@ Generated from the engine's command registry (formsculptor 0.42.0) by `./formscu
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
-- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
+- Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
@@ -520,11 +520,12 @@ Reset an object's paint to the default clay colour, roughness 0.5 and metalness 
 
 ## uv_unwrap
 
-Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.
+Give an object UV coordinates: faces are grouped into charts by the direction they face, each chart is laid flat (by default with least-squares conformal maps, which keep angles; method project is a straight box projection) and the charts are packed into the unit square keeping their relative sizes. seams groups cuts along face groups and seams charts grows disc-shaped charts automatically (chart_angle, default 45 degrees; tiny charts are merged). Reports stretch, the area-weighted mean and worst angle distortion (1 is none). Needed before bake_maps; topology changes (remesh, dyntopo, subdivide, booleans) clear the UVs. One undo step.
 
+- `chart_angle`: number; default 45; range 5 to 89; With seams charts: a face joins a chart while its normal is within this many degrees of the chart's average normal. Smaller gives more, flatter charts.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `method`: string (conformal | project); default "conformal"; conformal flattens each chart by least-squares conformal maps (angles kept, little stretch); project is the straight box projection (fastest, stretches faces at an angle).
-- `seams`: string (direction | groups); default "direction"; Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction).
+- `seams`: string (direction | groups | charts); default "direction"; Where charts are cut: direction groups faces by the way they face; groups cuts along face group borders, so groups painted with the Group brush or made by group_auto place the seams (a group that is a closed shell is split further by direction); charts grows disc-shaped charts over the faces automatically (see chart_angle), merges tiny ones and cuts along their borders without touching the face groups.
 
 ## cloth_drape
 
@@ -678,6 +679,15 @@ Find the mesh vertex whose UV point is nearest a spot in the UV view. Give at [u
 - `at`: array of number; required; A UV point [u, v] (0 to 1, v up) to pick near.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `radius`: number; default 0.02; range 0 to 1; Largest UV distance from at to the picked corner.
+
+Note: read-only.
+
+## get_uvs
+
+Read an unwrapped object's UV coordinates, one pair per triangle corner in index order. Returns object, revision (changes whenever the mesh does), corners (triangle corners, three per triangle) and uvs. With format base64 (default) uvs is a base64 string of little-endian f32 pairs u, v, so corners times 8 bytes; with format array it is a list of [u, v] pairs and is refused with bad_arguments above 200000 corners. The window uses it to draw a UV checker in the viewport. Refuses with no_uvs when the object is not unwrapped. Read-only.
+
+- `format`: string (base64 | array); default "base64"; base64 gives little-endian f32 pairs u, v per triangle corner; array gives a list of [u, v] and is refused above 200000 corners.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 Note: read-only.
 

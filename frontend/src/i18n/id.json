@@ -799,5 +799,9 @@
  "Straighten path": "Luruskan jalur",
  "Straighten UV Path": "Luruskan Jalur UV",
  "UV Edge Path": "Jalur Tepi UV",
- "{n} pinned points; Relax keeps them still": "{n} titik tersemat; Kendurkan membiarkannya diam"
+ "{n} pinned points; Relax keeps them still": "{n} titik tersemat; Kendurkan membiarkannya diam",
+ "Automatic charts": "Bagan otomatis",
+ "Get UVs": "Ambil UV",
+ "UV Checker": "Kotak-kotak UV",
+ "UV checker": "Kotak-kotak UV"
 }

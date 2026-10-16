@@ -799,5 +799,9 @@
  "Straighten path": "拉直路徑",
  "Straighten UV Path": "拉直 UV 路徑",
  "UV Edge Path": "UV 邊路徑",
- "{n} pinned points; Relax keeps them still": "{n} 個釘點；鬆弛時保持不動"
+ "{n} pinned points; Relax keeps them still": "{n} 個釘點；鬆弛時保持不動",
+ "Automatic charts": "自動圖塊",
+ "Get UVs": "取得 UV",
+ "UV Checker": "UV 棋盤格",
+ "UV checker": "UV 棋盤格"
 }

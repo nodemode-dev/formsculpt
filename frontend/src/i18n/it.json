@@ -799,5 +799,9 @@
  "Straighten path": "Raddrizza percorso",
  "Straighten UV Path": "Raddrizza percorso UV",
  "UV Edge Path": "Percorso di spigoli UV",
- "{n} pinned points; Relax keeps them still": "{n} punti bloccati; Rilassa li tiene fermi"
+ "{n} pinned points; Relax keeps them still": "{n} punti bloccati; Rilassa li tiene fermi",
+ "Automatic charts": "Carte automatiche",
+ "Get UVs": "Ottieni UV",
+ "UV Checker": "Scacchiera UV",
+ "UV checker": "Scacchiera UV"
 }

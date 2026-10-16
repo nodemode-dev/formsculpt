@@ -799,5 +799,9 @@
  "Straighten path": "경로 곧게 펴기",
  "Straighten UV Path": "UV 경로 곧게 펴기",
  "UV Edge Path": "UV 가장자리 경로",
- "{n} pinned points; Relax keeps them still": "고정점 {n}개. 이완해도 움직이지 않습니다"
+ "{n} pinned points; Relax keeps them still": "고정점 {n}개. 이완해도 움직이지 않습니다",
+ "Automatic charts": "자동 차트",
+ "Get UVs": "UV 가져오기",
+ "UV Checker": "UV 체커",
+ "UV checker": "UV 체커"
 }

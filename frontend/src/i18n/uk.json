@@ -799,5 +799,9 @@
  "Straighten path": "Випрямити шлях",
  "Straighten UV Path": "Випрямити UV-шлях",
  "UV Edge Path": "Шлях ребрами UV",
- "{n} pinned points; Relax keeps them still": "Закріплених точок: {n}; розслаблення їх не зрушить"
+ "{n} pinned points; Relax keeps them still": "Закріплених точок: {n}; розслаблення їх не зрушить",
+ "Automatic charts": "Автоматичні карти",
+ "Get UVs": "Отримати UV",
+ "UV Checker": "UV-шахівниця",
+ "UV checker": "UV-шахівниця"
 }

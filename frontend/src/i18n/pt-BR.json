@@ -799,5 +799,9 @@
  "Straighten path": "Endireitar caminho",
  "Straighten UV Path": "Endireitar caminho UV",
  "UV Edge Path": "Caminho de arestas UV",
- "{n} pinned points; Relax keeps them still": "{n} pontos fixados; Relaxar os mantém parados"
+ "{n} pinned points; Relax keeps them still": "{n} pontos fixados; Relaxar os mantém parados",
+ "Automatic charts": "Cartas automáticas",
+ "Get UVs": "Obter UVs",
+ "UV Checker": "Xadrez UV",
+ "UV checker": "Xadrez UV"
 }
