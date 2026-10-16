@@ -35,7 +35,7 @@ pub use text::{extrude_shape, text_mesh, TEXT_CHARACTERS};
 pub use transfer::transfer_paint;
 pub use exact::exact_boolean;
 pub use loops::{border_loops, bridge_borders, insert_edge_loop};
-pub use zmodel::{close_border, delete_face, extrude_edge, inset_face, insert_loop_at, poly_hit, quads_of, PolyHit};
+pub use zmodel::{close_border, delete_face, extrude_edge, inset_face, insert_loop_at, poly_hit, quads_of, set_creases, PolyHit};
 pub use voxel::{round_edges, voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp, RoundEdges};
 
 pub fn engine_version() -> &'static str {

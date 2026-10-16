@@ -30,16 +30,28 @@ pub fn loop_subdivide_with(mesh: &Mesh, smooth: bool, sharp_border: bool) -> Sub
             boundary_nb[b as usize].push(a);
         }
     }
+    // Creased interior edges follow the border rules: a vertex on two creased edges slides along them, on three or
+    // more it stays put, on one it is smoothed as usual (a dart); a creased edge splits at its midpoint.
+    let creased: std::collections::HashSet<Edge> = mesh.creases.iter().map(|&(a, b)| key(a, b)).filter(|e| faces_of_edge.get(e).is_some_and(|f| f.len() == 2)).collect();
+    let mut crease_nb: Vec<Vec<u32>> = vec![Vec::new(); n];
+    for &(a, b) in &creased {
+        crease_nb[a as usize].push(b);
+        crease_nb[b as usize].push(a);
+    }
     let mut stencil = Stencil::default();
     let mut row: Vec<(u32, f32)> = Vec::with_capacity(16);
     for v in 0..n as u32 {
         row.clear();
         let bn = &boundary_nb[v as usize];
+        let cn = &crease_nb[v as usize];
         let nb = &neighbors[v as usize];
         let k = nb.len() as f32;
-        if smooth && bn.len() == 2 && !sharp_border {
+        let sharp: Vec<u32> = bn.iter().chain(cn.iter()).copied().collect();
+        if smooth && bn.len() == 2 && !sharp_border && cn.is_empty() {
             row.extend_from_slice(&[(v, 0.75), (bn[0], 0.125), (bn[1], 0.125)]);
-        } else if smooth && bn.is_empty() && k >= 3.0 {
+        } else if smooth && !cn.is_empty() && sharp.len() == 2 && !(sharp_border && !bn.is_empty()) {
+            row.extend_from_slice(&[(v, 0.75), (sharp[0], 0.125), (sharp[1], 0.125)]);
+        } else if smooth && bn.is_empty() && cn.len() <= 1 && k >= 3.0 {
             let beta = (0.625 - (0.375 + 0.25 * (TAU / k).cos()).powi(2)) / k;
             row.push((v, 1.0 - k * beta));
             row.extend(nb.iter().map(|&w| (w, beta)));
@@ -52,7 +64,7 @@ pub fn loop_subdivide_with(mesh: &Mesh, smooth: bool, sharp_border: bool) -> Sub
     let mut mid: HashMap<Edge, u32> = HashMap::with_capacity(faces_of_edge.len());
     for (&(a, b), fs) in &faces_of_edge {
         row.clear();
-        if smooth && fs.len() == 2 {
+        if smooth && fs.len() == 2 && !creased.contains(&(a, b)) {
             let opp = |t: u32| -> u32 {
                 let [x, y, z] = mesh.triangle(t as usize);
                 [x, y, z].into_iter().find(|&w| w != a && w != b).unwrap_or(a)
@@ -80,6 +92,13 @@ pub fn loop_subdivide_with(mesh: &Mesh, smooth: bool, sharp_border: bool) -> Sub
     if mesh.has_hidden() {
         out.hidden = mesh.hidden.iter().flat_map(|&h| [h; 4]).collect();
     }
+    // A creased edge's two halves stay creased.
+    let mut halves: Vec<(u32, u32)> = creased.iter().flat_map(|&(a, b)| {
+        let m = mid[&(a, b)];
+        [key(a, m), key(m, b)]
+    }).collect();
+    halves.sort_unstable();
+    out.creases = halves;
     Subdivided { mesh: out, parents, stencil }
 }
 

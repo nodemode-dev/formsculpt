@@ -49,6 +49,10 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
         if o.mesh.has_hidden() {
             entry["hidden"] = json!(w.put(&format!("{dir}/hidden.u8"), &o.mesh.hidden_bytes())?);
         }
+        if o.mesh.has_creases() {
+            let flat: Vec<u32> = o.mesh.creases.iter().flat_map(|&(a, b)| [a, b]).collect();
+            entry["creases"] = json!(w.put(&format!("{dir}/creases.u32"), &u32s(&flat))?);
+        }
         if let Some(m) = &o.maps {
             entry["maps"] = json!({
                 "size": m.size,
@@ -277,6 +281,14 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 return Err("a hidden-face buffer does not match its mesh".into());
             }
             mesh.hidden = hidden.into_iter().map(|b| b != 0).collect();
+        }
+        if e["creases"].is_string() {
+            let flat = r.u32(&e["creases"])?;
+            let n = mesh.vertex_count() as u32;
+            if flat.len() % 2 != 0 || flat.iter().any(|&v| v >= n) {
+                return Err("a crease buffer does not match its mesh".into());
+            }
+            mesh.creases = flat.chunks_exact(2).map(|c| (c[0].min(c[1]), c[0].max(c[1]))).collect();
         }
         let maps = match e.get("maps").filter(|m| m.is_object()) {
             Some(m) => Some(fsc_core::Maps {

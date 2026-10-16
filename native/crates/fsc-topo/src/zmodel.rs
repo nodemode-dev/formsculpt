@@ -67,11 +67,17 @@ struct Builder<'a> {
     src: &'a Mesh,
     positions: Vec<[f32; 3]>,
     paint: Vec<Paint>,
+    /// Creased edges for the result: the source's, plus any the action adds.
+    creases: Vec<(u32, u32)>,
 }
 
 impl<'a> Builder<'a> {
     fn new(src: &'a Mesh) -> Builder<'a> {
-        Builder { src, positions: src.positions.clone(), paint: src.paint.clone() }
+        Builder { src, positions: src.positions.clone(), paint: src.paint.clone(), creases: src.creases.clone() }
+    }
+
+    fn crease(&mut self, a: u32, b: u32) {
+        self.creases.push(key(a, b));
     }
 
     /// A new vertex at `p` painted as vertex `like`.
@@ -106,13 +112,26 @@ impl<'a> Builder<'a> {
         if self.src.has_paint() {
             out.paint = paint;
         }
+        // Creases kept where both ends survive and they are still quad edges.
+        let edges: HashSet<(u32, u32)> = quads.iter().flat_map(|q| (0..4).map(move |k| key(q[k], q[(k + 1) % 4]))).collect();
+        let mut creases: Vec<(u32, u32)> = self
+            .creases
+            .iter()
+            .filter(|&&(a, b)| edges.contains(&key(a, b)))
+            .map(|&(a, b)| key(remap[a as usize], remap[b as usize]))
+            .collect();
+        creases.sort_unstable();
+        creases.dedup();
+        out.creases = creases;
         out
     }
 }
 
 /// Inserts an edge loop across the ring of quads through the edge nearest `near`, placed at fraction `at` (0 to 1)
-/// across each quad, measured from the same side of the ring all the way round. Returns the mesh and the quads split.
-pub fn insert_loop_at(mesh: &Mesh, near: Vec3, at: f32) -> Result<(Mesh, usize), String> {
+/// across each quad, measured from the same side of the ring all the way round; with `crease` the new loop's edges are
+/// creased (auto-crease). A creased edge the loop splits stays creased in both halves. Returns the mesh and the quads
+/// split.
+pub fn insert_loop_at(mesh: &Mesh, near: Vec3, at: f32, crease: bool) -> Result<(Mesh, usize), String> {
     let quads = quads_of(mesh)?;
     let at = at.clamp(0.02, 0.98);
     let mut edge_quads: HashMap<(u32, u32), Vec<(usize, usize)>> = HashMap::new();
@@ -166,11 +185,17 @@ pub fn insert_loop_at(mesh: &Mesh, near: Vec3, at: f32) -> Result<(Mesh, usize),
         split.insert(q, (k, flip));
     }
     let mut b = Builder::new(mesh);
+    let was_creased: HashSet<(u32, u32)> = mesh.creases.iter().map(|&(x, y)| key(x, y)).collect();
     let mut mids: HashMap<(u32, u32), u32> = HashMap::new();
     let mut mid = |b: &mut Builder, from: u32, to: u32| -> u32 {
         *mids.entry(key(from, to)).or_insert_with(|| {
             let p = mesh.position(from).lerp(mesh.position(to), at);
-            b.add(p, if at <= 0.5 { from } else { to })
+            let m = b.add(p, if at <= 0.5 { from } else { to });
+            if was_creased.contains(&key(from, to)) {
+                b.crease(from, m);
+                b.crease(m, to);
+            }
+            m
         })
     };
     let mut out: Vec<[u32; 4]> = Vec::with_capacity(quads.len() + ring.len());
@@ -179,6 +204,9 @@ pub fn insert_loop_at(mesh: &Mesh, near: Vec3, at: f32) -> Result<(Mesh, usize),
             Some(&(k, flip)) => {
                 let v = |i: usize| f[(k + i) % 4];
                 let (m1, m2) = if flip { (mid(&mut b, v(1), v(0)), mid(&mut b, v(2), v(3))) } else { (mid(&mut b, v(0), v(1)), mid(&mut b, v(3), v(2))) };
+                if crease {
+                    b.crease(m1, m2);
+                }
                 out.push([v(0), m1, m2, v(3)]);
                 out.push([m1, v(1), v(2), m2]);
             }
@@ -240,8 +268,9 @@ pub fn close_border(mesh: &Mesh, hit: &PolyHit) -> Result<(Mesh, usize), String>
 }
 
 /// Insets the picked face by `inset` (0 to 0.95 of the way to its centre) and lifts the inner face by `height` along
-/// its normal, with a wall quad on each side: inset alone, extrude alone (inset 0) or both.
-pub fn inset_face(mesh: &Mesh, hit: &PolyHit, inset: f32, height: f32) -> Result<Mesh, String> {
+/// its normal, with a wall quad on each side: inset alone, extrude alone (inset 0) or both. With `crease` the inner
+/// face's four edges and the original face's outline are creased (auto-crease).
+pub fn inset_face(mesh: &Mesh, hit: &PolyHit, inset: f32, height: f32, crease: bool) -> Result<Mesh, String> {
     let quads = quads_of(mesh)?;
     let f = quads[hit.quad];
     let p: [Vec3; 4] = f.map(|v| mesh.position(v));
@@ -253,9 +282,37 @@ pub fn inset_face(mesh: &Mesh, hit: &PolyHit, inset: f32, height: f32) -> Result
     for i in 0..4 {
         let j = (i + 1) % 4;
         faces.push([f[i], f[j], inner[j], inner[i]]);
+        if crease {
+            b.crease(inner[i], inner[j]);
+            b.crease(f[i], f[j]);
+        }
     }
     faces.push(inner);
     Ok(b.mesh(&faces))
+}
+
+/// The creases after creasing (`on`) or uncreasing the picked edge, or with `around_point` every quad edge that meets
+/// the picked corner. Returns the new list and how many edges changed.
+pub fn set_creases(mesh: &Mesh, hit: &PolyHit, around_point: bool, on: bool) -> Result<(Vec<(u32, u32)>, usize), String> {
+    let quads = quads_of(mesh)?;
+    let targets: HashSet<(u32, u32)> = if around_point {
+        quads.iter().flat_map(|q| (0..4).map(move |k| (q[k], q[(k + 1) % 4]))).filter(|&(a, b)| a == hit.vertex || b == hit.vertex).map(|(a, b)| key(a, b)).collect()
+    } else {
+        [key(hit.edge.0, hit.edge.1)].into_iter().collect()
+    };
+    let mut now: HashSet<(u32, u32)> = mesh.creases.iter().map(|&(a, b)| key(a, b)).collect();
+    let before = now.len();
+    for e in &targets {
+        if on {
+            now.insert(*e);
+        } else {
+            now.remove(e);
+        }
+    }
+    let changed = now.len().abs_diff(before);
+    let mut list: Vec<(u32, u32)> = now.into_iter().collect();
+    list.sort_unstable();
+    Ok((list, changed))
 }
 
 /// Deletes the picked face, opening the mesh there.

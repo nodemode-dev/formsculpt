@@ -26,6 +26,26 @@ fn num(args: &Value, key: &str, default: f32, lo: f32, hi: f32) -> Result<f32, C
     }
 }
 
+fn flag(args: &Value, key: &str) -> Result<bool, CommandError> {
+    match args.get(key) {
+        None | Some(Value::Null) => Ok(false),
+        Some(Value::Bool(b)) => Ok(*b),
+        Some(_) => Err(bad(format!("{key} is true or false"))),
+    }
+}
+
+/// Swaps in a new crease list as one undo step; the mesh, its UVs and textures are otherwise untouched.
+fn crease_step(s: &mut Session, id: ObjectId, label: &str, creases: Vec<(u32, u32)>) -> Value {
+    let object = s.scene.get_mut(id).expect("checked");
+    let old_mesh = object.mesh.clone();
+    let old_mask = object.mask.clone();
+    object.mesh.creases = creases;
+    object.revision += 1;
+    let after = summary(object);
+    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask });
+    after
+}
+
 fn aim_props() -> serde_json::Map<String, Value> {
     json!({
         "id": {"type": "integer", "minimum": 1, "description": "A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted."},
@@ -64,9 +84,10 @@ fn aim(s: &Session, id: ObjectId, args: &Value) -> Result<Option<(PolyHit, Vec3)
 
 fn hit_json(m: &Mesh, hit: &PolyHit) -> Value {
     let p = |v: u32| m.position(v).to_array();
+    let e = (hit.edge.0.min(hit.edge.1), hit.edge.0.max(hit.edge.1));
     json!({
         "face": hit.quad, "face_corners": hit.corners.map(p), "edge": [hit.edge.0, hit.edge.1], "edge_points": [p(hit.edge.0), p(hit.edge.1)],
-        "border": hit.border, "vertex": hit.vertex, "vertex_point": p(hit.vertex)
+        "border": hit.border, "creased": m.creases.contains(&e), "vertex": hit.vertex, "vertex_point": p(hit.vertex), "creases": m.creases.len()
     })
 }
 
@@ -107,7 +128,8 @@ fn aimed(s: &mut Session, args: &Value, what: &str) -> Result<(ObjectId, PolyHit
 
 pub(crate) fn edge_schema() -> Value {
     let mut p = aim_props();
-    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "extrude", "close"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides)."}));
+    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "extrude", "close", "crease", "uncrease"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it."}));
+    p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "insert: crease the new loop's edges (auto-crease)."}));
     p.insert("at".into(), json!({"type": "number", "minimum": 0.02, "maximum": 0.98, "default": 0.5, "description": "insert: where the loop crosses each quad, from one side of the ring to the other."}));
     p.insert("distance".into(), json!({"type": "number", "minimum": -1000, "maximum": 1000, "description": "extrude: how far, in world units; the edge's own length when omitted."}));
     json!({"type": "object", "properties": p, "required": ["action"], "additionalProperties": false})
@@ -115,13 +137,18 @@ pub(crate) fn edge_schema() -> Value {
 
 /// ZModeler edge actions on the edge nearest the aimed point. One undo step.
 pub(crate) fn zmodel_edge(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is insert, extrude or close"))?;
+    let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is insert, extrude, close, crease or uncrease"))?;
     let (id, hit, point) = aimed(s, args, "A ZModeler edge action")?;
     let mesh = &s.scene.get(id).expect("checked").mesh;
+    if action == "crease" || action == "uncrease" {
+        let (list, changed) = fsc_topo::set_creases(mesh, &hit, false, action == "crease").map_err(|e| CommandError::new("not_quads", e))?;
+        let after = crease_step(s, id, if action == "crease" { "Crease Edge" } else { "Uncrease Edge" }, list);
+        return Ok(json!({"object": after, "action": action, "edge": [hit.edge.0, hit.edge.1], "edges_changed": changed}));
+    }
     let (out, extra) = match action {
         "insert" => {
             let at = num(args, "at", 0.5, 0.02, 0.98)?;
-            let (m, n) = fsc_topo::insert_loop_at(mesh, point, at).map_err(|e| CommandError::new("not_quads", e))?;
+            let (m, n) = fsc_topo::insert_loop_at(mesh, point, at, flag(args, "crease")?).map_err(|e| CommandError::new("not_quads", e))?;
             (m, json!({"quads_split": n}))
         }
         "extrude" => {
@@ -136,7 +163,7 @@ pub(crate) fn zmodel_edge(s: &mut Session, args: &Value) -> Result<Value, Comman
             let (m, n) = fsc_topo::close_border(mesh, &hit).map_err(|e| CommandError::new("cannot_close", e))?;
             (m, json!({"quads_added": n}))
         }
-        other => return Err(bad(format!("unknown action {other}; use insert, extrude or close"))),
+        other => return Err(bad(format!("unknown action {other}; use insert, extrude, close, crease or uncrease"))),
     };
     let label = match action {
         "insert" => "Insert Edge Loop",
@@ -156,6 +183,7 @@ pub(crate) fn face_schema() -> Value {
     p.insert("action".into(), json!({"type": "string", "enum": ["inset", "extrude", "delete"], "description": "inset: a smaller face inside the face with a ring of quads around it; extrude: the face lifted along its normal with walls; delete: the face removed, opening the mesh."}));
     p.insert("inset".into(), json!({"type": "number", "minimum": 0, "maximum": 0.95, "description": "How far the inner face shrinks toward the centre (0.25 for inset, 0 for extrude when omitted)."}));
     p.insert("height".into(), json!({"type": "number", "minimum": -1000, "maximum": 1000, "description": "How far the inner face moves along the face normal in world units (0 for inset; the face's mean side length for extrude when omitted); negative pushes in."}));
+    p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "inset and extrude: crease the inner face's edges and the original outline (auto-crease)."}));
     json!({"type": "object", "properties": p, "required": ["action"], "additionalProperties": false})
 }
 
@@ -173,7 +201,7 @@ pub(crate) fn zmodel_face(s: &mut Session, args: &Value) -> Result<Value, Comman
             if inset < 1e-6 && height.abs() < 1e-7 {
                 return Err(bad("give a nonzero inset or height"));
             }
-            (fsc_topo::inset_face(mesh, &hit, inset, height).map_err(|e| CommandError::new("not_quads", e))?, if action == "inset" { "Inset Face" } else { "Extrude Face" })
+            (fsc_topo::inset_face(mesh, &hit, inset, height, flag(args, "crease")?).map_err(|e| CommandError::new("not_quads", e))?, if action == "inset" { "Inset Face" } else { "Extrude Face" })
         }
         "delete" => (fsc_topo::delete_face(mesh, &hit).map_err(|e| CommandError::new("cannot_delete", e))?, "Delete Face"),
         other => return Err(bad(format!("unknown action {other}; use inset, extrude or delete"))),
@@ -184,16 +212,22 @@ pub(crate) fn zmodel_face(s: &mut Session, args: &Value) -> Result<Value, Comman
 
 pub(crate) fn point_schema() -> Value {
     let mut p = aim_props();
-    p.insert("action".into(), json!({"type": "string", "enum": ["slide"], "description": "slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift."}));
+    p.insert("action".into(), json!({"type": "string", "enum": ["slide", "crease", "uncrease"], "description": "slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared."}));
     p.insert("to".into(), json!({"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "slide: where the corner goes, in object space (projected onto its tangent plane)."}));
-    json!({"type": "object", "properties": p, "required": ["action", "to"], "additionalProperties": false})
+    json!({"type": "object", "properties": p, "required": ["action"], "additionalProperties": false})
 }
 
 /// ZModeler point actions on the corner nearest the aimed point. One undo step.
 pub(crate) fn zmodel_point(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is slide"))?;
+    let action = args.get("action").and_then(Value::as_str).ok_or_else(|| bad("action is slide, crease or uncrease"))?;
+    if action == "crease" || action == "uncrease" {
+        let (id, hit, _) = aimed(s, args, "A ZModeler point action")?;
+        let (list, changed) = fsc_topo::set_creases(&s.scene.get(id).expect("checked").mesh, &hit, true, action == "crease").map_err(|e| CommandError::new("not_quads", e))?;
+        let after = crease_step(s, id, if action == "crease" { "Crease Point" } else { "Uncrease Point" }, list);
+        return Ok(json!({"object": after, "action": action, "vertex": hit.vertex, "edges_changed": changed}));
+    }
     if action != "slide" {
-        return Err(bad(format!("unknown action {action}; use slide")));
+        return Err(bad(format!("unknown action {action}; use slide, crease or uncrease")));
     }
     let to = vec3_of(args.get("to").ok_or_else(|| bad("to is required"))?, "to")?;
     let (id, hit, _) = aimed(s, args, "A ZModeler point action")?;

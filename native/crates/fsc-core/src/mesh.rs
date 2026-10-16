@@ -62,6 +62,9 @@ pub struct Mesh {
     pub groups: Vec<u32>,
     /// Hidden flag per triangle (empty: none), under the same rule as `groups`.
     pub hidden: Vec<bool>,
+    /// Creased edges as (lower, higher) vertex pairs, kept sharp by subdivision; an entry that is no longer an edge of
+    /// the mesh is ignored by every reader.
+    pub creases: Vec<(u32, u32)>,
 }
 
 /// Floats per painted vertex: red, green, blue, roughness, metalness, opacity, emissive.
@@ -99,7 +102,7 @@ pub fn mix_paint(a: Paint, b: Paint, t: f32) -> Paint {
 
 impl Mesh {
     pub fn new(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
-        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new(), quads: false, groups: Vec::new(), hidden: Vec::new() };
+        let mut mesh = Mesh { normals: vec![[0.0; 3]; positions.len()], positions, indices, paint: Vec::new(), uvs: Vec::new(), quads: false, groups: Vec::new(), hidden: Vec::new(), creases: Vec::new() };
         mesh.recompute_normals();
         mesh
     }
@@ -134,6 +137,10 @@ impl Mesh {
 
     pub fn has_groups(&self) -> bool {
         !self.groups.is_empty() && self.groups.len() == self.triangle_count()
+    }
+
+    pub fn has_creases(&self) -> bool {
+        !self.creases.is_empty()
     }
 
     pub fn has_hidden(&self) -> bool {
