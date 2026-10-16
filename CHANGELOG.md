@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.52.0 · 2026-10-16
+
+### Added
+
+- Sculpt layers carry paint and mask as well as shape, with per-channel factors: `layer_set` (strength, shape_factor, paint_factor, mask_factor, name), `layer_offset`, `layer_bake` (all three channels into the base) and `layer_extract` (difference, mask or displaced_only); saved in projects.
+- Paint layers: 23 blend modes (darken, lighten, colour dodge and burn, linear burn and light, vivid, pin, hard and soft light, difference, exclusion, subtract, divide, hue, saturation, colour, luminosity added to the five) and `channel_blend` per-channel overrides.
+- Window: Layer shape %, Layer paint % and Layer mask % under Strength; Offset layer, Bake layer and Extract layer; the full blend list.
+- 149 engine commands; 926 interface strings in every language.
+
 ## 0.51.0 · 2026-10-16
 
 ### Added
