@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.33.0 · 2026-10-16
+
+### Added
+
+- Selection Sets: `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list` keep and bring back named snapshots of an object's face groups, mask, vertex paint, layer strengths and UVs (all or chosen channels, one undo step, saved in projects). Window: Mask > Selection Sets.
+- Channel clipboard: `channel_copy`, `channel_paste`, `channel_clear` move the mask, face groups or paint from one object to another with the same topology. Window: Edit > Channels.
+- Viewport backdrop: a gradient with midpoint and vignette or a flat colour, and an infinite anti-aliased floor grid that scales with distance and fades at the horizon. View panel: Background, its colours, midpoint, vignette and Floor grid (kept between sessions); View > Floor Grid (Shift+P) and Gradient Background.
+- All 26 languages complete: 703 strings in every table.
+- 125 engine commands.
+
+### Changed
+
+- The viewport no longer draws a flat clear colour with a 41-line grid running aliased to the horizon, and the stage no longer shows a dotted pattern behind the canvas.
+
 ## 0.32.0 · 2026-10-16
 
 ### Added
@@ -10,7 +24,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 - `./build_app` and `build_app.bat`: one command builds the installable desktop app (tools checked, engine, Python module, window, frozen sidecar, Tauri bundle; a disk image and install on macOS, a deb on Linux, msi and nsis on Windows); `./formsculptor app` runs it.
 - Commands in the window: every panel button and engine command is a command with label, keys, enabled and checked state; a menu bar (File, Edit, Add, Sculpt, Mask, Topology, Object, Paint, View, Window, Help), right-click menus on the viewport and panel buttons, a `Mod+K` palette and a `Mod+/` shortcut editor with conflict handling.
 - Curves: a shared curve model in the engine with smooth or sharp points, fillet rounding of a corner by a radius, Catmull-Rom, B-spline or straight interpolation and closed loops. `sample_curve`; `warp_along_curve` (bend an object along a path); `curve_tube` gains profiles (circle, square, triangle, star, flat or your own outline), round or flat caps, hollow pipes, twist, spirals and start-to-end radius; `lathe` profiles take rounded corners; `edit_build` sets one point's sharp, round, radius or twist. Window: Alt-click a curve handle for a corner, Corner round, Path shape, Closed path, Tube from curve and the tube settings.
-- 26 interface languages, English by default (View > Language), switched live; `./formsculptor i18n extract|check`. German seeded; the other tables follow in 0.33.0.
+- 26 interface languages, English by default (View > Language), switched live; `./formsculptor i18n extract|check`. German seeded; the other tables followed in 0.33.0.
 - 118 engine commands.
 
 ### Changed
