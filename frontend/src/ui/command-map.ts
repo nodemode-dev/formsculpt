@@ -69,6 +69,10 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     maps: n('paint.download_maps', 'Download Maps'),
     project_view: n('paint.project', 'Project Image'),
     project_tile: n('paint.project_tile', 'Tile Image'),
+    spotlight_add: c('paint.spotlight_load', 'Load Spotlight Image'),
+    spotlight_clear: c('paint.spotlight_clear_all', 'Clear Spotlight'),
+    spotlight_paint: n('paint.spotlight_paint', 'Paint Through Spotlight'),
+    spotlight_sculpt: n('paint.spotlight_sculpt', 'Sculpt Through Spotlight'),
   },
   paintLayer: {
     paint_layer_add: n('paint.layer_add', 'New Paint Layer'),

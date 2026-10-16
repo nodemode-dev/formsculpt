@@ -41,6 +41,14 @@ button { font: inherit; color: inherit; }
 .viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 .stage-reference { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: var(--z-raised); }
 .stage-reference[hidden] { display: none; }
+.spotlight { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: var(--z-raised); }
+.spotlight-image { position: absolute; left: 0; top: 0; transform-origin: center; pointer-events: none; user-select: none; outline: 1px dashed transparent; }
+.spotlight-image.active { outline-color: var(--accent-color); }
+.spotlight[data-mode="dial"] .spotlight-image { pointer-events: auto; cursor: move; }
+.spotlight-dial { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.spotlight-ring { fill: none; stroke: var(--accent-color); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.spotlight-knob { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 2; pointer-events: auto; cursor: grab; }
+.spotlight-cursor { fill: none; stroke: var(--accent-color); stroke-opacity: 0.8; stroke-width: 1; }
 .stage-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }
 .stage-overlay polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .stage-overlay path { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 2; }

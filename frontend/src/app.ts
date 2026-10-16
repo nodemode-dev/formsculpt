@@ -34,6 +34,7 @@ import { language, languages, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
 import { registerTerminal } from './ui/terminal';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
+import { SpotlightDial, type SpotlightMode } from './ui/spotlight';
 import { PanelLayout } from './ui/layout';
 import { SpaceMouse } from './ui/spacemouse';
 import { ENV_PRESETS, imageEnvironment, parseHdr, presetEnvironment, type EnvImage } from './viewport/environment';
@@ -251,6 +252,12 @@ interface Shell {
   pluginButtons: HTMLButtonElement[];
   projectOpacity: HTMLInputElement;
   projectInput: HTMLInputElement;
+  spotlightMode: HTMLSelectElement;
+  spotlightApply: HTMLSelectElement;
+  spotlightDepth: HTMLInputElement;
+  spotlightOpacity: HTMLInputElement;
+  spotlightFlip: HTMLInputElement;
+  spotlightInput: HTMLInputElement;
   lightPick: HTMLSelectElement;
   lightAdd: HTMLButtonElement;
   lightRemove: HTMLButtonElement;
@@ -875,9 +882,17 @@ function buildShell(root: HTMLElement): Shell {
   const projectInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose an image to paint' });
   projectInput.hidden = true;
   panel.append(projectInput);
+  const spotlightMode = choices('Spotlight', [['off', 'Off'], ['dial', 'Dial'], ['brush', 'Brush']]);
+  const spotlightApply = choices('Spotlight brush', [['paint', 'Paint'], ['sculpt', 'Sculpt']]);
+  const spotlightDepth = input('range', { min: '-100', max: '100', value: '20', 'aria-label': 'Spotlight depth' });
+  const spotlightOpacity = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Spotlight opacity' });
+  const spotlightFlip = input('checkbox', { 'aria-label': 'Flip Spotlight' });
+  const spotlightInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a Spotlight image' });
+  spotlightInput.hidden = true;
+  panel.append(spotlightInput);
   const subsurface = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Subsurface' });
   const transmission = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Transmission' });
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Paint into texture', paintTexture), field('Material preset', materialPreset), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity));
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Paint into texture', paintTexture), field('Material preset', materialPreset), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity), field('Spotlight', spotlightMode), field('Spotlight brush', spotlightApply), field('Spotlight depth %', spotlightDepth), field('Spotlight opacity', spotlightOpacity), field('Flip Spotlight', spotlightFlip));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
@@ -891,6 +906,10 @@ function buildShell(root: HTMLElement): Shell {
       ['maps', 'Download maps'],
       ['project_view', 'Project image'],
       ['project_tile', 'Tile image'],
+      ['spotlight_add', 'Spotlight image'],
+      ['spotlight_clear', 'Clear Spotlight'],
+      ['spotlight_paint', 'Paint through'],
+      ['spotlight_sculpt', 'Sculpt through'],
     ] as const
   ).map(([action, label]) => {
     const b = el('button', 'btn', label);
@@ -1333,14 +1352,34 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
   private rows = new Map<number, HTMLLIElement>();
   private scene: SceneSummary = { objects: [], active: null };
 
+  /** The Spotlight images over the viewport, their dial and the brush through them. */
+  private readonly spotlight: SpotlightDial;
+
   constructor(private shell: Shell, private viewport: Viewport) {
+    this.spotlight = new SpotlightDial(shell.canvas.parentElement as HTMLElement, {
+      dispatch: (name, args) => dispatch(name, args),
+      viewProj: () => Array.from(this.viewport.camera.viewProjection()),
+      activeObject: () => this.scene.active,
+      brushRadius: () => Math.max(1, Number(shell.radius.value) || 50),
+      applyArgs: (mode) => {
+        const m = mode ?? shell.spotlightApply.value;
+        if (m === 'sculpt') return { mode: m, depth: Number(shell.spotlightDepth.value) / 1000 };
+        return { mode: 'paint', ...(shell.paintTexture.checked ? { target: 'texture' } : {}) };
+      },
+      refresh: () => this.refresh(),
+      note: (text) => this.note(text),
+    });
+    shell.spotlightMode.addEventListener('change', () => this.spotlight.setMode(shell.spotlightMode.value as SpotlightMode));
+    shell.spotlightOpacity.addEventListener('change', () => void this.spotlight.set({ opacity: Number(shell.spotlightOpacity.value) / 100 }));
+    shell.spotlightFlip.addEventListener('change', () => void this.spotlight.set({ flip: shell.spotlightFlip.checked }));
+    shell.spotlightInput.addEventListener('change', () => void this.loadSpotlight());
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
       if (row?.dataset.id) void this.run('select_object', { id: Number(row.dataset.id) });
@@ -1501,6 +1540,8 @@ class SceneView {
     });
     shell.paintButtons.forEach((b) =>
       this.on(b, () => {
+        if (b.dataset.action === 'spotlight_add') return shell.spotlightInput.click();
+        if (b.dataset.action === 'spotlight_clear') return void this.run('spotlight_remove', { all: true });
         const id = this.scene.active;
         if (id === null) return;
         const action = b.dataset.action;
@@ -1512,6 +1553,7 @@ class SceneView {
           this.projectMode = action === 'project_view' ? 'view' : 'triplanar';
           shell.projectInput.click();
         }
+        else if (action === 'spotlight_paint' || action === 'spotlight_sculpt') void this.spotlight.apply({ mode: action === 'spotlight_paint' ? 'paint' : 'sculpt' });
         else if (action === 'texture_create') void this.run('texture_create', { id, size: Math.max(256, Math.min(4096, Number(shell.bakeSize.value) || 1024)) });
         else if (action === 'texture_clear') void this.run('texture_clear', { id });
         else void this.run('paint_fill', { id, ...this.paintArgs(true), ...(shell.paintTexture.checked ? { target: 'texture' } : {}) });
@@ -3868,6 +3910,7 @@ class SceneView {
     const history = await dispatch<{ steps: string[]; done: number }>('get_history');
     if (history.ok) this.patchHistory(history.result.steps, history.result.done);
     await this.patchSets();
+    await this.spotlight.sync();
     const textured = this.scene.objects.some((x) => x.id === this.scene.active && (x.texture_size ?? null) !== null);
     if (this.shell.uvChecker.checked || this.checkerFor || textured) await this.syncChecker();
   }
@@ -4434,6 +4477,33 @@ class SceneView {
   }
 
   private projectMode: 'view' | 'triplanar' = 'view';
+
+  /** Loads the chosen image onto the Spotlight (re-encoded as PNG, at most 2048 px a side) and shows its dial. */
+  private async loadSpotlight(): Promise<void> {
+    const file = this.shell.spotlightInput.files?.[0];
+    this.shell.spotlightInput.value = '';
+    if (!file) return;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const k = Math.min(1, 2048 / Math.max(bitmap.width, bitmap.height));
+      const canvas = new OffscreenCanvas(Math.max(1, Math.round(bitmap.width * k)), Math.max(1, Math.round(bitmap.height * k)));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('no 2D canvas');
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const name = file.name.replace(/\.[^.]+$/, '').slice(0, 120);
+      await this.run('spotlight_add', { png_base64: btoa(bin), name, opacity: Number(this.shell.spotlightOpacity.value) / 100, flip: this.shell.spotlightFlip.checked });
+      if (this.shell.spotlightMode.value === 'off') {
+        this.shell.spotlightMode.value = 'dial';
+        this.spotlight.setMode('dial');
+      }
+    } catch {
+      this.note('That image could not be read');
+    }
+  }
 
   /** Paints the chosen image onto the active object: from the current view (as seen on screen) or tiled. Any image
    * the browser reads is re-encoded as PNG for the engine. */
