@@ -983,5 +983,10 @@
  "Insert edge loop": "แทรกลูปขอบ",
  "Inset face": "แทรกหน้าด้านใน",
  "Uncrease edge": "ยกเลิกการพับขอบ",
- "Uncrease point": "ยกเลิกการพับจุด"
+ "Uncrease point": "ยกเลิกการพับจุด",
+ "Align edge loop": "จัดแนวลูปขอบ",
+ "Get Creases": "ดึงรอยพับ",
+ "Slide amount %": "ระยะเลื่อน %",
+ "Slide edge loop": "เลื่อนลูปขอบ",
+ "Slide point": "เลื่อนจุด"
 }

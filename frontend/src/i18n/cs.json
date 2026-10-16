@@ -983,5 +983,10 @@
  "Insert edge loop": "Vložit smyčku hran",
  "Inset face": "Vsadit plochu",
  "Uncrease edge": "Zrušit ostření hrany",
- "Uncrease point": "Zrušit ostření bodu"
+ "Uncrease point": "Zrušit ostření bodu",
+ "Align edge loop": "Zarovnat smyčku hran",
+ "Get Creases": "Zjistit ostré hrany",
+ "Slide amount %": "Míra posunu %",
+ "Slide edge loop": "Posunout smyčku hran",
+ "Slide point": "Posunout bod"
 }

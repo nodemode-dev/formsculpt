@@ -983,5 +983,10 @@
  "Insert edge loop": "Вставити петлю ребер",
  "Inset face": "Вставити грань",
  "Uncrease edge": "Зняти загострення ребра",
- "Uncrease point": "Зняти загострення точки"
+ "Uncrease point": "Зняти загострення точки",
+ "Align edge loop": "Вирівняти петлю ребер",
+ "Get Creases": "Отримати складки",
+ "Slide amount %": "Величина зсуву %",
+ "Slide edge loop": "Зсунути петлю ребер",
+ "Slide point": "Зсунути точку"
 }

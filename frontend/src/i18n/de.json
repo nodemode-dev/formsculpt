@@ -983,5 +983,10 @@
  "Insert edge loop": "Kantenschleife einfügen",
  "Inset face": "Fläche einsetzen",
  "Uncrease edge": "Kantenschärfe entfernen",
- "Uncrease point": "Punktschärfe entfernen"
+ "Uncrease point": "Punktschärfe entfernen",
+ "Align edge loop": "Kantenschleife ausrichten",
+ "Get Creases": "Scharfe Kanten holen",
+ "Slide amount %": "Verschiebung %",
+ "Slide edge loop": "Kantenschleife verschieben",
+ "Slide point": "Punkt verschieben"
 }

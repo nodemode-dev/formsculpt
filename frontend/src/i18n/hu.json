@@ -983,5 +983,10 @@
  "Insert edge loop": "Élhurok beszúrása",
  "Inset face": "Lap besüllyesztése",
  "Uncrease edge": "Él élesítésének törlése",
- "Uncrease point": "Pont élesítésének törlése"
+ "Uncrease point": "Pont élesítésének törlése",
+ "Align edge loop": "Élhurok igazítása",
+ "Get Creases": "Éles élek lekérése",
+ "Slide amount %": "Csúsztatás mértéke %",
+ "Slide edge loop": "Élhurok csúsztatása",
+ "Slide point": "Pont csúsztatása"
 }

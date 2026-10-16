@@ -983,5 +983,10 @@
  "Insert edge loop": "插入循环边",
  "Inset face": "内插面",
  "Uncrease edge": "取消边折痕",
- "Uncrease point": "取消点折痕"
+ "Uncrease point": "取消点折痕",
+ "Align edge loop": "对齐循环边",
+ "Get Creases": "获取折痕",
+ "Slide amount %": "滑动量 %",
+ "Slide edge loop": "滑动循环边",
+ "Slide point": "滑动点"
 }

@@ -983,5 +983,10 @@
  "Insert edge loop": "Insertar bucle de aristas",
  "Inset face": "Insertar cara",
  "Uncrease edge": "Quitar pliegue de arista",
- "Uncrease point": "Quitar pliegue de punto"
+ "Uncrease point": "Quitar pliegue de punto",
+ "Align edge loop": "Alinear bucle de aristas",
+ "Get Creases": "Obtener pliegues",
+ "Slide amount %": "Cantidad de deslizamiento %",
+ "Slide edge loop": "Deslizar bucle de aristas",
+ "Slide point": "Deslizar punto"
 }

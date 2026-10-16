@@ -983,5 +983,10 @@
  "Insert edge loop": "Infoga kantslinga",
  "Inset face": "Infälld yta",
  "Uncrease edge": "Ta bort kantveck",
- "Uncrease point": "Ta bort punktveck"
+ "Uncrease point": "Ta bort punktveck",
+ "Align edge loop": "Räta upp kantslinga",
+ "Get Creases": "Hämta veck",
+ "Slide amount %": "Glidmängd %",
+ "Slide edge loop": "Skjut kantslinga",
+ "Slide point": "Skjut punkt"
 }

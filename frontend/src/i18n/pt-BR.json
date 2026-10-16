@@ -983,5 +983,10 @@
  "Insert edge loop": "Inserir loop de arestas",
  "Inset face": "Inserir face",
  "Uncrease edge": "Remover vinco da aresta",
- "Uncrease point": "Remover vinco do ponto"
+ "Uncrease point": "Remover vinco do ponto",
+ "Align edge loop": "Alinhar loop de arestas",
+ "Get Creases": "Obter vincos",
+ "Slide amount %": "Deslizamento %",
+ "Slide edge loop": "Deslizar loop de arestas",
+ "Slide point": "Deslizar ponto"
 }

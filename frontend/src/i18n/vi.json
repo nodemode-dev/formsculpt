@@ -983,5 +983,10 @@
  "Insert edge loop": "Chèn vòng cạnh",
  "Inset face": "Thu mặt vào",
  "Uncrease edge": "Bỏ gấp cạnh",
- "Uncrease point": "Bỏ gấp điểm"
+ "Uncrease point": "Bỏ gấp điểm",
+ "Align edge loop": "Căn thẳng vòng cạnh",
+ "Get Creases": "Lấy nếp gấp",
+ "Slide amount %": "Mức trượt %",
+ "Slide edge loop": "Trượt vòng cạnh",
+ "Slide point": "Trượt điểm"
 }

@@ -983,5 +983,10 @@
  "Insert edge loop": "Indsæt kantløkke",
  "Inset face": "Indsæt flade",
  "Uncrease edge": "Fjern fold fra kant",
- "Uncrease point": "Fjern fold fra punkt"
+ "Uncrease point": "Fjern fold fra punkt",
+ "Align edge loop": "Juster kantløkke",
+ "Get Creases": "Hent folder",
+ "Slide amount %": "Glidemængde %",
+ "Slide edge loop": "Skub kantløkke",
+ "Slide point": "Skub punkt"
 }

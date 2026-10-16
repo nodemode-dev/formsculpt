@@ -983,5 +983,10 @@
  "Insert edge loop": "엣지 루프 삽입",
  "Inset face": "면 인셋",
  "Uncrease edge": "엣지 크리스 해제",
- "Uncrease point": "점 크리스 해제"
+ "Uncrease point": "점 크리스 해제",
+ "Align edge loop": "엣지 루프 정렬",
+ "Get Creases": "크리스 가져오기",
+ "Slide amount %": "슬라이드 양 %",
+ "Slide edge loop": "엣지 루프 슬라이드",
+ "Slide point": "점 슬라이드"
 }

@@ -983,5 +983,10 @@
  "Insert edge loop": "Lisää reunasilmukka",
  "Inset face": "Upota tahko",
  "Uncrease edge": "Poista reunan taite",
- "Uncrease point": "Poista pisteen taite"
+ "Uncrease point": "Poista pisteen taite",
+ "Align edge loop": "Suorista reunasilmukka",
+ "Get Creases": "Hae taitteet",
+ "Slide amount %": "Liu'utuksen määrä %",
+ "Slide edge loop": "Liu'uta reunasilmukkaa",
+ "Slide point": "Liu'uta pistettä"
 }

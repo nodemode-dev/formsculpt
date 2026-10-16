@@ -983,5 +983,10 @@
  "Insert edge loop": "Inserisci loop di spigoli",
  "Inset face": "Inserto faccia",
  "Uncrease edge": "Togli piega allo spigolo",
- "Uncrease point": "Togli piega al punto"
+ "Uncrease point": "Togli piega al punto",
+ "Align edge loop": "Allinea loop di spigoli",
+ "Get Creases": "Ottieni pieghe",
+ "Slide amount %": "Scorrimento %",
+ "Slide edge loop": "Scorri loop di spigoli",
+ "Slide point": "Scorri punto"
 }

@@ -983,5 +983,10 @@
  "Insert edge loop": "Wstaw pętlę krawędzi",
  "Inset face": "Wstaw ścianę",
  "Uncrease edge": "Usuń zagięcie krawędzi",
- "Uncrease point": "Usuń zagięcie punktu"
+ "Uncrease point": "Usuń zagięcie punktu",
+ "Align edge loop": "Wyrównaj pętlę krawędzi",
+ "Get Creases": "Pobierz zagięcia",
+ "Slide amount %": "Przesunięcie %",
+ "Slide edge loop": "Przesuń pętlę krawędzi",
+ "Slide point": "Przesuń punkt"
 }

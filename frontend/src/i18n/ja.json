@@ -983,5 +983,10 @@
  "Insert edge loop": "エッジループを挿入",
  "Inset face": "面を差し込み",
  "Uncrease edge": "エッジのクリースを解除",
- "Uncrease point": "点のクリースを解除"
+ "Uncrease point": "点のクリースを解除",
+ "Align edge loop": "エッジループを整列",
+ "Get Creases": "クリースを取得",
+ "Slide amount %": "スライド量 %",
+ "Slide edge loop": "エッジループをスライド",
+ "Slide point": "点をスライド"
 }

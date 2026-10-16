@@ -983,5 +983,10 @@
  "Insert edge loop": "Randlus invoegen",
  "Inset face": "Vlak inzetten",
  "Uncrease edge": "Randvouw opheffen",
- "Uncrease point": "Puntvouw opheffen"
+ "Uncrease point": "Puntvouw opheffen",
+ "Align edge loop": "Randlus uitlijnen",
+ "Get Creases": "Vouwen ophalen",
+ "Slide amount %": "Schuifafstand %",
+ "Slide edge loop": "Randlus verschuiven",
+ "Slide point": "Punt verschuiven"
 }

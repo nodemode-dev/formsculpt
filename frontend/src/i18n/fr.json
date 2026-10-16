@@ -983,5 +983,10 @@
  "Insert edge loop": "Insérer une boucle d'arêtes",
  "Inset face": "Incruster la face",
  "Uncrease edge": "Retirer le pli de l'arête",
- "Uncrease point": "Retirer le pli du point"
+ "Uncrease point": "Retirer le pli du point",
+ "Align edge loop": "Aligner la boucle d'arêtes",
+ "Get Creases": "Obtenir les plis",
+ "Slide amount %": "Glissement %",
+ "Slide edge loop": "Glisser la boucle d'arêtes",
+ "Slide point": "Glisser le point"
 }

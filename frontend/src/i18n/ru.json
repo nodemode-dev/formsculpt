@@ -983,5 +983,10 @@
  "Insert edge loop": "Вставить петлю рёбер",
  "Inset face": "Вставить грань",
  "Uncrease edge": "Снять заострение ребра",
- "Uncrease point": "Снять заострение точки"
+ "Uncrease point": "Снять заострение точки",
+ "Align edge loop": "Выровнять петлю рёбер",
+ "Get Creases": "Получить складки",
+ "Slide amount %": "Величина сдвига %",
+ "Slide edge loop": "Сдвинуть петлю рёбер",
+ "Slide point": "Сдвинуть точку"
 }

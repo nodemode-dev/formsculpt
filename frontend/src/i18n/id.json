@@ -983,5 +983,10 @@
  "Insert edge loop": "Sisipkan loop tepi",
  "Inset face": "Inset muka",
  "Uncrease edge": "Hapus lipatan tepi",
- "Uncrease point": "Hapus lipatan titik"
+ "Uncrease point": "Hapus lipatan titik",
+ "Align edge loop": "Luruskan loop tepi",
+ "Get Creases": "Ambil lipatan",
+ "Slide amount %": "Jumlah geser %",
+ "Slide edge loop": "Geser loop tepi",
+ "Slide point": "Geser titik"
 }

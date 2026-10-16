@@ -983,5 +983,10 @@
  "Insert edge loop": "Kenar döngüsü ekle",
  "Inset face": "Yüzü içe al",
  "Uncrease edge": "Kenar kırışığını kaldır",
- "Uncrease point": "Nokta kırışığını kaldır"
+ "Uncrease point": "Nokta kırışığını kaldır",
+ "Align edge loop": "Kenar döngüsünü hizala",
+ "Get Creases": "Kırışıkları al",
+ "Slide amount %": "Kaydırma miktarı %",
+ "Slide edge loop": "Kenar döngüsünü kaydır",
+ "Slide point": "Noktayı kaydır"
 }
