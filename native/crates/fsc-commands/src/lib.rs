@@ -33,6 +33,7 @@ mod uv_straighten_cmds;
 mod udim_cmds;
 mod vdm_cmds;
 mod view_cmds;
+mod zmodel_cmds;
 
 pub use history::{Edit, History};
 pub use file_cmds::{export_data, import_data, open_data, save_data};
@@ -804,6 +805,50 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sim_cmds::bridge_schema,
         run: sim_cmds::bridge,
+    },
+    Command {
+        id: "topo.poly_pick",
+        mcp: "poly_pick",
+        group: Group::Topo,
+        label: "Poly Pick",
+        description: "ZModeler aiming on a quad mesh: the face under a point or ray, its edge nearest the point and its nearest corner, with their positions and whether the edge is an open border (hit false when a ray misses). The window draws its hover highlight from it. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: zmodel_cmds::pick_schema,
+        run: zmodel_cmds::poly_pick,
+    },
+    Command {
+        id: "topo.zmodel_edge",
+        mcp: "zmodel_edge",
+        group: Group::Topo,
+        label: "ZModeler Edge",
+        description: "ZModeler edge actions on a quad mesh, aimed by point or ray at the edge nearest it: insert puts an edge loop across the ring of quads through that edge at fraction at (0.5 is the middle; measured from the same side all round); extrude pulls an open-border edge out in its face's plane as a new quad (distance, default the edge's length); close fills the hole that border edge belongs to with quads (one quad for four sides, a fan around a centre for more; an even number of sides). The mesh stays all quads; UVs and textures are dropped as for any topology change. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: zmodel_cmds::edge_schema,
+        run: zmodel_cmds::zmodel_edge,
+    },
+    Command {
+        id: "topo.zmodel_face",
+        mcp: "zmodel_face",
+        group: Group::Topo,
+        label: "ZModeler Face",
+        description: "ZModeler face actions on a quad mesh, aimed by point or ray at the face under it: inset (a smaller face inside with a ring of quads; inset 0.25 by default), extrude (the face lifted along its normal with four walls; height defaults to the face's side length, negative pushes in; inset and height can be combined) or delete (opens the mesh there). One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: zmodel_cmds::face_schema,
+        run: zmodel_cmds::zmodel_face,
+    },
+    Command {
+        id: "topo.zmodel_point",
+        mcp: "zmodel_point",
+        group: Group::Topo,
+        label: "ZModeler Point",
+        description: "ZModeler point actions on a quad mesh, aimed by point or ray at the nearest corner of the face under it: slide moves that corner toward `to`, kept in its tangent plane so the surface does not lift. Recorded into the active sculpt layer when there is one. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: zmodel_cmds::point_schema,
+        run: zmodel_cmds::zmodel_point,
     },
     Command {
         id: "file.substance",
