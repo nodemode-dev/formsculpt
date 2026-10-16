@@ -65,6 +65,30 @@ fn free(o: &Object, v: u32, hidden: bool) -> f32 {
     1.0 - o.mask[v as usize]
 }
 
+fn xorshift(state: &mut u64) -> f32 {
+    *state ^= *state << 13;
+    *state ^= *state >> 7;
+    *state ^= *state << 17;
+    (*state >> 40) as f32 / (1u64 << 24) as f32
+}
+
+/// The falloff weight of each vertex of `found` around `center`, with the weighted sum of normals and the weighted mean position.
+fn weigh(object: &Object, found: &[u32], center: Vec3, r: f32, s: &BrushSettings) -> (Vec<f32>, Vec3, Vec3) {
+    let (mut area_n, mut area_c, mut wsum) = (Vec3::ZERO, Vec3::ZERO, 0.0);
+    let weights = found
+        .iter()
+        .map(|&v| {
+            let p = object.mesh.position(v);
+            let w = s.falloff.weight(p.distance(center) / r);
+            area_n += Vec3::from_array(object.mesh.normals[v as usize]) * w;
+            area_c += p * w;
+            wsum += w;
+            w
+        })
+        .collect();
+    (weights, area_n, if wsum > 0.0 { area_c / wsum } else { center })
+}
+
 struct Grab {
     anchor: Vec3,
     plane_normal: Vec3,
@@ -95,6 +119,9 @@ pub struct Stroke {
     smudge: Option<Vec3>,
     /// Spray: a seeded generator, and the current dab's extra turn (radians) and share of the strength.
     rng: u64,
+    /// Jitter: its own generator state, and the current dab's radius and strength scales.
+    jrng: u64,
+    dab_mul: (f32, f32),
     jitter: (f32, f32),
     /// The area normal under the last unmirrored dab, the plane spray scatters in.
     last_normal: Vec3,
@@ -135,6 +162,13 @@ impl Stroke {
             alpha: None,
             smudge: None,
             rng: 0x9e37_79b9_7f4a_7c15,
+            jrng: {
+                let mut x = settings.jitter_seed.wrapping_add(1).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+                x = (x ^ (x >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+                x = (x ^ (x >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+                (x ^ (x >> 31)).max(1)
+            },
+            dab_mul: (1.0, 1.0),
             jitter: (0.0, 1.0),
             last_normal: Vec3::Y,
             tilt: 0.0,
@@ -162,10 +196,23 @@ impl Stroke {
 
     /// A uniform number in 0..1 from a seeded xorshift, so a spray stroke is the same on every replay.
     fn random(&mut self) -> f32 {
-        self.rng ^= self.rng << 13;
-        self.rng ^= self.rng >> 7;
-        self.rng ^= self.rng << 17;
-        (self.rng >> 40) as f32 / (1u64 << 24) as f32
+        xorshift(&mut self.rng)
+    }
+
+    /// The same generator on its own state, seeded by `jitter_seed`, so jitter and spray never disturb each other.
+    fn jitter_random(&mut self) -> f32 {
+        xorshift(&mut self.jrng)
+    }
+
+    /// A dab's radius: pressure, then the jitter scale, then the snap to a multiple of `snap_radius` (at least one step).
+    fn dab_radius(&self, pressure: f32) -> f32 {
+        let s = &self.settings;
+        let r = if s.pressure_size { s.radius * pressure.max(0.1) } else { s.radius } * self.dab_mul.0;
+        if s.snap_radius > 0.0 {
+            (r / s.snap_radius).round().max(1.0) * s.snap_radius
+        } else {
+            r
+        }
     }
 
     /// Shapes every dab by a grayscale alpha (multiplied with the falloff).
@@ -272,6 +319,22 @@ impl Stroke {
             } else {
                 c
             };
+            let s = self.settings;
+            let c = if s.jitter_position > 0.0 || s.jitter_radius > 0.0 || s.jitter_strength > 0.0 {
+                let (a, d, rr, ss) = (self.jitter_random(), self.jitter_random(), self.jitter_random(), self.jitter_random());
+                self.dab_mul = (1.0 + (rr * 2.0 - 1.0) * s.jitter_radius, 1.0 + (ss * 2.0 - 1.0) * s.jitter_strength);
+                if s.jitter_position > 0.0 && !matches!(s.kind, BrushKind::SnakeHook | BrushKind::Nudge) {
+                    let n = self.last_normal;
+                    let u = n.any_orthonormal_vector();
+                    let w = n.cross(u);
+                    let ang = a * std::f32::consts::TAU;
+                    c + (u * ang.cos() + w * ang.sin()) * (d.sqrt() * s.jitter_position * s.radius)
+                } else {
+                    c
+                }
+            } else {
+                c
+            };
             if self.settings.kind == BrushKind::SnakeHook {
                 if let Some(prev) = self.snake_prev {
                     for k in 0..self.transforms.len() {
@@ -367,7 +430,8 @@ impl Stroke {
     fn snake_dab(&mut self, object: &mut Object, from: Vec3, delta: Vec3) {
         let s = self.settings;
         let mut found = std::mem::take(&mut self.found);
-        object.bvh.vertices_in_sphere(&object.mesh, from, s.radius, &mut found);
+        let r = self.dab_radius(1.0);
+        object.bvh.vertices_in_sphere(&object.mesh, from, r, &mut found);
         // The core follows the pointer fully at any strength: a partial move would leave the pulled area behind the
         // brush, out of reach of the next dab, and the hook would stall. Strength widens the pulled area instead.
         let soft = 1.5 - s.strength.clamp(0.0, 1.0);
@@ -375,7 +439,7 @@ impl Stroke {
         for &v in &found {
             self.remember(object, v);
             let p = object.mesh.position(v);
-            let w = s.falloff.weight(p.distance(from) / s.radius).powf(soft).min(1.0) * free(object, v, hid);
+            let w = s.falloff.weight(p.distance(from) / r).powf(soft).min(1.0) * free(object, v, hid);
             object.mesh.positions[v as usize] = (p + delta * w).to_array();
         }
         self.finish_dab(object, &found);
@@ -389,15 +453,16 @@ impl Stroke {
         let s = self.settings;
         let mut found = std::mem::take(&mut self.found);
         let (surface, tree) = self.nudge_surface.take().unwrap_or_else(|| (object.mesh.clone(), fsc_core::Bvh::build(&object.mesh)));
-        let lift = s.radius * 0.25;
-        object.bvh.vertices_in_sphere(&object.mesh, center, s.radius, &mut found);
+        let r = self.dab_radius(1.0);
+        let lift = r * 0.25;
+        object.bvh.vertices_in_sphere(&object.mesh, center, r, &mut found);
         let hid = object.mesh.has_hidden();
-        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * 2.0;
+        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * 2.0 * self.dab_mul.1;
         for &v in &found {
             self.remember(object, v);
             let p = object.mesh.position(v);
             let n = Vec3::from_array(object.mesh.normals[v as usize]);
-            let w = (s.falloff.weight(p.distance(center) / s.radius) * amount).min(1.0) * free(object, v, hid);
+            let w = (s.falloff.weight(p.distance(center) / r) * amount).min(1.0) * free(object, v, hid);
             let mut q = p + (delta - n * delta.dot(n)) * w;
             if w > 0.0 {
                 if let Some(hit) = tree.raycast(&surface, q + n * lift, -n).filter(|h| h.t < lift * 2.0) {
@@ -417,7 +482,8 @@ impl Stroke {
             self.no_active_layer = true;
             return;
         }
-        let r = if s.pressure_size { s.radius * pressure.max(0.1) } else { s.radius };
+        let r = self.dab_radius(pressure);
+        let mut center = center;
         let mut found = std::mem::take(&mut self.found);
         object.bvh.vertices_in_sphere(&object.mesh, center, r, &mut found);
         if found.is_empty() {
@@ -426,26 +492,22 @@ impl Stroke {
         }
         let sign = if s.invert { -1.0 } else { 1.0 };
         let hid = object.mesh.has_hidden();
-        let mut area_n = Vec3::ZERO;
-        let mut area_c = Vec3::ZERO;
-        let mut wsum = 0.0;
-        let mut weights: Vec<f32> = found
-            .iter()
-            .map(|&v| {
-                let p = object.mesh.position(v);
-                let w = s.falloff.weight(p.distance(center) / r);
-                area_n += Vec3::from_array(object.mesh.normals[v as usize]) * w;
-                area_c += p * w;
-                wsum += w;
-                w
-            })
-            .collect();
+        let (mut weights, mut area_n, mut area_c) = weigh(object, &found, center, r, &s);
+        if s.offset != 0.0 {
+            center += area_n.normalize_or(Vec3::Y) * (s.offset * r);
+            object.bvh.vertices_in_sphere(&object.mesh, center, r, &mut found);
+            if found.is_empty() {
+                self.found = found;
+                return;
+            }
+            (weights, area_n, area_c) = weigh(object, &found, center, r, &s);
+        }
         let area_n = area_n.normalize_or(Vec3::Y);
         if copy == 0 {
             self.last_normal = area_n;
         }
-        let area_c = if wsum > 0.0 { area_c / wsum } else { center };
-        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * self.jitter.1;
+        let compensation = if s.spacing_compensation { (s.spacing / 0.15).min(4.0) } else { 1.0 };
+        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * self.jitter.1 * self.dab_mul.1 * compensation;
         // The alpha lies in the plane of the area under the brush. Its top points along `alpha_up` (mirrored with the
         // copy), or with roll along the stroke's direction since the previous dab, then turns by `alpha_angle`.
         let prev = self.prev_dab[copy].replace(center);

@@ -74,8 +74,29 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         Some(Value::Bool(true)) => Some(0.25),
         Some(_) => Some(f(args, "dyntopo", 0.25, 0.05, 1.0)?),
     };
+    let jitter = match args.get("jitter") {
+        None | Some(Value::Null) => Value::Null,
+        Some(v @ Value::Object(o)) => {
+            if let Some(k) = o.keys().find(|k| !["position", "radius", "strength", "seed"].contains(&k.as_str())) {
+                return Err(bad(format!("unknown jitter field {k}; use position, radius, strength or seed")));
+            }
+            v.clone()
+        }
+        Some(_) => return Err(bad("jitter is an object with position, radius, strength and seed")),
+    };
+    let jitter_seed = match jitter.get("seed") {
+        None | Some(Value::Null) => 1,
+        Some(v) => v.as_u64().ok_or_else(|| bad("jitter.seed must be a non-negative integer"))?,
+    };
     Ok(BrushSettings {
         kind,
+        spacing_compensation: args.get("spacing_compensation").and_then(Value::as_bool).unwrap_or(false),
+        offset: f(args, "offset", 0.0, -1.0, 1.0)?,
+        jitter_position: f(&jitter, "position", 0.0, 0.0, 2.0)?,
+        jitter_radius: f(&jitter, "radius", 0.0, 0.0, 1.0)?,
+        jitter_strength: f(&jitter, "strength", 0.0, 0.0, 1.0)?,
+        jitter_seed,
+        snap_radius: f(args, "snap_radius", 0.0, 0.0, 1e4)?,
         radius: f(args, "radius", 0.2, 1e-5, 1e4)?,
         strength: f(args, "strength", 0.5, 0.0, 1.0)?,
         invert: args.get("invert").and_then(Value::as_bool).unwrap_or(false),
@@ -455,6 +476,10 @@ pub(crate) fn brush_props() -> Value {
     json!({
         "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none."},
         "height": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0."},
+        "spacing_compensation": {"type": "boolean", "default": false, "description": "Multiplies each dab's strength by spacing over 0.15 (at most 4), so the total effect along a path stays about the same whatever the spacing. Not used by grab, elastic, snake_hook or nudge."},
+        "offset": {"type": "number", "minimum": -1, "maximum": 1, "default": 0, "description": "Lifts each dab's centre along its area normal by offset times the radius before vertices are gathered: positive touches only what stands out (peaks first), negative reaches into hollows. Not used by the drag brushes."},
+        "jitter": {"type": "object", "properties": {"position": {"type": "number", "minimum": 0, "maximum": 2, "default": 0, "description": "Each dab moves along the surface by up to this many radii in a random direction."}, "radius": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Each dab's radius is scaled by 1 plus or minus up to this share."}, "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Each dab's strength is scaled by 1 plus or minus up to this share."}, "seed": {"type": "integer", "minimum": 0, "default": 1, "description": "Seed of the generator; the same seed repeats the same stroke."}}, "additionalProperties": false, "description": "Random variation per dab, deterministic for a seed and usable with any stroke mode including spray. Position is not used by snake_hook and nudge; strength is not used by snake_hook."},
+        "snap_radius": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "When above 0, each dab's radius (after pressure and jitter) is rounded to the nearest multiple of this in world units, at least one step."},
         "noise_scale": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Noise brush: feature size in world units; a fifth of the radius when 0."},
         "alpha": {"type": "string", "description": "A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp."},
         "alpha_angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "Turns the alpha, in degrees."},

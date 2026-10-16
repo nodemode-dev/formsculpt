@@ -165,6 +165,20 @@ pub struct BrushSettings {
     pub pressure_size: bool,
     /// Layer brush: the cap on each vertex's offset over one stroke, in world units (0 means a tenth of the radius).
     pub height: f32,
+    /// Multiplies each dab's strength by spacing over the default spacing (at most 4), so the deposit per length holds across spacings.
+    pub spacing_compensation: bool,
+    /// Lifts each dab's centre along its area normal by this many radii (positive touches peaks, negative reaches hollows).
+    pub offset: f32,
+    /// Jitter: each dab moves along the surface by up to this many radii in a random direction.
+    pub jitter_position: f32,
+    /// Jitter: each dab's radius is scaled by 1 plus or minus up to this share.
+    pub jitter_radius: f32,
+    /// Jitter: each dab's strength is scaled by 1 plus or minus up to this share.
+    pub jitter_strength: f32,
+    /// Jitter: the seed of the generator, so a stroke repeats exactly.
+    pub jitter_seed: u64,
+    /// Each dab's radius is rounded to a multiple of this in world units, at least one step (0 is off).
+    pub snap_radius: f32,
 }
 
 impl Default for BrushSettings {
@@ -191,6 +205,13 @@ impl Default for BrushSettings {
             pressure_strength: true,
             pressure_size: false,
             height: 0.0,
+            spacing_compensation: false,
+            offset: 0.0,
+            jitter_position: 0.0,
+            jitter_radius: 0.0,
+            jitter_strength: 0.0,
+            jitter_seed: 1,
+            snap_radius: 0.0,
         }
     }
 }
