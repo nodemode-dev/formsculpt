@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.48.0 · 2026-10-16
+
+### Added
+
+- Stroke options in `sculpt_stroke` and live strokes: `spacing_compensation` (the same deposit at any spacing), `offset` (the brush lifted above or into the surface), `jitter` (seeded position, radius and strength variation per dab) and `snap_radius` (radius in fixed steps).
+- Window brush fields: Spacing %, Even deposit, Brush offset %, Stroke jitter %, Snap radius, Constant 3D radius (the brush keeps its scene size when zooming) and Shared radius (off: each brush keeps its own radius and strength).
+- 858 interface strings in every language.
+
 ## 0.47.0 · 2026-10-16
 
 ### Added
