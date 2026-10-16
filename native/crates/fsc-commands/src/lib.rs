@@ -21,6 +21,7 @@ mod scene_cmds;
 mod sculpt_cmds;
 mod selection_cmds;
 mod sim_cmds;
+pub mod spotlight_cmds;
 mod texture_cmds;
 mod topo_cmds;
 mod uv_data_cmds;
@@ -93,6 +94,8 @@ pub struct Session {
     pub bridges: Vec<(fsc_core::ObjectId, String, std::time::SystemTime)>,
     /// The channel last copied with channel_copy.
     pub(crate) clipboard: Option<selection_cmds::Clip>,
+    /// The images held on the Spotlight with their placement over the view; not in the undo history or projects.
+    pub spotlight: spotlight_cmds::Spotlight,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -559,6 +562,72 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: texture_cmds::pick_schema,
         run: texture_cmds::pick_paint,
+    },
+    Command {
+        id: "paint.spotlight_add",
+        mcp: "spotlight_add",
+        group: Group::Paint,
+        label: "Spotlight Add Image",
+        description: "Spotlight: load an image (png_base64 or path) onto the Spotlight, an image dial held over the view for projection painting and sculpting from an image, as in ZBrush. Place it with center ([x, y] fractions of the view, y down), size (its height as a fraction of the view's height), angle (degrees clockwise), opacity, tile and flip; it becomes the active image. Holds up to 16 images. View state: not in the undo history and not saved in projects. Then spotlight_apply paints or sculpts through it.",
+        keys: &[],
+        hints: WRITE,
+        schema: spotlight_cmds::add_schema,
+        run: spotlight_cmds::spotlight_add,
+    },
+    Command {
+        id: "paint.spotlight_set",
+        mcp: "spotlight_set",
+        group: Group::Paint,
+        label: "Spotlight Dial",
+        description: "Spotlight: turn the dial for one image (the active one when image is omitted): move it (center), size it, turn it (angle), fade it (opacity), tile or flip it, or make it the active image (activate). Only the fields given change.",
+        keys: &[],
+        hints: WRITE,
+        schema: spotlight_cmds::set_schema,
+        run: spotlight_cmds::spotlight_set,
+    },
+    Command {
+        id: "paint.spotlight_list",
+        mcp: "spotlight_list",
+        group: Group::Paint,
+        label: "Spotlight Images",
+        description: "Spotlight: every image held with its id, name, pixel size, placement and which is active, and a revision that rises on every Spotlight change. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: no_args,
+        run: spotlight_cmds::spotlight_list,
+    },
+    Command {
+        id: "paint.spotlight_image",
+        mcp: "spotlight_image",
+        group: Group::Paint,
+        label: "Spotlight Image Pixels",
+        description: "Spotlight: one image's own pixels as a PNG (png_base64) with its placement, so a window can draw an image an agent loaded. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: spotlight_cmds::image_schema,
+        run: spotlight_cmds::spotlight_image,
+    },
+    Command {
+        id: "paint.spotlight_remove",
+        mcp: "spotlight_remove",
+        group: Group::Paint,
+        label: "Spotlight Clear Images",
+        description: "Spotlight: clear one image (the active one when image is omitted) or every image (all true) from the Spotlight; the last remaining image becomes active. The surface keeps whatever was painted or sculpted through them.",
+        keys: &[],
+        hints: WRITE,
+        schema: spotlight_cmds::remove_schema,
+        run: spotlight_cmds::spotlight_remove,
+    },
+    Command {
+        id: "paint.spotlight_apply",
+        mcp: "spotlight_apply",
+        group: Group::Paint,
+        label: "Spotlight Apply",
+        description: "Spotlight: paint or sculpt through a Spotlight image as seen from a camera (view_proj, a column-major view-projection matrix, with the view's width and height in pixels). Only surfaces that face the camera and are not hidden behind others take it, fading at grazing angles; masked and hidden areas are protected. mode paint lays the image's colour into vertex paint (the active paint layer when there is one) or, with target texture, into the object's texture per texel so the image is not limited by the mesh's resolution; mode sculpt raises the surface along its normals by the image's brightness (depth at full white as a fraction of the object's size, negative carves; mid is the brightness that stays put), recorded into the active sculpt layer when there is one. brush {center, radius} in view pixels limits it to one soft dab, as the window's Spotlight brush does while dragging; without it the whole image applies. strength and the image's opacity and alpha set the weight. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: spotlight_cmds::apply_schema,
+        run: spotlight_cmds::spotlight_apply,
     },
     Command {
         id: "paint.project",
