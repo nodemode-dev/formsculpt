@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.50.0 · 2026-10-16
+
+### Added
+
+- Alpha options in `sculpt_stroke` and live strokes: `alpha_stretch`, `alpha_rotation` (on top of the angle and roll), `alpha_tile`, `alpha_mid` (grey is zero, so draw, stamp, inflate and noise both raise and carve) and `alpha_invert`.
+- Window: Alpha stretch, Alpha rotation, Alpha tiles, Alpha mid % and Invert alpha; tool presets (the brush and its settings) saved, chosen and deleted from Tool preset; a brush cursor ring at the brush's real size.
+- 877 interface strings in every language.
+
 ## 0.49.0 · 2026-10-16
 
 ### Added
