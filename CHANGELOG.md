@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.37.0 · 2026-10-16
+
+### Added
+
+- `array_object` gains `scale_start` and `scale_end` (a scale ramp across the copies) and `jitter` {position, rotation, scale, seed} (deterministic random variation), for line, radial and curve arrays, linked copies included. Window: Last copy scale, Array jitter % and Jitter seed.
+- The falloff editor's points can be corners or smooth (Alt-click), as on curves; all corners behaves exactly as before.
+- 752 interface strings in every language.
+
 ## 0.36.0 · 2026-10-16
 
 ### Added
