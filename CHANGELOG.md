@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.55.0 · 2026-10-16
+
+### Changed
+
+- Window: a painted texture's roughness and metalness now drive Lit (PBR) shading per texel, and its opacity draws see-through; before, lit shading took them from the vertex paint. Emissive from a texture is not drawn yet.
+
 ## 0.54.0 · 2026-10-16
 
 ### Added
