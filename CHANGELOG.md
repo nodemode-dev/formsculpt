@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.42.0 · 2026-10-16
+
+### Added
+
+- `uv_pick` (the nearest UV point to a spot in the layout: vertex, UV, island) and `uv_path` (the shortest path along mesh edges between two vertices, kept inside one island when asked).
+- UV view: Alt-click pins points for Relax; Ctrl-click points of one island to build a path; Cut along path, Straighten path and Clear points.
+- 137 engine commands; 801 interface strings in every language.
+
 ## 0.41.0 · 2026-10-16
 
 ### Added
