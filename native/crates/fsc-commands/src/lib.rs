@@ -1,5 +1,6 @@
 mod arrange_cmds;
 mod bake_cmds;
+mod bridge_cmds;
 mod build_cmds;
 mod curve_cmds;
 mod cut_cmds;
@@ -406,6 +407,17 @@ pub static COMMANDS: &[Command] = &[
         hints: READ,
         schema: curve_cmds::border_schema,
         run: curve_cmds::from_border,
+    },
+    Command {
+        id: "build.curve_bridge",
+        mcp: "curve_bridge",
+        group: Group::Object,
+        label: "Curve Bridge",
+        description: "Loft a cross-section loop along a path into a new object (ZBrush's Curve Bridge and Snake Curve) as one undo step. from is the start loop: the longest border of a face set, either one face group (source group, with group) or the masked faces (source mask). With to (same shape) the bridge ends on that second loop; the path is the straight line between the two loop centres, or the curve through points (same formats as sample_curve). Without to the end section is the start loop scaled about its centre by end_scale (default 0.3), and the path runs along the loop's average normal for length world units (default four times the loop's mean radius) unless points is given: a tapering snake out of a mask or group border. Both loops are cut into samples points (8 to 256, default 48), made to correspond (same winding, start index turned to the nearest fit), and swept along the path on rotation-minimising frames in sections rings (4 to 512, default 48), so the bridge meets each loop exactly at its ends. The result is an open triangle tube with both ends left open. offset lifts the loops along the surface normal. Returns the new object plus sections and samples. Refuses with no_border when a loop is missing and with bad_arguments when the border is open, since a bridge needs closed loops.",
+        keys: &[],
+        hints: WRITE,
+        schema: bridge_cmds::bridge_schema,
+        run: bridge_cmds::curve_bridge,
     },
     Command {
         id: "build.lathe",

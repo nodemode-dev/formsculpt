@@ -35,7 +35,7 @@ fn list<'a>(args: &'a Value, key: &str) -> Result<&'a Vec<Value>, CommandError> 
     args.get(key).and_then(Value::as_array).ok_or_else(|| bad(format!("{key} is required")))
 }
 
-fn add(s: &mut Session, args: &Value, base: &str, mesh: Mesh, started: Instant) -> Value {
+pub(crate) fn add(s: &mut Session, args: &Value, base: &str, mesh: Mesh, started: Instant) -> Value {
     let base = args.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).unwrap_or(base);
     let name = s.scene.unique_name(base);
     let id = s.scene.add(name, mesh);
