@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.41.0 · 2026-10-16
+
+### Added
+
+- `uv_sew` (move one UV island onto another along their shared edges and weld them), `uv_cut` (cut a UV seam along a vertex path; a closed loop becomes a new island) and `uv_straighten` (lay a vertex chain on a straight UV line or an axis, spaced by 3D length, and relax the rest).
+- UV section: Sew to neighbour.
+- 135 engine commands; 785 interface strings in every language.
+
 ## 0.40.0 · 2026-10-16
 
 ### Added
