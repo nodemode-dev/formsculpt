@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.49.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.50.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -10,11 +10,11 @@ Generated from the engine's command registry (formsculptor 0.49.0) by `./formscu
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
-- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
-- Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
+- Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`, `hide_shape`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 
 ## get_engine_info
@@ -264,14 +264,17 @@ Round every edge sharper than `radius`: convex edges (a box's corners and rims),
 
 ## cut_shape
 
-Hard-surface cut: extrude a closed outline straight through the object along `direction` (the way it is seen) and take away what it covers, or with keep inside keep only that, as one undo step. Lasso a notch, a vent, a window or a bevelled slot; trim a block to a profile. round softens the cut edges. The object is remeshed watertight at resolution; points from pick or a view's frame give the outline.
+Hard-surface cut: extrude an outline (shape lasso, polygon, curve, path or line; see shape) straight through the object along `direction` (the way it is seen) and take away what it covers, or with keep inside keep only that, as one undo step. Lasso a notch, a vent, a window or a bevelled slot; trim a block to a profile. round softens the cut edges. The object is remeshed watertight at resolution; points from pick or a view's frame give the outline.
 
 - `direction`: array of number; required; The way the outline is seen, from the eye into the scene; the cut goes all the way through the object along it.
+- `flip`: boolean; default false; Invert the shape: swaps what keep outside and keep inside take.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `keep`: string (outside | inside); default "outside"; outside removes what the outline covers (a lasso cut, a hole, a notch); inside keeps only what it covers (trimming a block to a profile).
-- `outline`: array of array; required; A closed outline as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count).
+- `outline`: array of array; required; The shape's points as [x, y, z] world points, drawn as seen along direction (only their positions across the direction count). Three or more for lasso, polygon and curve, two or more for path, exactly two for line.
 - `resolution`: integer; default 192; range 32 to 320; Voxels along the longest side; the object is remeshed at this resolution.
 - `round`: number; default 0; range 0 to 100; Rounds the cut edges by this many world units; 0 leaves them sharp.
+- `shape`: string (lasso | polygon | curve | path | line); default "lasso"; lasso and polygon: the points are the corners of a closed outline. curve: control points of a closed smooth outline (Catmull-Rom, 8 samples per span). path: an open polyline thickened to stroke_width (keep bends gentle; a very sharp turn can overlap itself). line: the half-plane on the left of the direction from point 0 to point 1, in the plane across the view where the first axis runs to the screen's right and the second down for a front view (y down); it is clipped to the object's extent.
+- `stroke_width`: number; range -inf to 100000; path only: the stroke's full width in world units; 5 percent of the object's largest side when omitted.
 
 ## curve_tube
 
@@ -897,14 +900,16 @@ Mask outward from a point by distance measured along the surface, not through sp
 
 ## mask_shape
 
-Mask everything inside a box, ellipse or lasso drawn on a view, through the whole object (back faces too). Points are in the coordinates of the get_view picture for the same view, width and height, so you can look with get_view and then mask what you see. Adds to the mask by default. One undo step.
+Mask everything inside a box, ellipse, lasso, polygon, curve (closed smooth spline through control points), path (open polyline thickened by stroke_width pixels) or line (left half-plane, y down) drawn on a view, with flip to take the complement, through the whole object (back faces too). Points are in the coordinates of the get_view picture for the same view, width and height, so you can look with get_view and then mask what you see. Adds to the mask by default. One undo step.
 
+- `flip`: boolean; default false; Invert the inside test of any shape: everything the shape does not cover is taken.
 - `height`: integer; default 640; range 1 to 8192
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `op`: string (replace | add | subtract | intersect); default "add"; How the new mask meets the current one: replace it, add (keep the larger), subtract, or intersect (keep the smaller).
 - `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
 - `points`: array of array; required; Picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
-- `shape`: string (box | ellipse | lasso); default "box"; box and ellipse take two corner points; lasso takes the outline, three points or more.
+- `shape`: string (box | ellipse | lasso | polygon | curve | path | line); default "box"; box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline (a Catmull-Rom spline through them); path takes an open polyline of two points or more and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen).
+- `stroke_width`: number; default 20; range -inf to 8192; path only: the stroke's full width in screen pixels of the width by height picture.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
 - `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
 - `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
@@ -918,15 +923,17 @@ Make the masked faces a new face group. Face groups divide a mesh into named reg
 
 ## group_from_outline
 
-Slice Curve: put the faces inside a screen-space outline into a face group (a new one, or `group`), so a face group can be cut along a curve drawn on a view. A face is inside when the middle of the face falls inside the outline; the others keep their groups, and a mesh without groups starts with every face in group 0. Shape is lasso (the outline, three points or more) or box (two corners). Points are in the coordinates of the get_view picture for the same view, width and height, or give view_proj for the window's camera. With front_only true only faces turned toward the camera are taken, otherwise the outline goes through the whole object. Returns the group number used and how many faces went in; refuses with nothing_inside when no face is inside. One undo step.
+Slice Curve: put the faces inside a screen-space outline into a face group (a new one, or `group`), so a face group can be cut along a curve drawn on a view. A face is inside when the middle of the face falls inside the outline; the others keep their groups, and a mesh without groups starts with every face in group 0. Shape is lasso or polygon (the outline, three points or more), curve (a closed smooth spline through three or more control points), path (an open polyline thickened by stroke_width pixels), line (the left half-plane, y down), or box or ellipse (two corners); flip takes the complement. Points are in the coordinates of the get_view picture for the same view, width and height, or give view_proj for the window's camera. With front_only true only faces turned toward the camera are taken, otherwise the outline goes through the whole object. Returns the group number used and how many faces went in; refuses with nothing_inside when no face is inside. One undo step.
 
+- `flip`: boolean; default false; Invert the inside test of any shape.
 - `front_only`: boolean; default false; Take only faces that face the camera; false takes every face inside the outline, through the whole object.
 - `group`: integer; range 0 to inf; The group number to give the faces; one above the highest existing group when omitted.
 - `height`: integer; default 640; range 1 to 8192
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
 - `points`: array of array; required; The outline in picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
-- `shape`: string (box | lasso); default "lasso"; box takes two corner points; lasso takes the outline, three points or more.
+- `shape`: string (box | ellipse | lasso | polygon | curve | path | line); default "lasso"; box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline; path takes an open polyline and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen).
+- `stroke_width`: number; default 20; range -inf to 8192; path only: the stroke's full width in screen pixels of the width by height picture.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
 - `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
 - `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
@@ -974,6 +981,40 @@ Hide, show or isolate faces chosen by face group or by the mask, invert what is 
 - `group`: integer; range 0 to inf
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `point`: array of number; Choose the group of the face nearest this point.
+
+## hide_shape
+
+Hide (or with show true, show) the faces whose centre falls inside a shape drawn on a view, through the whole object. Takes the shape arguments of mask_shape (box, ellipse, lasso, polygon, curve, path, line, flip) and the same projection, but no op. Refuses with nothing_inside when no face is inside and with all_hidden when every face would be hidden. One undo step.
+
+- `flip`: boolean; default false; Invert the inside test of any shape: everything the shape does not cover is taken.
+- `height`: integer; default 640; range 1 to 8192
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
+- `points`: array of array; required; Picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
+- `shape`: string (box | ellipse | lasso | polygon | curve | path | line); default "box"; box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline (a Catmull-Rom spline through them); path takes an open polyline of two points or more and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen).
+- `show`: boolean; default false; Show the faces inside the shape again instead of hiding them.
+- `stroke_width`: number; default 20; range -inf to 8192; path only: the stroke's full width in screen pixels of the width by height picture.
+- `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
+- `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
+- `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
+- `yaw`: number; range -360 to 360; Degrees; overrides view, as in get_view.
+
+## split_shape
+
+Move the faces whose centre falls inside a shape drawn on a view into a new object named after the original plus ' split', leaving the rest in place. No remesh: the cut edge is open on both pieces unless close is true, which fills the holes on both. Takes the shape arguments of mask_shape (box, ellipse, lasso, polygon, curve, path, line, flip) and the same projection, but no op. Refuses when nothing or everything is inside. One undo step.
+
+- `close`: boolean; default false; Fill the holes along the cut on both pieces; false leaves the cut edge open.
+- `flip`: boolean; default false; Invert the inside test of any shape: everything the shape does not cover is taken.
+- `height`: integer; default 640; range 1 to 8192
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
+- `points`: array of array; required; Picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
+- `shape`: string (box | ellipse | lasso | polygon | curve | path | line); default "box"; box and ellipse take two corner points; lasso and polygon take the outline (polygon is clicked corners), three points or more; curve takes three or more control points of a closed smooth outline (a Catmull-Rom spline through them); path takes an open polyline of two points or more and is inside within stroke_width / 2 pixels of it; line takes two points and is inside the half-plane on the left of the direction from point 0 to point 1 in picture coordinates with y down (travelling right, the inside is above the line on screen).
+- `stroke_width`: number; default 20; range -inf to 8192; path only: the stroke's full width in screen pixels of the width by height picture.
+- `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
+- `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
+- `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
+- `yaw`: number; range -360 to 360; Degrees; overrides view, as in get_view.
 
 ## subdivide
 
@@ -1036,10 +1077,12 @@ Move an object's vertices along their normals onto another object's surface (wit
 
 ## extract_mask
 
-Make a new closed object from the masked part of an object, thickened along its normals: a shell for clothing, armour or straps. The original is unchanged.
+Make a new closed object from the masked part of an object. mode shell (default) thickens the patch outward along its normals for clothing, armour or straps; balloon pushes a copy of the patch out into a rounded dome (full thickness in the middle, none at the border); extrude moves the patch straight along its average normal with side walls; splat is a shell with a flat back on the patch's average plane; project flattens the patch onto the plane perpendicular to direction and extrudes it, a flat badge in the mask's outline. The original is unchanged.
 
+- `direction`: array of number; project only: the projection direction as [x, y, z], not zero; the patch's average normal when omitted.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
-- `thickness`: number; range -10000 to 10000; Shell thickness along the surface normal, in world units; 2 percent of the object's size when omitted. Negative grows inward.
+- `mode`: string (shell | balloon | extrude | splat | project); default "shell"; shell: the patch and a copy offset outward along the normals, joined at the border. balloon: a copy of the patch pushed out along the normals by thickness times a dome profile (1 in the middle, 0 at the border, from the distance along the surface to the border), welded to the original border, with the unmoved patch as the back. extrude: the patch moved straight along its area-weighted average normal by thickness, with side walls. splat: like shell, but the back is flat, on the plane perpendicular to the patch's average normal touching its lowest point (shell is already outward-only with its back on the surface), and the front is the surface offset by thickness. project: the patch flattened onto the plane through its centroid perpendicular to direction, then extruded by thickness along it, a flat badge in the mask's outline.
+- `thickness`: number; range -10000 to 10000; Thickness in world units (a shell's offset along the surface normal, a balloon's dome height, an extrusion's or badge's depth); 2 percent of the object's size when omitted. Negative grows the other way.
 
 ## extrude_mask
 
