@@ -750,5 +750,10 @@
  "Array jitter %": "阵列随机偏移 %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "衰减：上下拖动点；Alt 点击切换尖角或平滑点。",
  "Jitter seed": "随机种子",
- "Last copy scale": "最后一个副本的缩放"
+ "Last copy scale": "最后一个副本的缩放",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "在对象上拖出一条线；线左侧的面成为新分组（按 Ctrl 取右侧）",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "在对象上拖出一条线；线左侧的部分被切除（按 Ctrl 取右侧）",
+ "Group From Outline": "从轮廓创建分组",
+ "Slice curve": "切分曲线",
+ "Trim curve": "修剪曲线"
 }

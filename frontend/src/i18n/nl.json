@@ -750,5 +750,10 @@
  "Array jitter %": "Reeksvariatie %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Afloop: sleep een punt omhoog of omlaag; Alt-klik voor een hoek of een glad punt.",
  "Jitter seed": "Variatiezaad",
- "Last copy scale": "Schaal van de laatste kopie"
+ "Last copy scale": "Schaal van de laatste kopie",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Sleep een lijn over het object; de vlakken links ervan worden een nieuwe groep (Ctrl voor rechts)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Sleep een lijn over het object; het deel links ervan wordt weggesneden (Ctrl voor rechts)",
+ "Group From Outline": "Groep uit omtrek",
+ "Slice curve": "Snijcurve",
+ "Trim curve": "Bijsnijcurve"
 }

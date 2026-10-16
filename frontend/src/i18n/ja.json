@@ -750,5 +750,10 @@
  "Array jitter %": "配列のばらつき %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "フォールオフ: ポイントを上下にドラッグ。Alt クリックで角とスムーズを切り替え。",
  "Jitter seed": "ばらつきのシード",
- "Last copy scale": "最後のコピーのスケール"
+ "Last copy scale": "最後のコピーのスケール",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "オブジェクトを横切る線をドラッグします。線の左側の面が新しいグループになります（Ctrl で右側）",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "オブジェクトを横切る線をドラッグします。線の左側の部分が切り取られます（Ctrl で右側）",
+ "Group From Outline": "輪郭からグループ",
+ "Slice curve": "スライスカーブ",
+ "Trim curve": "トリムカーブ"
 }

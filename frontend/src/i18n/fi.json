@@ -750,5 +750,10 @@
  "Array jitter %": "Monistuksen hajonta %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Vaimeneminen: vedä pistettä ylös tai alas; Alt-napsauta kulmaksi tai pyöreäksi pisteeksi.",
  "Jitter seed": "Hajonnan siemen",
- "Last copy scale": "Viimeisen kopion mittakaava"
+ "Last copy scale": "Viimeisen kopion mittakaava",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Vedä viiva objektin yli; sen vasemmalla puolella olevat pinnat muodostavat uuden ryhmän (Ctrl oikealle)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Vedä viiva objektin yli; sen vasemmalla puolella oleva osa leikataan pois (Ctrl oikealle)",
+ "Group From Outline": "Ryhmä ääriviivasta",
+ "Slice curve": "Jakokäyrä",
+ "Trim curve": "Leikkauskäyrä"
 }

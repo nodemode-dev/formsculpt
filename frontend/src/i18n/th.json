@@ -750,5 +750,10 @@
  "Array jitter %": "ความกระจายของอาร์เรย์ %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "การลดหลั่น: ลากจุดขึ้นหรือลง Alt-คลิกเพื่อสลับมุมหรือจุดโค้ง",
  "Jitter seed": "ค่าเริ่มต้นการกระจาย",
- "Last copy scale": "ขนาดของสำเนาสุดท้าย"
+ "Last copy scale": "ขนาดของสำเนาสุดท้าย",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "ลากเส้นผ่านวัตถุ หน้าทางซ้ายของเส้นจะเป็นกลุ่มใหม่ (Ctrl สำหรับด้านขวา)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "ลากเส้นผ่านวัตถุ ส่วนทางซ้ายของเส้นจะถูกตัดออก (Ctrl สำหรับด้านขวา)",
+ "Group From Outline": "กลุ่มจากเส้นขอบ",
+ "Slice curve": "เส้นโค้งแบ่งกลุ่ม",
+ "Trim curve": "เส้นโค้งตัดแต่ง"
 }

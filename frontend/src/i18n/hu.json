@@ -750,5 +750,10 @@
  "Array jitter %": "Sokszorozás szórása %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Lecsengés: húzz egy pontot fel vagy le; Alt-kattintás sarokért vagy sima pontért.",
  "Jitter seed": "Szórás kezdőértéke",
- "Last copy scale": "Utolsó másolat mérete"
+ "Last copy scale": "Utolsó másolat mérete",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Húzz egy vonalat az objektumon át; a tőle balra eső lapok új csoportot alkotnak (Ctrl a jobb oldalhoz)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Húzz egy vonalat az objektumon át; a tőle balra eső rész levágódik (Ctrl a jobb oldalhoz)",
+ "Group From Outline": "Csoport körvonalból",
+ "Slice curve": "Szeletelő görbe",
+ "Trim curve": "Vágó görbe"
 }

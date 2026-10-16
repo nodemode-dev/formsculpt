@@ -750,5 +750,10 @@
  "Array jitter %": "Radvariation %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Avtoning: dra en punkt upp eller ned; Alt-klicka för hörn eller mjuk punkt.",
  "Jitter seed": "Variationsfrö",
- "Last copy scale": "Skala för sista kopian"
+ "Last copy scale": "Skala för sista kopian",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Dra en linje över objektet; ytorna till vänster om den blir en ny grupp (Ctrl för höger)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Dra en linje över objektet; delen till vänster om den skärs bort (Ctrl för höger)",
+ "Group From Outline": "Grupp från kontur",
+ "Slice curve": "Delningskurva",
+ "Trim curve": "Trimkurva"
 }

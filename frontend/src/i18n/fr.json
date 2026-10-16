@@ -750,5 +750,10 @@
  "Array jitter %": "Variation du réseau %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Atténuation : faites glisser un point vers le haut ou le bas ; Alt-clic pour un coin ou un point lisse.",
  "Jitter seed": "Graine de variation",
- "Last copy scale": "Échelle de la dernière copie"
+ "Last copy scale": "Échelle de la dernière copie",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Tracez une ligne sur l'objet ; les faces à sa gauche forment un nouveau groupe (Ctrl pour la droite)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Tracez une ligne sur l'objet ; la partie à sa gauche est coupée (Ctrl pour la droite)",
+ "Group From Outline": "Groupe depuis un contour",
+ "Slice curve": "Courbe de découpe de groupe",
+ "Trim curve": "Courbe de rognage"
 }

@@ -750,5 +750,10 @@
  "Array jitter %": "Độ xáo trộn mảng %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Suy giảm: kéo một điểm lên hoặc xuống; Alt-nhấp để chuyển góc hoặc điểm mềm.",
  "Jitter seed": "Hạt giống xáo trộn",
- "Last copy scale": "Tỉ lệ bản sao cuối"
+ "Last copy scale": "Tỉ lệ bản sao cuối",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Kéo một đường ngang qua đối tượng; các mặt bên trái đường thành nhóm mới (Ctrl cho bên phải)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Kéo một đường ngang qua đối tượng; phần bên trái đường bị cắt bỏ (Ctrl cho bên phải)",
+ "Group From Outline": "Nhóm từ đường viền",
+ "Slice curve": "Đường cong chia nhóm",
+ "Trim curve": "Đường cong cắt tỉa"
 }

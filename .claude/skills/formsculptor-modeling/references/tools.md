@@ -14,7 +14,7 @@ Generated from the engine's command registry (formsculptor 0.37.0) by `./formscu
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
-- Face groups: `group_from_mask`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
+- Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`
 
 ## get_engine_info
@@ -765,6 +765,22 @@ Mask everything inside a box, ellipse or lasso drawn on a view, through the whol
 Make the masked faces a new face group. Face groups divide a mesh into named regions (a head's eyes, lips and ears; a robot's panels) to mask, hide or isolate in one step. Groups survive strokes, masks and subdivision levels; remesh, booleans and dynamic topology drop them. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+## group_from_outline
+
+Slice Curve: put the faces inside a screen-space outline into a face group (a new one, or `group`), so a face group can be cut along a curve drawn on a view. A face is inside when the middle of the face falls inside the outline; the others keep their groups, and a mesh without groups starts with every face in group 0. Shape is lasso (the outline, three points or more) or box (two corners). Points are in the coordinates of the get_view picture for the same view, width and height, or give view_proj for the window's camera. With front_only true only faces turned toward the camera are taken, otherwise the outline goes through the whole object. Returns the group number used and how many faces went in; refuses with nothing_inside when no face is inside. One undo step.
+
+- `front_only`: boolean; default false; Take only faces that face the camera; false takes every face inside the outline, through the whole object.
+- `group`: integer; range 0 to inf; The group number to give the faces; one above the highest existing group when omitted.
+- `height`: integer; default 640; range 1 to 8192
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pitch`: number; range -90 to 90; Degrees; overrides view, as in get_view.
+- `points`: array of array; required; The outline in picture coordinates as [x, y], x from 0 (left) to 1 (right), y from 0 (top) to 1 (bottom), in the picture get_view returns for the same view, width and height.
+- `shape`: string (box | lasso); default "lasso"; box takes two corner points; lasso takes the outline, three points or more.
+- `view`: string (three_quarter | front | back | right | left | top | bottom); default "front"; The get_view camera the points refer to (framing every visible object, as get_view does by default).
+- `view_proj`: array of number; Instead of a view: a column-major view-projection matrix (the window's camera); the points are then that view's picture coordinates.
+- `width`: integer; default 640; range 1 to 8192; The picture's width, for its aspect; as in get_view.
+- `yaw`: number; range -360 to 360; Degrees; overrides view, as in get_view.
 
 ## group_paint
 

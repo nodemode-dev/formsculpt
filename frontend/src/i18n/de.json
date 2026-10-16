@@ -750,5 +750,10 @@
  "Array jitter %": "Array-Streuung %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Abfall: Punkt nach oben oder unten ziehen; Alt-Klick für Ecke oder glatten Punkt.",
  "Jitter seed": "Streuungs-Startwert",
- "Last copy scale": "Skalierung der letzten Kopie"
+ "Last copy scale": "Skalierung der letzten Kopie",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Eine Linie über das Objekt ziehen; die Flächen links davon werden eine neue Gruppe (Strg für rechts)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Eine Linie über das Objekt ziehen; der Teil links davon wird abgeschnitten (Strg für rechts)",
+ "Group From Outline": "Gruppe aus Umriss",
+ "Slice curve": "Schnittkurve",
+ "Trim curve": "Trimmkurve"
 }

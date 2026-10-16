@@ -750,5 +750,10 @@
  "Array jitter %": "Rozrzut szyku %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Spadek: przeciągnij punkt w górę lub w dół; Alt-kliknij dla narożnika lub gładkiego punktu.",
  "Jitter seed": "Ziarno rozrzutu",
- "Last copy scale": "Skala ostatniej kopii"
+ "Last copy scale": "Skala ostatniej kopii",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Przeciągnij linię przez obiekt; ściany po jej lewej stronie tworzą nową grupę (Ctrl dla prawej)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Przeciągnij linię przez obiekt; część po jej lewej stronie zostanie odcięta (Ctrl dla prawej)",
+ "Group From Outline": "Grupa z obrysu",
+ "Slice curve": "Krzywa podziału",
+ "Trim curve": "Krzywa przycinania"
 }

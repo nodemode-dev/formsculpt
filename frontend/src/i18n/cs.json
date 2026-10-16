@@ -750,5 +750,10 @@
  "Array jitter %": "Rozptyl pole %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Útlum: táhněte bod nahoru nebo dolů; Alt-klik přepne roh nebo hladký bod.",
  "Jitter seed": "Semínko rozptylu",
- "Last copy scale": "Měřítko poslední kopie"
+ "Last copy scale": "Měřítko poslední kopie",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Táhněte čáru přes objekt; plochy vlevo od ní tvoří novou skupinu (Ctrl pro pravou)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Táhněte čáru přes objekt; část vlevo od ní se odřízne (Ctrl pro pravou)",
+ "Group From Outline": "Skupina z obrysu",
+ "Slice curve": "Dělicí křivka",
+ "Trim curve": "Ořezová křivka"
 }

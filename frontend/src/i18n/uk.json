@@ -750,5 +750,10 @@
  "Array jitter %": "Розкид масиву %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Спад: тягніть точку вгору чи вниз; Alt-клацання робить кут або гладку точку.",
  "Jitter seed": "Зерно розкиду",
- "Last copy scale": "Масштаб останньої копії"
+ "Last copy scale": "Масштаб останньої копії",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Проведіть лінію через об'єкт; грані ліворуч від неї стануть новою групою (з Ctrl праворуч)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Проведіть лінію через об'єкт; частину ліворуч від неї буде відрізано (з Ctrl праворуч)",
+ "Group From Outline": "Група за контуром",
+ "Slice curve": "Крива розділення",
+ "Trim curve": "Крива обрізання"
 }

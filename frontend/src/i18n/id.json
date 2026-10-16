@@ -750,5 +750,10 @@
  "Array jitter %": "Acakan larik %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Falloff: seret titik ke atas atau bawah; Alt-klik untuk sudut atau titik halus.",
  "Jitter seed": "Benih acakan",
- "Last copy scale": "Skala salinan terakhir"
+ "Last copy scale": "Skala salinan terakhir",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Seret garis melintasi objek; permukaan di sebelah kirinya menjadi grup baru (Ctrl untuk kanan)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Seret garis melintasi objek; bagian di sebelah kirinya dipotong (Ctrl untuk kanan)",
+ "Group From Outline": "Grup dari Garis Luar",
+ "Slice curve": "Kurva iris",
+ "Trim curve": "Kurva pangkas"
 }

@@ -750,5 +750,10 @@
  "Array jitter %": "배열 흩뿌림 %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "감쇠: 점을 위아래로 드래그하고, Alt 클릭으로 모서리와 부드러운 점을 전환합니다.",
  "Jitter seed": "흩뿌림 시드",
- "Last copy scale": "마지막 복사본 크기"
+ "Last copy scale": "마지막 복사본 크기",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "개체를 가로지르는 선을 드래그하세요. 선 왼쪽의 면이 새 그룹이 됩니다(오른쪽은 Ctrl)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "개체를 가로지르는 선을 드래그하세요. 선 왼쪽 부분이 잘려 나갑니다(오른쪽은 Ctrl)",
+ "Group From Outline": "윤곽에서 그룹",
+ "Slice curve": "슬라이스 커브",
+ "Trim curve": "트림 커브"
 }

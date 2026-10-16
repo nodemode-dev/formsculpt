@@ -750,5 +750,10 @@
  "Array jitter %": "Dizi sapması %",
  "Falloff: drag a point up or down; Alt-click it for a corner or a smooth point.": "Azalma: bir noktayı yukarı veya aşağı sürükleyin; köşe veya yumuşak nokta için Alt-tıklayın.",
  "Jitter seed": "Sapma tohumu",
- "Last copy scale": "Son kopya ölçeği"
+ "Last copy scale": "Son kopya ölçeği",
+ "Drag a line across the object; the faces on its left become a new group (Ctrl for the right)": "Nesnenin üzerinden bir çizgi sürükleyin; solundaki yüzler yeni bir grup olur (sağ için Ctrl)",
+ "Drag a line across the object; the part on its left is cut away (Ctrl for the right)": "Nesnenin üzerinden bir çizgi sürükleyin; solundaki kısım kesilip atılır (sağ için Ctrl)",
+ "Group From Outline": "Dış Hattan Grup",
+ "Slice curve": "Dilim eğrisi",
+ "Trim curve": "Kırpma eğrisi"
 }
