@@ -27,6 +27,7 @@ mod uv_pick_cmds;
 mod uv_relax_cmds;
 mod uv_seam_cmds;
 mod uv_straighten_cmds;
+mod udim_cmds;
 mod vdm_cmds;
 mod view_cmds;
 
@@ -899,11 +900,44 @@ pub static COMMANDS: &[Command] = &[
         run: uv_seam_cmds::uv_cut,
     },
     Command {
+        id: "paint.uv_tiles",
+        mcp: "uv_tiles",
+        group: Group::Paint,
+        label: "UV Tiles",
+        description: "List the UDIM tiles an unwrapped object's UV islands sit in. A tile is numbered 1001 + floor(u) + 10 * floor(v) for u from 0 to 10 and v from 0 up, and an island belongs to the tile holding the centre of its UV bounding box. Returns tiles (tile, u, v, the island numbers, faces and coverage, the share of the tile's area covered by UV triangles), crossing (islands whose UVs span more than one tile) and outside (islands with a centre at u below 0, u of 10 or more, or v below 0). Refuses with no_uvs when the object is not unwrapped. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: udim_cmds::uv_tiles_schema,
+        run: udim_cmds::uv_tiles,
+    },
+    Command {
+        id: "paint.uv_to_tile",
+        mcp: "uv_to_tile",
+        group: Group::Paint,
+        label: "Move UVs to Tile",
+        description: "Move UV islands into a UDIM tile (tile, 1001 to 1100). Each chosen island (islands, numbered as get_uv_layout and uv_tiles number them; every island when omitted) moves by a whole number of tiles so its centre lands in the tile, keeping its position inside its tile. Returns moved (islands that actually shifted), the island count and the object summary. Refuses with no_uvs when the object is not unwrapped. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: udim_cmds::uv_to_tile_schema,
+        run: udim_cmds::uv_to_tile,
+    },
+    Command {
+        id: "paint.uv_pack_udim",
+        mcp: "uv_pack_udim",
+        group: Group::Paint,
+        label: "Pack UVs into Tiles",
+        description: "Spread UV islands over UDIM tiles and pack each tile's islands into its tile, keeping their shapes, turns and relative sizes within a tile. By group (the default) gives each face group one tile, in ascending group order, and an island goes to the group most of its faces belong to; by island shares the islands out over tiles (tiles, or 0 for enough that each holds about the UV area of the largest island) balancing UV area, largest first. Tiles start at start (default 1001), run along u and wrap to the next row after ten. Returns tiles (tile, island count, coverage) and the island total. Refuses with no_uvs, with no_groups for by group on an object without face groups, and with bad_arguments when the tiles would pass 1100. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: udim_cmds::uv_pack_udim_schema,
+        run: udim_cmds::uv_pack_udim,
+    },
+    Command {
         id: "paint.bake",
         mcp: "bake_maps",
         group: Group::Paint,
         label: "Bake Maps",
-        description: "Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.",
+        description: "Bake an unwrapped object's maps: colour and roughness-metal from paint, a tangent-space normal map and a 32-bit displacement map from the detail of its highest subdivision level (or another object with source_id), by casting along each texel's normal. The maps go into GLB export with UVs and tangents, and into PNG and EXR files when path is given. With tile (1001 to 1100) only that UDIM tile is baked, as if it were the unit square. With udim true (path needed) every tile that holds UV islands (see uv_tiles) is baked and written in the Mari naming, NAME_color.1001.png and so on, and the reply lists tiles; the object keeps the maps of tile 1001 (or of the given tile, or of the first tile) for GLB export, and covered and hit describe that tile. Typical flow: multires_set_level 0, uv_unwrap, bake_maps, export_mesh to .glb.",
         keys: &[],
         hints: WRITE,
         schema: bake_cmds::bake_schema,

@@ -245,7 +245,9 @@ pub(crate) fn bake_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "The object to bake onto (it needs UVs from uv_unwrap); the active object when omitted."},
             "size": {"type": "integer", "enum": [256, 512, 1024, 2048, 4096], "default": 1024, "description": "Texture width and height in pixels."},
             "source_id": {"type": "integer", "minimum": 1, "description": "Bake detail from this object (a high-resolution sculpt) instead; by default the object's highest subdivision level, or the object itself."},
-            "path": {"type": "string", "minLength": 1, "description": "A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into."}
+            "path": {"type": "string", "minLength": 1, "description": "A folder to also write NAME_color.png, NAME_roughness_metal.png, NAME_normal.png and NAME_displacement.exr into (NAME_color.1001.png and so on when tile or udim is set)."},
+            "tile": {"type": "integer", "minimum": 1001, "maximum": 1100, "description": "Bake only this UDIM tile: the UVs are shifted by minus the tile's offset so the tile fills the texture, and texels outside the tile are left uncovered."},
+            "udim": {"type": "boolean", "default": false, "description": "Bake every UDIM tile that holds UV islands (as uv_tiles lists them), one set of maps per tile, written as NAME_color.1001.png, NAME_roughness_metal.1001.png, NAME_normal.1001.png, NAME_displacement.1001.exr (and NAME_emissive.1001.png when it glows). Needs path. Not together with tile."}
         },
         "required": [],
         "additionalProperties": false
@@ -261,6 +263,23 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     let started = Instant::now();
     let object = s.scene.get(id).expect("checked");
     if object.mesh.uvs.is_empty() {
+        return Err(CommandError::new("no_uvs", "the object has no UVs; run uv_unwrap first (UVs are cleared by topology changes)"));
+    }
+    let tile = match args.get("tile") {
+        None | Some(Value::Null) => None,
+        Some(v) => Some(v.as_u64().filter(|n| (1001..=1100).contains(n)).ok_or_else(|| bad("tile is a tile number, 1001 to 1100"))? as u32),
+    };
+    let udim = match args.get("udim") {
+        None | Some(Value::Null) => false,
+        Some(v) => v.as_bool().ok_or_else(|| bad("udim is true or false"))?,
+    };
+    if udim && tile.is_some() {
+        return Err(bad("give tile or udim, not both"));
+    }
+    if udim && args.get("path").and_then(Value::as_str).is_none() {
+        return Err(bad("udim needs path, the folder to write the tiles into"));
+    }
+    if (udim || tile.is_some()) && object.mesh.uvs.len() != object.mesh.indices.len() {
         return Err(CommandError::new("no_uvs", "the object has no UVs; run uv_unwrap first (UVs are cleared by topology changes)"));
     }
     let source_id = args.get("source_id").and_then(Value::as_u64).map(|x| x as u32);
@@ -281,43 +300,78 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
         },
     };
     let max_dist = object.mesh.bounds().extent().length() * 0.05;
-    let ex = fsc_paint::expand(&object.mesh);
-    let baked = fsc_paint::bake(&object.mesh, &ex, source_mesh, source_bvh, size, max_dist, 6);
-    let png = |px: &[[u8; 4]]| fsc_paint::png_rgba(size, px).map_err(|e| CommandError::new("encode_failed", e));
-    let maps = Maps {
-        size,
-        color_png: png(&baked.color)?,
-        mr_png: png(&baked.mr)?,
-        normal_png: png(&baked.normal)?,
-        displacement_exr: fsc_paint::exr_float(size, &baked.displacement),
-        emissive_png: if baked.glows { png(&baked.emissive)? } else { Vec::new() },
-        source: source_name.clone(),
+    let jobs: Vec<Option<u32>> = if udim {
+        let tiles = crate::udim_cmds::occupied_tiles(&object.mesh);
+        if tiles.is_empty() {
+            return Err(CommandError::new("no_tiles", "no UV island has its centre inside a UDIM tile (u 0 to 10, v 0 and up); see uv_tiles"));
+        }
+        tiles.into_iter().map(Some).collect()
+    } else {
+        vec![tile]
     };
-    let (lo, hi) = baked.displacement.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(a, b), &d| (a.min(d), b.max(d)));
+    let dir = args.get("path").and_then(Value::as_str);
+    let stem: String = object.name.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
+    let png = |px: &[[u8; 4]]| fsc_paint::png_rgba(size, px).map_err(|e| CommandError::new("encode_failed", e));
+    let texels = size * size;
+    let mut kept: Option<(Maps, f32, f32, [f32; 2])> = None;
     let mut written = Vec::new();
-    if let Some(dir) = args.get("path").and_then(Value::as_str) {
-        let stem: String = object.name.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
-        for (suffix, bytes) in [("color.png", &maps.color_png), ("roughness_metal.png", &maps.mr_png), ("normal.png", &maps.normal_png), ("displacement.exr", &maps.displacement_exr), ("emissive.png", &maps.emissive_png)] {
-            if bytes.is_empty() {
-                continue;
+    for job in &jobs {
+        let shifted;
+        let mesh = match job {
+            Some(t) if *t != 1001 => {
+                shifted = crate::udim_cmds::shifted_to_unit(&object.mesh, *t);
+                &shifted
             }
-            let file = Path::new(dir).join(format!("{stem}_{suffix}"));
-            std::fs::write(&file, bytes).map_err(|e| CommandError::new("io_failed", format!("could not write {}: {e}", file.display())))?;
-            written.push(file.display().to_string());
+            _ => &object.mesh,
+        };
+        let ex = fsc_paint::expand(mesh);
+        let baked = fsc_paint::bake(mesh, &ex, source_mesh, source_bvh, size, max_dist, 6);
+        let maps = Maps {
+            size,
+            color_png: png(&baked.color)?,
+            mr_png: png(&baked.mr)?,
+            normal_png: png(&baked.normal)?,
+            displacement_exr: fsc_paint::exr_float(size, &baked.displacement),
+            emissive_png: if baked.glows { png(&baked.emissive)? } else { Vec::new() },
+            source: source_name.clone(),
+        };
+        let (lo, hi) = baked.displacement.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(a, b), &d| (a.min(d), b.max(d)));
+        if let Some(dir) = dir {
+            for (name, ext, bytes) in [("color", "png", &maps.color_png), ("roughness_metal", "png", &maps.mr_png), ("normal", "png", &maps.normal_png), ("displacement", "exr", &maps.displacement_exr), ("emissive", "png", &maps.emissive_png)] {
+                if bytes.is_empty() {
+                    continue;
+                }
+                let leaf = match job {
+                    Some(t) => format!("{stem}_{name}.{t}.{ext}"),
+                    None => format!("{stem}_{name}.{ext}"),
+                };
+                let file = Path::new(dir).join(leaf);
+                std::fs::write(&file, bytes).map_err(|e| CommandError::new("io_failed", format!("could not write {}: {e}", file.display())))?;
+                written.push(file.display().to_string());
+            }
+        }
+        let covered = baked.covered as f32 / texels as f32;
+        let hit = if baked.covered > 0 { baked.hits as f32 / baked.covered as f32 } else { 0.0 };
+        if kept.is_none() || *job == Some(1001) {
+            kept = Some((maps, covered, hit, [lo, hi]));
         }
     }
-    let texels = size * size;
+    let (maps, covered, hit, range) = kept.expect("at least one tile");
     let object = s.scene.get_mut(id).expect("checked");
     object.maps = Some(maps);
     object.revision += 1;
-    Ok(json!({
+    let mut out = json!({
         "id": id,
         "size": size,
         "source": source_name,
-        "covered": baked.covered as f32 / texels as f32,
-        "hit": if baked.covered > 0 { baked.hits as f32 / baked.covered as f32 } else { 0.0 },
-        "displacement_range": [lo, hi],
+        "covered": covered,
+        "hit": hit,
+        "displacement_range": range,
         "files": written,
         "ms": started.elapsed().as_millis(),
-    }))
+    });
+    if udim || tile.is_some() {
+        out["tiles"] = json!(jobs.iter().flatten().collect::<Vec<_>>());
+    }
+    Ok(out)
 }
