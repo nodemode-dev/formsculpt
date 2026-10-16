@@ -186,6 +186,41 @@ impl Bvh {
         best
     }
 
+    /// The visible triangles whose bounding box reaches within `radius` of `center`.
+    pub fn triangles_in_sphere(&self, mesh: &Mesh, center: Vec3, radius: f32, out: &mut Vec<u32>) {
+        out.clear();
+        if self.nodes.is_empty() {
+            return;
+        }
+        let r2 = radius * radius;
+        let mut stack = vec![0usize];
+        while let Some(ni) = stack.pop() {
+            let node = &self.nodes[ni];
+            if node.bounds.distance_sq_to(center) > r2 {
+                continue;
+            }
+            if Bvh::is_leaf(node) {
+                for &t in &self.tris[node.first as usize..(node.first + node.count) as usize] {
+                    if mesh.face_hidden(t as usize) {
+                        continue;
+                    }
+                    let mut b = Aabb::EMPTY;
+                    for v in mesh.triangle(t as usize) {
+                        b.grow(mesh.position(v));
+                    }
+                    if b.distance_sq_to(center) <= r2 {
+                        out.push(t);
+                    }
+                }
+            } else {
+                stack.push(node.first as usize);
+                stack.push(node.first as usize + 1);
+            }
+        }
+        out.sort_unstable();
+        out.dedup();
+    }
+
     pub fn vertices_in_sphere(&self, mesh: &Mesh, center: Vec3, radius: f32, out: &mut Vec<u32>) {
         out.clear();
         if self.nodes.is_empty() {

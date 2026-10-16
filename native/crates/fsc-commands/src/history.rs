@@ -19,6 +19,10 @@ pub enum Edit {
     LayerStroke { label: String, object: ObjectId, layer: usize, edit: VertexEdit },
     /// A paint layer step (add, delete, settings, merge, flatten): the whole stack and the composite swap back.
     PaintLayers { label: String, object: ObjectId, layers: PaintLayers, paint: Vec<Paint> },
+    /// The texels one texture stroke or fill changed.
+    Texels { label: String, object: ObjectId, edit: fsc_core::TextureEdit },
+    /// The texture made or removed: the other state swaps back.
+    TextureState { label: String, object: ObjectId, texture: Option<fsc_core::Texture> },
     /// A material change (subsurface, transmission): the previous material swaps back.
     Material { object: ObjectId, material: fsc_core::Material },
     /// Several channels (groups, mask, paint, sculpt layers, UVs) swapped as one step: selection set restores, pastes, clears.
@@ -35,6 +39,8 @@ impl Edit {
             | Edit::LayerState { label, .. }
             | Edit::LayerStroke { label, .. }
             | Edit::PaintLayers { label, .. }
+            | Edit::Texels { label, .. }
+            | Edit::TextureState { label, .. }
             | Edit::Channels { label, .. } => label.clone(),
             Edit::Rename { .. } => "Rename".into(),
             Edit::Material { .. } => "Material".into(),
@@ -51,6 +57,22 @@ impl Edit {
             Edit::Vertices { object, edit, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 edit.apply(o, forward);
+                scene.active = Some(*object);
+            }
+            Edit::Texels { object, edit, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                let texture = o.texture.as_mut().ok_or("the object's texture is gone")?;
+                edit.apply(texture, forward);
+                o.revision += 1;
+                scene.active = Some(*object);
+            }
+            Edit::TextureState { object, texture, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                std::mem::swap(&mut o.texture, texture);
+                if let Some(t) = &mut o.texture {
+                    t.revision += 1;
+                }
+                o.revision += 1;
                 scene.active = Some(*object);
             }
             Edit::PaintLayers { object, layers, paint, .. } => {

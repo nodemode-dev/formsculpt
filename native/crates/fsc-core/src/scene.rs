@@ -2,6 +2,7 @@ use crate::bvh::Bvh;
 use crate::mesh::Mesh;
 use crate::layers::Layers;
 use crate::multires::Multires;
+use crate::texture::Texture;
 use crate::topology::Topology;
 
 pub type ObjectId = u32;
@@ -19,6 +20,8 @@ pub struct Object {
     pub multires: Option<Multires>,
     pub layers: Layers,
     pub maps: Option<Maps>,
+    /// Paint kept per texel in UV space (tile 1001); dropped whenever the UVs go or change.
+    pub texture: Option<Texture>,
     /// Baked maps per UDIM tile (tile number, maps), ascending by tile; empty unless a udim bake kept them.
     pub tile_maps: Vec<(u32, Maps)>,
     /// The folder the object is filed under in the scene list (one level, as ZBrush's SubTool folders); empty: none.
@@ -77,6 +80,8 @@ pub struct Maps {
     /// The glow map (paint colour times emissive), empty when nothing glows.
     pub emissive_png: Vec<u8>,
     pub source: String,
+    /// True when the colour map holds opacity below 1, so a glTF material needs alpha blending (set for maps made from a texture).
+    pub translucent: bool,
 }
 
 impl Object {
@@ -84,16 +89,30 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, tile_maps: Vec::new(), folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, texture: None, tile_maps: Vec::new(), folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
     }
 
-    /// Drops the baked maps, the single set and every UDIM tile's.
+    /// Drops the baked maps, the single set and every UDIM tile's, and the texture, which every change of UVs ends.
     pub fn clear_maps(&mut self) {
         self.maps = None;
         self.tile_maps.clear();
+        self.texture = None;
+    }
+
+    /// True when the mesh has a UV for every corner.
+    pub fn has_uvs(&self) -> bool {
+        !self.mesh.indices.is_empty() && self.mesh.uvs.len() == self.mesh.indices.len()
+    }
+
+    /// The texture, while the mesh still has the UVs it was made for (a count check; UV edits drop it).
+    pub fn live_texture(&self) -> Option<&Texture> {
+        self.texture.as_ref().filter(|_| self.has_uvs())
     }
 
     pub fn rebuild(&mut self) {
+        if !self.has_uvs() {
+            self.texture = None;
+        }
         self.bvh = Bvh::build(&self.mesh);
         self.topology = Topology::build(&self.mesh);
         self.mask.resize(self.mesh.vertex_count(), 0.0);
@@ -101,6 +120,9 @@ impl Object {
     }
 
     pub fn retopologize(&mut self) {
+        if !self.has_uvs() {
+            self.texture = None;
+        }
         self.mesh.normals.resize(self.mesh.vertex_count(), [0.0, 1.0, 0.0]);
         if self.mesh.has_paint() {
             self.mesh.ensure_paint();

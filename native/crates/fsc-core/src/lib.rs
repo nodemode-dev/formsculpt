@@ -8,6 +8,7 @@ pub mod paint_layers;
 pub mod primitives;
 pub mod scene;
 pub mod selection;
+pub mod texture;
 pub mod time;
 pub mod topology;
 
@@ -21,6 +22,7 @@ pub use paint_layers::{Blend, LayerPaint, PaintLayer, PaintLayers, COVER};
 pub use primitives::Primitive;
 pub use scene::{Instance, Maps, Material, Object, ObjectId, Scene};
 pub use selection::{ChannelState, SelectionSet, SET_CHANNELS};
+pub use texture::{Texture, TextureEdit};
 
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 

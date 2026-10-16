@@ -86,6 +86,9 @@ pub fn boolean_payload(s: &Session, a: u32, b: u32, op: &str) -> Result<Vec<u8>,
 pub fn stroke_begin(s: &mut Session, id: u32, settings: &Value) -> Result<(), CommandError> {
     let mut brush = crate::parse_brush(settings)?;
     let object = s.scene.get(id).ok_or_else(|| not_found(id))?;
+    if brush.texture && object.live_texture().is_none() {
+        return Err(crate::sculpt_cmds::no_texture());
+    }
     if object.multires.is_some() || !object.layers.list.is_empty() {
         brush.dyntopo = None;
         brush.dyntopo_size = None;
@@ -116,6 +119,7 @@ pub fn stroke_sample(s: &mut Session, origin: [f32; 3], dir: [f32; 3], pressure:
 pub fn stroke_end(s: &mut Session) -> Value {
     let Some((id, stroke)) = s.stroke.take() else { return json!({"ok": true, "result": null}) };
     let kind = stroke.settings.kind;
+    let on_texture = stroke.settings.texture;
     let dabs = stroke.dabs;
     let no_layer = stroke.no_active_layer;
     let Some(object) = s.scene.get_mut(id) else { return json!({"ok": false, "error": {"code": "not_found", "message": "the stroke's object is gone"}}) };
@@ -126,6 +130,10 @@ pub fn stroke_end(s: &mut Session) -> Value {
     let label = format!("{}{} Stroke", name[..1].to_ascii_uppercase(), name[1..].replace('_', " "));
     let changed = crate::push_stroke(s, id, label, result);
     crate::sync_instances(s);
+    let texture_revision = s.scene.get(id).and_then(|o| o.texture.as_ref()).map(|t| t.revision);
+    if on_texture {
+        return json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": 0, "texels_changed": changed, "texture_revision": texture_revision, "revision": revision, "topology": false, "no_active_layer": no_layer}});
+    }
     json!({"ok": true, "result": {"id": id, "dabs": dabs, "vertices_changed": changed, "revision": revision, "topology": topology, "no_active_layer": no_layer}})
 }
 

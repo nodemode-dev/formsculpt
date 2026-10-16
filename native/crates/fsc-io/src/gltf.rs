@@ -219,8 +219,12 @@ fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
                 textures.push(json!({"source": images.len() - 1, "sampler": 0}));
                 textures.len() - 1
             };
-            let (c, mr, nm) = (texture(&maps.color_png), texture(&maps.mr_png), texture(&maps.normal_png));
-            material = json!({"name": label, "pbrMetallicRoughness": {"baseColorTexture": {"index": c}, "metallicRoughnessTexture": {"index": mr}, "metallicFactor": 1.0, "roughnessFactor": 1.0}, "normalTexture": {"index": nm}});
+            let (c, mr) = (texture(&maps.color_png), texture(&maps.mr_png));
+            let nm = (!maps.normal_png.is_empty()).then(|| texture(&maps.normal_png));
+            material = json!({"name": label, "pbrMetallicRoughness": {"baseColorTexture": {"index": c}, "metallicRoughnessTexture": {"index": mr}, "metallicFactor": 1.0, "roughnessFactor": 1.0}});
+            if let Some(nm) = nm {
+                material["normalTexture"] = json!({"index": nm});
+            }
             if !maps.emissive_png.is_empty() {
                 material["emissiveTexture"] = json!({"index": texture(&maps.emissive_png)});
                 material["emissiveFactor"] = json!([1.0, 1.0, 1.0]);
@@ -232,7 +236,8 @@ fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
                 material["emissiveFactor"] = json!(glow);
             }
         }
-        if o.mesh.has_paint() && o.mesh.paint.iter().any(|p| p[5] < 0.999) {
+        let from_texture = maps.is_some_and(|m| m.source == "texture");
+        if maps.is_some_and(|m| m.translucent) || (!from_texture && o.mesh.has_paint() && o.mesh.paint.iter().any(|p| p[5] < 0.999)) {
             material["alphaMode"] = json!("BLEND");
         }
         materials.push(material);

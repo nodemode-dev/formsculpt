@@ -81,6 +81,9 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             }
             entry["tile_maps"] = json!(tiles);
         }
+        if let Some(t) = o.live_texture() {
+            entry["texture"] = json!({"size": t.size, "data": w.put(&format!("{dir}/texture.u16"), &t.to_bytes())?});
+        }
         if let Some(m) = &o.multires {
             let mut levels = Vec::new();
             for (k, l) in m.levels.iter().enumerate() {
@@ -284,6 +287,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 normal_png: r.raw(&m["normal"])?,
                 displacement_exr: r.raw(&m["displacement"])?,
                 emissive_png: if m["emissive"].is_string() { r.raw(&m["emissive"])? } else { Vec::new() },
+                translucent: false,
             }),
             None => None,
         };
@@ -315,8 +319,16 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                     normal_png: r.raw(&t["normal"])?,
                     displacement_exr: r.raw(&t["displacement"])?,
                     emissive_png: if t["emissive"].is_string() { r.raw(&t["emissive"])? } else { Vec::new() },
+                    translucent: false,
                 },
             ));
+        }
+        if let Some(t) = e.get("texture").filter(|t| t.is_object()) {
+            let mut tex = fsc_core::Texture::from_bytes(t["size"].as_u64().unwrap_or(0) as usize, &r.raw(&t["data"])?)?;
+            if o.has_uvs() {
+                tex.mark_interior(&o.mesh);
+                o.texture = Some(tex);
+            }
         }
         let mask = r.f32(&e["mask"])?;
         if mask.len() == o.mesh.vertex_count() {

@@ -207,6 +207,8 @@ pub struct BrushSettings {
     pub area_sample: f32,
     /// Vertices more than this far below the dab's area plane are untouched, easing over the last 20% (0 is off).
     pub depth: f32,
+    /// The paint brush paints the object's texture (per texel in UV space) instead of its vertex paint.
+    pub texture: bool,
 }
 
 /// Up to 16 face group ids.
@@ -267,6 +269,7 @@ impl Default for BrushSettings {
             accumulate: true,
             area_sample: 1.0,
             depth: 0.0,
+            texture: false,
         }
     }
 }

@@ -83,11 +83,13 @@ pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec
     if ids.is_empty() {
         return Err(bad("there is nothing to export"));
     }
+    let textured: Vec<Option<fsc_core::Maps>> = ids.iter().map(|&id| matches!(format, Format::Glb | Format::Gltf).then(|| crate::texture_cmds::export_maps(s.scene.get(id).expect("checked"))).flatten()).collect();
     let objects: Vec<GltfObject> = ids
         .iter()
-        .map(|&id| {
+        .enumerate()
+        .map(|(k, &id)| {
             let o = s.scene.get(id).expect("checked");
-            GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: o.maps.as_ref(), tiles: crate::udim_cmds::tile_split(o) }
+            GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
         })
         .collect();
     fsc_io::export(format, &objects).map_err(io)
@@ -230,11 +232,13 @@ pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         }
         let p = Path::new(path);
         let bin_name = format!("{}.bin", p.file_stem().and_then(|x| x.to_str()).unwrap_or("scene"));
+        let textured: Vec<Option<fsc_core::Maps>> = ids.iter().map(|&id| crate::texture_cmds::export_maps(s.scene.get(id).expect("checked"))).collect();
         let objects: Vec<GltfObject> = ids
             .iter()
-            .map(|&id| {
+            .enumerate()
+            .map(|(k, &id)| {
                 let o = s.scene.get(id).expect("checked");
-                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: o.maps.as_ref(), tiles: crate::udim_cmds::tile_split(o) }
+                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
             })
             .collect();
         let (doc, bin) = fsc_io::export_gltf(&objects, &bin_name);

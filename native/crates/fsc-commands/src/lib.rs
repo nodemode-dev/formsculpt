@@ -21,6 +21,7 @@ mod scene_cmds;
 mod sculpt_cmds;
 mod selection_cmds;
 mod sim_cmds;
+mod texture_cmds;
 mod topo_cmds;
 mod uv_data_cmds;
 mod uv_density_cmds;
@@ -514,6 +515,50 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::paint_fill_schema,
         run: sculpt_cmds::paint_fill,
+    },
+    Command {
+        id: "paint.texture_create",
+        mcp: "texture_create",
+        group: Group::Paint,
+        label: "Create Texture",
+        description: "Give an object a texture: paint kept per texel in UV space (colour, roughness, metalness, opacity, emissive) instead of per vertex, so a stroke can be finer than the mesh. Needs UVs (uv_unwrap first; refuses with no_uvs). size is texels per side, 256 to 4096 (default 1024). from vertex (default) bakes the current vertex paint into the texels by rasterising each UV triangle with its corner paint interpolated, with a few texels of padding past the seams; from blank starts from the default grey. Replaces any texture the object has. Paint it with sculpt_stroke brush paint and target texture, or paint_fill with target texture; read it with get_texture and pick_paint. GLB and glTF export and bake_maps then take colour, roughness-metal and glow from the texture, and projects save it. Changing the UVs (unwrap with a different result, uv_transform, uv_pack, relax, topology changes) drops it. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: texture_cmds::texture_create_schema,
+        run: texture_cmds::texture_create,
+    },
+    Command {
+        id: "paint.texture_clear",
+        mcp: "texture_clear",
+        group: Group::Paint,
+        label: "Clear Texture",
+        description: "Remove an object's texture; its vertex paint is untouched. Refuses with no_texture when it has none. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: texture_cmds::texture_clear_schema,
+        run: texture_cmds::texture_clear,
+    },
+    Command {
+        id: "paint.get_texture",
+        mcp: "get_texture",
+        group: Group::Paint,
+        label: "Get Texture",
+        description: "The object's texture as a PNG (png_base64): channel color (RGB with opacity as alpha), roughness_metal (roughness in green, metalness in blue) or emissive (glow colour). Give size to reduce it by averaging for a preview. The reply has size, texture_size and revision, which rises on every change, so a viewer fetches again only when it moves. Refuses with no_texture when the object has none. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: texture_cmds::get_texture_schema,
+        run: texture_cmds::get_texture,
+    },
+    Command {
+        id: "paint.pick",
+        mcp: "pick_paint",
+        group: Group::Paint,
+        label: "Pick Paint",
+        description: "The eyedropper: the paint at a surface point. Give point [x, y, z] (the nearest surface point is used) or ray {origin, dir} (the first hit; hit false on a miss), in object space. Returns color (#rrggbb), rgb, roughness, metalness, opacity and emissive, and source: texture when the object has a texture (sampled at the hit's UV) or vertex (interpolated from the hit triangle's vertex paint by barycentric weights). Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: texture_cmds::pick_schema,
+        run: texture_cmds::pick_paint,
     },
     Command {
         id: "paint.project",

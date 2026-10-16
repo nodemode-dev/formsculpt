@@ -1,4 +1,4 @@
-use fsc_core::{Bvh, Mesh, Paint, DEFAULT_PAINT};
+use fsc_core::{Bvh, Mesh, Paint, Texture, DEFAULT_PAINT};
 use glam::{Vec2, Vec3};
 
 use crate::uv::Expanded;
@@ -36,7 +36,9 @@ fn paint_at(mesh: &Mesh, tri: [u32; 3], w: [f32; 3]) -> Paint {
     std::array::from_fn(|k| mesh.paint[tri[0] as usize][k] * w[0] + mesh.paint[tri[1] as usize][k] * w[1] + mesh.paint[tri[2] as usize][k] * w[2])
 }
 
-pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: usize, max_dist: f32, padding: usize) -> Baked {
+/// Bakes `low` against `source`; with a texture, colour, roughness, metalness, opacity and glow come from it instead of vertex paint.
+#[allow(clippy::too_many_arguments)]
+pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: usize, max_dist: f32, padding: usize, texture: Option<&Texture>) -> Baked {
     let mut owner: Vec<Option<Texel>> = (0..size * size).map(|_| None).collect();
     for t in 0..low.triangle_count() {
         let q: [Vec2; 3] = std::array::from_fn(|k| Vec2::from_array(low.uvs[3 * t + k]) * size as f32);
@@ -89,6 +91,7 @@ pub fn bake(low: &Mesh, ex: &Expanded, source: &Mesh, source_bvh: &Bvh, size: us
             }
             None => (paint_at(low, ids, w), n, 0.0, false),
         };
+        let paint = texture.map_or(paint, |t| t.lookup(at, size));
         let local = Vec3::new(hn.dot(tg), hn.dot(bt), hn.dot(n)).normalize_or(Vec3::Z);
         Some((
             [to8(paint[0]), to8(paint[1]), to8(paint[2]), to8(paint[5])],

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use fsc_core::{LayerPaint, Mesh, Object, Paint};
-use glam::{Mat3, Vec3};
+use fsc_core::texture::{rasterize, Texture, TextureEdit, PAD};
+use fsc_core::{paint_channel, LayerPaint, Mesh, Object, Paint, PAINT_LEN};
+use glam::{Mat3, Vec2, Vec3};
 
 use crate::alpha::Alpha;
 use crate::brush::{BrushKind, BrushSettings};
@@ -182,9 +183,12 @@ pub struct Stroke {
     group_at: Vec<Option<u32>>,
     /// Accumulate off: per vertex the largest move one dab gave it.
     dab_max: HashMap<u32, f32>,
+    /// Texture painting: each texel's paint before the stroke first touched it.
+    tex_before: HashMap<u32, Paint>,
 }
 
 pub enum StrokeEdit {
+    Texels(TextureEdit),
     Vertices(VertexEdit),
     Topology { mesh: Mesh, mask: Vec<f32> },
     Nothing,
@@ -226,6 +230,7 @@ impl Stroke {
             sharp: None,
             group_at: vec![None; transforms.len()],
             dab_max: HashMap::new(),
+            tex_before: HashMap::new(),
             planes,
             snake_prev: None,
             transforms,
@@ -702,6 +707,10 @@ impl Stroke {
 
     fn dab(&mut self, object: &mut Object, copy: usize, center: Vec3, pressure: f32) {
         let s = self.settings;
+        if s.texture && s.kind == BrushKind::Paint {
+            self.texture_dab(object, copy, center, pressure);
+            return;
+        }
         if s.kind == BrushKind::LayerReset && object.layers.active.is_none_or(|a| a >= object.layers.list.len()) {
             self.no_active_layer = true;
             return;
@@ -1006,6 +1015,107 @@ impl Stroke {
         self.dabs += 1;
     }
 
+    fn texture_dab(&mut self, object: &mut Object, copy: usize, center: Vec3, pressure: f32) {
+        let Some(mut tex) = object.texture.take() else { return };
+        if object.has_uvs() {
+            self.texture_dab_in(object, &mut tex, copy, center, pressure);
+        }
+        object.texture = Some(tex);
+    }
+
+    fn texture_dab_in(&mut self, object: &Object, tex: &mut Texture, copy: usize, center: Vec3, pressure: f32) {
+        let s = self.settings;
+        let m = &object.mesh;
+        let r = self.dab_radius(pressure);
+        let mut center = center;
+        let mut tris = Vec::new();
+        object.bvh.triangles_in_sphere(m, center, r, &mut tris);
+        if tris.is_empty() {
+            return;
+        }
+        let mut area_n = triangle_normal(m, &tris, center, r, &s);
+        if s.offset != 0.0 {
+            center += area_n * (s.offset * r);
+            object.bvh.triangles_in_sphere(m, center, r, &mut tris);
+            if tris.is_empty() {
+                return;
+            }
+            area_n = triangle_normal(m, &tris, center, r, &s);
+        }
+        if copy == 0 {
+            self.last_normal = area_n;
+        }
+        let compensation = if s.spacing_compensation { (s.spacing / 0.15).min(4.0) } else { 1.0 };
+        let amount = s.strength * if s.pressure_strength { pressure } else { 1.0 } * self.jitter.1 * self.dab_mul.1 * compensation;
+        let prev = self.prev_dab[copy].replace(center);
+        let frame = self.alpha.clone().map(|alpha| {
+            let up_ref = match (s.roll, prev) {
+                (true, Some(p)) if p.distance(center) > 1e-7 => center - p,
+                _ => self.transforms[copy] * Vec3::from(s.alpha_up),
+            };
+            let y_axis = (up_ref - area_n * up_ref.dot(area_n)).try_normalize().unwrap_or_else(|| area_n.any_orthonormal_vector());
+            (alpha, y_axis.cross(area_n), y_axis)
+        });
+        let mut verts: Vec<u32> = tris.iter().flat_map(|&t| m.triangle(t as usize)).collect();
+        verts.sort_unstable();
+        verts.dedup();
+        let mult = self.filter(object, copy, &verts, center, r);
+        let hid = m.has_hidden();
+        let freedom: Vec<f32> = verts.iter().enumerate().map(|(k, &v)| free(object, v, hid) * mult.as_ref().map_or(1.0, |x| x[k])).collect();
+        let mut hits = Vec::new();
+        let mut cand: Vec<(u32, f32)> = Vec::new();
+        for &t in &tris {
+            let Some(window) = uv_window(m, t as usize, center, r, tex.size) else { continue };
+            hits.clear();
+            rasterize(m, tex.size, t as usize, PAD, Some(window), &mut hits);
+            let ids = m.triangle(t as usize);
+            let pos = ids.map(|v| m.position(v));
+            let own = ids.map(|v| freedom[verts.binary_search(&v).expect("listed")]);
+            for h in &hits {
+                if !h.inside && tex.interior[h.at as usize] {
+                    continue;
+                }
+                let p = pos[0] * h.bary[0] + pos[1] * h.bary[1] + pos[2] * h.bary[2];
+                let d = p.distance(center) / r;
+                if d > 1.0 {
+                    continue;
+                }
+                let mut w = s.falloff.weight(d);
+                if let Some((alpha, x_axis, y_axis)) = &frame {
+                    let o = p - center;
+                    let (x, y) = crate::alpha::turn(o.dot(*x_axis) / r, o.dot(*y_axis) / r, s.alpha_angle + self.jitter.0 + self.tilt + s.alpha_rotation);
+                    w *= alpha.stamp(x, y, s.alpha_stretch, s.alpha_tile, s.alpha_invert, s.alpha_mid).max(0.0);
+                }
+                w *= own[0] * h.bary[0] + own[1] * h.bary[1] + own[2] * h.bary[2];
+                let w = (w * amount).min(1.0);
+                if w > 0.0 {
+                    cand.push((h.at, w));
+                }
+            }
+        }
+        cand.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)));
+        let target = if s.invert { fsc_core::DEFAULT_PAINT } else { s.paint };
+        let mut i = 0;
+        while i < cand.len() {
+            let mut j = i;
+            while j + 1 < cand.len() && cand[j + 1].0 == cand[i].0 {
+                j += 1;
+            }
+            let (at, w) = cand[j];
+            let cur = &mut tex.texels[at as usize];
+            self.tex_before.entry(at).or_insert(*cur);
+            for c in 0..PAINT_LEN {
+                if s.paint_channels[paint_channel(c)] {
+                    cur[c] += (target[c] - cur[c]) * w;
+                }
+            }
+            i = j + 1;
+        }
+        if !cand.is_empty() {
+            tex.revision += 1;
+        }
+    }
+
     pub fn drain_changed(&mut self) -> Vec<u32> {
         let mut out = std::mem::take(&mut self.changed);
         out.sort_unstable();
@@ -1022,6 +1132,26 @@ impl Stroke {
                 object.revision += 1;
                 return StrokeEdit::Topology { mesh, mask };
             }
+        }
+        if !self.tex_before.is_empty() {
+            let mut keys: Vec<u32> = self.tex_before.keys().copied().collect();
+            keys.sort_unstable();
+            let mut edit = TextureEdit::default();
+            if let Some(tex) = &object.texture {
+                for at in keys {
+                    let (was, now) = (self.tex_before[&at], tex.texels[at as usize]);
+                    if was != now {
+                        edit.texels.push(at);
+                        edit.before.push(was);
+                        edit.after.push(now);
+                    }
+                }
+            }
+            if edit.is_empty() {
+                return StrokeEdit::Nothing;
+            }
+            object.revision += 1;
+            return StrokeEdit::Texels(edit);
         }
         let edit = self.vertex_edit(object);
         if edit.is_empty() {
@@ -1069,6 +1199,48 @@ impl Stroke {
         }
         edit
     }
+}
+
+fn triangle_normal(m: &Mesh, tris: &[u32], center: Vec3, r: f32, s: &BrushSettings) -> Vec3 {
+    let (mut weighted, mut plain) = (Vec3::ZERO, Vec3::ZERO);
+    for &t in tris {
+        let [a, b, c] = m.triangle(t as usize);
+        let (pa, pb, pc) = (m.position(a), m.position(b), m.position(c));
+        let n = (pb - pa).cross(pc - pa);
+        weighted += n * s.falloff.weight(((pa + pb + pc) / 3.0).distance(center) / r);
+        plain += n;
+    }
+    let n = if weighted.length_squared() > 1e-20 { weighted } else { plain };
+    n.normalize_or(Vec3::Y)
+}
+
+fn uv_window(m: &Mesh, t: usize, center: Vec3, r: f32, size: usize) -> Option<(Vec2, Vec2)> {
+    let [a, b, c] = m.triangle(t);
+    let pa = m.position(a);
+    let (v0, v1) = (m.position(b) - pa, m.position(c) - pa);
+    let n = v0.cross(v1);
+    let nl = n.length();
+    if nl < 1e-20 {
+        return None;
+    }
+    let h = (center - pa).dot(n) / nl;
+    if h.abs() > r {
+        return None;
+    }
+    let rp = (r * r - h * h).max(0.0).sqrt();
+    let v2 = center - n / nl * h - pa;
+    let (d00, d01, d11, d20, d21) = (v0.dot(v0), v0.dot(v1), v1.dot(v1), v2.dot(v0), v2.dot(v1));
+    let denom = d00 * d11 - d01 * d01;
+    if denom.abs() < 1e-30 {
+        return None;
+    }
+    let (bb, bc) = ((d11 * d20 - d01 * d21) / denom, (d00 * d21 - d01 * d20) / denom);
+    let (g1, g2) = (((v0 * d11 - v1 * d01) / denom).length(), ((v1 * d00 - v0 * d01) / denom).length());
+    let uv = |k: usize| Vec2::from_array(m.uvs[3 * t + k]) * size as f32;
+    let (qa, qb, qc) = (uv(0), uv(1), uv(2));
+    let mid = qa + (qb - qa) * bb + (qc - qa) * bc;
+    let half = (qb - qa).abs() * (rp * g1) + (qc - qa).abs() * (rp * g2) + Vec2::splat(PAD + 1.0);
+    Some((mid - half, mid + half))
 }
 
 const KELVIN_REACH: f32 = 3.0;

@@ -62,8 +62,10 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let mut mesh = object.mesh.clone();
     mesh.uvs = result.uvs;
     let mask = object.mask.clone();
+    let kept = if mesh.uvs == object.mesh.uvs { object.texture.take() } else { None };
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     object.clear_maps();
+    object.texture = kept;
     let after = summary(object);
     s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
@@ -355,8 +357,10 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
             _ => &object.mesh,
         };
         let ex = fsc_paint::expand(mesh);
-        let baked = fsc_paint::bake(mesh, &ex, source_mesh, source_bvh, size, max_dist, 6);
+        let texture = object.live_texture().filter(|_| matches!(job, None | Some(1001)));
+        let baked = fsc_paint::bake(mesh, &ex, source_mesh, source_bvh, size, max_dist, 6, texture);
         let maps = Maps {
+            translucent: false,
             size,
             color_png: png(&baked.color)?,
             mr_png: png(&baked.mr)?,

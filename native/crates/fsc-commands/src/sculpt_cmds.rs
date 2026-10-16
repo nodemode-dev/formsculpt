@@ -24,6 +24,15 @@ fn f(args: &Value, key: &str, default: f32, lo: f32, hi: f32) -> Result<f32, Com
     }
 }
 
+pub(crate) fn target_texture(args: &Value) -> Result<bool, CommandError> {
+    match args.get("target") {
+        None | Some(Value::Null) => Ok(false),
+        Some(Value::String(t)) if t == "vertex" => Ok(false),
+        Some(Value::String(t)) if t == "texture" => Ok(true),
+        Some(_) => Err(bad("target is vertex or texture")),
+    }
+}
+
 pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
     let kind_name = args.get("brush").and_then(Value::as_str).unwrap_or("draw");
     let kind = BrushKind::parse(kind_name).ok_or_else(|| bad(format!("unknown brush {kind_name}; use one of {}", BrushKind::NAMES.join(", "))))?;
@@ -116,8 +125,13 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         Some(Value::Bool(b)) => Ok(*b),
         Some(_) => Err(bad(format!("{k} must be true or false"))),
     };
+    let texture = target_texture(args)?;
+    if texture && kind != BrushKind::Paint {
+        return Err(bad("target texture is for the paint brush only"));
+    }
     Ok(BrushSettings {
         kind,
+        texture,
         front_facing: flag_arg("front_facing", false)?,
         view_dir,
         connected_only: flag_arg("connected_only", false)?,
@@ -223,7 +237,8 @@ pub(crate) fn paint_fill_schema() -> Value {
             "roughness": {"type": "number", "minimum": 0, "maximum": 1},
             "metalness": {"type": "number", "minimum": 0, "maximum": 1},
             "opacity": {"type": "number", "minimum": 0, "maximum": 1, "description": "1 is solid; lower lets what is behind show through (drawn dithered in the window, as alpha in GLB and baked colour maps)."},
-            "emissive": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much the surface glows in its own colour, unlit (lamps, lava, eyes)."}
+            "emissive": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much the surface glows in its own colour, unlit (lamps, lava, eyes)."},
+            "target": {"type": "string", "enum": ["vertex", "texture"], "default": "vertex", "description": "texture fills every texel of the object's texture (texture_create first) instead of the vertex paint; masked and hidden areas are protected as for vertices."}
         },
         "required": [],
         "additionalProperties": false
@@ -238,6 +253,11 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
     let channels = [color.is_some(), rough.is_some(), metal.is_some(), opacity.is_some(), emissive.is_some()];
     if !channels.iter().any(|&c| c) {
         return Err(bad("give color, roughness, metalness, opacity or emissive"));
+    }
+    if target_texture(args)? {
+        let c = color.unwrap_or([0.0; 3]);
+        let fill = [c[0], c[1], c[2], rough.unwrap_or(0.0), metal.unwrap_or(0.0), opacity.unwrap_or(1.0), emissive.unwrap_or(0.0)];
+        return crate::texture_cmds::fill_texture(s, id, fill, channels);
     }
     let object = s.scene.get_mut(id).expect("checked");
     let had = object.mesh.has_paint();
@@ -558,6 +578,7 @@ pub(crate) fn brush_props() -> Value {
         "metalness": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this metalness."},
         "opacity": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this opacity (1 solid, 0 clear)."},
         "emissive": {"type": "number", "minimum": 0, "maximum": 1, "description": "Paint brush: paint this glow in the paint colour."},
+        "target": {"type": "string", "enum": ["vertex", "texture"], "default": "vertex", "description": "Paint brush only: vertex paints the mesh's vertex paint; texture paints the object's texture per texel in UV space (texture_create first), so a stroke can be finer than the mesh. Refused with bad_arguments for any other brush. Invert erases toward the default paint in the chosen channels."},
         "radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "default": 0.2, "description": "World units; compare with the object's bounds from get_scene."},
         "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
         "invert": {"type": "boolean", "default": false, "description": "Carve instead of build, deflate, unpinch, erase mask."},
@@ -607,6 +628,9 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         parsed.push((Vec3::new(x, y, z), n(3).unwrap_or(1.0).clamp(0.0, 1.0)));
     }
     let object = s.scene.get_mut(id).expect("checked");
+    if settings.texture && object.live_texture().is_none() {
+        return Err(no_texture());
+    }
     if settings.dyntopo.is_some() && object.multires.is_some() {
         return Err(CommandError::new("has_levels", "dynamic topology cannot run on an object with subdivision levels; sculpt without dyntopo, or multires_delete_lower and multires_delete_higher first"));
     }
@@ -631,14 +655,27 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
     let label = format!("{} Stroke", capital(BrushKind::NAMES[settings.kind as usize]));
     let moved = push_stroke(s, id, label, result);
     let mut reply = json!({"object": after, "dabs": dabs, "vertices_changed": moved});
+    if settings.texture {
+        reply["vertices_changed"] = json!(0);
+        reply["texels_changed"] = moved;
+    }
     if no_layer {
         reply["no_active_layer"] = json!(true);
     }
     Ok(reply)
 }
 
+pub(crate) fn no_texture() -> CommandError {
+    CommandError::new("no_texture", "the object has no texture; run texture_create first (it needs UVs from uv_unwrap)")
+}
+
 pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeEdit) -> Value {
     match result {
+        StrokeEdit::Texels(edit) => {
+            let n = edit.texels.len();
+            s.history.push(Edit::Texels { label, object: id, edit });
+            json!(n)
+        }
         StrokeEdit::Vertices(edit) => {
             let n = edit.indices.len();
             push_vertices(s, id, label, edit);
