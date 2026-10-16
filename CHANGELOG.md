@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.44.0 · 2026-10-16
+
+### Added
+
+- UDIM tiles: `uv_tiles` (the tiles islands sit in), `uv_to_tile` (move islands by whole tiles), `uv_pack_udim` (one tile per face group, or islands spread over tiles by area, each tile packed); `bake_maps` bakes one `tile` or every occupied tile (`udim`, files named NAME_color.1001.png); `get_uv_layout` pictures any `tile`.
+- UV section: a UV tile field, Island to tile, Tiles by group, Tiles by island and List tiles; the UV checker tints each tile past 1001.
+- 141 engine commands; 818 interface strings in every language.
+
 ## 0.43.0 · 2026-10-16
 
 ### Added
