@@ -21,6 +21,8 @@ mod sculpt_cmds;
 mod selection_cmds;
 mod sim_cmds;
 mod topo_cmds;
+mod uv_density_cmds;
+mod uv_relax_cmds;
 mod vdm_cmds;
 mod view_cmds;
 
@@ -783,6 +785,17 @@ pub static COMMANDS: &[Command] = &[
         run: bake_cmds::uv_transform,
     },
     Command {
+        id: "paint.uv_relax",
+        mcp: "uv_relax",
+        group: Group::Paint,
+        label: "Relax UVs",
+        description: "Smooth an unwrapped object's UVs to reduce stretch. Each point moves toward the average of its neighbours for a number of passes (iterations, strength). Mode conformal weights neighbours by the cotangents of the 3D triangles so UV angles follow the 3D shape; smooth is a plain average. Island borders stay put (keep_border) and so do the vertices in pinned; give island [a vertex index] to relax only the island holding that vertex. Reports the angle distortion before and after (1 is none) and how many vertices moved. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: uv_relax_cmds::uv_relax_schema,
+        run: uv_relax_cmds::uv_relax,
+    },
+    Command {
         id: "paint.uv_pack",
         mcp: "uv_pack",
         group: Group::Paint,
@@ -792,6 +805,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: sculpt_cmds::id_opt_schema,
         run: bake_cmds::uv_pack,
+    },
+    Command {
+        id: "paint.uv_density",
+        mcp: "uv_density",
+        group: Group::Paint,
+        label: "UV Density",
+        description: "Read the texel density of each UV island in pixels per world unit for a texture of a given size (texture, default 2048): the island's faces, density, UV area and surface area, plus the area-weighted mean, the lowest, the highest and their ratio (spread). A spread of 1 means every part of the model gets the same texture detail. Read-only; use uv_equalize to even it out.",
+        keys: &[],
+        hints: READ,
+        schema: uv_density_cmds::density_schema,
+        run: uv_density_cmds::uv_density,
+    },
+    Command {
+        id: "paint.uv_equalize",
+        mcp: "uv_equalize",
+        group: Group::Paint,
+        label: "Equalize UV Density",
+        description: "Scale each UV island about its centre so every island has the same texel density: target in pixels per world unit for a 2048 pixel texture, or the area-weighted mean when omitted. Packs the islands into the unit square afterwards unless pack is false, which keeps their sizes relative to each other but can change all densities by one factor. Returns the density mean, min, max and spread before and after. Clears baked maps. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: uv_density_cmds::equalize_schema,
+        run: uv_density_cmds::uv_equalize,
     },
     Command {
         id: "paint.bake",

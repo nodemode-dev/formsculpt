@@ -194,20 +194,25 @@ pub(crate) fn uv_transform(s: &mut Session, args: &Value) -> Result<Value, Comma
 
 /// Packs the UV islands back into the unit square, keeping their shapes and turns and their sizes relative to each
 /// other (after islands were moved or scaled by hand). One undo step.
+pub(crate) fn packed_mesh(source: &fsc_core::Mesh) -> (fsc_core::Mesh, usize, f32) {
+    let island = fsc_paint::islands(source);
+    let count = island.iter().copied().max().map_or(0, |m| m as usize + 1);
+    let mut charts: Vec<Vec<usize>> = vec![Vec::new(); count];
+    for c in 0..source.indices.len() {
+        charts[island[c / 3] as usize].push(c);
+    }
+    let mut coords: Vec<glam::Vec2> = source.uvs.iter().map(|&p| glam::Vec2::from_array(p)).collect();
+    let coverage = fsc_paint::pack(&charts, &mut coords, 4.0 / 1024.0);
+    let mut mesh = source.clone();
+    mesh.uvs = coords.iter().map(|q| q.to_array()).collect();
+    (mesh, count, coverage)
+}
+
 pub(crate) fn uv_pack(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let object = s.scene.get_mut(id).expect("checked");
     need_uvs(&object.mesh)?;
-    let island = fsc_paint::islands(&object.mesh);
-    let count = island.iter().copied().max().map_or(0, |m| m as usize + 1);
-    let mut charts: Vec<Vec<usize>> = vec![Vec::new(); count];
-    for c in 0..object.mesh.indices.len() {
-        charts[island[c / 3] as usize].push(c);
-    }
-    let mut coords: Vec<glam::Vec2> = object.mesh.uvs.iter().map(|&p| glam::Vec2::from_array(p)).collect();
-    let coverage = fsc_paint::pack(&charts, &mut coords, 4.0 / 1024.0);
-    let mut mesh = object.mesh.clone();
-    mesh.uvs = coords.iter().map(|q| q.to_array()).collect();
+    let (mesh, count, coverage) = packed_mesh(&object.mesh);
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     object.maps = None;
