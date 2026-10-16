@@ -151,6 +151,8 @@ interface Shell {
   setPick: HTMLSelectElement;
   tubeProfile: HTMLSelectElement;
   curveIntensity: HTMLSelectElement;
+  curveLive: HTMLInputElement;
+  snakeTaper: HTMLInputElement;
   profileEditor: SVGSVGElement;
   profileLine: SVGPolygonElement;
   profileDots: SVGPathElement;
@@ -673,8 +675,11 @@ function buildShell(root: HTMLElement): Shell {
   const curveOffset = input('number', { min: '-1', max: '1', step: '0.005', value: '0', 'aria-label': 'Surface offset' });
   const curveGrid = input('number', { min: '0', max: '10', step: '0.05', value: '0', 'aria-label': 'Grid snap' });
   const curveChain = input('checkbox', { 'aria-label': 'Drag as chain' });
+  const curveLive = input('checkbox', { 'aria-label': 'Live re-edit' });
+  curveLive.checked = true;
+  const snakeTaper = input('range', { min: '1', max: '100', value: '30', 'aria-label': 'Snake end size %' });
   const curveIntensity = choices('Intensity along curve', [['even', 'Even'], ['fade_in', 'Fade in'], ['fade_out', 'Fade out'], ['fade_both', 'Fade both ends'], ['pulse', 'Pulse']]);
-  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Surface offset', curveOffset), field('Grid snap', curveGrid), field('Drag as chain', curveChain), field('Intensity along curve', curveIntensity), field('Tube profile', tubeProfile), field('Radius along path', radiusMode), field('End radius %', radiusEnd), field('Point radius %', pointRadius), field('Point twist', pointTwist), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
+  pathFields.append(field('Path shape', curveInterp), field('Closed path', curveClosed), field('Corner round', curveRound), field('Surface offset', curveOffset), field('Grid snap', curveGrid), field('Drag as chain', curveChain), field('Intensity along curve', curveIntensity), field('Live re-edit', curveLive), field('Snake end size %', snakeTaper), field('Tube profile', tubeProfile), field('Radius along path', radiusMode), field('End radius %', radiusEnd), field('Point radius %', pointRadius), field('Point twist', pointTwist), field('Tube ends', tubeCap), field('Pipe wall', tubeHole), field('Spiral turns', tubeSpiral));
   panel.append(pathFields);
   // The tube profile editor: a closed outline in units of the tube radius, always shown at a fixed size.
   const profileEditor = document.createElementNS(SVG, 'svg');
@@ -721,7 +726,7 @@ function buildShell(root: HTMLElement): Shell {
   });
   panel.append(pathGrid);
   const makeGrid = el('div', 'add-grid two after-fields');
-  for (const [cmd, label] of [['curve.edit_last_stroke', 'Last stroke as curve'], ['curve.from_mask_edge', 'Curve from mask edge'], ['curve.from_group_border', 'Curve from group border']]) {
+  for (const [cmd, label] of [['curve.edit_last_stroke', 'Last stroke as curve'], ['curve.from_mask_edge', 'Curve from mask edge'], ['curve.from_group_border', 'Curve from group border'], ['curve.snake_mask', 'Snake from mask'], ['curve.bridge_groups', 'Bridge two groups']]) {
     const b = el('button', 'btn', label);
     b.type = 'button';
     b.dataset.cmd = cmd;
@@ -1162,7 +1167,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1574,6 +1579,9 @@ class SceneView {
   private lastBrush = 'draw';
   /** The rays of the last brush stroke, so it can be undone and brought back as an editable curve. */
   private lastStroke: { rays: { o: Vec3; d: Vec3 }[]; wpp: number; brush: string } | null = null;
+  /** The curve whose last application is the newest undo step, so moving its handles re-applies it (null otherwise). */
+  private liveCurve: object | null = null;
+  private liveDone = -1;
   /** A curve stroke waiting to be applied: handles on the surface, and the world size of a pixel when it was drawn. */
   private curve: { handles: Vec3[]; wpp: number; sharp: boolean[]; round: number[]; radius: number[]; twist: number[]; samples: Vec3[] | null } | null = null;
   /** The handle last clicked (Corner round sets its fillet), and whether Alt was held when a handle was pressed. */
@@ -2272,6 +2280,7 @@ class SceneView {
       else this.curve.handles[edit] = point;
       this.drawCurve();
       void this.resample();
+      if (point && this.liveCurve === this.curve) await this.reapplyLive();
       return;
     }
     // Handles about every 40 pixels along the drawn path (2 to 32 of them).
@@ -2376,7 +2385,58 @@ class SceneView {
     }
     this.lastStroke = null;
     this.adoptCurve(handles, s.wpp, false, s.brush);
-    this.note(t('The stroke is undone and waits as a curve: move its handles, then Apply curve'));
+    if (!this.shell.curveLive.checked) {
+      this.note(t('The stroke is undone and waits as a curve: move its handles, then Apply curve'));
+      return;
+    }
+    await this.applyCurve();
+    this.liveCurve = this.curve;
+    this.liveDone = await this.historyDone();
+    this.note(t('The stroke is a curve now: move a handle and it is applied again'));
+  }
+
+  private async historyDone(): Promise<number> {
+    const h = await dispatch<{ done: number }>('get_history');
+    return h.ok ? h.result.done : -1;
+  }
+
+  /**
+   * Live re-edit: undoes the live curve's last application and applies it again along the moved handles. Only while that
+   * application is still the newest step; anything done since ends the live link instead of undoing someone else's step.
+   */
+  private async reapplyLive(): Promise<void> {
+    if (!this.curve || this.liveCurve !== this.curve) return;
+    if ((await this.historyDone()) !== this.liveDone) {
+      this.liveCurve = null;
+      this.note(t('Something else changed since; Apply curve applies the moved curve as a new step'));
+      return;
+    }
+    await this.run('undo');
+    await this.applyCurve();
+    this.liveDone = await this.historyDone();
+  }
+
+  /**
+   * Snake Curve: a tapering extrusion out of the mask's border, along the waiting curve when there is one (else straight
+   * out along the surface). Curve Bridge: a loft between two face groups' borders, along the waiting curve when there is one.
+   */
+  private async curveBridge(kind: 'snake' | 'bridge'): Promise<void> {
+    const id = this.scene.active;
+    if (id === null) return;
+    const path = this.curve && this.curve.handles.length >= 2 ? { points: this.curve.handles } : {};
+    const offset = Number(this.shell.curveOffset.value) || 0;
+    if (kind === 'snake') {
+      await this.run('curve_bridge', { id, from: { source: 'mask' }, end_scale: Math.max(0.01, Number(this.shell.snakeTaper.value) / 100), offset, ...path, name: 'Snake' });
+      return;
+    }
+    const answer = await this.prompt.ask(t('Two face group numbers'), '1 2');
+    if (answer === null) return;
+    const [a, b] = answer.split(/[\s,]+/).map((x) => Math.round(Number(x)));
+    if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) {
+      this.note(t('Give two different face group numbers, such as 1 2'));
+      return;
+    }
+    await this.run('curve_bridge', { id, from: { source: 'group', group: a }, to: { source: 'group', group: b }, offset, ...path, name: 'Bridge' });
   }
 
   /** A curve along the mask's edge or a face group's border (curve_from_border), lifted by Surface offset. */
@@ -2920,8 +2980,10 @@ class SceneView {
       { id: 'curve.edit_last_stroke', label: 'Edit Last Stroke as Curve', mutates: true, run: () => void this.editLastStroke(), enabled: () => this.lastStroke !== null },
       { id: 'curve.from_mask_edge', label: 'Curve from Mask Edge', run: () => void this.curveFromBorder('mask') },
       { id: 'curve.from_group_border', label: 'Curve from Group Border', run: () => void this.curveFromBorder('group') },
+      { id: 'curve.snake_mask', label: 'Snake Curve from Mask', mutates: true, run: () => void this.curveBridge('snake') },
+      { id: 'curve.bridge_groups', label: 'Curve Bridge Between Two Groups', mutates: true, run: () => void this.curveBridge('bridge') },
     );
-    for (const id of ['curve.edit_last_stroke', 'curve.from_mask_edge', 'curve.from_group_border']) NEEDS_OBJECT.add(id);
+    for (const id of ['curve.edit_last_stroke', 'curve.from_mask_edge', 'curve.from_group_border', 'curve.snake_mask', 'curve.bridge_groups']) NEEDS_OBJECT.add(id);
     const channelVerbs: [string, string, string, string][] = [
       ['channel.copy_mask', 'Copy Mask', 'channel_copy', 'mask'], ['channel.paste_mask', 'Paste Mask', 'channel_paste', 'mask'], ['channel.clear_mask', 'Clear Mask Channel', 'channel_clear', 'mask'],
       ['channel.copy_groups', 'Copy Groups', 'channel_copy', 'groups'], ['channel.paste_groups', 'Paste Groups', 'channel_paste', 'groups'], ['channel.clear_groups', 'Clear Groups', 'channel_clear', 'groups'],
