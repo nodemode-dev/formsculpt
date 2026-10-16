@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.49.0 · 2026-10-16
+
+### Added
+
+- Stroke filters in `sculpt_stroke` and live strokes: `front_facing` (with `view_dir`; live strokes use each ray), `connected_only`, `protect_group` and `protect_groups`, `keep_sharp` (degrees), `accumulate` (false caps a stroke at one dab's depth), `area_sample` and `depth` (depth masking for thin parts).
+- Window brush fields: Front faces only, Connected only, Same group only, Keep sharp edges, Accumulate, Area sample % and Depth mask.
+- 865 interface strings in every language.
+
 ## 0.48.0 · 2026-10-16
 
 ### Added
