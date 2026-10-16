@@ -44,6 +44,10 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     vdm_capture: n('sculpt.vdm_capture', 'Capture VDM'),
     text: c('build.text', 'Build Text'),
   },
+  preset: {
+    preset_save: c('brush.preset_save', 'Save Tool Preset'),
+    preset_delete: c('brush.preset_delete', 'Delete Tool Preset'),
+  },
   curve: {
     alpha: c('sculpt.alpha_load', 'Load Alpha'),
     apply_curve: c('sculpt.apply_curve', 'Apply Curve'),

@@ -120,6 +120,14 @@ interface Shell {
   accumulate: HTMLInputElement;
   areaSample: HTMLInputElement;
   depthMask: HTMLInputElement;
+  alphaStretch: HTMLInputElement;
+  alphaRotation: HTMLInputElement;
+  alphaTile: HTMLInputElement;
+  alphaMid: HTMLInputElement;
+  alphaInvert: HTMLInputElement;
+  toolPreset: HTMLSelectElement;
+  brushRing: SVGCircleElement;
+  presetButtons: HTMLButtonElement[];
   repeatStep: HTMLSelectElement;
   repeatResult: HTMLSelectElement;
   scatterCount: HTMLInputElement;
@@ -386,6 +394,7 @@ const FILE_ACTIONS: [string, string][] = [
 const NODEMODE_KEY = 'formsculptor.nodemode';
 const BACKDROP_KEY = 'formsculptor.backdrop';
 const PROFILES_KEY = 'formsculptor.profiles';
+const PRESETS_KEY = 'formsculptor.toolPresets';
 
 const OBJECT_ACTIONS: [string, string][] = [
   ['duplicate', 'Duplicate'],
@@ -519,7 +528,11 @@ function buildShell(root: HTMLElement): Shell {
   const gizmoUniform = svgPath('gizmo-uniform');
   const latticeLines = svgPath('lattice-lines');
   const latticePoints = svgPath('lattice-points');
-  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints);
+  // The brush cursor: one circle that follows the pointer at the brush's size, moved by attributes only.
+  const brushRing = document.createElementNS(SVG, 'circle');
+  brushRing.setAttribute('class', 'brush-ring');
+  brushRing.setAttribute('r', '0');
+  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -674,6 +687,11 @@ function buildShell(root: HTMLElement): Shell {
   accumulate.checked = true;
   const areaSample = input('range', { min: '10', max: '200', value: '100', 'aria-label': 'Area sample %' });
   const depthMask = input('number', { min: '0', max: '100', step: '0.01', value: '0', 'aria-label': 'Depth mask' });
+  const alphaStretch = input('number', { min: '0.1', max: '10', step: '0.1', value: '1', 'aria-label': 'Alpha stretch' });
+  const alphaRotation = input('number', { min: '-360', max: '360', step: '15', value: '0', 'aria-label': 'Alpha rotation' });
+  const alphaTile = input('number', { min: '1', max: '16', step: '1', value: '1', 'aria-label': 'Alpha tiles' });
+  const alphaMid = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Alpha mid %' });
+  const alphaInvert = input('checkbox', { 'aria-label': 'Invert alpha' });
   const alpha = choices('Alpha', ALPHAS);
   const alphaAngle = input('number', { min: '-360', max: '360', step: '5', value: '0', 'aria-label': 'Alpha angle' });
   const strokeMode = choices('Stroke', [['dots', 'Dots (upright)'], ['roll', 'Roll (along stroke)'], ['spray', 'Spray (scattered)']]);
@@ -686,8 +704,26 @@ function buildShell(root: HTMLElement): Shell {
   pressureStrength.checked = true;
   const pressureSize = input('checkbox', { 'aria-label': 'Pressure sets size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Layer height %', layerHeight), field('Spacing %', spacing), field('Even deposit', evenDeposit), field('Brush offset %', brushOffset), field('Stroke jitter %', strokeJitter), field('Snap radius', snapRadius), field('Constant 3D radius', constantRadius), field('Shared radius', sharedRadius), field('Front faces only', frontFacing), field('Connected only', connectedOnly), field('Same group only', sameGroup), field('Keep sharp edges', keepSharp), field('Accumulate', accumulate), field('Area sample %', areaSample), field('Depth mask', depthMask));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Alpha stretch', alphaStretch), field('Alpha rotation', alphaRotation), field('Alpha tiles', alphaTile), field('Alpha mid %', alphaMid), field('Invert alpha', alphaInvert), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Layer height %', layerHeight), field('Spacing %', spacing), field('Even deposit', evenDeposit), field('Brush offset %', brushOffset), field('Stroke jitter %', strokeJitter), field('Snap radius', snapRadius), field('Constant 3D radius', constantRadius), field('Shared radius', sharedRadius), field('Front faces only', frontFacing), field('Connected only', connectedOnly), field('Same group only', sameGroup), field('Keep sharp edges', keepSharp), field('Accumulate', accumulate), field('Area sample %', areaSample), field('Depth mask', depthMask));
   panel.append(fields);
+  const presetFields = el('div', 'fields');
+  const toolPreset = choices('Tool preset', [['', 'None']]);
+  presetFields.append(field('Tool preset', toolPreset));
+  panel.append(presetFields);
+  const presetGrid = el('div', 'add-grid two after-fields');
+  const presetButtons = (
+    [
+      ['preset_save', 'Save tool preset'],
+      ['preset_delete', 'Delete tool preset'],
+    ] as const
+  ).map(([action, label]) => {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.action = action;
+    presetGrid.append(b);
+    return b;
+  });
+  panel.append(presetGrid);
   // The falloff curve: five weights from the centre (left) to the rim (right), dragged up and down; always shown, so
   // choosing a preset or drawing never changes the panel's height.
   const falloffCurve = document.createElementNS(SVG, 'svg');
@@ -1233,6 +1269,7 @@ function buildShell(root: HTMLElement): Shell {
   tag(curveButtons, 'curve', action);
   tag(pathButtons, 'curve', action);
   tag(profileButtons, 'curve', action);
+  tag(presetButtons, 'preset', action);
   tag(paintButtons, 'paint', action);
   tag(paintLayerButtons, 'paintLayer', action);
   tag(uvButtons, 'uv', action);
@@ -1249,7 +1286,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1476,6 +1513,7 @@ class SceneView {
       const o = this.scene.objects.find((x) => x.id === this.scene.active);
       return o && o.editable_build === kind ? o.id : null;
     };
+    this.wirePresets();
     this.wireProfile(() => {
       const id = editable('tube');
       if (id !== null) void this.run('edit_build', { id, profile: this.tubeArgs().profile });
@@ -1639,6 +1677,19 @@ class SceneView {
     };
     shell.canvas.addEventListener('pointerdown', trace);
     shell.canvas.addEventListener('pointermove', trace);
+    // The brush ring shows a sculpting brush's reach: the slider's pixels, or with Constant 3D radius the held world
+    // radius at the current zoom. Only cx, cy, r and visibility change; nothing is added or rebuilt.
+    const ring = (e: PointerEvent | null): void => {
+      const sculpting = e !== null && !SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube';
+      setAttr(shell.brushRing, 'visibility', sculpting ? 'visible' : 'hidden');
+      if (!sculpting || !e) return;
+      const px = shell.constantRadius.checked ? this.worldRadius / Math.max(1e-9, this.viewport.camera.worldPerPixel(shell.canvas.clientHeight)) : Number(shell.radius.value);
+      setAttr(shell.brushRing, 'cx', e.offsetX.toFixed(0));
+      setAttr(shell.brushRing, 'cy', e.offsetY.toFixed(0));
+      setAttr(shell.brushRing, 'r', Math.max(1, px).toFixed(1));
+    };
+    shell.canvas.addEventListener('pointermove', ring);
+    shell.canvas.addEventListener('pointerleave', () => ring(null));
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null),
@@ -1897,6 +1948,17 @@ class SceneView {
     if (area !== 1) out.area_sample = area;
     const depth = Math.max(0, Number(s.depthMask.value) || 0);
     if (depth > 0) out.depth = depth;
+    if (s.alpha.value !== 'none') {
+      const stretch = Math.max(0.1, Math.min(10, Number(s.alphaStretch.value) || 1));
+      if (stretch !== 1) out.alpha_stretch = stretch;
+      const turn = Math.max(-360, Math.min(360, Number(s.alphaRotation.value) || 0));
+      if (turn !== 0) out.alpha_rotation = turn;
+      const tiles = Math.max(1, Math.min(16, Math.round(Number(s.alphaTile.value) || 1)));
+      if (tiles !== 1) out.alpha_tile = tiles;
+      const mid = Math.max(0, Math.min(1, Number(s.alphaMid.value) / 100));
+      if (mid > 0) out.alpha_mid = mid;
+      if (s.alphaInvert.checked) out.alpha_invert = true;
+    }
     return out;
   }
 
@@ -2616,6 +2678,86 @@ class SceneView {
       'd',
       pts.map(([x, y], i) => (this.profilePts[i].sharp ? `M${x - 4},${y - 4}h8v8h-8z` : `M${x - 4},${y}a4,4 0 1,0 8,0a4,4 0 1,0 -8,0`)).join(''),
     );
+  }
+
+  /** The brush fields a tool preset keeps, by their shell names. */
+  private static readonly PRESET_FIELDS = ['radius', 'strength', 'lazy', 'invert', 'symX', 'radial', 'alpha', 'alphaAngle', 'alphaStretch', 'alphaRotation', 'alphaTile', 'alphaMid', 'alphaInvert', 'strokeMode', 'pressureGamma', 'pressureStrength', 'pressureSize', 'falloff', 'layerHeight', 'spacing', 'evenDeposit', 'brushOffset', 'strokeJitter', 'snapRadius', 'frontFacing', 'connectedOnly', 'sameGroup', 'keepSharp', 'accumulate', 'areaSample', 'depthMask'] as const;
+
+  private savedPresets(): Record<string, { brush: string; values: Record<string, string | boolean> }> {
+    try {
+      return JSON.parse(localStorage.getItem(PRESETS_KEY) ?? '{}') as Record<string, { brush: string; values: Record<string, string | boolean> }>;
+    } catch {
+      return {};
+    }
+  }
+
+  /** Tool presets in Tool preset, after None; a saved one is applied on choosing it. */
+  private listPresets(): void {
+    const pick = this.shell.toolPreset;
+    const names = Object.keys(this.savedPresets()).sort();
+    for (const o of Array.from(pick.options)) if (o.value && !names.includes(o.value)) o.remove();
+    for (const name of names) {
+      if (Array.from(pick.options).some((o) => o.value === name)) continue;
+      const o = el('option', '', name);
+      o.value = name;
+      pick.append(o);
+    }
+  }
+
+  private wirePresets(): void {
+    const s = this.shell;
+    const fields = s as unknown as Record<string, HTMLInputElement | HTMLSelectElement>;
+    s.toolPreset.addEventListener('change', () => {
+      const preset = this.savedPresets()[s.toolPreset.value];
+      if (!preset) return;
+      for (const key of SceneView.PRESET_FIELDS) {
+        const control = fields[key];
+        const v = preset.values[key];
+        if (!control || v === undefined) continue;
+        if (control instanceof HTMLInputElement && control.type === 'checkbox') control.checked = v === true;
+        else control.value = String(v);
+        control.dispatchEvent(new Event('input', { bubbles: true }));
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      s.brushButtons.find((b) => b.dataset.brush === preset.brush)?.click();
+    });
+    for (const b of s.presetButtons) {
+      this.on(b, () => {
+        const all = this.savedPresets();
+        const current = s.toolPreset.value;
+        const store = (): void => {
+          try {
+            localStorage.setItem(PRESETS_KEY, JSON.stringify(all));
+          } catch {
+            this.note(t('Tool presets cannot be saved in this browser'));
+          }
+          this.listPresets();
+        };
+        if (b.dataset.action === 'preset_delete') {
+          if (!current) {
+            this.note(t('Choose a tool preset first'));
+            return;
+          }
+          delete all[current];
+          s.toolPreset.value = '';
+          store();
+          return;
+        }
+        void this.prompt.ask(t('Save tool preset'), current || `${this.brush} ${Object.keys(all).length + 1}`).then((name) => {
+          if (!name) return;
+          const values: Record<string, string | boolean> = {};
+          for (const key of SceneView.PRESET_FIELDS) {
+            const control = fields[key];
+            if (!control) continue;
+            values[key] = control instanceof HTMLInputElement && control.type === 'checkbox' ? control.checked : control.value;
+          }
+          all[name] = { brush: this.brush, values };
+          store();
+          s.toolPreset.value = name;
+        });
+      });
+    }
+    this.listPresets();
   }
 
   private savedProfiles(): Record<string, { p: [number, number]; sharp: boolean }[]> {

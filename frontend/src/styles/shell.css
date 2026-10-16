@@ -45,6 +45,7 @@ button { font: inherit; color: inherit; }
 .stage-overlay polyline { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .stage-overlay path { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 2; }
 .stage-overlay path.gizmo-axis, .stage-overlay path.lattice-lines { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.stage-overlay circle.brush-ring { fill: none; stroke: var(--text-primary); stroke-opacity: 0.55; stroke-width: 1; }
 .stage-overlay path.gizmo-x { stroke: var(--axis-x); }
 .stage-overlay path.gizmo-y { stroke: var(--axis-y); }
 .stage-overlay path.gizmo-z { stroke: var(--axis-z); }
