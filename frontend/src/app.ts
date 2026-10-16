@@ -106,6 +106,11 @@ interface Shell {
   zmodelAmount: HTMLInputElement;
   zmodelHover: SVGPathElement;
   zmodelCreases: SVGPathElement;
+  retopoWire: SVGPathElement;
+  patchKind: HTMLSelectElement;
+  patchSize: HTMLInputElement;
+  patchColumns: HTMLInputElement;
+  patchRows: HTMLInputElement;
   actionButtons: HTMLButtonElement[];
   skeleton: HTMLSelectElement;
   lathe: HTMLSelectElement;
@@ -345,6 +350,7 @@ const BRUSHES: [string, string][] = [
   ['insert_brush', 'Insert brush'],
   ['group_brush', 'Group brush'],
   ['retopo', 'Retopo quad'],
+  ['retopo_patch', 'Retopo patch'],
   ['edge_loop', 'Edge loop'],
   ['zmodeler', 'ZModeler'],
   ['bevel_edge', 'Bevel edge'],
@@ -388,7 +394,7 @@ const ALPHAS: [string, string][] = [
   ['stripes', 'Stripes'],
   ['dots', 'Dots'],
 ];
-const CLICK_TOOLS = new Set(['eyedropper', 'mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'edge_loop', 'zmodeler', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
+const CLICK_TOOLS = new Set(['eyedropper', 'mask_topo', 'mask_group', 'hide_group', 'insert', 'vdm', 'plugin', 'retopo', 'retopo_patch', 'edge_loop', 'zmodeler', 'bevel_edge', 'clip', 'zsphere', 'pose_joint', 'groom_comb', 'groom_cut']);
 
 const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['subdivide', 'Subdivide', { levels: 1 }],
@@ -571,7 +577,11 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelCreases = document.createElementNS(SVG, 'path');
   zmodelCreases.setAttribute('class', 'zmodel-creases');
   zmodelCreases.setAttribute('visibility', 'hidden');
-  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing, zmodelCreases, zmodelHover);
+  // The retopology object's wire over the sculpt while a Retopo tool is on (its quads lie on the surface and hide in it).
+  const retopoWire = document.createElementNS(SVG, 'path');
+  retopoWire.setAttribute('class', 'retopo-wire');
+  retopoWire.setAttribute('visibility', 'hidden');
+  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing, retopoWire, zmodelCreases, zmodelHover);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -1067,6 +1077,12 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
   const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'Slide amount' });
   topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Slide amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
+  // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
+  const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc']]);
+  const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
+  const patchColumns = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch columns' });
+  const patchRows = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch rows' });
+  topoFields.append(field('Retopo patch', patchKind), field('Patch size %', patchSize), field('Patch columns', patchColumns), field('Patch rows', patchRows));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -1372,7 +1388,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1400,6 +1416,12 @@ class SceneView {
     shell.spotlightOpacity.addEventListener('change', () => void this.spotlight.set({ opacity: Number(shell.spotlightOpacity.value) / 100 }));
     shell.spotlightFlip.addEventListener('change', () => void this.spotlight.set({ flip: shell.spotlightFlip.checked }));
     shell.spotlightInput.addEventListener('change', () => void this.loadSpotlight());
+    // Loops and the disc count points around and rings, grids and strips quads across and up: each gets its defaults.
+    shell.patchKind.addEventListener('change', () => {
+      const loop = !['grid', 'strip'].includes(shell.patchKind.value);
+      shell.patchColumns.value = loop ? '12' : '4';
+      shell.patchRows.value = loop ? '3' : '4';
+    });
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
       if (row?.dataset.id) void this.run('select_object', { id: Number(row.dataset.id) });
@@ -1422,8 +1444,9 @@ class SceneView {
         this.brush = next;
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         this.drawTools();
-        // A tool change draws no frame, so the ZModeler overlays are updated here too.
+        // A tool change draws no frame, so the ZModeler and retopology overlays are updated here too.
         this.drawZmodel();
+        this.drawRetopoWire();
         scheduleChrome();
       }),
     );
@@ -2506,6 +2529,44 @@ class SceneView {
       .join(' ');
     setAttr(path, 'd', d);
     setAttr(path, 'visibility', d ? 'visible' : 'hidden');
+  }
+
+  /** The retopology wire: segments from get_wire (hidden by the sculpt or not), refetched when either object or the
+   * settled camera changes, and the key they were fetched for. */
+  private retopoWireSegs: { a: Vec3; b: Vec3; visible: boolean | null }[] = [];
+  private retopoWireKey = '';
+  private retopoWireTimer = 0;
+
+  /** Called every frame and on a tool change: the retopology object's wire over the sculpt while a Retopo tool is on. */
+  drawRetopoWire(): void {
+    const path = this.shell.retopoWire;
+    const sculpt = this.scene.objects.find((x) => x.id === this.scene.active);
+    const retopo = this.scene.objects.find((x) => x.id === this.retopoInto);
+    if ((this.brush !== 'retopo' && this.brush !== 'retopo_patch') || !sculpt || !retopo || retopo.id === sculpt.id) {
+      setAttr(path, 'visibility', 'hidden');
+      return;
+    }
+    const eye = this.viewport.camera.eye();
+    const key = `${retopo.id}:${retopo.revision}:${sculpt.id}:${sculpt.revision}:${eye.map((x) => x.toFixed(3)).join(',')}`;
+    if (key !== this.retopoWireKey) {
+      this.retopoWireKey = key;
+      window.clearTimeout(this.retopoWireTimer);
+      this.retopoWireTimer = window.setTimeout(() => void this.fetchRetopoWire(retopo.id, sculpt.id, eye), 150);
+    }
+    const project = this.projector();
+    const d = this.retopoWireSegs
+      .filter((s) => s.visible !== false)
+      .map((s) => [project(s.a), project(s.b)])
+      .filter((q): q is [[number, number], [number, number]] => q[0] !== null && q[1] !== null)
+      .map(([a, b]) => `M${a[0].toFixed(1)},${a[1].toFixed(1)} L${b[0].toFixed(1)},${b[1].toFixed(1)}`)
+      .join(' ');
+    setAttr(path, 'd', d);
+    setAttr(path, 'visibility', d ? 'visible' : 'hidden');
+  }
+
+  private async fetchRetopoWire(id: number, occluder: number, eye: Vec3): Promise<void> {
+    const r = await dispatch<{ edges: { a: Vec3; b: Vec3; visible: boolean | null }[] }>('get_wire', { id, occluder, eye });
+    this.retopoWireSegs = r.ok ? r.result.edges : [];
   }
 
   private async fetchCreases(id: number, eye: Vec3): Promise<void> {
@@ -3711,7 +3772,7 @@ class SceneView {
     const tool = this.brush;
     const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
     // Retopology lands on the sculpt or on the retopology already laid over it; the engine snaps to the sculpt.
-    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || tool === 'retopo' || hit.result.id === id);
+    const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || tool === 'retopo' || tool === 'retopo_patch' || hit.result.id === id);
     if (!hit.ok || !onActive || !hit.result.point) {
       this.note(tool === 'insert' ? 'Click on a surface to insert there' : 'Click on the active object');
       return;
@@ -3763,6 +3824,30 @@ class SceneView {
       this.retopoPoints = [];
       const into = this.retopoInto !== null && this.scene.objects.some((o) => o.id === this.retopoInto) ? this.retopoInto : undefined;
       const reply = await dispatch<{ id: number; faces: number }>('retopo_face', { target: id, points, ...(into ? { into } : {}) });
+      if (!reply.ok) this.note(reply.error.message);
+      else {
+        this.retopoInto = reply.result.id;
+        this.note(`Retopology: ${reply.result.faces} faces`);
+      }
+      await this.refresh();
+    }
+    else if (tool === 'retopo_patch') {
+      // One click lays the chosen patch, upright on screen, into the same retopology object as Retopo quad.
+      const s = this.shell;
+      const o = this.scene.objects.find((x) => x.id === id);
+      const diag = o ? Math.hypot(...o.bounds.max.map((v, i) => v - o.bounds.min[i])) : 1;
+      const into = this.retopoInto !== null && this.scene.objects.some((x) => x.id === this.retopoInto) ? this.retopoInto : undefined;
+      const count = (c: HTMLInputElement, d: number): number => Math.max(1, Math.min(64, Math.round(Number(c.value) || d)));
+      const reply = await dispatch<{ id: number; faces: number; faces_added: number }>('retopo_patch', {
+        target: id,
+        patch: s.patchKind.value,
+        center: point,
+        size: Math.max(1e-4, (Number(s.patchSize.value) / 100) * diag),
+        up: this.viewport.camera.screenUp(),
+        columns: count(s.patchColumns, 4),
+        rows: count(s.patchRows, 4),
+        ...(into ? { into } : {}),
+      });
       if (!reply.ok) this.note(reply.error.message);
       else {
         this.retopoInto = reply.result.id;
@@ -5305,6 +5390,7 @@ async function boot(shell: Shell): Promise<void> {
       view.drawCurve();
       view.drawTools();
       view.drawZmodel();
+      view.drawRetopoWire();
     };
     void view.refresh();
     // Agents reach the engine through the service's MCP server; the browser engine has none to follow.

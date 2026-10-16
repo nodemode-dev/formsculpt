@@ -56,6 +56,7 @@ button { font: inherit; color: inherit; }
 .stage-overlay path.zmodel-hover { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .stage-overlay path.zmodel-hover.face { fill: var(--accent-color); fill-opacity: 0.25; stroke-width: 2; }
 .stage-overlay path.zmodel-hover.border { stroke-dasharray: 6 4; }
+.stage-overlay path.retopo-wire { fill: none; stroke: var(--accent-color); stroke-opacity: 0.9; stroke-width: 1.5; stroke-linecap: round; }
 .stage-overlay path.zmodel-creases { fill: none; stroke: var(--text-primary); stroke-opacity: 0.85; stroke-width: 2; stroke-dasharray: 4 3; }
 .stage-overlay path.zmodel-hover.creased { stroke-width: 5; stroke: var(--text-primary); }
 .stage-overlay circle.brush-ring { fill: none; stroke: var(--text-primary); stroke-opacity: 0.55; stroke-width: 1; }
