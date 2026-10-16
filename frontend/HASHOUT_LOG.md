@@ -573,3 +573,9 @@ ZModeler is a click tool: the panel's ZModeler action (edge insert, extrude, clo
 - kind: rationale
 - logged: v0.57.0 · 2026-10-16
 Point actions aim at a corner, so the hover becomes a 6 px ring around poly_pick's vertex_point, drawn with two arcs in the same path element; edges already creased draw thicker in the text colour so creasing twice is visible before the click. Auto-crease rides only on the actions the engine takes it for (a new loop, a face inset or extrude). Creases themselves are not drawn in the viewport yet; they show in their effect after subdivision.
+
+### Creases drawn, loop align and slide, point slide by drag
+- refers-to: app.ts :: the Align edge loop, Slide edge loop and Slide point actions, the Slide amount % field, zslide, zslidePoint, zslideEnd, the strokes begin, move and end hooks, drawZmodel, fetchCreases, zmodelCreaseSegs and zmodelCreaseKey, the brush change and onFrame calls; styles/shell.css :: path.zmodel-creases
+- kind: rationale
+- logged: v0.58.0 · 2026-10-16
+While ZModeler is the tool, creases are one dashed SVG path reprojected every frame from segments that get_creases returned; the list (with visibility from the camera's eye) is refetched 150 ms after the object's revision or the camera last changed, so hidden creases drop out once the view settles rather than per frame. A tool change draws no frame, so the brush handler calls drawZmodel itself; without that the creases stayed on screen after leaving the tool. Slide point is a drag: the press runs the click tool's pick (which records the corner instead of acting), moves keep the latest ray, and release sends zmodel_point slide with `to` where that ray meets the plane through the corner facing the camera; the engine then keeps the corner in its tangent plane. Slide edge loop sends Slide amount % as amount.

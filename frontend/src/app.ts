@@ -103,7 +103,9 @@ interface Shell {
   zmodelAction: HTMLSelectElement;
   zmodelAt: HTMLInputElement;
   zmodelCrease: HTMLInputElement;
+  zmodelAmount: HTMLInputElement;
   zmodelHover: SVGPathElement;
+  zmodelCreases: SVGPathElement;
   actionButtons: HTMLButtonElement[];
   skeleton: HTMLSelectElement;
   lathe: HTMLSelectElement;
@@ -565,7 +567,11 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelHover = document.createElementNS(SVG, 'path');
   zmodelHover.setAttribute('class', 'zmodel-hover');
   zmodelHover.setAttribute('visibility', 'hidden');
-  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing, zmodelHover);
+  // The creased edges in view while ZModeler is the tool: one path of segments, reprojected each frame.
+  const zmodelCreases = document.createElementNS(SVG, 'path');
+  zmodelCreases.setAttribute('class', 'zmodel-creases');
+  zmodelCreases.setAttribute('visibility', 'hidden');
+  overlay.append(tubeLine, curveLine, curveHandles, ...gizmoAxes, gizmoUniform, latticeLines, latticePoints, brushRing, zmodelCreases, zmodelHover);
   stage.append(overlay);
 
   const panel = el('aside', 'panel');
@@ -1056,10 +1062,11 @@ function buildShell(root: HTMLElement): Shell {
   const topoFields = el('div', 'fields');
   const quadTarget = input('number', { min: '100', max: '400000', value: '4000', 'aria-label': 'Target quads' });
   // Values are target.action, in the characters the string extractor reads as option values, so the labels translate.
-  const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point']]);
+  const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point'], ['edge.align', 'Align edge loop'], ['edge.slide', 'Slide edge loop'], ['point.slide', 'Slide point']]);
   const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
   const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
-  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Auto-crease', zmodelCrease));
+  const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'Slide amount' });
+  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Slide amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   panel.append(topoFields);
 
   panel.append(el('h2', 'gap', 'Multiresolution'));
@@ -1365,7 +1372,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelCrease, zmodelHover, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1415,6 +1422,8 @@ class SceneView {
         this.brush = next;
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         this.drawTools();
+        // A tool change draws no frame, so the ZModeler overlays are updated here too.
+        this.drawZmodel();
         scheduleChrome();
       }),
     );
@@ -1824,7 +1833,12 @@ class SceneView {
       begin: (ray, pressure, wpp, inv, tilt) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
-        else if (CLICK_TOOLS.has(this.brush)) void this.clickTool(ray, wpp, inv);
+        else if (CLICK_TOOLS.has(this.brush)) {
+          const picked = this.clickTool(ray, wpp, inv);
+          // Slide point is a drag: the corner is found on press and moved where the pointer is let go.
+          if (this.brush === 'zmodeler' && this.shell.zmodelAction.value === 'point.slide') this.zslide = { picked, ray };
+          void picked;
+        }
         else if (this.scene.active !== null) {
           this.lastStroke = this.brush === 'curve' ? null : { rays: [{ o: ray.origin, d: ray.dir }], wpp, brush: this.brush };
           this.strokes.begin(this.scene.active, this.brushState(), wpp, inv, ray.origin, ray.dir, pressure, tilt);
@@ -1832,6 +1846,7 @@ class SceneView {
       },
       move: (ray, pressure, tilt) => {
         if (this.tube) this.tubeMove(ray);
+        else if (this.zslide) this.zslide.ray = ray;
         else if (!this.shape && !CLICK_TOOLS.has(this.brush)) {
           if (this.lastStroke && this.lastStroke.rays.length < 4000) this.lastStroke.rays.push({ o: ray.origin, d: ray.dir });
           this.strokes.move(ray.origin, ray.dir, pressure, tilt);
@@ -1840,6 +1855,7 @@ class SceneView {
       end: () => {
         if (this.tube) void this.tubeEnd();
         else if (this.shape) void this.shapeEnd();
+        else if (this.zslide) void this.zslideEnd();
         else if (!CLICK_TOOLS.has(this.brush)) this.strokes.end();
       },
       // A press that misses the gizmo's handles or the lattice's points turns the view instead.
@@ -2428,11 +2444,73 @@ class SceneView {
     const [target, action] = this.shell.zmodelAction.value.split('.');
     const args: Record<string, unknown> = { id, point, action };
     if (action === 'insert') args.at = Math.max(5, Math.min(95, Number(this.shell.zmodelAt.value) || 50)) / 100;
+    if (action === 'slide') args.amount = Math.max(5, Math.min(95, Number(this.shell.zmodelAmount.value) || 25)) / 100;
     // Auto-crease applies where the engine takes it: a new edge loop, and a face inset or extrude.
     if (this.shell.zmodelCrease.checked && (action === 'insert' || (target === 'face' && action !== 'delete'))) args.crease = true;
     await this.run(target === 'face' ? 'zmodel_face' : target === 'point' ? 'zmodel_point' : 'zmodel_edge', args);
     this.zmodelHit = null;
     this.drawZmodelHover();
+  }
+
+  /** A Slide point drag in progress: the press's pick (which fills zslidePoint) and the pointer's latest ray. */
+  private zslide: { picked: Promise<void>; ray: Ray } | null = null;
+  private zslidePoint: { id: number; point: Vec3 } | null = null;
+
+  /** Ends a Slide point drag: the corner under the press goes where the release ray meets the plane through it facing
+   * the camera; the engine keeps it in its tangent plane. */
+  private async zslideEnd(): Promise<void> {
+    const drag = this.zslide;
+    this.zslide = null;
+    if (!drag) return;
+    await drag.picked;
+    const at = this.zslidePoint;
+    this.zslidePoint = null;
+    if (!at) return;
+    const { origin, dir } = drag.ray;
+    const t = dot(sub(at.point, origin), dir) / Math.max(1e-12, dot(dir, dir));
+    const to = add(origin, scale(dir, t));
+    if (distance3(to, at.point) < 1e-7) return;
+    await this.run('zmodel_point', { id: at.id, point: at.point, action: 'slide', to });
+    this.zmodelCreaseKey = '';
+  }
+
+  /** Creases in view: segments from get_creases for the active object, refetched when the object or the settled camera
+   * changes, and the key they were fetched for. */
+  private zmodelCreaseSegs: { a: Vec3; b: Vec3; visible: boolean | null }[] = [];
+  private zmodelCreaseKey = '';
+  private zmodelCreaseTimer = 0;
+
+  /** Called every frame: keeps the hover and the crease path on the model as the camera moves. */
+  drawZmodel(): void {
+    this.drawZmodelHover();
+    const path = this.shell.zmodelCreases;
+    const o = this.scene.objects.find((x) => x.id === this.scene.active);
+    if (this.brush !== 'zmodeler' || !o) {
+      setAttr(path, 'visibility', 'hidden');
+      return;
+    }
+    const eye = this.viewport.camera.eye();
+    const key = `${o.id}:${o.revision}:${eye.map((x) => x.toFixed(3)).join(',')}`;
+    if (key !== this.zmodelCreaseKey) {
+      this.zmodelCreaseKey = key;
+      window.clearTimeout(this.zmodelCreaseTimer);
+      // Visibility is asked once the camera has stopped, not every frame.
+      this.zmodelCreaseTimer = window.setTimeout(() => void this.fetchCreases(o.id, eye), 150);
+    }
+    const project = this.projector();
+    const d = this.zmodelCreaseSegs
+      .filter((s) => s.visible !== false)
+      .map((s) => [project(s.a), project(s.b)])
+      .filter((q): q is [[number, number], [number, number]] => q[0] !== null && q[1] !== null)
+      .map(([a, b]) => `M${a[0].toFixed(1)},${a[1].toFixed(1)} L${b[0].toFixed(1)},${b[1].toFixed(1)}`)
+      .join(' ');
+    setAttr(path, 'd', d);
+    setAttr(path, 'visibility', d ? 'visible' : 'hidden');
+  }
+
+  private async fetchCreases(id: number, eye: Vec3): Promise<void> {
+    const r = await dispatch<{ creases: { a: Vec3; b: Vec3; visible: boolean | null }[] }>('get_creases', { id, eye });
+    this.zmodelCreaseSegs = r.ok ? r.result.creases : [];
   }
 
   /** The last poly_pick under the pointer, the pointer's newest position waiting for a reply, and whether one is out. */
@@ -3646,6 +3724,7 @@ class SceneView {
     else if (tool === 'hide_group') await this.run('hide_faces', { id, action: ctrl ? 'isolate' : 'hide', point });
     else if (tool === 'plugin') await this.runPlugin({ point, normal: hit.result.normal, id: hit.result.id });
     else if (tool === 'edge_loop') await this.run('insert_edge_loop', { id, point });
+    else if (tool === 'zmodeler' && this.shell.zmodelAction.value === 'point.slide') this.zslidePoint = { id, point };
     else if (tool === 'zmodeler') await this.zmodel(id, point);
     else if (tool === 'bevel_edge') await this.run('bevel_edge', { id, point, mode: ctrl ? 'round' : 'chamfer' });
     else if (tool === 'clip') {
@@ -5225,6 +5304,7 @@ async function boot(shell: Shell): Promise<void> {
       setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
       view.drawCurve();
       view.drawTools();
+      view.drawZmodel();
     };
     void view.refresh();
     // Agents reach the engine through the service's MCP server; the browser engine has none to follow.
