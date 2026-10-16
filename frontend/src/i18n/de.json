@@ -730,5 +730,21 @@
  "Last stroke as curve": "Letzter Strich als Kurve",
  "Make a brush stroke first": "Zuerst einen Pinselstrich machen",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Der Strich ist rückgängig gemacht und wartet als Kurve: Griffe verschieben, dann Kurve anwenden",
- "The stroke left too few points on the object to make a curve": "Der Strich hat zu wenige Punkte auf dem Objekt für eine Kurve hinterlassen"
+ "The stroke left too few points on the object to make a curve": "Der Strich hat zu wenige Punkte auf dem Objekt für eine Kurve hinterlassen",
+ "A profile needs at least three points": "Ein Profil braucht mindestens drei Punkte",
+ "Choose a saved profile in Tube profile first": "Zuerst unter Röhrenprofil ein gespeichertes Profil wählen",
+ "Delete saved profile": "Gespeichertes Profil löschen",
+ "Delete Saved Tube Profile": "Gespeichertes Röhrenprofil löschen",
+ "Drawn below": "Unten gezeichnet",
+ "Even": "Gleichmäßig",
+ "Fade both ends": "An beiden Enden ausblenden",
+ "Fade in": "Einblenden",
+ "Fade out": "Ausblenden",
+ "Intensity along curve": "Intensität entlang der Kurve",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: Punkt ziehen, auf eine Kante klicken zum Hinzufügen, Alt-Klick auf einen Punkt für Ecke oder glatten Punkt, Umschalt-Klick zum Entfernen.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Profile können in diesem Browser nicht gespeichert werden; dieses bleibt für die Sitzung",
+ "Pulse": "Puls",
+ "Save profile": "Profil speichern",
+ "Save Tube Profile": "Röhrenprofil speichern",
+ "Tube profile, drag the points": "Röhrenprofil, Punkte ziehen"
 }

@@ -730,5 +730,21 @@
  "Last stroke as curve": "Последний мазок в кривую",
  "Make a brush stroke first": "Сначала сделайте мазок кистью",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Мазок отменён и ждёт в виде кривой: передвиньте маркеры, затем нажмите «Применить кривую»",
- "The stroke left too few points on the object to make a curve": "Мазок оставил на объекте слишком мало точек для кривой"
+ "The stroke left too few points on the object to make a curve": "Мазок оставил на объекте слишком мало точек для кривой",
+ "A profile needs at least three points": "Профилю нужно не меньше трёх точек",
+ "Choose a saved profile in Tube profile first": "Сначала выберите сохранённый профиль в «Профиль трубки»",
+ "Delete saved profile": "Удалить сохранённый профиль",
+ "Delete Saved Tube Profile": "Удалить сохранённый профиль трубки",
+ "Drawn below": "Нарисованный ниже",
+ "Even": "Равномерно",
+ "Fade both ends": "Затухание на обоих концах",
+ "Fade in": "Нарастание",
+ "Fade out": "Затухание",
+ "Intensity along curve": "Интенсивность вдоль кривой",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Профиль: тяните точку, щёлкните по стороне, чтобы добавить точку, Alt-щелчок по точке делает угол или гладкую точку, Shift-щелчок удаляет её.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "В этом браузере профили не сохраняются; этот останется до конца сеанса",
+ "Pulse": "Пульс",
+ "Save profile": "Сохранить профиль",
+ "Save Tube Profile": "Сохранить профиль трубки",
+ "Tube profile, drag the points": "Профиль трубки, тяните точки"
 }

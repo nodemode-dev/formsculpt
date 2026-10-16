@@ -730,5 +730,21 @@
  "Last stroke as curve": "Ultimo tratto come curva",
  "Make a brush stroke first": "Fai prima un tratto di pennello",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Il tratto è stato annullato e attende come curva: sposta le maniglie, poi Applica curva",
- "The stroke left too few points on the object to make a curve": "Il tratto ha lasciato troppo pochi punti sull'oggetto per creare una curva"
+ "The stroke left too few points on the object to make a curve": "Il tratto ha lasciato troppo pochi punti sull'oggetto per creare una curva",
+ "A profile needs at least three points": "Un profilo richiede almeno tre punti",
+ "Choose a saved profile in Tube profile first": "Scegli prima un profilo salvato in Profilo tubo",
+ "Delete saved profile": "Elimina profilo salvato",
+ "Delete Saved Tube Profile": "Elimina profilo tubo salvato",
+ "Drawn below": "Disegnato sotto",
+ "Even": "Uniforme",
+ "Fade both ends": "Sfuma entrambe le estremità",
+ "Fade in": "Dissolvenza in entrata",
+ "Fade out": "Dissolvenza in uscita",
+ "Intensity along curve": "Intensità lungo la curva",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profilo: trascina un punto, fai clic su un lato per aggiungerne uno, Alt-clic su un punto per spigolo o punto morbido, Maiusc-clic per rimuoverlo.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Impossibile salvare i profili in questo browser; questo dura per la sessione",
+ "Pulse": "Impulso",
+ "Save profile": "Salva profilo",
+ "Save Tube Profile": "Salva profilo tubo",
+ "Tube profile, drag the points": "Profilo tubo, trascina i punti"
 }

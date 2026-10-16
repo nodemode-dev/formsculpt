@@ -730,5 +730,21 @@
  "Last stroke as curve": "Nét cuối thành đường cong",
  "Make a brush stroke first": "Hãy vẽ một nét cọ trước",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Nét đã được hoàn tác và chờ dưới dạng đường cong: di chuyển các tay nắm, rồi Áp dụng đường cong",
- "The stroke left too few points on the object to make a curve": "Nét để lại quá ít điểm trên đối tượng để tạo đường cong"
+ "The stroke left too few points on the object to make a curve": "Nét để lại quá ít điểm trên đối tượng để tạo đường cong",
+ "A profile needs at least three points": "Một biên dạng cần ít nhất ba điểm",
+ "Choose a saved profile in Tube profile first": "Hãy chọn trước một biên dạng đã lưu ở Biên dạng ống",
+ "Delete saved profile": "Xóa biên dạng đã lưu",
+ "Delete Saved Tube Profile": "Xóa biên dạng ống đã lưu",
+ "Drawn below": "Vẽ bên dưới",
+ "Even": "Đều",
+ "Fade both ends": "Mờ dần hai đầu",
+ "Fade in": "Rõ dần",
+ "Fade out": "Mờ dần",
+ "Intensity along curve": "Cường độ dọc đường cong",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Biên dạng: kéo một điểm, nhấp vào cạnh để thêm điểm, Alt-nhấp vào điểm để chuyển góc hoặc điểm mềm, Shift-nhấp để xóa.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Không thể lưu biên dạng trong trình duyệt này; biên dạng này chỉ giữ trong phiên",
+ "Pulse": "Nhịp",
+ "Save profile": "Lưu biên dạng",
+ "Save Tube Profile": "Lưu biên dạng ống",
+ "Tube profile, drag the points": "Biên dạng ống, kéo các điểm"
 }

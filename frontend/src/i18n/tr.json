@@ -730,5 +730,21 @@
  "Last stroke as curve": "Son darbe eğri olarak",
  "Make a brush stroke first": "Önce bir fırça darbesi yapın",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Darbe geri alındı ve eğri olarak bekliyor: tutamaçlarını taşıyın, ardından Eğriyi uygula",
- "The stroke left too few points on the object to make a curve": "Darbe, eğri oluşturmak için nesne üzerinde çok az nokta bıraktı"
+ "The stroke left too few points on the object to make a curve": "Darbe, eğri oluşturmak için nesne üzerinde çok az nokta bıraktı",
+ "A profile needs at least three points": "Bir profil en az üç nokta gerektirir",
+ "Choose a saved profile in Tube profile first": "Önce Tüp profilinde kayıtlı bir profil seçin",
+ "Delete saved profile": "Kayıtlı profili sil",
+ "Delete Saved Tube Profile": "Kayıtlı Tüp Profilini Sil",
+ "Drawn below": "Aşağıda çizilen",
+ "Even": "Eşit",
+ "Fade both ends": "İki ucu da soldur",
+ "Fade in": "Yavaşça belir",
+ "Fade out": "Yavaşça sol",
+ "Intensity along curve": "Eğri boyunca yoğunluk",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: bir noktayı sürükleyin, eklemek için bir kenara tıklayın, köşe veya yumuşak nokta için Alt-tıklayın, kaldırmak için Shift-tıklayın.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Bu tarayıcıda profiller kaydedilemiyor; bu profil oturum boyunca kalır",
+ "Pulse": "Nabız",
+ "Save profile": "Profili kaydet",
+ "Save Tube Profile": "Tüp Profilini Kaydet",
+ "Tube profile, drag the points": "Tüp profili, noktaları sürükleyin"
 }

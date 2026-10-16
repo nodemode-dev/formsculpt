@@ -730,5 +730,21 @@
  "Last stroke as curve": "Ostatnie pociągnięcie jako krzywa",
  "Make a brush stroke first": "Najpierw wykonaj pociągnięcie pędzlem",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Pociągnięcie cofnięto i czeka jako krzywa: przesuń uchwyty, a potem Zastosuj krzywą",
- "The stroke left too few points on the object to make a curve": "Pociągnięcie zostawiło na obiekcie za mało punktów na krzywą"
+ "The stroke left too few points on the object to make a curve": "Pociągnięcie zostawiło na obiekcie za mało punktów na krzywą",
+ "A profile needs at least three points": "Profil potrzebuje co najmniej trzech punktów",
+ "Choose a saved profile in Tube profile first": "Najpierw wybierz zapisany profil w Profil rurki",
+ "Delete saved profile": "Usuń zapisany profil",
+ "Delete Saved Tube Profile": "Usuń zapisany profil rurki",
+ "Drawn below": "Narysowany poniżej",
+ "Even": "Równomiernie",
+ "Fade both ends": "Wygaszaj oba końce",
+ "Fade in": "Narastanie",
+ "Fade out": "Wygasanie",
+ "Intensity along curve": "Intensywność wzdłuż krzywej",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: przeciągnij punkt, kliknij krawędź, aby dodać punkt, Alt-kliknij punkt dla narożnika lub gładkiego punktu, Shift-kliknij, aby go usunąć.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "W tej przeglądarce nie można zapisać profili; ten przetrwa do końca sesji",
+ "Pulse": "Puls",
+ "Save profile": "Zapisz profil",
+ "Save Tube Profile": "Zapisz profil rurki",
+ "Tube profile, drag the points": "Profil rurki, przeciągaj punkty"
 }

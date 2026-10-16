@@ -730,5 +730,21 @@
  "Last stroke as curve": "Utolsó vonás görbeként",
  "Make a brush stroke first": "Először húzz egy ecsetvonást",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "A vonás visszavonva, görbeként vár: mozgasd a fogantyúit, majd Görbe alkalmazása",
- "The stroke left too few points on the object to make a curve": "A vonás túl kevés pontot hagyott az objektumon egy görbéhez"
+ "The stroke left too few points on the object to make a curve": "A vonás túl kevés pontot hagyott az objektumon egy görbéhez",
+ "A profile needs at least three points": "Egy profilnak legalább három pont kell",
+ "Choose a saved profile in Tube profile first": "Először válassz mentett profilt a Csőprofilnál",
+ "Delete saved profile": "Mentett profil törlése",
+ "Delete Saved Tube Profile": "Mentett csőprofil törlése",
+ "Drawn below": "Lent rajzolt",
+ "Even": "Egyenletes",
+ "Fade both ends": "Mindkét vég elhalványítása",
+ "Fade in": "Felerősödés",
+ "Fade out": "Elhalványulás",
+ "Intensity along curve": "Erősség a görbe mentén",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: húzz egy pontot, kattints egy élre új pontért, Alt-kattintás egy pontra sarokért vagy sima pontért, Shift-kattintás a törléséhez.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Ebben a böngészőben nem menthetők profilok; ez a munkamenet végéig marad",
+ "Pulse": "Pulzálás",
+ "Save profile": "Profil mentése",
+ "Save Tube Profile": "Csőprofil mentése",
+ "Tube profile, drag the points": "Csőprofil, húzd a pontokat"
 }

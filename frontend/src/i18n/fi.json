@@ -730,5 +730,21 @@
  "Last stroke as curve": "Viimeinen veto käyräksi",
  "Make a brush stroke first": "Tee ensin siveltimen veto",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Veto on peruttu ja odottaa käyränä: siirrä kahvoja ja valitse sitten Käytä käyrää",
- "The stroke left too few points on the object to make a curve": "Veto jätti objektiin liian vähän pisteitä käyrää varten"
+ "The stroke left too few points on the object to make a curve": "Veto jätti objektiin liian vähän pisteitä käyrää varten",
+ "A profile needs at least three points": "Profiili tarvitsee vähintään kolme pistettä",
+ "Choose a saved profile in Tube profile first": "Valitse ensin tallennettu profiili kohdasta Putken profiili",
+ "Delete saved profile": "Poista tallennettu profiili",
+ "Delete Saved Tube Profile": "Poista tallennettu putken profiili",
+ "Drawn below": "Piirretty alla",
+ "Even": "Tasainen",
+ "Fade both ends": "Häivytä molemmat päät",
+ "Fade in": "Häivytä sisään",
+ "Fade out": "Häivytä ulos",
+ "Intensity along curve": "Voimakkuus käyrää pitkin",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profiili: vedä pistettä, napsauta reunaa lisätäksesi pisteen, Alt-napsauta pistettä kulmaksi tai pyöreäksi, Vaihto-napsauta poistaaksesi sen.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Profiileja ei voi tallentaa tässä selaimessa; tämä säilyy istunnon ajan",
+ "Pulse": "Pulssi",
+ "Save profile": "Tallenna profiili",
+ "Save Tube Profile": "Tallenna putken profiili",
+ "Tube profile, drag the points": "Putken profiili, vedä pisteitä"
 }

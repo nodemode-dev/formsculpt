@@ -730,5 +730,21 @@
  "Last stroke as curve": "Último traço como curva",
  "Make a brush stroke first": "Faça primeiro um traço de pincel",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "O traço foi desfeito e aguarda como curva: mova as alças e depois Aplicar curva",
- "The stroke left too few points on the object to make a curve": "O traço deixou poucos pontos no objeto para criar uma curva"
+ "The stroke left too few points on the object to make a curve": "O traço deixou poucos pontos no objeto para criar uma curva",
+ "A profile needs at least three points": "Um perfil precisa de pelo menos três pontos",
+ "Choose a saved profile in Tube profile first": "Escolha primeiro um perfil salvo em Perfil do tubo",
+ "Delete saved profile": "Excluir perfil salvo",
+ "Delete Saved Tube Profile": "Excluir perfil de tubo salvo",
+ "Drawn below": "Desenhado abaixo",
+ "Even": "Uniforme",
+ "Fade both ends": "Suavizar as duas pontas",
+ "Fade in": "Surgir aos poucos",
+ "Fade out": "Sumir aos poucos",
+ "Intensity along curve": "Intensidade ao longo da curva",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Perfil: arraste um ponto, clique em uma aresta para adicionar, Alt-clique em um ponto para canto ou ponto suave, Shift-clique para removê-lo.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Não é possível salvar perfis neste navegador; este dura a sessão",
+ "Pulse": "Pulso",
+ "Save profile": "Salvar perfil",
+ "Save Tube Profile": "Salvar perfil de tubo",
+ "Tube profile, drag the points": "Perfil do tubo, arraste os pontos"
 }

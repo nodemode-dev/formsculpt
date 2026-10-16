@@ -730,5 +730,21 @@
  "Last stroke as curve": "上一筆轉為曲線",
  "Make a brush stroke first": "請先畫一筆",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "該筆已復原並以曲線等待：移動其控制點，然後套用曲線",
- "The stroke left too few points on the object to make a curve": "該筆在物件上留下的點太少，無法產生曲線"
+ "The stroke left too few points on the object to make a curve": "該筆在物件上留下的點太少，無法產生曲線",
+ "A profile needs at least three points": "輪廓至少需要三個點",
+ "Choose a saved profile in Tube profile first": "請先在「管狀輪廓」中選擇一個已儲存的輪廓",
+ "Delete saved profile": "刪除已儲存的輪廓",
+ "Delete Saved Tube Profile": "刪除已儲存的管狀輪廓",
+ "Drawn below": "下方繪製",
+ "Even": "均勻",
+ "Fade both ends": "兩端漸弱",
+ "Fade in": "漸強",
+ "Fade out": "漸弱",
+ "Intensity along curve": "沿曲線強度",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "輪廓：拖曳點，點擊邊新增點，Alt 點擊點切換尖角或平滑，Shift 點擊刪除。",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "此瀏覽器無法儲存輪廓；目前的輪廓僅保留到本次工作階段結束",
+ "Pulse": "脈衝",
+ "Save profile": "儲存輪廓",
+ "Save Tube Profile": "儲存管狀輪廓",
+ "Tube profile, drag the points": "管狀輪廓，拖曳各點"
 }

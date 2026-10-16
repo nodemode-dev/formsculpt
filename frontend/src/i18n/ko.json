@@ -730,5 +730,21 @@
  "Last stroke as curve": "마지막 스트로크를 커브로",
  "Make a brush stroke first": "먼저 브러시 스트로크를 그리세요",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "스트로크가 취소되어 커브로 대기 중입니다. 핸들을 옮긴 뒤 커브 적용을 누르세요",
- "The stroke left too few points on the object to make a curve": "스트로크가 개체에 남긴 점이 너무 적어 커브를 만들 수 없습니다"
+ "The stroke left too few points on the object to make a curve": "스트로크가 개체에 남긴 점이 너무 적어 커브를 만들 수 없습니다",
+ "A profile needs at least three points": "프로필에는 점이 세 개 이상 필요합니다",
+ "Choose a saved profile in Tube profile first": "먼저 튜브 프로필에서 저장된 프로필을 선택하세요",
+ "Delete saved profile": "저장된 프로필 삭제",
+ "Delete Saved Tube Profile": "저장된 튜브 프로필 삭제",
+ "Drawn below": "아래에 그림",
+ "Even": "균일",
+ "Fade both ends": "양쪽 끝 페이드",
+ "Fade in": "페이드 인",
+ "Fade out": "페이드 아웃",
+ "Intensity along curve": "커브를 따른 강도",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "프로필: 점을 드래그하고, 변을 클릭해 점을 추가하고, Alt 클릭으로 모서리와 부드러운 점을 전환하고, Shift 클릭으로 제거합니다.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "이 브라우저에서는 프로필을 저장할 수 없습니다. 이 프로필은 세션 동안만 유지됩니다",
+ "Pulse": "펄스",
+ "Save profile": "프로필 저장",
+ "Save Tube Profile": "튜브 프로필 저장",
+ "Tube profile, drag the points": "튜브 프로필, 점을 드래그"
 }

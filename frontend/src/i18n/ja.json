@@ -730,5 +730,21 @@
  "Last stroke as curve": "最後のストロークをカーブに",
  "Make a brush stroke first": "まずブラシストロークを描いてください",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "ストロークは取り消され、カーブとして待機しています。ハンドルを動かしてからカーブを適用してください",
- "The stroke left too few points on the object to make a curve": "ストロークがオブジェクト上に残したポイントが少なすぎてカーブを作れません"
+ "The stroke left too few points on the object to make a curve": "ストロークがオブジェクト上に残したポイントが少なすぎてカーブを作れません",
+ "A profile needs at least three points": "プロファイルには少なくとも 3 つのポイントが必要です",
+ "Choose a saved profile in Tube profile first": "まずチューブのプロファイルで保存済みのプロファイルを選んでください",
+ "Delete saved profile": "保存済みプロファイルを削除",
+ "Delete Saved Tube Profile": "保存済みチューブプロファイルを削除",
+ "Drawn below": "下で描画",
+ "Even": "均等",
+ "Fade both ends": "両端をフェード",
+ "Fade in": "フェードイン",
+ "Fade out": "フェードアウト",
+ "Intensity along curve": "カーブに沿った強さ",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "プロファイル: ポイントをドラッグ、辺をクリックで追加、Alt クリックで角とスムーズを切り替え、Shift クリックで削除。",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "このブラウザーではプロファイルを保存できません。このプロファイルはセッション中のみ残ります",
+ "Pulse": "パルス",
+ "Save profile": "プロファイルを保存",
+ "Save Tube Profile": "チューブプロファイルを保存",
+ "Tube profile, drag the points": "チューブのプロファイル、ポイントをドラッグ"
 }

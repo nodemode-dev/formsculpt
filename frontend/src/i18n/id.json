@@ -730,5 +730,21 @@
  "Last stroke as curve": "Goresan terakhir jadi kurva",
  "Make a brush stroke first": "Buat goresan kuas terlebih dahulu",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Goresan dibatalkan dan menunggu sebagai kurva: geser pegangannya, lalu Terapkan kurva",
- "The stroke left too few points on the object to make a curve": "Goresan meninggalkan terlalu sedikit titik pada objek untuk membuat kurva"
+ "The stroke left too few points on the object to make a curve": "Goresan meninggalkan terlalu sedikit titik pada objek untuk membuat kurva",
+ "A profile needs at least three points": "Profil memerlukan setidaknya tiga titik",
+ "Choose a saved profile in Tube profile first": "Pilih dulu profil tersimpan di Profil tabung",
+ "Delete saved profile": "Hapus profil tersimpan",
+ "Delete Saved Tube Profile": "Hapus Profil Tabung Tersimpan",
+ "Drawn below": "Digambar di bawah",
+ "Even": "Rata",
+ "Fade both ends": "Pudarkan kedua ujung",
+ "Fade in": "Muncul perlahan",
+ "Fade out": "Memudar",
+ "Intensity along curve": "Intensitas sepanjang kurva",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: seret titik, klik tepi untuk menambah titik, Alt-klik titik untuk sudut atau titik halus, Shift-klik untuk menghapusnya.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Profil tidak dapat disimpan di peramban ini; profil ini bertahan selama sesi",
+ "Pulse": "Denyut",
+ "Save profile": "Simpan profil",
+ "Save Tube Profile": "Simpan Profil Tabung",
+ "Tube profile, drag the points": "Profil tabung, seret titik-titiknya"
 }

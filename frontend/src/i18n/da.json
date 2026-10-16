@@ -730,5 +730,21 @@
  "Last stroke as curve": "Sidste strøg som kurve",
  "Make a brush stroke first": "Lav først et penselstrøg",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "Strøget er fortrudt og venter som en kurve: flyt dets håndtag, og vælg så Anvend kurve",
- "The stroke left too few points on the object to make a curve": "Strøget efterlod for få punkter på objektet til en kurve"
+ "The stroke left too few points on the object to make a curve": "Strøget efterlod for få punkter på objektet til en kurve",
+ "A profile needs at least three points": "En profil skal have mindst tre punkter",
+ "Choose a saved profile in Tube profile first": "Vælg først en gemt profil under Rørprofil",
+ "Delete saved profile": "Slet gemt profil",
+ "Delete Saved Tube Profile": "Slet gemt rørprofil",
+ "Drawn below": "Tegnet nedenfor",
+ "Even": "Jævn",
+ "Fade both ends": "Udton begge ender",
+ "Fade in": "Indton",
+ "Fade out": "Udton",
+ "Intensity along curve": "Intensitet langs kurven",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "Profil: træk et punkt, klik på en kant for at tilføje et, Alt-klik på et punkt for hjørne eller blødt punkt, Skift-klik for at fjerne det.",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "Profiler kan ikke gemmes i denne browser; denne holder for sessionen",
+ "Pulse": "Puls",
+ "Save profile": "Gem profil",
+ "Save Tube Profile": "Gem rørprofil",
+ "Tube profile, drag the points": "Rørprofil, træk punkterne"
 }

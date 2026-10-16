@@ -730,5 +730,21 @@
  "Last stroke as curve": "เส้นล่าสุดเป็นเส้นโค้ง",
  "Make a brush stroke first": "ลากแปรงหนึ่งเส้นก่อน",
  "The stroke is undone and waits as a curve: move its handles, then Apply curve": "เส้นถูกยกเลิกและรออยู่ในรูปเส้นโค้ง: ย้ายจุดจับ แล้วกดใช้เส้นโค้ง",
- "The stroke left too few points on the object to make a curve": "เส้นทิ้งจุดบนวัตถุน้อยเกินกว่าจะสร้างเส้นโค้งได้"
+ "The stroke left too few points on the object to make a curve": "เส้นทิ้งจุดบนวัตถุน้อยเกินกว่าจะสร้างเส้นโค้งได้",
+ "A profile needs at least three points": "โปรไฟล์ต้องมีอย่างน้อยสามจุด",
+ "Choose a saved profile in Tube profile first": "เลือกโปรไฟล์ที่บันทึกไว้ในโปรไฟล์ท่อก่อน",
+ "Delete saved profile": "ลบโปรไฟล์ที่บันทึกไว้",
+ "Delete Saved Tube Profile": "ลบโปรไฟล์ท่อที่บันทึกไว้",
+ "Drawn below": "วาดด้านล่าง",
+ "Even": "เท่ากัน",
+ "Fade both ends": "จางทั้งสองปลาย",
+ "Fade in": "ค่อยๆ เข้ม",
+ "Fade out": "ค่อยๆ จาง",
+ "Intensity along curve": "ความแรงตามเส้นโค้ง",
+ "Profile: drag a point, click an edge to add one, Alt-click a point for a corner or a smooth point, Shift-click to remove it.": "โปรไฟล์: ลากจุด คลิกขอบเพื่อเพิ่มจุด Alt-คลิกจุดเพื่อสลับมุมหรือจุดโค้ง Shift-คลิกเพื่อลบ",
+ "Profiles cannot be saved in this browser; this one lasts for the session": "เบราว์เซอร์นี้บันทึกโปรไฟล์ไม่ได้ โปรไฟล์นี้จะอยู่จนจบเซสชัน",
+ "Pulse": "จังหวะ",
+ "Save profile": "บันทึกโปรไฟล์",
+ "Save Tube Profile": "บันทึกโปรไฟล์ท่อ",
+ "Tube profile, drag the points": "โปรไฟล์ท่อ ลากจุดต่างๆ"
 }
