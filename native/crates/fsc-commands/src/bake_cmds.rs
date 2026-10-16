@@ -99,7 +99,8 @@ pub(crate) fn uv_layout_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "size": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 512, "description": "Width and height of the picture in pixels."},
             "at": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2, "description": "A UV point [u, v] (0 to 1, v up); the island under it is drawn brighter and reported as selected."},
-            "island": {"type": "integer", "minimum": 0, "description": "An island's number to draw brighter, instead of at."}
+            "island": {"type": "integer", "minimum": 0, "description": "An island's number to draw brighter, instead of at."},
+            "tile": {"type": "integer", "minimum": 1001, "maximum": 1100, "default": 1001, "description": "The UDIM tile to draw (1001 is the unit square); at is then given inside that tile, 0 to 1."}
         },
         "required": [],
         "additionalProperties": false
@@ -114,8 +115,19 @@ pub(crate) fn uv_layout(s: &mut Session, args: &Value) -> Result<Value, CommandE
         return Err(bad("size must be 64 to 2048"));
     }
     let at = uv_point(args, "at")?;
+    let tile = args.get("tile").and_then(Value::as_u64).unwrap_or(1001) as u32;
+    if !(1001..=1100).contains(&tile) {
+        return Err(bad("tile must be 1001 to 1100"));
+    }
     let mesh = &s.scene.get(id).expect("checked").mesh;
     need_uvs(mesh)?;
+    let shifted;
+    let mesh = if tile == 1001 {
+        mesh
+    } else {
+        shifted = crate::udim_cmds::shifted_to_unit(mesh, tile);
+        &shifted
+    };
     let island = fsc_paint::islands(mesh);
     let count = island.iter().copied().max().map_or(0, |m| m as usize + 1);
     let selected = match args.get("island").and_then(Value::as_u64) {
