@@ -130,6 +130,8 @@ interface Shell {
   uvTile: HTMLInputElement;
   uvPathLine: SVGPolylineElement;
   uvPinMarks: SVGPathElement;
+  uvTileGrid: SVGPathElement;
+  uvAllTiles: HTMLInputElement;
   layout: PanelLayout;
   panelLeft: HTMLInputElement;
   uiSize: HTMLSelectElement;
@@ -823,7 +825,8 @@ function buildShell(root: HTMLElement): Shell {
   const uvSeams = choices('UV seams', [['direction', 'By facing'], ['groups', 'Along face groups'], ['charts', 'Automatic charts']]);
   const uvFields = el('div', 'fields');
   const uvTile = input('number', { min: '1001', max: '1100', step: '1', value: '1001', 'aria-label': 'UV tile' });
-  uvFields.append(field('Seams', uvSeams), field('UV tile', uvTile));
+  const uvAllTiles = input('checkbox', { 'aria-label': 'All tiles' });
+  uvFields.append(field('Seams', uvSeams), field('UV tile', uvTile), field('All tiles', uvAllTiles));
   panel.append(uvFields);
   // The layout picture keeps its square whether or not there is a layout, so nothing below it moves.
   const uvView = el('div', 'uv-view');
@@ -839,7 +842,9 @@ function buildShell(root: HTMLElement): Shell {
   uvMarks.setAttribute('preserveAspectRatio', 'none');
   const uvPathLine = document.createElementNS(SVG, 'polyline');
   const uvPinMarks = document.createElementNS(SVG, 'path');
-  uvMarks.append(uvPathLine, uvPinMarks);
+  const uvTileGrid = document.createElementNS(SVG, 'path');
+  uvTileGrid.setAttribute('class', 'uv-tile-grid');
+  uvMarks.append(uvTileGrid, uvPathLine, uvPinMarks);
   uvView.append(uvImage, uvEmpty, uvMarks);
   panel.append(uvView);
   const uvGrid = el('div', 'add-grid three after-fields');
@@ -1193,7 +1198,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, detail, detailMode, topoButtons, resolution, quadTarget, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, arrayScaleEnd, arrayJitter, arraySeed, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -3701,13 +3706,18 @@ class SceneView {
 
   private async bake(id: number): Promise<void> {
     this.note('Baking maps');
-    const reply = await dispatch<{ size: number; source: string; covered: number; ms: number }>('bake_maps', { id, size: Number(this.shell.bakeSize.value) });
+    // Islands spread over UDIM tiles bake one map set per tile, which GLB export turns into one material per tile.
+    const used = await dispatch<{ tiles: { tile: number }[] }>('uv_tiles', { id });
+    const tiles = used.ok ? used.result.tiles.map((x) => x.tile) : [];
+    const udim = tiles.length > 1 || (tiles.length === 1 && tiles[0] !== 1001);
+    const reply = await dispatch<{ size: number; source: string; covered: number; ms: number }>('bake_maps', { id, size: Number(this.shell.bakeSize.value), ...(udim ? { udim: true } : {}) });
     if (!reply.ok) {
       this.note(reply.error.message);
       return;
     }
     const r = reply.result;
-    this.note(`Baked ${r.size} px maps from ${r.source} in ${(r.ms / 1000).toFixed(1)} s; Export GLB or Download maps`);
+    if (udim) this.note(t('Baked {size} px maps for tiles {list}; Export GLB for one material per tile').replace('{size}', String(r.size)).replace('{list}', tiles.join(', ')));
+    else this.note(`Baked ${r.size} px maps from ${r.source} in ${(r.ms / 1000).toFixed(1)} s; Export GLB or Download maps`);
     await this.refresh();
   }
 
@@ -4122,7 +4132,8 @@ class SceneView {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     const has = o?.uvs === true;
     const tile = this.uvTileNumber();
-    const key = o && has ? `${o.id}:${o.revision}:${this.uvIsland ?? ''}:${tile}` : '';
+    const all = this.shell.uvAllTiles.checked;
+    const key = o && has ? `${o.id}:${o.revision}:${this.uvIsland ?? ''}:${all ? 'all' : tile}` : '';
     // Pins and the path name vertices of one object's layout as it stood; any change to it leaves them stale.
     const markKey = o && has ? `${o.id}:${o.revision}` : '';
     if (markKey !== this.uvMarksFor) {
@@ -4141,13 +4152,31 @@ class SceneView {
       this.shell.uvImage.hidden = true;
       return;
     }
-    const args: Record<string, unknown> = { id: o.id, size: 512, tile };
+    const args: Record<string, unknown> = all ? { id: o.id, size: 512, overview: true } : { id: o.id, size: 512, tile };
     if (this.uvIsland !== null) args.island = this.uvIsland;
-    const reply = await dispatch<{ png_base64: string; islands: number; selected: number | null }>('get_uv_layout', args);
+    const reply = await dispatch<{ png_base64: string; islands: number; selected: number | null; overview: { u0: number; v0: number; n: number } | null }>('get_uv_layout', args);
     if (!reply.ok) return;
+    this.uvOverview = all ? reply.result.overview : null;
+    this.drawTileGrid();
     if (this.uvIsland !== null && reply.result.selected === null) this.uvIsland = null;
     this.shell.uvImage.src = `data:image/png;base64,${reply.result.png_base64}`;
     this.shell.uvImage.hidden = false;
+  }
+
+  /** The tile overview's lower left tile corner and width in tiles while All tiles is on, else null. */
+  private uvOverview: { u0: number; v0: number; n: number } | null = null;
+
+  /** Tile borders over the overview picture (one path), empty for a single tile. */
+  private drawTileGrid(): void {
+    const ov = this.uvOverview;
+    let d = '';
+    if (ov && ov.n > 1) {
+      for (let k = 1; k < ov.n; k++) {
+        const at = ((k / ov.n) * 100).toFixed(2);
+        d += `M${at},0V100M0,${at}H100`;
+      }
+    }
+    setAttr(this.shell.uvTileGrid, 'd', d);
   }
 
   /** The UDIM tile the UV view shows, 1001 to 1100. */
@@ -4210,6 +4239,11 @@ class SceneView {
   private drawUvMarks(): void {
     const [du, dv] = this.uvTileOffset();
     const xy = ([u, v]: [number, number]): [number, number] => [(u - du) * 100, (1 - v + dv) * 100];
+    if (this.shell.uvAllTiles.checked) {
+      setAttr(this.shell.uvPinMarks, 'd', '');
+      setAttr(this.shell.uvPathLine, 'points', '');
+      return;
+    }
     const ring = ([x, y]: [number, number]): string => `M${(x - 1.6).toFixed(2)},${y.toFixed(2)}a1.6,1.6 0 1,0 3.2,0a1.6,1.6 0 1,0 -3.2,0`;
     setAttr(this.shell.uvPinMarks, 'd', [...this.uvPins.values()].map((p) => ring(xy(p))).join(''));
     setAttr(this.shell.uvPathLine, 'points', this.uvPath ? this.uvPath.marks.map((p) => xy(p).map((n) => n.toFixed(2)).join(',')).join(' ') : '');
@@ -4251,6 +4285,10 @@ class SceneView {
       this.drawUvMarks();
       void this.drawUv(false);
     });
+    this.shell.uvAllTiles.addEventListener('change', () => {
+      this.drawUvMarks();
+      void this.drawUv(false);
+    });
     let start: { x: number; y: number; uv: [number, number] } | null = null;
     view.addEventListener('pointerdown', (e) => {
       if (this.scene.active === null) return;
@@ -4262,6 +4300,20 @@ class SceneView {
       start = null;
       const id = this.scene.active;
       if (!from || id === null) return;
+      const ov = this.uvOverview;
+      if (this.shell.uvAllTiles.checked) {
+        // In the overview a click opens the tile under it; nothing is moved.
+        if (!ov) return;
+        const r = view.getBoundingClientRect();
+        const u = ov.u0 + Math.floor(((e.clientX - r.left) / r.width) * ov.n);
+        const v = ov.v0 + Math.floor((1 - (e.clientY - r.top) / r.height) * ov.n);
+        if (u < 0 || u > 9 || v < 0 || v > 9) return;
+        this.shell.uvTile.value = String(1001 + u + 10 * v);
+        this.shell.uvAllTiles.checked = false;
+        this.drawUvMarks();
+        void this.drawUv(false);
+        return;
+      }
       const to = this.uvAt(e);
       if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 3) {
         // Shift drags the nearest UV point (Alt with a soft reach) instead of the whole island.

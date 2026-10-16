@@ -495,3 +495,9 @@ UVs are per triangle corner and the viewport draws indexed vertices, so the chec
 - kind: rationale
 - logged: v0.44.0 · 2026-10-16
 The UV view shows one tile at a time (the UV tile field, 1001 to 1100) through get_uv_layout's tile, so the picture and its square stay the same size and nothing below moves. uvAt returns real UV space (the tile's corner added), so island drags, point drags, pins and paths all work unchanged in any tile; only the island pick, which asks get_uv_layout, sends the point inside the tile, and the marks overlay subtracts the corner. Tiles by group and Tiles by island run uv_pack_udim starting at the shown tile, Island to tile moves the chosen island into it, and List tiles reports each tile's island count. The checker tints every tile past 1001 with its own hue so tiles can be told apart on the model, and red now means outside the UDIM range (u below 0 or from 10, v below 0) instead of outside the unit square.
+
+### All tiles overview; UDIM bake from the Paint section
+- refers-to: app.ts :: uvOverview, drawTileGrid, drawUv, drawUvMarks, wireUvView (overview click), bake; styles/shell.css :: .uv-tile-grid
+- kind: rationale
+- logged: v0.45.0 · 2026-10-16
+All tiles asks get_uv_layout for its overview (the smallest square of tiles holding every occupied one) and draws the tile borders as one dashed path in the marks overlay, rewritten in place, so the picture keeps its square. In the overview a click opens the tile under it (sets UV tile and turns All tiles off) and nothing is dragged, pinned or picked, and pins and the path are hidden because their positions belong to one tile. Bake maps asks uv_tiles first and bakes with udim whenever islands sit anywhere but tile 1001 alone, so a tiled object always gets one map set per tile and GLB export one material per tile, with no extra control.
