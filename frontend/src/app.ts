@@ -30,7 +30,8 @@ import { CommandPalette } from './ui/command-palette';
 import { MenuBar, PopupMenu } from './ui/menu';
 import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
 import { scheduleChrome } from './ui/chrome';
-import { t } from './ui/i18n';
+import { language, languages, setLanguage, t } from './ui/i18n';
+import { isLang } from './ui/i18n/langs';
 import { registerTerminal } from './ui/terminal';
 import { Gizmo, type GizmoDrag } from './ui/gizmo';
 import { PanelLayout } from './ui/layout';
@@ -879,8 +880,12 @@ function buildShell(root: HTMLElement): Shell {
   const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
   const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
   const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
+  const langPick = choices('Language', languages().map(([code, name]) => [code, name] as [string, string]));
+  langPick.dataset.noI18n = '';
+  langPick.value = language();
+  langPick.addEventListener('change', () => { if (isLang(langPick.value)) void setLanguage(langPick.value); });
   const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (

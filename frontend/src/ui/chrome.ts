@@ -1,8 +1,9 @@
 import { commands } from './commands';
 import { setAttr, setDisabled, setTitle } from './dom';
-import { t } from './i18n';
+import { onLanguage, t } from './i18n';
 
 let frame = 0;
+onLanguage(() => scheduleChrome());
 
 export function syncChrome(root: ParentNode = document): void {
   for (const node of Array.from(root.querySelectorAll<HTMLElement>('[data-cmd]'))) {

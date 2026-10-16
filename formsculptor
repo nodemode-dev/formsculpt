@@ -25,6 +25,7 @@ usage: ./formsculptor [command] [options]
   bench [level]       time mesh build, normals, BVH, raycasts and brush-radius queries (icosphere level, default 8)
   mcp                 formsculptor over MCP's stdio transport (starts the engine if it is not running)
   script FILE [JSON]  run a Python script with fsc.call(command, **args), on the running engine or its own
+  i18n extract|check  collect the English interface strings, or report each language table's coverage
   agents sync|install refresh the modeling skill's tool reference (sync), or register formsculptor with Claude Code, Codex and Cursor (install)
   clean [--all]       remove build output (--all also venv and node_modules)
   help                this text
@@ -70,6 +71,7 @@ case "$cmd" in
     [ -x backend/venv/Scripts/python ] && py=backend/venv/Scripts/python
     FSC_CWD="${OLDPWD:-$PWD}" exec "$py" setup/run_script.py "$@" ;;
   agents) exec python3 setup/agents.py "$@" ;;
+  i18n) exec python3 -I setup/i18n.py "$@" ;;
   clean) exec setup/clean "$@" ;;
   help|-h|--help) usage ;;
   *) printf '[formsculptor] unknown command: %s\n\n' "$cmd"; usage; exit 2 ;;
