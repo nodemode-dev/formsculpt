@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.36.0 · 2026-10-16
+
+### Added
+
+- A tube profile editor in the panel: draw a closed cross-section (drag points, click an edge to add one, Alt-click for a corner or a smooth point, Shift-click to remove); Tube profile gains Drawn below and saved profiles (Save profile, Delete saved profile, kept in this browser). An unchanged tube follows the edits.
+- Intensity along curve for Apply curve: even, fade in, fade out, fade both ends or pulse, sent as per-point pressure.
+- 748 interface strings in every language.
+
 ## 0.35.0 · 2026-10-16
 
 ### Added
