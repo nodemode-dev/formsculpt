@@ -3954,7 +3954,15 @@ class SceneView {
     const img = new Image();
     img.src = `data:image/png;base64,${r.result.png_base64}`;
     await img.decode();
-    if (this.viewport.renderer.setPaintTexture(id, img)) {
+    // Roughness and metalness per texel for lit shading, fetched only when the texture changed.
+    const mr = await dispatch<{ png_base64: string }>('get_texture', { id, size: 1024, channel: 'roughness_metal' });
+    let mrImg: HTMLImageElement | undefined;
+    if (mr.ok) {
+      mrImg = new Image();
+      mrImg.src = `data:image/png;base64,${mr.result.png_base64}`;
+      await mrImg.decode();
+    }
+    if (this.viewport.renderer.setPaintTexture(id, img, mrImg)) {
       this.textureShown.set(id, r.result.revision);
       this.viewport.invalidate();
     }

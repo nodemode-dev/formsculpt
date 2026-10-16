@@ -87,6 +87,8 @@ uniform float uOrtho;
 uniform float uPainted;
 uniform float uChecker;
 uniform sampler2D uPaintTex;
+uniform sampler2D uPaintMr;
+uniform float uPaintMrOn;
 uniform float uLit;
 uniform vec4 uCap;
 uniform vec3 uTint;
@@ -138,9 +140,11 @@ vec3 light(vec3 n, vec3 v, vec3 l, vec3 radiance, vec3 albedo, float rough, floa
 void main() {
   // Painted opacity draws as a screen-door: a fixed noise per pixel decides which fragments stay, so see-through
   // parts need no sorting and keep writing depth where they are drawn.
-  if (uPainted > 0.5 && vFx.x < 0.999) {
+  // A painted texture keeps opacity in its alpha.
+  float opacity = uChecker > 1.5 ? texture(uPaintTex, vCol.xy).a : vFx.x;
+  if (uPainted > 0.5 && opacity < 0.999) {
     float gate = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-    if (vFx.x <= gate) discard;
+    if (opacity <= gate) discard;
   }
   vec3 n = normalize(vNrm);
   vec3 v = uOrtho > 0.5 ? vec3(0.0, 0.0, 1.0) : normalize(-vViewPos);
@@ -159,6 +163,12 @@ void main() {
   if (uLit > 0.5) {
     float rough = clamp(vMat.x, 0.05, 1.0);
     float metal = clamp(vMat.y, 0.0, 1.0);
+    if (uChecker > 1.5 && uPaintMrOn > 0.5) {
+      // The texture's roughness-metal map: roughness in green, metalness in blue, per texel.
+      vec3 mr = texture(uPaintMr, vCol.xy).rgb;
+      rough = clamp(mr.g, 0.05, 1.0);
+      metal = clamp(mr.b, 0.0, 1.0);
+    }
     col = light(n, v, uKeyDir, uKeyColor, albedo, rough, metal) * keyShadow();
     for (int i = 0; i < 3; i++) if (i < uExtraCount) col += light(n, v, uExtraDir[i], uExtraColor[i], albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.6, 0.1, 0.5)), vec3(0.55, 0.62, 0.75), albedo, rough, metal);
@@ -260,6 +270,8 @@ interface GpuMesh {
   checker: Expanded | null;
   /** The object's painted texture, drawn through the per-corner UV copy when present. */
   paintTexture: WebGLTexture | null;
+  /** The painted texture's roughness-metal map (green, blue), drawn with it in lit shading. */
+  paintMr: WebGLTexture | null;
   /** Bounds at upload, for fitting the shadow map (strokes move vertices only a little). */
   lo: [number, number, number];
   hi: [number, number, number];
@@ -454,7 +466,7 @@ export class GlRenderer {
         if (x > hi[c]) hi[c] = x;
       }
     }
-    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, paintTexture: null, lo, hi };
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, paintTexture: null, paintMr: null, lo, hi };
     this.meshes.set(mesh.id, gpu);
     if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
   }
@@ -539,25 +551,35 @@ export class GlRenderer {
 
   /**
    * A painted texture for one object, drawn through its per-corner UV copy (set that first with setChecker); null
-   * removes it. The image replaces the previous one in the same GL texture.
+   * removes it (and its roughness-metal map). The image replaces the previous one in the same GL texture; `mr`, when
+   * given, does the same for the roughness-metal map on unit 4.
    */
-  setPaintTexture(id: number, image: TexImageSource | null): boolean {
+  setPaintTexture(id: number, image: TexImageSource | null, mr?: TexImageSource): boolean {
     const m = this.meshes.get(id);
     if (!m) return false;
     const gl = this.gl;
     if (!image) {
       if (m.paintTexture) gl.deleteTexture(m.paintTexture);
+      if (m.paintMr) gl.deleteTexture(m.paintMr);
       m.paintTexture = null;
+      m.paintMr = null;
       return true;
     }
+    const upload = (tex: WebGLTexture, unit: number, source: TexImageSource): void => {
+      gl.activeTexture(unit);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    };
     m.paintTexture = m.paintTexture ?? gl.createTexture();
-    gl.activeTexture(gl.TEXTURE3);
-    gl.bindTexture(gl.TEXTURE_2D, m.paintTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    upload(m.paintTexture, gl.TEXTURE3, image);
+    if (mr) {
+      m.paintMr = m.paintMr ?? gl.createTexture();
+      upload(m.paintMr, gl.TEXTURE4, mr);
+    }
     gl.activeTexture(gl.TEXTURE0);
     return true;
   }
@@ -851,8 +873,14 @@ export class GlRenderer {
           gl.activeTexture(gl.TEXTURE3);
           gl.bindTexture(gl.TEXTURE_2D, m.paintTexture);
           gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uPaintTex'), 3);
+          if (m.paintMr) {
+            gl.activeTexture(gl.TEXTURE4);
+            gl.bindTexture(gl.TEXTURE_2D, m.paintMr);
+            gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uPaintMr'), 4);
+          }
           gl.activeTexture(gl.TEXTURE0);
         }
+        gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uPaintMrOn'), m.paintTexture && m.paintMr ? 1 : 0);
         gl.bindVertexArray(m.checker.vao);
         gl.vertexAttrib2f(4, PAINT_DEFAULT[3], PAINT_DEFAULT[4]);
         gl.vertexAttrib2f(5, 1, 0);
