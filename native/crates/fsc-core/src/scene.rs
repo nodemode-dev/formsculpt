@@ -30,6 +30,7 @@ pub struct Object {
     pub instance: Option<Instance>,
     /// How light passes into and through the surface, beyond its painted colour, roughness and metalness.
     pub material: Material,
+    pub selection_sets: Vec<crate::SelectionSet>,
 }
 
 /// An object's light transport in lit shading: subsurface scattering (skin, wax, jade) and transmission with refraction
@@ -81,7 +82,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
     }
 
     pub fn rebuild(&mut self) {

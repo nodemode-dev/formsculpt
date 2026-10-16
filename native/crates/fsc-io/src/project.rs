@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read, Write};
 
-use fsc_core::{Blend, Layer, LayerPaint, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, Stencil, COVER, PAINT_LEN};
+use fsc_core::{Blend, Layer, LayerPaint, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, SelectionSet, Stencil, COVER, PAINT_LEN};
 use serde_json::{json, Value};
 
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
@@ -107,6 +107,32 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
                 list.push(json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible, "data": w.put(&format!("{dir}/paintlayer{k}.f32"), &f32s(&data))?}));
             }
             entry["paint_layers"] = json!({"active": o.paint_layers.active, "base": w.put(&format!("{dir}/paintbase.f32"), &f32s(&base))?, "list": list});
+        }
+        if !o.selection_sets.is_empty() {
+            let mut sets = Vec::new();
+            for (k, set) in o.selection_sets.iter().enumerate() {
+                let sd = format!("{dir}/sets/{k}");
+                let mut se = json!({"name": set.name, "vertices": set.vertices, "faces": set.faces});
+                if let Some(g) = &set.groups {
+                    se["groups"] = json!(w.put(&format!("{sd}/groups.u32"), &u32s(g))?);
+                }
+                if let Some(m) = &set.mask {
+                    se["mask"] = json!(w.put(&format!("{sd}/mask.f32"), &f32s(m))?);
+                }
+                if let Some(p) = &set.paint {
+                    let flat: Vec<f32> = p.iter().flatten().copied().collect();
+                    se["paint"] = json!(w.put(&format!("{sd}/paint.f32"), &f32s(&flat))?);
+                }
+                if let Some(st) = &set.strengths {
+                    se["strengths"] = json!(st);
+                }
+                if let Some(u) = &set.uvs {
+                    let flat: Vec<f32> = u.iter().flatten().copied().collect();
+                    se["uvs"] = json!(w.put(&format!("{sd}/uvs.f32"), &f32s(&flat))?);
+                }
+                sets.push(se);
+            }
+            entry["selection_sets"] = json!(sets);
         }
         objects.push(entry);
     }
@@ -301,6 +327,33 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 o.paint_layers = PaintLayers { list, active, base };
                 o.composite_paint(None);
             }
+        }
+        for se in e["selection_sets"].as_array().cloned().unwrap_or_default() {
+            let broken = "a selection set does not match its recorded counts";
+            let (vertices, faces) = (se["vertices"].as_u64().unwrap_or(0) as usize, se["faces"].as_u64().unwrap_or(0) as usize);
+            let mut set = SelectionSet { name: se["name"].as_str().unwrap_or("Set").chars().take(64).collect(), vertices, faces, ..SelectionSet::default() };
+            if se["groups"].is_string() {
+                set.groups = Some(r.u32(&se["groups"])?).filter(|g| g.len() == faces);
+                set.groups.as_ref().ok_or(broken)?;
+            }
+            if se["mask"].is_string() {
+                set.mask = Some(r.f32(&se["mask"])?).filter(|m| m.len() == vertices);
+                set.mask.as_ref().ok_or(broken)?;
+            }
+            if se["paint"].is_string() {
+                set.paint = Some(r.paint(&se["paint"], vertices)?);
+            }
+            if let Some(st) = se["strengths"].as_array() {
+                set.strengths = Some(st.iter().map(|x| x.as_f64().unwrap_or(1.0) as f32).collect());
+            }
+            if se["uvs"].is_string() {
+                let flat = r.f32(&se["uvs"])?;
+                if flat.len() != faces * 6 {
+                    return Err(broken.into());
+                }
+                set.uvs = Some(flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect());
+            }
+            o.selection_sets.push(set);
         }
         let at = scene.objects.len();
         scene.insert(at, o);

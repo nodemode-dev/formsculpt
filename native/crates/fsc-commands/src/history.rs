@@ -21,6 +21,8 @@ pub enum Edit {
     PaintLayers { label: String, object: ObjectId, layers: PaintLayers, paint: Vec<Paint> },
     /// A material change (subsurface, transmission): the previous material swaps back.
     Material { object: ObjectId, material: fsc_core::Material },
+    /// Several channels (groups, mask, paint, sculpt layers, UVs) swapped as one step: selection set restores, pastes, clears.
+    Channels { label: String, object: ObjectId, state: fsc_core::ChannelState },
 }
 
 impl Edit {
@@ -32,7 +34,8 @@ impl Edit {
             | Edit::Scene { label, .. }
             | Edit::LayerState { label, .. }
             | Edit::LayerStroke { label, .. }
-            | Edit::PaintLayers { label, .. } => label.clone(),
+            | Edit::PaintLayers { label, .. }
+            | Edit::Channels { label, .. } => label.clone(),
             Edit::Rename { .. } => "Rename".into(),
             Edit::Material { .. } => "Material".into(),
             Edit::Divide { .. } => "Divide".into(),
@@ -110,6 +113,11 @@ impl Edit {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 std::mem::swap(&mut o.name, name);
                 o.revision += 1;
+            }
+            Edit::Channels { object, state, .. } => {
+                let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
+                o.swap_channels(state)?;
+                scene.active = Some(*object);
             }
             Edit::Material { object, material } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;

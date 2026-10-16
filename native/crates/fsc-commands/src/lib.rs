@@ -17,6 +17,7 @@ mod place_cmds;
 mod rig_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
+mod selection_cmds;
 mod sim_cmds;
 mod topo_cmds;
 mod vdm_cmds;
@@ -80,6 +81,8 @@ pub struct Session {
     pub vdms: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Vdm>>,
     /// Objects sent out through bridge_send: the object, the file, and the file's modification time when last seen.
     pub bridges: Vec<(fsc_core::ObjectId, String, std::time::SystemTime)>,
+    /// The channel last copied with channel_copy.
+    pub(crate) clipboard: Option<selection_cmds::Clip>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -1404,6 +1407,83 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: no_args,
         run: sculpt_cmds::redo,
+    },
+    Command {
+        id: "selection_set.save",
+        mcp: "selection_set_save",
+        group: Group::Object,
+        label: "Save Selection Set",
+        description: "Keep a named snapshot of an object's face groups, mask, vertex paint, sculpt layer strengths and UVs (all it has, or the channels listed) to bring back later with selection_set_restore, as ZBrush's Selection Sets do. Saving under an existing name replaces that set. Up to 64 sets per object; they are saved in projects. Returns the stored channels and the number of values in each.",
+        keys: &[],
+        hints: WRITE,
+        schema: selection_cmds::save_schema,
+        run: selection_cmds::selection_set_save,
+    },
+    Command {
+        id: "selection_set.restore",
+        mcp: "selection_set_restore",
+        group: Group::Object,
+        label: "Restore Selection Set",
+        description: "Put a saved selection set back on the object: the channels it holds, or the subset listed. Groups and UVs need the same face count as when saved; mask, paint and sculpt layer strengths need the same vertex count (layers also the same number of layers). If any chosen channel no longer fits, nothing is changed and the error says why. Restoring paint flattens the object's paint layers into the saved colours. One undo step.",
+        keys: &[],
+        hints: DESTROY,
+        schema: selection_cmds::restore_schema,
+        run: selection_cmds::selection_set_restore,
+    },
+    Command {
+        id: "selection_set.delete",
+        mcp: "selection_set_delete",
+        group: Group::Object,
+        label: "Delete Selection Set",
+        description: "Delete a saved selection set from the object. The object itself is untouched, but deleting a set is not an undo step.",
+        keys: &[],
+        hints: DESTROY,
+        schema: selection_cmds::name_schema,
+        run: selection_cmds::selection_set_delete,
+    },
+    Command {
+        id: "selection_set.list",
+        mcp: "selection_set_list",
+        group: Group::Object,
+        label: "List Selection Sets",
+        description: "The object's selection sets: each name, its channels, the number of values in each, the vertex and face counts it was saved with, and whether it can be restored now (restorable) or only some channels (restorable_channels) after the topology changed.",
+        keys: &[],
+        hints: READ,
+        schema: selection_cmds::list_schema,
+        run: selection_cmds::selection_set_list,
+    },
+    Command {
+        id: "channel.copy",
+        mcp: "channel_copy",
+        group: Group::Object,
+        label: "Copy Channel",
+        description: "Copy an object's face groups, mask or vertex paint into the engine's clipboard (one channel at a time, replacing what was there) to paste onto another object with channel_paste. Changes no object.",
+        keys: &[],
+        hints: Hints { read_only_hint: false, destructive_hint: false, idempotent_hint: true, open_world_hint: false },
+        schema: selection_cmds::copy_schema,
+        run: selection_cmds::channel_copy,
+    },
+    Command {
+        id: "channel.paste",
+        mcp: "channel_paste",
+        group: Group::Object,
+        label: "Paste Channel",
+        description: "Paste the copied channel onto an object with the same count: groups need the same face count, mask and paint the same vertex count, otherwise nothing is changed and the error gives both counts. Pasting paint replaces the object's paint and flattens its paint layers. One undo step.",
+        keys: &[],
+        hints: DESTROY,
+        schema: selection_cmds::paste_schema,
+        run: selection_cmds::channel_paste,
+    },
+    Command {
+        id: "channel.clear",
+        mcp: "channel_clear",
+        group: Group::Object,
+        label: "Clear Channel",
+        description: "Clear an object's face groups (every face to group 0), mask (every vertex to 0) or vertex paint (back to unpainted, dropping the paint layers). Does nothing, with changed false, when the channel is already clear. One undo step.",
+        keys: &[],
+        hints: DESTROY,
+        schema: selection_cmds::clear_schema,
+        run: selection_cmds::channel_clear,
     },
 ];
 

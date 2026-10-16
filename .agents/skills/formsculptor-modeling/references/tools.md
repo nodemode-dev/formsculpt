@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.31.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.32.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_transform`, `uv_pack`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -1157,3 +1157,65 @@ Redo the last undone step.
 - no parameters
 
 Note: in the window: Mod+Shift+Z.
+
+## selection_set_save
+
+Keep a named snapshot of an object's face groups, mask, vertex paint, sculpt layer strengths and UVs (all it has, or the channels listed) to bring back later with selection_set_restore, as ZBrush's Selection Sets do. Saving under an existing name replaces that set. Up to 64 sets per object; they are saved in projects. Returns the stored channels and the number of values in each.
+
+- `channels`: array of string; What to keep: face groups, the mask, vertex paint (the composited colour, roughness, metalness, opacity and glow), sculpt layer strengths and UVs. All the channels the object has when omitted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `name`: string; required; The set's name; saving under an existing name replaces that set.
+
+## selection_set_restore
+
+Put a saved selection set back on the object: the channels it holds, or the subset listed. Groups and UVs need the same face count as when saved; mask, paint and sculpt layer strengths need the same vertex count (layers also the same number of layers). If any chosen channel no longer fits, nothing is changed and the error says why. Restoring paint flattens the object's paint layers into the saved colours. One undo step.
+
+- `channels`: array of string; Restore only these channels, which the set must hold. Every channel the set holds when omitted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `name`: string; required; The set to restore.
+
+Note: removes or replaces (undoable).
+
+## selection_set_delete
+
+Delete a saved selection set from the object. The object itself is untouched, but deleting a set is not an undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `name`: string; required; The set to delete.
+
+Note: removes or replaces (undoable).
+
+## selection_set_list
+
+The object's selection sets: each name, its channels, the number of values in each, the vertex and face counts it was saved with, and whether it can be restored now (restorable) or only some channels (restorable_channels) after the topology changed.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: read-only.
+
+## channel_copy
+
+Copy an object's face groups, mask or vertex paint into the engine's clipboard (one channel at a time, replacing what was there) to paste onto another object with channel_paste. Changes no object.
+
+- `channel`: string (groups | mask | paint); required; What to copy: the face groups (per face), the mask or the vertex paint (per vertex, as composited).
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: safe to repeat.
+
+## channel_paste
+
+Paste the copied channel onto an object with the same count: groups need the same face count, mask and paint the same vertex count, otherwise nothing is changed and the error gives both counts. Pasting paint replaces the object's paint and flattens its paint layers. One undo step.
+
+- `channel`: string (groups | mask | paint); The channel the clipboard must hold; whatever was copied when omitted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: removes or replaces (undoable).
+
+## channel_clear
+
+Clear an object's face groups (every face to group 0), mask (every vertex to 0) or vertex paint (back to unpainted, dropping the paint layers). Does nothing, with changed false, when the channel is already clear. One undo step.
+
+- `channel`: string (groups | mask | paint); required; groups puts every face in group 0; mask sets every vertex to 0; paint removes all vertex paint and the paint layer stack, back to unpainted.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: removes or replaces (undoable).
