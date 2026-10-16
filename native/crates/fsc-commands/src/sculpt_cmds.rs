@@ -88,8 +88,45 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         None | Some(Value::Null) => 1,
         Some(v) => v.as_u64().ok_or_else(|| bad("jitter.seed must be a non-negative integer"))?,
     };
+    let view_dir = match args.get("view_dir") {
+        None | Some(Value::Null) => None,
+        Some(Value::Array(a)) if a.len() == 3 => {
+            let v: Vec<f32> = a.iter().map(|x| x.as_f64().unwrap_or(f64::NAN) as f32).collect();
+            if v.iter().any(|x| !x.is_finite()) || v.iter().all(|x| *x == 0.0) {
+                return Err(bad("view_dir must be a non-zero [x, y, z]"));
+            }
+            Some([v[0], v[1], v[2]])
+        }
+        Some(_) => return Err(bad("view_dir is [x, y, z]")),
+    };
+    let mut protect_groups = fsc_sculpt::GroupList::default();
+    match args.get("protect_groups") {
+        None | Some(Value::Null) => {}
+        Some(Value::Array(a)) if a.len() <= protect_groups.ids.len() => {
+            for g in a {
+                let id = g.as_u64().filter(|&g| g <= u32::MAX as u64).ok_or_else(|| bad("protect_groups holds group ids (non-negative integers)"))?;
+                protect_groups.ids[protect_groups.len] = id as u32;
+                protect_groups.len += 1;
+            }
+        }
+        Some(_) => return Err(bad("protect_groups is up to 16 group ids")),
+    }
+    let flag_arg = |k: &str, default: bool| match args.get(k) {
+        None | Some(Value::Null) => Ok(default),
+        Some(Value::Bool(b)) => Ok(*b),
+        Some(_) => Err(bad(format!("{k} must be true or false"))),
+    };
     Ok(BrushSettings {
         kind,
+        front_facing: flag_arg("front_facing", false)?,
+        view_dir,
+        connected_only: flag_arg("connected_only", false)?,
+        protect_group: flag_arg("protect_group", false)?,
+        protect_groups,
+        keep_sharp: f(args, "keep_sharp", 0.0, 0.0, 180.0)?,
+        accumulate: flag_arg("accumulate", true)?,
+        area_sample: f(args, "area_sample", 1.0, 0.1, 2.0)?,
+        depth: f(args, "depth", 0.0, 0.0, 1e4)?,
         spacing_compensation: args.get("spacing_compensation").and_then(Value::as_bool).unwrap_or(false),
         offset: f(args, "offset", 0.0, -1.0, 1.0)?,
         jitter_position: f(&jitter, "position", 0.0, 0.0, 2.0)?,
@@ -473,13 +510,26 @@ pub(crate) fn paint_clear(s: &mut Session, args: &Value) -> Result<Value, Comman
 }
 
 pub(crate) fn brush_props() -> Value {
-    json!({
+    let mut all = json!({
         "brush": {"type": "string", "enum": BrushKind::NAMES, "default": "draw", "description": "paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none."},
         "height": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0."},
         "spacing_compensation": {"type": "boolean", "default": false, "description": "Multiplies each dab's strength by spacing over 0.15 (at most 4), so the total effect along a path stays about the same whatever the spacing. Not used by grab, elastic, snake_hook or nudge."},
         "offset": {"type": "number", "minimum": -1, "maximum": 1, "default": 0, "description": "Lifts each dab's centre along its area normal by offset times the radius before vertices are gathered: positive touches only what stands out (peaks first), negative reaches into hollows. Not used by the drag brushes."},
         "jitter": {"type": "object", "properties": {"position": {"type": "number", "minimum": 0, "maximum": 2, "default": 0, "description": "Each dab moves along the surface by up to this many radii in a random direction."}, "radius": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Each dab's radius is scaled by 1 plus or minus up to this share."}, "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Each dab's strength is scaled by 1 plus or minus up to this share."}, "seed": {"type": "integer", "minimum": 0, "default": 1, "description": "Seed of the generator; the same seed repeats the same stroke."}}, "additionalProperties": false, "description": "Random variation per dab, deterministic for a seed and usable with any stroke mode including spray. Position is not used by snake_hook and nudge; strength is not used by snake_hook."},
         "snap_radius": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "When above 0, each dab's radius (after pressure and jitter) is rounded to the nearest multiple of this in world units, at least one step."},
+    });
+    let filters = json!({
+        "front_facing": {"type": "boolean", "default": false, "description": "Only vertices whose normal faces the viewer are affected (dot of normal and minus view_dir above 0, easing in over 0 to 0.2), so a brush does not reach through to the back of a thin part. Uses view_dir; when that is absent in sculpt_stroke, the reverse of the surface normal at the stroke's first point (the nearest vertex's normal) stands in for the view (live strokes use each sample's ray direction)."},
+        "view_dir": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The direction the viewer looks along, [x, y, z], for front_facing; mirrored with each symmetry copy. Absent in sculpt_stroke, the first point's normal approximates it."},
+        "connected_only": {"type": "boolean", "default": false, "description": "Only vertices joined by mesh edges to the vertex nearest the dab centre, without leaving the brush sphere, are affected, so a brush on one finger does not touch the next."},
+        "protect_group": {"type": "boolean", "default": false, "description": "Only faces in the face group under the stroke's first hit are affected (each symmetry copy uses the group under its own first dab): a vertex is affected when any of its faces is in the group, and vertices on its border get half weight. Does nothing on a mesh without face groups."},
+        "protect_groups": {"type": "array", "items": {"type": "integer", "minimum": 0}, "maxItems": 16, "description": "Face group ids that are protected: vertices whose faces all lie in these groups are untouched."},
+        "keep_sharp": {"type": "number", "minimum": 0, "maximum": 180, "default": 0, "description": "Degrees; 0 is off. Vertices on an edge whose dihedral angle exceeds this are held (weight 0), and their neighbours take half weight. The edges are found from the mesh as it was when the stroke began."},
+        "accumulate": {"type": "boolean", "default": true, "description": "When false, a vertex's displacement over one stroke is capped at the largest move any single dab gave it, so a long back-and-forth stroke does not pile up. Not used by grab, elastic, snake_hook, nudge, smooth, relax, layer or layer_reset."},
+        "area_sample": {"type": "number", "minimum": 0.1, "maximum": 2, "default": 1, "description": "The radius, as a share of the brush radius, over which each dab takes its area normal and plane (draw, clay, flatten, planar, trim, polish and the other brushes that read them). A small share follows fine detail, a large one a broad average."},
+        "depth": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "World units; 0 is off. Vertices more than this far below the dab's area plane (along minus the area normal) are untouched, easing over the last 20%, so a brush does not reach through a thin part. The plane is taken from the vertices under the dab whose normals agree with the nearest one's (so the far side of a thin part does not tilt it)."},
+    });
+    let rest = json!({
         "noise_scale": {"type": "number", "minimum": 0, "maximum": 10000, "default": 0, "description": "Noise brush: feature size in world units; a fifth of the radius when 0."},
         "alpha": {"type": "string", "description": "A grayscale alpha shaping each dab (white pushes, black does not): none, square, noise, cracks, rings, star, stripes, dots, or a name loaded with alpha_load. A one-point stroke with an alpha is a stamp."},
         "alpha_angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "Turns the alpha, in degrees."},
@@ -504,7 +554,12 @@ pub(crate) fn brush_props() -> Value {
         "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},
         "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels."},
         "dyntopo_size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction."}
-    })
+    });
+    let out = all.as_object_mut().expect("object");
+    for part in [filters, rest] {
+        out.extend(part.as_object().expect("object").clone());
+    }
+    all
 }
 
 pub(crate) fn stroke_schema() -> Value {

@@ -179,6 +179,37 @@ pub struct BrushSettings {
     pub jitter_seed: u64,
     /// Each dab's radius is rounded to a multiple of this in world units, at least one step (0 is off).
     pub snap_radius: f32,
+    /// Only vertices whose normal faces the viewer are affected, with a soft ramp over the first 0.2 of facing.
+    pub front_facing: bool,
+    /// The direction the viewer looks along (None: the first point's surface normal, reversed, stands in).
+    pub view_dir: Option<[f32; 3]>,
+    /// Only vertices joined by mesh edges to the vertex nearest the dab centre, inside the brush sphere, are affected.
+    pub connected_only: bool,
+    /// Only faces in the face group under each copy's first dab are affected (borders at half weight).
+    pub protect_group: bool,
+    /// Vertices whose faces all lie in these face groups are untouched.
+    pub protect_groups: GroupList,
+    /// Vertices on an edge sharper than this many degrees are held, easing back over their one-ring (0 is off).
+    pub keep_sharp: f32,
+    /// When false, a vertex's displacement over the stroke is capped at the largest single-dab move it received.
+    pub accumulate: bool,
+    /// The radius, as a share of the brush radius, used for the dab's area normal and plane.
+    pub area_sample: f32,
+    /// Vertices more than this far below the dab's area plane are untouched, easing over the last 20% (0 is off).
+    pub depth: f32,
+}
+
+/// Up to 16 face group ids.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct GroupList {
+    pub ids: [u32; 16],
+    pub len: usize,
+}
+
+impl GroupList {
+    pub fn contains(&self, id: u32) -> bool {
+        self.ids[..self.len].contains(&id)
+    }
 }
 
 impl Default for BrushSettings {
@@ -212,6 +243,15 @@ impl Default for BrushSettings {
             jitter_strength: 0.0,
             jitter_seed: 1,
             snap_radius: 0.0,
+            front_facing: false,
+            view_dir: None,
+            connected_only: false,
+            protect_group: false,
+            protect_groups: GroupList::default(),
+            keep_sharp: 0.0,
+            accumulate: true,
+            area_sample: 1.0,
+            depth: 0.0,
         }
     }
 }
