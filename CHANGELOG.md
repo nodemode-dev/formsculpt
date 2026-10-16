@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.45.0 · 2026-10-16
+
+### Added
+
+- UDIM in export: a `bake_maps` `udim` bake keeps every tile's maps on the object (saved in projects, no path needed), and GLB and glTF export give a tiled object one primitive and one material per tile, UVs in 0..1. Objects without tile maps export exactly as before.
+- `get_uv_layout` `overview` pictures every occupied tile at once.
+- UV section: All tiles shows the overview with tile borders, and a click opens a tile; Bake maps bakes every tile when the islands are spread over tiles.
+- 141 engine commands; 820 interface strings in every language.
+
 ## 0.44.0 · 2026-10-16
 
 ### Added
