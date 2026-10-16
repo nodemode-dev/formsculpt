@@ -15,7 +15,7 @@ pub enum Edit {
     Levels { label: String, object: ObjectId, multires: Option<Multires> },
     Scene { label: String, objects: Vec<Object>, active: Option<ObjectId> },
     Rename { object: ObjectId, name: String },
-    LayerState { label: String, object: ObjectId, layers: Layers, positions: Vec<[f32; 3]> },
+    LayerState { label: String, object: ObjectId, layers: Layers, positions: Vec<[f32; 3]>, paint: Vec<Paint>, mask: Vec<f32> },
     LayerStroke { label: String, object: ObjectId, layer: usize, edit: VertexEdit },
     /// A paint layer step (add, delete, settings, merge, flatten): the whole stack and the composite swap back.
     PaintLayers { label: String, object: ObjectId, layers: PaintLayers, paint: Vec<Paint> },
@@ -123,13 +123,15 @@ impl Edit {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 std::mem::swap(&mut o.material, material);
             }
-            Edit::LayerState { object, layers, positions, .. } => {
+            Edit::LayerState { object, layers, positions, paint, mask, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
-                if positions.len() != o.mesh.vertex_count() {
+                if positions.len() != o.mesh.vertex_count() || mask.len() != o.mask.len() {
                     return Err("the object's vertex count changed since this layer step".into());
                 }
                 std::mem::swap(&mut o.layers, layers);
                 std::mem::swap(&mut o.mesh.positions, positions);
+                std::mem::swap(&mut o.mesh.paint, paint);
+                std::mem::swap(&mut o.mask, mask);
                 o.mesh.recompute_normals();
                 o.bvh.refit(&o.mesh);
                 o.revision += 1;
@@ -138,7 +140,7 @@ impl Edit {
             Edit::LayerStroke { object, layer, edit, .. } => {
                 let o = scene.get_mut(*object).ok_or("the edited object no longer exists")?;
                 edit.apply(o, forward);
-                o.record_into_layer(*layer, &edit.indices, &edit.before, &edit.after, if forward { 1.0 } else { -1.0 });
+                edit.record_into_layer(o, *layer, if forward { 1.0 } else { -1.0 });
                 scene.active = Some(*object);
             }
             Edit::Clear { parked, active } => {

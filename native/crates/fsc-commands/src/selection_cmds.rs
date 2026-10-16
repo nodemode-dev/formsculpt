@@ -238,7 +238,10 @@ pub(crate) fn selection_set_restore(s: &mut Session, args: &Value) -> Result<Val
         let mut layers = o.layers.clone();
         let mut positions = o.mesh.positions.clone();
         for (l, &new) in layers.list.iter_mut().zip(strengths) {
-            let by = new - l.strength;
+            if l.paint.is_some() || l.mask.is_some() {
+                continue;
+            }
+            let by = (new - l.strength) * l.shape_factor;
             if by != 0.0 {
                 for (p, d) in positions.iter_mut().zip(&l.delta) {
                     for k in 0..3 {

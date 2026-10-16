@@ -1,6 +1,7 @@
 //! Paint layer commands: add, change (name, blend, opacity, visibility, order), select, delete, merge down and
 //! flatten. Each is one undo step that swaps the object's whole paint stack and composite.
 
+use fsc_core::paint_layers::{ChannelBlend, CHANNEL_NAMES};
 use fsc_core::{Blend, ObjectId, PaintLayer, COVER, PAINT_LEN};
 use serde_json::{json, Value};
 
@@ -51,6 +52,28 @@ fn blend(args: &Value) -> Result<Option<Blend>, CommandError> {
     }
 }
 
+/// The `channel_blend` argument: None when absent, otherwise the whole new override set (null or {} clears it).
+fn channel_blend(args: &Value) -> Result<Option<ChannelBlend>, CommandError> {
+    let names = || CHANNEL_NAMES.join(", ");
+    match args.get("channel_blend") {
+        None => Ok(None),
+        Some(Value::Null) => Ok(Some(ChannelBlend::default())),
+        Some(Value::Object(map)) => {
+            let mut out = ChannelBlend::default();
+            for (key, value) in map {
+                let c = CHANNEL_NAMES.iter().position(|n| n == key).ok_or_else(|| bad(format!("channel_blend keys must be among {}", names())))?;
+                out[c] = match value {
+                    Value::Null => None,
+                    Value::String(name) => Some(Blend::parse(name).ok_or_else(|| bad(format!("blend must be one of {}", Blend::NAMES.join(", "))))?),
+                    _ => return Err(bad("channel_blend values are blend names")),
+                };
+            }
+            Ok(Some(out))
+        }
+        Some(_) => Err(bad("channel_blend is an object from channel name to blend, or null to clear")),
+    }
+}
+
 fn opacity(args: &Value) -> Result<Option<f32>, CommandError> {
     match args.get("opacity") {
         None | Some(Value::Null) => Ok(None),
@@ -67,6 +90,7 @@ fn opacity(args: &Value) -> Result<Option<f32>, CommandError> {
 pub(crate) fn add(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let blend = blend(args)?.unwrap_or(Blend::Normal);
+    let channel_blend = channel_blend(args)?.unwrap_or_default();
     let opacity = opacity(args)?.unwrap_or(1.0);
     let name = args.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
     step(s, id, "Add Paint Layer", |o| {
@@ -80,7 +104,7 @@ pub(crate) fn add(s: &mut Session, args: &Value) -> Result<Value, CommandError> 
         let name = name.unwrap_or_else(|| format!("Paint {}", n + 1));
         // New layers go above the active one (on top when the base is active).
         let at = o.paint_layers.active.map_or(n, |a| a + 1);
-        o.paint_layers.list.insert(at, PaintLayer { name, blend, opacity, visible: true, data: vec![[0.0; PAINT_LEN + 1]; vc] });
+        o.paint_layers.list.insert(at, PaintLayer { name, blend, channel_blend, opacity, visible: true, data: vec![[0.0; PAINT_LEN + 1]; vc] });
         o.paint_layers.active = Some(at);
         Ok(())
     })
@@ -91,6 +115,7 @@ pub(crate) fn set(s: &mut Session, args: &Value) -> Result<Value, CommandError> 
     let object = s.scene.get(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?;
     let i = index(object, args)?;
     let blend = blend(args)?;
+    let channel_blend = channel_blend(args)?;
     let opacity = opacity(args)?;
     let name = args.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
     let visible = args.get("visible").and_then(Value::as_bool);
@@ -106,6 +131,9 @@ pub(crate) fn set(s: &mut Session, args: &Value) -> Result<Value, CommandError> 
         let layer = &mut o.paint_layers.list[i];
         if let Some(b) = blend {
             layer.blend = b;
+        }
+        if let Some(cb) = channel_blend {
+            layer.channel_blend = cb;
         }
         if let Some(x) = opacity {
             layer.opacity = x;
@@ -194,6 +222,7 @@ pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError
             }
             let l = &mut o.paint_layers.list[under];
             l.blend = Blend::Normal;
+            l.channel_blend = ChannelBlend::default();
             l.opacity = 1.0;
         }
         o.paint_layers.list.remove(i);
@@ -220,11 +249,21 @@ pub(crate) fn flatten(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     })
 }
 
+fn channel_blend_schema() -> Value {
+    let mode = json!({"type": "string", "enum": Blend::NAMES});
+    let mut props = serde_json::Map::new();
+    for name in CHANNEL_NAMES {
+        props.insert(name.to_string(), mode.clone());
+    }
+    json!({"type": ["object", "null"], "properties": props, "additionalProperties": false, "description": "Blend per paint channel (color, roughness, metalness, opacity, emissive), replacing the layer's earlier overrides. A named channel uses its mode; color falls back to blend and the rest to normal. null or {} clears the overrides."})
+}
+
 pub(crate) fn add_schema() -> Value {
     json!({"type": "object", "properties": {
         "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
         "name": {"type": "string", "maxLength": 64},
-        "blend": {"type": "string", "enum": Blend::NAMES, "default": "normal"},
+        "blend": {"type": "string", "enum": Blend::NAMES, "default": "normal", "description": "How the layer mixes with what lies below. hue, saturation, color and luminosity work on the colour only; on roughness, metalness, opacity and emissive they act as normal."},
+        "channel_blend": channel_blend_schema(),
         "opacity": {"type": "number", "minimum": 0, "maximum": 1, "default": 1}
     }, "additionalProperties": false})
 }
@@ -234,7 +273,8 @@ pub(crate) fn set_schema() -> Value {
         "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
         "index": {"type": "integer", "minimum": 0, "description": "Layer number from the bottom (0); the active layer when omitted."},
         "name": {"type": "string", "maxLength": 64},
-        "blend": {"type": "string", "enum": Blend::NAMES},
+        "blend": {"type": "string", "enum": Blend::NAMES, "description": "How the layer mixes with what lies below (colour; the other channels mix normally unless channel_blend names them). hue, saturation, color and luminosity work on the colour only."},
+        "channel_blend": channel_blend_schema(),
         "opacity": {"type": "number", "minimum": 0, "maximum": 1},
         "visible": {"type": "boolean"},
         "move": {"type": "string", "enum": ["up", "down"], "description": "Move the layer one place up or down the stack."}

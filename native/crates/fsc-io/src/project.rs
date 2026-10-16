@@ -1,5 +1,6 @@
 use std::io::{Cursor, Read, Write};
 
+use fsc_core::paint_layers::{ChannelBlend, CHANNEL_NAMES};
 use fsc_core::{Blend, Layer, LayerPaint, Layers, Level, Mesh, Multires, Object, Paint, PaintLayer, PaintLayers, Scene, SelectionSet, Stencil, COVER, PAINT_LEN};
 use serde_json::{json, Value};
 
@@ -112,7 +113,18 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
         if !o.layers.list.is_empty() {
             let mut list = Vec::new();
             for (k, l) in o.layers.list.iter().enumerate() {
-                list.push(json!({"name": l.name, "strength": l.strength, "delta": w.put(&format!("{dir}/layer{k}.f32"), &vec3s(&l.delta))?}));
+                let mut le = json!({"name": l.name, "strength": l.strength, "delta": w.put(&format!("{dir}/layer{k}.f32"), &vec3s(&l.delta))?});
+                if let Some(p) = &l.paint {
+                    let flat: Vec<f32> = p.iter().flatten().copied().collect();
+                    le["paint"] = json!(w.put(&format!("{dir}/layer{k}_paint.f32"), &f32s(&flat))?);
+                }
+                if let Some(m) = &l.mask {
+                    le["mask"] = json!(w.put(&format!("{dir}/layer{k}_mask.f32"), &f32s(m))?);
+                }
+                if (l.shape_factor, l.paint_factor, l.mask_factor) != (1.0, 1.0, 1.0) {
+                    le["factors"] = json!([l.shape_factor, l.paint_factor, l.mask_factor]);
+                }
+                list.push(le);
             }
             entry["layers"] = json!({"active": o.layers.active, "list": list});
         }
@@ -123,7 +135,12 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             let mut list = Vec::new();
             for (k, l) in o.paint_layers.list.iter().enumerate() {
                 let data: Vec<f32> = l.data.iter().flatten().copied().collect();
-                list.push(json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible, "data": w.put(&format!("{dir}/paintlayer{k}.f32"), &f32s(&data))?}));
+                let mut item = json!({"name": l.name, "blend": l.blend.name(), "opacity": l.opacity, "visible": l.visible, "data": w.put(&format!("{dir}/paintlayer{k}.f32"), &f32s(&data))?});
+                if l.channel_blend.iter().any(Option::is_some) {
+                    let named: serde_json::Map<String, serde_json::Value> = l.channel_blend.iter().zip(CHANNEL_NAMES).filter_map(|(b, n)| b.map(|b| (n.to_string(), json!(b.name())))).collect();
+                    item["channel_blend"] = serde_json::Value::Object(named);
+                }
+                list.push(item);
             }
             entry["paint_layers"] = json!({"active": o.paint_layers.active, "base": w.put(&format!("{dir}/paintbase.f32"), &f32s(&base))?, "list": list});
         }
@@ -337,7 +354,14 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 if delta.len() != o.mesh.vertex_count() {
                     return Err("a layer does not match its object".into());
                 }
-                list.push(Layer { name: le["name"].as_str().unwrap_or("Layer").to_string(), strength: le["strength"].as_f64().unwrap_or(1.0) as f32, delta });
+                let vc = o.mesh.vertex_count();
+                let paint = if le["paint"].is_string() { Some(paint_floats(&r.f32(&le["paint"])?, vc).ok_or("a layer's paint does not match its object")?) } else { None };
+                let mask = if le["mask"].is_string() { Some(r.f32(&le["mask"])?).filter(|m| m.len() == vc) } else { None };
+                if le["mask"].is_string() && mask.is_none() {
+                    return Err("a layer's mask does not match its object".into());
+                }
+                let f = |k: usize| le["factors"].get(k).and_then(Value::as_f64).unwrap_or(1.0) as f32;
+                list.push(Layer { name: le["name"].as_str().unwrap_or("Layer").to_string(), strength: le["strength"].as_f64().unwrap_or(1.0) as f32, delta, paint, mask, shape_factor: f(0), paint_factor: f(1), mask_factor: f(2) });
             }
             let active = l["active"].as_u64().map(|a| a as usize).filter(|&a| a < list.len());
             o.layers = Layers { list, active };
@@ -351,6 +375,13 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 list.push(PaintLayer {
                     name: le["name"].as_str().unwrap_or("Paint").chars().take(64).collect(),
                     blend: le["blend"].as_str().and_then(Blend::parse).unwrap_or(Blend::Normal),
+                    channel_blend: {
+                        let mut cb = ChannelBlend::default();
+                        for (c, name) in CHANNEL_NAMES.iter().enumerate() {
+                            cb[c] = le["channel_blend"][*name].as_str().and_then(Blend::parse);
+                        }
+                        cb
+                    },
                     opacity: le["opacity"].as_f64().unwrap_or(1.0).clamp(0.0, 1.0) as f32,
                     visible: le["visible"].as_bool().unwrap_or(true),
                     data,

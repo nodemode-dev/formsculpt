@@ -24,6 +24,13 @@ impl VertexEdit {
         self.indices.is_empty()
     }
 
+    /// Records the edit's shape, paint and mask changes into layer `at` (`sign` -1 takes them back out).
+    pub fn record_into_layer(&self, object: &mut Object, at: usize, sign: f32) {
+        object.record_into_layer(at, &self.indices, &self.before, &self.after, sign);
+        object.record_paint_into_layer(at, &self.indices, &self.paint_before, &self.paint_after, sign);
+        object.record_mask_into_layer(at, &self.indices, &self.mask_before, &self.mask_after, sign);
+    }
+
     pub fn apply(&self, object: &mut Object, forward: bool) -> Vec<u32> {
         let (pos, mask) = if forward { (&self.after, &self.mask_after) } else { (&self.before, &self.mask_before) };
         let paint = if forward { &self.paint_after } else { &self.paint_before };
@@ -830,7 +837,7 @@ impl Stroke {
             // The layer's delta only changes when the stroke ends, so each vertex keeps its contribution from first
             // touch and the share still left; every dab removes a falloff-weighted part of what is left.
             let at = object.layers.active.expect("checked");
-            let layer_strength = object.layers.list[at].strength;
+            let layer_strength = object.layers.list[at].shape_scale();
             for (k, &v) in found.iter().enumerate() {
                 let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
                 if w <= 0.0 {

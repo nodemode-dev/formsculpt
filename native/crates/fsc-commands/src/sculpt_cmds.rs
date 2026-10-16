@@ -281,7 +281,7 @@ pub(crate) fn paint_fill(s: &mut Session, args: &Value) -> Result<Value, Command
     let n = edit.indices.len();
     let after = summary(object);
     if n > 0 {
-        s.history.push(Edit::Vertices { label: "Fill Paint".into(), object: id, edit });
+        push_vertices(s, id, "Fill Paint".into(), edit);
     }
     Ok(json!({"object": after, "vertices_painted": n}))
 }
@@ -641,15 +641,7 @@ pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeE
     match result {
         StrokeEdit::Vertices(edit) => {
             let n = edit.indices.len();
-            let layer = s.scene.get_mut(id).and_then(|o| {
-                let at = o.layers.active?;
-                o.record_into_layer(at, &edit.indices, &edit.before, &edit.after, 1.0);
-                Some(at)
-            });
-            match layer {
-                Some(layer) => s.history.push(Edit::LayerStroke { label, object: id, layer, edit }),
-                None => s.history.push(Edit::Vertices { label, object: id, edit }),
-            }
+            push_vertices(s, id, label, edit);
             json!(n)
         }
         StrokeEdit::Topology { mesh, mask } => {
@@ -657,6 +649,19 @@ pub fn push_stroke(s: &mut Session, id: ObjectId, label: String, result: StrokeE
             json!("topology changed")
         }
         StrokeEdit::Nothing => json!(0),
+    }
+}
+
+/// Pushes a vertex edit, recording its shape, paint and mask changes into the active sculpt layer when there is one.
+pub(crate) fn push_vertices(s: &mut Session, id: ObjectId, label: String, edit: VertexEdit) {
+    let layer = s.scene.get_mut(id).and_then(|o| {
+        let at = o.layers.active?;
+        edit.record_into_layer(o, at, 1.0);
+        Some(at)
+    });
+    match layer {
+        Some(layer) => s.history.push(Edit::LayerStroke { label, object: id, layer, edit }),
+        None => s.history.push(Edit::Vertices { label, object: id, edit }),
     }
 }
 
