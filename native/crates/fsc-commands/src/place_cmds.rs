@@ -11,7 +11,7 @@ fn bad(msg: impl Into<String>) -> CommandError {
     CommandError::new("bad_arguments", msg)
 }
 
-fn vec3(args: &Value, key: &str) -> Result<Option<Vec3>, CommandError> {
+pub(crate) fn vec3(args: &Value, key: &str) -> Result<Option<Vec3>, CommandError> {
     match args.get(key) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Array(a)) if a.len() == 3 => {
@@ -26,7 +26,7 @@ fn vec3(args: &Value, key: &str) -> Result<Option<Vec3>, CommandError> {
 }
 
 /// A copy of `mesh` under an affine transform; a mirroring transform reverses the triangles so they still face out.
-fn transformed(mesh: &Mesh, m: Mat4) -> Mesh {
+pub(crate) fn transformed(mesh: &Mesh, m: Mat4) -> Mesh {
     let positions = mesh.positions.iter().map(|&p| m.transform_point3(Vec3::from(p)).to_array()).collect();
     let mut indices = mesh.indices.clone();
     if m.determinant() < 0.0 {
@@ -68,7 +68,7 @@ pub fn sync_instances(s: &mut Session) {
 }
 
 /// Adds an object; with `record` it is its own undo step (an array records one scene step for all its copies).
-fn add_object(s: &mut Session, name: &str, mesh: Mesh, record: bool) -> u32 {
+pub(crate) fn add_object(s: &mut Session, name: &str, mesh: Mesh, record: bool) -> u32 {
     let name = s.scene.unique_name(name);
     let id = s.scene.add(name, mesh);
     if record {
@@ -78,10 +78,10 @@ fn add_object(s: &mut Session, name: &str, mesh: Mesh, record: bool) -> u32 {
     id
 }
 
-struct SplitMix(u64);
+pub(crate) struct SplitMix(pub(crate) u64);
 
 impl SplitMix {
-    fn next(&mut self) -> u64 {
+    pub(crate) fn next(&mut self) -> u64 {
         self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
         let mut z = self.0;
         z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -90,7 +90,7 @@ impl SplitMix {
     }
 
     /// Uniform in [-1, 1).
-    fn signed(&mut self) -> f32 {
+    pub(crate) fn signed(&mut self) -> f32 {
         ((self.next() >> 40) as f32 / (1u64 << 24) as f32) * 2.0 - 1.0
     }
 }
@@ -102,7 +102,7 @@ struct Jitter {
     seed: u64,
 }
 
-fn number_in(obj: &Value, key: &str, lo: f64, hi: f64, default: f64) -> Result<f32, CommandError> {
+pub(crate) fn number_in(obj: &Value, key: &str, lo: f64, hi: f64, default: f64) -> Result<f32, CommandError> {
     match obj.get(key) {
         None | Some(Value::Null) => Ok(default as f32),
         Some(v) => match v.as_f64() {

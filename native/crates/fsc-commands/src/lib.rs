@@ -15,6 +15,7 @@ mod multires_cmds;
 mod object_cmds;
 mod paint_layer_cmds;
 mod place_cmds;
+mod repeat_cmds;
 mod rig_cmds;
 mod scene_cmds;
 mod sculpt_cmds;
@@ -1382,6 +1383,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: place_cmds::array_schema,
         run: place_cmds::array_object,
+    },
+    Command {
+        id: "object.repeat",
+        mcp: "repeat_object",
+        group: Group::Object,
+        label: "Repeat",
+        description: "Nested repeaters on an object, as ZBrush's repeater stack: 1 to 4 steps, the first innermost, each repeating the whole set the steps before it made, so the copy counts multiply (at most 2048). A step is a line (count, offset between copies), radial (count, axis, total angle, centre), mirror (axis, plane offset; the reflected copy has its winding flipped so normals stay outward) or curve (points, count, align; copies evenly by arc length along the path). Any step can carry randomize (position in units, rotation in degrees, scale as a fraction) for each copy it creates, from a seed. validate merge (default) joins every copy into one new object and removes the source; separate makes one object per copy and keeps the source; linked does the same and the copies follow the source when it changes; preview changes nothing and only returns the transforms. One undo step; the reply gives the copy count, the new object ids, the first 64 transforms (position, rotation in Euler degrees, scale and the matrix) and a scene summary.",
+        keys: &[],
+        hints: WRITE,
+        schema: repeat_cmds::repeat_schema,
+        run: repeat_cmds::repeat_object,
+    },
+    Command {
+        id: "object.scatter",
+        mcp: "scatter_on_surface",
+        group: Group::Object,
+        label: "Scatter On Surface",
+        description: "Scatter copies of an object over the surface of another: pebbles on a hill, scales, thorns, moss, studs. Points are drawn uniformly by triangle area from a seed, with the normal interpolated from the vertex normals; align normal stands each copy's +Y on the surface normal and up keeps it upright, with a random spin about that axis, a random scale between scale_min and scale_max and an offset along the normal. min_distance keeps copies apart by rejection sampling with a bounded number of tries, and the reply says how many were placed against how many were asked for. mask_only places only where the target's mask is set. validate merge (default) makes one new object and leaves the source and target alone; separate makes one object per copy; linked does the same and the copies follow the source; preview changes nothing and only returns the transforms. One undo step; the reply gives placed, requested, the new object ids and the first 64 transforms.",
+        keys: &[],
+        hints: WRITE,
+        schema: repeat_cmds::scatter_schema,
+        run: repeat_cmds::scatter_on_surface,
     },
     Command {
         id: "object.insert",
