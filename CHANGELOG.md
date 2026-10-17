@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.79.0 · 2026-10-17
+
+### Added
+
+- Colour temperature for every light: Light > Colour temperature (K) runs from 1700 (candle) through 2700 to 3200 (tungsten) and 6500 (white) to 12000 (blue sky), and sets the light's colour to match. Picking a colour afterwards replaces it.
+- Spot lights. An added light's Light type can be Spot: it shines from its direction toward the scene's centre in a cone. Spot distance sets how far out it sits, Cone angle how wide it is, and Cone softness how much its edge fades. It is at full strength on the scene's centre, so moving it out widens the pool without dimming the model. The key light stays directional, since it casts the shadows.
+- For agents: `get_view`'s path render lights take `kind` (`directional` or `spot`) and `kelvin`. A spot takes `at`, `to` (the framed centre by default), `cone` and `softness`, and casts soft shadows. `kelvin` multiplies `color`, so the two act as a gel. Lights in the earlier form render as before.
+- 1213 interface strings in every language.
+
 ## 0.78.0 · 2026-10-17
 
 ### Added
