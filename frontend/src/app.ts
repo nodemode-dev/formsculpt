@@ -1105,7 +1105,7 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'ZModeler amount' });
   topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
-  const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc']]);
+  const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc'], ['head', 'Head (whole object)'], ['sphere', 'Sphere (whole object)']]);
   const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
   const patchColumns = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch columns' });
   const patchRows = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch rows' });
@@ -1443,11 +1443,12 @@ class SceneView {
     shell.spotlightOpacity.addEventListener('change', () => void this.spotlight.set({ opacity: Number(shell.spotlightOpacity.value) / 100 }));
     shell.spotlightFlip.addEventListener('change', () => void this.spotlight.set({ flip: shell.spotlightFlip.checked }));
     shell.spotlightInput.addEventListener('change', () => void this.loadSpotlight());
-    // Loops and the disc count points around and rings, grids and strips quads across and up: each gets its defaults.
+    // Loops and the disc count points around and rings, grids and strips quads across and up, whole-object templates
+    // quads per cube edge and (the head) rings round the eyes and mouth: each gets its defaults.
     shell.patchKind.addEventListener('change', () => {
-      const loop = !['grid', 'strip'].includes(shell.patchKind.value);
-      shell.patchColumns.value = loop ? '12' : '4';
-      shell.patchRows.value = loop ? '3' : '4';
+      const kind = shell.patchKind.value;
+      const defaults: Record<string, [string, string]> = { grid: ['4', '4'], strip: ['4', '4'], head: ['10', '2'], sphere: ['8', '2'] };
+      [shell.patchColumns.value, shell.patchRows.value] = defaults[kind] ?? ['12', '3'];
     });
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
@@ -2639,11 +2640,14 @@ class SceneView {
   private async fetchRetopoWire(id: number, occluder: number, eye: Vec3): Promise<void> {
     const r = await dispatch<{ edges: { a: Vec3; b: Vec3; visible: boolean | null }[] }>('get_wire', { id, occluder, eye });
     this.retopoWireSegs = r.ok ? r.result.edges : [];
+    // The viewport may be idle by the time the edges arrive (no frame would draw them), so they are drawn now.
+    this.drawRetopoWire();
   }
 
   private async fetchCreases(id: number, eye: Vec3): Promise<void> {
     const r = await dispatch<{ creases: { a: Vec3; b: Vec3; visible: boolean | null }[] }>('get_creases', { id, eye });
     this.zmodelCreaseSegs = r.ok ? r.result.creases : [];
+    this.drawZmodel();
   }
 
   /** The last poly_pick under the pointer, the pointer's newest position waiting for a reply, and whether one is out. */
@@ -3908,13 +3912,16 @@ class SceneView {
       const s = this.shell;
       const o = this.scene.objects.find((x) => x.id === id);
       const diag = o ? Math.hypot(...o.bounds.max.map((v, i) => v - o.bounds.min[i])) : 1;
-      const into = this.retopoInto !== null && this.scene.objects.some((x) => x.id === this.retopoInto) ? this.retopoInto : undefined;
+      // A whole-object template wraps the sculpt with its front toward the camera and starts a new retopology object
+      // (later patches then join it); a patch joins the current one.
+      const whole = s.patchKind.value === 'head' || s.patchKind.value === 'sphere';
+      const into = !whole && this.retopoInto !== null && this.scene.objects.some((x) => x.id === this.retopoInto) ? this.retopoInto : undefined;
       const count = (c: HTMLInputElement, d: number): number => Math.max(1, Math.min(64, Math.round(Number(c.value) || d)));
-      const reply = await dispatch<{ id: number; faces: number; faces_added: number }>('retopo_patch', {
+      const mid: Vec3 = o ? [0, 1, 2].map((i) => (o.bounds.min[i] + o.bounds.max[i]) / 2) as Vec3 : point;
+      const reply = await dispatch<{ id: number; faces: number; faces_added: number; folded?: number }>('retopo_patch', {
         target: id,
         patch: s.patchKind.value,
-        center: point,
-        size: Math.max(1e-4, (Number(s.patchSize.value) / 100) * diag),
+        ...(whole ? { front: sub(this.viewport.camera.eye(), mid) } : { center: point, size: Math.max(1e-4, (Number(s.patchSize.value) / 100) * diag) }),
         up: this.viewport.camera.screenUp(),
         columns: count(s.patchColumns, 4),
         rows: count(s.patchRows, 4),
@@ -3923,7 +3930,8 @@ class SceneView {
       if (!reply.ok) this.note(reply.error.message);
       else {
         this.retopoInto = reply.result.id;
-        this.note(`Retopology: ${reply.result.faces} faces`);
+        const folded = reply.result.folded ?? 0;
+        this.note(folded > 0 ? t('Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)').replace('{faces}', String(reply.result.faces)).replace('{folded}', String(folded)) : `Retopology: ${reply.result.faces} faces`);
       }
       await this.refresh();
     }

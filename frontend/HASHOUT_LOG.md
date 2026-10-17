@@ -615,3 +615,9 @@ The guide is the curve already waiting on the surface from the Curve stroke tool
 - kind: rationale
 - logged: v0.64.0 · 2026-10-17
 Border only is its own action (edge.inset_border) mapped to inset with keep border_only, so it needs no extra control. The one slider that was Slide amount % now sets the slide's distance, the inset's spacing (capped at 45) and the split's radius, so it is renamed Amount % (the old string is replaced in every table, not left behind). Stitch takes two clicks on the same object: the first is kept with a note, the second runs the weld; changing the action forgets a pending first click. The weld uses the engine's default alignment (at the second point).
+
+### Head and sphere templates in Retopo patch; wire drawn on arrival
+- refers-to: app.ts :: patchKind (head, sphere), its change listener (defaults per kind), the retopo_patch click (front toward the camera, a new object), fetchRetopoWire, fetchCreases
+- kind: rationale
+- logged: v0.65.0 · 2026-10-17
+The whole-object templates sit in the same Retopo patch list and tool, since a click is still how they are placed; for them the click sends front as the direction from the sculpt's middle to the camera and up as the screen's up, so the face goes where the person is looking, and they start a new retopology object that later patches join. Choosing a kind now sets its own counts (head 10 and 2, sphere 8 and 2). The retopology wire and the crease path were drawn only on rendered frames, and their edges are fetched 150 ms after a change; when the viewport had gone idle before they arrived (a large template), nothing drew them until the camera moved. Both fetches now draw on arrival.
