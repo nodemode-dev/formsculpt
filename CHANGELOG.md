@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.64.0 · 2026-10-17
+
+### Added
+
+- ZModeler edge inset (`zmodel_edge` action `inset`): supporting loops on both sides of an edge loop, the same distance from it all along, keeping the loop (`keep` center_and_border) or replacing it (border_only); optionally creased.
+- ZModeler point split (`zmodel_point` action `split`): a circular inset round a corner that keeps quads at its centre, on a circle (`equalize`) or along the diagonals, optionally creased.
+- ZModeler point stitch (`zmodel_point` action `stitch`): welds a corner to the corner nearest `to`, at the second point, halfway or at the first (`align`); a quad between them collapses, and a weld across one edge is refused since it would leave triangles.
+- Window: Inset edge loop, Inset edge loop, border only, Split point and Stitch points (two clicks) in ZModeler; its amount slider, renamed Amount %, also sets the inset's spacing and the split's radius.
+- 1024 interface strings in every language.
+
 ## 0.63.0 · 2026-10-17
 
 ### Added
