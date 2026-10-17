@@ -42,6 +42,9 @@ def main() -> int:
         page.on("console", lambda m: m.type == "error" and errors.append(m.text))
         page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": 4})
         page.add_init_script("window.__cls=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true});")
+        # The smoke test drives the panel layout's controls; the tablet layout is the default since 0.75.1, so the
+        # panel layout is chosen the way a person's choice is kept.
+        page.add_init_script("try{localStorage.setItem('formsculptor.tablet.default','1');localStorage.setItem('formsculptor.tablet','off')}catch(e){}")
         page.goto(WINDOW)
         page.wait_for_timeout(3000)
         panel = page.locator(".panel")

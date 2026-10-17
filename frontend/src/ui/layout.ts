@@ -14,14 +14,18 @@ interface LayoutPrefs {
   rail: string[];
 }
 
+/** The rail a first start shows, so the panel layout never opens on an empty strip: the everyday sculpting tools,
+ * the mask and the transform gizmo. A rail the person has changed (even emptied) is kept as it is. */
+export const DEFAULT_RAIL = ['draw', 'clay', 'smooth', 'grab', 'inflate', 'crease', 'flatten', 'pinch', 'mask', 'gizmo'].map((b) => `tool.brush.${b}`);
+
 function load(): LayoutPrefs {
   try {
     const raw = localStorage.getItem(STORE);
     const p = raw ? (JSON.parse(raw) as Partial<LayoutPrefs>) : {};
     const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-    return { collapsed: strings(p.collapsed), panelLeft: p.panelLeft === true, size: typeof p.size === 'string' ? p.size : 'normal', rail: strings(p.rail) };
+    return { collapsed: strings(p.collapsed), panelLeft: p.panelLeft === true, size: typeof p.size === 'string' ? p.size : 'normal', rail: Array.isArray(p.rail) ? strings(p.rail) : [...DEFAULT_RAIL] };
   } catch {
-    return { collapsed: [], panelLeft: false, size: 'normal', rail: [] };
+    return { collapsed: [], panelLeft: false, size: 'normal', rail: [...DEFAULT_RAIL] };
   }
 }
 

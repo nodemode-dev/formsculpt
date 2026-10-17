@@ -18,6 +18,8 @@ import { familyOf } from './tool-family';
 
 const STORE = 'formsculptor.tablet';
 const WIDE_STORE = 'formsculptor.tablet.tools';
+/** Set once this layout has been opened as the default (0.75.1), so an "off" kept from before then is not obeyed. */
+const DEFAULT_SEEN = 'formsculptor.tablet.default';
 const SVG = 'http://www.w3.org/2000/svg';
 
 export type TabletControl = HTMLInputElement | HTMLSelectElement | HTMLButtonElement;
@@ -516,11 +518,18 @@ export class TabletLayout {
       this.wide = true;
     }
     this.setWide(this.wide, false);
-    let saved = false;
+    // This layout, rebuilt to the owner's recording, is the default: it opens unless the person switched it off. A
+    // browser that ran an earlier version may hold "off" from before the rebuild, so the first start of this version
+    // opens it once regardless (DEFAULT_SEEN marks that), and from then on the person's choice holds.
+    let saved = true;
     try {
-      saved = localStorage.getItem(STORE) === 'on';
+      if (localStorage.getItem(DEFAULT_SEEN) === null) {
+        localStorage.setItem(DEFAULT_SEEN, '1');
+        localStorage.setItem(STORE, 'on');
+      }
+      saved = localStorage.getItem(STORE) !== 'off';
     } catch {
-      // storage blocked; the layout starts as the panel layout
+      // storage blocked; the layout starts as this one
     }
     this.set(saved, false);
   }

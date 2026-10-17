@@ -4477,7 +4477,7 @@ class SceneView {
     applyTheme(theme);
     this.loadOverlayControls();
     try {
-      s.tablet.set(localStorage.getItem('formsculptor.tablet') === 'on', false);
+      s.tablet.set(localStorage.getItem('formsculptor.tablet') !== 'off', false);
       s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
     } catch {
       // storage blocked; the switches stay as they are
