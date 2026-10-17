@@ -1026,5 +1026,15 @@
  "Head (whole object)": "머리 (객체 전체)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "리토폴로지: 면 {faces}개, 접힘 {folded}개 (형태가 중심에서 전부 보이지 않음)",
  "Sphere (whole object)": "구 (객체 전체)",
- "Skeleton (whole object)": "스켈레톤 (객체 전체)"
+ "Skeleton (whole object)": "스켈레톤 (객체 전체)",
+ "Command palette": "명령 팔레트",
+ "Frame active object": "활성 객체 맞추기",
+ "More": "더 보기",
+ "Orthographic": "직교 투영",
+ "Paint and material": "페인트와 재질",
+ "Solo": "단독",
+ "Tablet Layout": "태블릿 레이아웃",
+ "Tool settings": "도구 설정",
+ "Wireframe": "와이어프레임",
+ "X-ray": "엑스레이"
 }

@@ -1026,5 +1026,15 @@
  "Head (whole object)": "ศีรษะ (ทั้งวัตถุ)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "รีโทโพโลยี: {faces} หน้า, พับ {folded} หน้า (มองรูปทรงจากกึ่งกลางไม่เห็นทั้งหมด)",
  "Sphere (whole object)": "ทรงกลม (ทั้งวัตถุ)",
- "Skeleton (whole object)": "โครงกระดูก (ทั้งวัตถุ)"
+ "Skeleton (whole object)": "โครงกระดูก (ทั้งวัตถุ)",
+ "Command palette": "แผงคำสั่ง",
+ "Frame active object": "จัดกรอบวัตถุที่ใช้งาน",
+ "More": "เพิ่มเติม",
+ "Orthographic": "ออร์โธกราฟิก",
+ "Paint and material": "สีและวัสดุ",
+ "Solo": "เดี่ยว",
+ "Tablet Layout": "เลย์เอาต์แท็บเล็ต",
+ "Tool settings": "การตั้งค่าเครื่องมือ",
+ "Wireframe": "โครงลวด",
+ "X-ray": "เอกซเรย์"
 }

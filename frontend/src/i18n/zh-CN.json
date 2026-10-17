@@ -1026,5 +1026,15 @@
  "Head (whole object)": "头部（整个对象）",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "重拓扑：{faces} 个面，{folded} 个翻折（从形体中心无法看到其全部）",
  "Sphere (whole object)": "球体（整个对象）",
- "Skeleton (whole object)": "骨架（整个对象）"
+ "Skeleton (whole object)": "骨架（整个对象）",
+ "Command palette": "命令面板",
+ "Frame active object": "框显活动对象",
+ "More": "更多",
+ "Orthographic": "正交",
+ "Paint and material": "绘制与材质",
+ "Solo": "单独显示",
+ "Tablet Layout": "平板布局",
+ "Tool settings": "工具设置",
+ "Wireframe": "线框",
+ "X-ray": "X 光"
 }

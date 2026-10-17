@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Cabeza (objeto entero)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopología: {faces} caras, {folded} plegadas (la forma no se ve entera desde su centro)",
  "Sphere (whole object)": "Esfera (objeto entero)",
- "Skeleton (whole object)": "Esqueleto (objeto entero)"
+ "Skeleton (whole object)": "Esqueleto (objeto entero)",
+ "Command palette": "Paleta de comandos",
+ "Frame active object": "Encuadrar objeto activo",
+ "More": "Más",
+ "Orthographic": "Ortográfica",
+ "Paint and material": "Pintura y material",
+ "Solo": "Solo",
+ "Tablet Layout": "Diseño para tableta",
+ "Tool settings": "Ajustes de herramienta",
+ "Wireframe": "Malla de alambre",
+ "X-ray": "Rayos X"
 }

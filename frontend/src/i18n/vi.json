@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Đầu (toàn bộ đối tượng)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopology: {faces} mặt, {folded} bị gập (không thấy toàn bộ hình từ tâm của nó)",
  "Sphere (whole object)": "Cầu (toàn bộ đối tượng)",
- "Skeleton (whole object)": "Bộ xương (toàn bộ đối tượng)"
+ "Skeleton (whole object)": "Bộ xương (toàn bộ đối tượng)",
+ "Command palette": "Bảng lệnh",
+ "Frame active object": "Đóng khung đối tượng đang chọn",
+ "More": "Thêm",
+ "Orthographic": "Trực giao",
+ "Paint and material": "Sơn và vật liệu",
+ "Solo": "Đơn lẻ",
+ "Tablet Layout": "Bố cục máy tính bảng",
+ "Tool settings": "Cài đặt công cụ",
+ "Wireframe": "Khung dây",
+ "X-ray": "X-quang"
 }

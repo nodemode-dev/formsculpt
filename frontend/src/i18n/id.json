@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Kepala (seluruh objek)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} muka, {folded} terlipat (bentuk tidak terlihat utuh dari tengahnya)",
  "Sphere (whole object)": "Bola (seluruh objek)",
- "Skeleton (whole object)": "Kerangka (seluruh objek)"
+ "Skeleton (whole object)": "Kerangka (seluruh objek)",
+ "Command palette": "Palet perintah",
+ "Frame active object": "Bingkai objek aktif",
+ "More": "Lainnya",
+ "Orthographic": "Ortografis",
+ "Paint and material": "Cat dan material",
+ "Solo": "Solo",
+ "Tablet Layout": "Tata letak tablet",
+ "Tool settings": "Pengaturan alat",
+ "Wireframe": "Rangka kawat",
+ "X-ray": "Sinar-X"
 }

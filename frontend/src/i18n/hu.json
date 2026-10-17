@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Fej (teljes objektum)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopológia: {faces} lap, {folded} visszahajlott (az alak a közepéről nem látszik egészben)",
  "Sphere (whole object)": "Gömb (teljes objektum)",
- "Skeleton (whole object)": "Csontváz (teljes objektum)"
+ "Skeleton (whole object)": "Csontváz (teljes objektum)",
+ "Command palette": "Parancspaletta",
+ "Frame active object": "Aktív objektum keretezése",
+ "More": "Továbbiak",
+ "Orthographic": "Ortografikus",
+ "Paint and material": "Festés és anyag",
+ "Solo": "Szóló",
+ "Tablet Layout": "Táblagépes elrendezés",
+ "Tool settings": "Eszközbeállítások",
+ "Wireframe": "Drótváz",
+ "X-ray": "Röntgen"
 }

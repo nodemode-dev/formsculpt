@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Hoofd (heel object)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie: {faces} vlakken, {folded} gevouwen (de vorm is vanuit het midden niet helemaal te zien)",
  "Sphere (whole object)": "Bol (heel object)",
- "Skeleton (whole object)": "Skelet (heel object)"
+ "Skeleton (whole object)": "Skelet (heel object)",
+ "Command palette": "Opdrachtenpalet",
+ "Frame active object": "Actief object in beeld",
+ "More": "Meer",
+ "Orthographic": "Orthografisch",
+ "Paint and material": "Verf en materiaal",
+ "Solo": "Solo",
+ "Tablet Layout": "Tabletindeling",
+ "Tool settings": "Gereedschapsinstellingen",
+ "Wireframe": "Draadmodel",
+ "X-ray": "Röntgen"
 }

@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Huvud (hela objektet)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} ytor, {folded} vikta (formen syns inte hel från sin mitt)",
  "Sphere (whole object)": "Sfär (hela objektet)",
- "Skeleton (whole object)": "Skelett (hela objektet)"
+ "Skeleton (whole object)": "Skelett (hela objektet)",
+ "Command palette": "Kommandopalett",
+ "Frame active object": "Rama in aktivt objekt",
+ "More": "Mer",
+ "Orthographic": "Ortografisk",
+ "Paint and material": "Färg och material",
+ "Solo": "Solo",
+ "Tablet Layout": "Surfplattelayout",
+ "Tool settings": "Verktygsinställningar",
+ "Wireframe": "Trådmodell",
+ "X-ray": "Röntgen"
 }

@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Testa (oggetto intero)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologia: {faces} facce, {folded} ripiegate (la forma non si vede intera dal suo centro)",
  "Sphere (whole object)": "Sfera (oggetto intero)",
- "Skeleton (whole object)": "Scheletro (oggetto intero)"
+ "Skeleton (whole object)": "Scheletro (oggetto intero)",
+ "Command palette": "Tavolozza comandi",
+ "Frame active object": "Inquadra oggetto attivo",
+ "More": "Altro",
+ "Orthographic": "Ortografica",
+ "Paint and material": "Pittura e materiale",
+ "Solo": "Solo",
+ "Tablet Layout": "Layout tablet",
+ "Tool settings": "Impostazioni strumento",
+ "Wireframe": "Wireframe",
+ "X-ray": "Raggi X"
 }

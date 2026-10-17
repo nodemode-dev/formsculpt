@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Kafa (tüm nesne)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopoloji: {faces} yüz, {folded} katlanmış (şekil ortasından bütünüyle görünmüyor)",
  "Sphere (whole object)": "Küre (tüm nesne)",
- "Skeleton (whole object)": "İskelet (tüm nesne)"
+ "Skeleton (whole object)": "İskelet (tüm nesne)",
+ "Command palette": "Komut paleti",
+ "Frame active object": "Etkin nesneyi çerçevele",
+ "More": "Daha fazla",
+ "Orthographic": "Ortografik",
+ "Paint and material": "Boya ve malzeme",
+ "Solo": "Tek",
+ "Tablet Layout": "Tablet düzeni",
+ "Tool settings": "Araç ayarları",
+ "Wireframe": "Tel kafes",
+ "X-ray": "Röntgen"
 }

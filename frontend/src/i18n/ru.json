@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Голова (весь объект)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Ретопология: {faces} граней, {folded} перевёрнуто (форма не видна целиком из своего центра)",
  "Sphere (whole object)": "Сфера (весь объект)",
- "Skeleton (whole object)": "Скелет (весь объект)"
+ "Skeleton (whole object)": "Скелет (весь объект)",
+ "Command palette": "Палитра команд",
+ "Frame active object": "Показать активный объект",
+ "More": "Ещё",
+ "Orthographic": "Ортографическая",
+ "Paint and material": "Краска и материал",
+ "Solo": "Соло",
+ "Tablet Layout": "Планшетная раскладка",
+ "Tool settings": "Настройки инструмента",
+ "Wireframe": "Каркас",
+ "X-ray": "Рентген"
 }

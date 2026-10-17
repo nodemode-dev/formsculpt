@@ -1026,5 +1026,15 @@
  "Head (whole object)": "Kopf (ganzes Objekt)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie: {faces} Flächen, {folded} gefaltet (die Form ist von ihrer Mitte aus nicht ganz sichtbar)",
  "Sphere (whole object)": "Kugel (ganzes Objekt)",
- "Skeleton (whole object)": "Skelett (ganzes Objekt)"
+ "Skeleton (whole object)": "Skelett (ganzes Objekt)",
+ "Command palette": "Befehlspalette",
+ "Frame active object": "Aktives Objekt einpassen",
+ "More": "Mehr",
+ "Orthographic": "Orthografisch",
+ "Paint and material": "Farbe und Material",
+ "Solo": "Solo",
+ "Tablet Layout": "Tablet-Layout",
+ "Tool settings": "Werkzeugeinstellungen",
+ "Wireframe": "Drahtgitter",
+ "X-ray": "Röntgen"
 }
