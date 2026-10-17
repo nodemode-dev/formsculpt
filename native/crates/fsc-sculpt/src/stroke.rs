@@ -839,8 +839,8 @@ impl Stroke {
             // shrinking the form; smooth also moves along the normal and wears the form down.
             let relax = s.kind == BrushKind::Relax;
             // One averaging pass spreads about one edge length, so on a dense mesh a single pass per dab cannot reach
-            // the size of the brush and smoothing all but stops working. Smooth runs as many passes as spread a tenth
-            // of the radius (spread grows with the square root of the passes), capped at 24; a coarse mesh keeps one.
+            // the size of the brush and smoothing all but stops working. Smooth runs as many passes as spread a fifth
+            // of the radius (spread grows with the square root of the passes), capped at 64; a coarse mesh keeps one.
             let passes = if relax {
                 1
             } else {
@@ -854,7 +854,7 @@ impl Stroke {
                     }
                 }
                 let edge = if count > 0 { sum / count as f32 } else { 0.0 };
-                if edge > 0.0 { ((r * 0.1 / edge).powi(2).round() as usize).clamp(1, 24) } else { 1 }
+                if edge > 0.0 { ((r * 0.2 / edge).powi(2).round() as usize).clamp(1, 64) } else { 1 }
             };
             for _ in 0..passes {
                 let targets: Vec<Vec3> = found
