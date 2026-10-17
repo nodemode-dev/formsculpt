@@ -217,10 +217,12 @@ Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an
 
 ## set_material
 
-Set how light passes into and through an object in lit shading: subsurface scattering (skin, wax, jade, marble: light enters, picks up subsurface_color and glows through thin parts within subsurface_radius) and transmission with refraction (glass, water, resin, at an ior). Given values change; the rest stay. Saved in projects; one undo step.
+Set how light passes into and through an object in lit shading: subsurface scattering (skin, wax, jade, marble: light enters, picks up subsurface_color and glows through thin parts within subsurface_radius) and transmission with refraction (glass, water, resin, at an ior); and its blend, opaque, dithered (see-through by a fine pattern at an opacity) or additive (adds its light, hides nothing). Given values change; the rest stay. Lit shading and the path render both show them. Saved in projects; one undo step.
 
+- `blend`: string (opaque | dithered | additive); How the surface covers what is behind it: opaque; dithered (see-through by a fine pattern, a share 1 - opacity left out, no sorting needed, keeps shadows); additive (adds its light, hides nothing, casts no shadow: glows, holograms, beams). For glass or water use transmission instead.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `ior`: number; range 1 to 2.5; Index of refraction: water 1.33, glass 1.5, diamond 2.4.
+- `opacity`: number; range 0 to 1; Dithered: the share of the surface drawn. Additive: how much light it adds. Opaque ignores it.
 - `subsurface`: number; range 0 to 1; How much light enters and comes back out tinted: skin 0.3 to 0.6, wax and jade 0.8.
 - `subsurface_color`: array of number; The tint light picks up inside, linear RGB (skin is a warm red).
 - `subsurface_radius`: number; range -inf to 1000; How far light travels inside, in world units; thin parts such as ears glow when lit from behind.

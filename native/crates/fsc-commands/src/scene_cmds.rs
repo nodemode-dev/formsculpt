@@ -31,7 +31,7 @@ pub(crate) fn summary(o: &Object) -> Value {
         "paint_layers": o.paint_layers.list.iter().filter(|_| o.paint_layers.valid(o.mesh.vertex_count())).map(|l| json!({"name": l.name, "blend": l.blend.name(), "channel_blend": l.channel_blend.iter().zip(fsc_core::paint_layers::CHANNEL_NAMES).filter_map(|(b, n)| b.map(|b| (n, b.name()))).collect::<std::collections::BTreeMap<_, _>>(), "opacity": l.opacity, "visible": l.visible})).collect::<Vec<_>>(),
         "active_paint_layer": o.paint_layers.active.filter(|_| o.paint_layers.valid(o.mesh.vertex_count())),
         "bounds": {"min": b.min.to_array(), "max": b.max.to_array()},
-        "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior},
+        "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior, "blend": o.material.blend.name(), "opacity": o.material.opacity},
     })
 }
 
@@ -44,7 +44,9 @@ pub(crate) fn material_schema() -> Value {
             "subsurface_color": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1}, "minItems": 3, "maxItems": 3, "description": "The tint light picks up inside, linear RGB (skin is a warm red)."},
             "subsurface_radius": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "How far light travels inside, in world units; thin parts such as ears glow when lit from behind."},
             "transmission": {"type": "number", "minimum": 0, "maximum": 1, "description": "How much light passes through, refracted: 1 for clear glass or water."},
-            "ior": {"type": "number", "minimum": 1, "maximum": 2.5, "description": "Index of refraction: water 1.33, glass 1.5, diamond 2.4."}
+            "ior": {"type": "number", "minimum": 1, "maximum": 2.5, "description": "Index of refraction: water 1.33, glass 1.5, diamond 2.4."},
+            "blend": {"type": "string", "enum": fsc_core::MaterialBlend::NAMES, "description": "How the surface covers what is behind it: opaque; dithered (see-through by a fine pattern, a share 1 - opacity left out, no sorting needed, keeps shadows); additive (adds its light, hides nothing, casts no shadow: glows, holograms, beams). For glass or water use transmission instead."},
+            "opacity": {"type": "number", "minimum": 0, "maximum": 1, "description": "Dithered: the share of the surface drawn. Additive: how much light it adds. Opaque ignores it."}
         },
         "required": [],
         "additionalProperties": false
@@ -74,6 +76,16 @@ pub(crate) fn set_material(s: &mut Session, args: &Value) -> Result<Value, Comma
     }
     if let Some(v) = num("ior", 1.0, 2.5)? {
         m.ior = v;
+    }
+    if let Some(v) = num("opacity", 0.0, 1.0)? {
+        m.opacity = v;
+    }
+    match args.get("blend") {
+        None | Some(Value::Null) => {}
+        Some(v) => {
+            let name = v.as_str().unwrap_or("");
+            m.blend = fsc_core::MaterialBlend::parse(name).ok_or_else(|| CommandError::new("bad_arguments", format!("blend must be one of {}, not {name}", fsc_core::MaterialBlend::NAMES.join(", "))))?;
+        }
     }
     if let Some(c) = args.get("subsurface_color") {
         let f: Vec<f32> = c.as_array().map(|a| a.iter().filter_map(Value::as_f64).map(|x| x as f32).collect()).unwrap_or_default();

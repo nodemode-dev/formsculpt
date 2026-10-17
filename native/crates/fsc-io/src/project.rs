@@ -31,7 +31,7 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             "name": o.name,
             "visible": o.visible,
             "folder": o.folder,
-            "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior},
+            "material": {"subsurface": o.material.subsurface, "subsurface_color": o.material.subsurface_color, "subsurface_radius": o.material.subsurface_radius, "transmission": o.material.transmission, "ior": o.material.ior, "blend": o.material.blend.name(), "opacity": o.material.opacity},
             "positions": w.put(&format!("{dir}/positions.f32"), &vec3s(&o.mesh.positions))?,
             "indices": w.put(&format!("{dir}/indices.u32"), &u32s(&o.mesh.indices))?,
             "mask": w.put(&format!("{dir}/mask.f32"), &f32s(&o.mask))?,
@@ -325,6 +325,9 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
             subsurface_radius: f("subsurface_radius", base.subsurface_radius, 1e-4, 1000.0),
             transmission: f("transmission", base.transmission, 0.0, 1.0),
             ior: f("ior", base.ior, 1.0, 2.5),
+            // Projects from before 0.80.0 have no blend or opacity; they open opaque.
+            blend: m["blend"].as_str().and_then(fsc_core::MaterialBlend::parse).unwrap_or_default(),
+            opacity: f("opacity", base.opacity, 0.0, 1.0),
         };
         o.maps = maps;
         for t in e.get("tile_maps").and_then(|t| t.as_array()).into_iter().flatten() {

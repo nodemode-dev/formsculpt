@@ -340,7 +340,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "set_material",
         group: Group::Paint,
         label: "Set Material",
-        description: "Set how light passes into and through an object in lit shading: subsurface scattering (skin, wax, jade, marble: light enters, picks up subsurface_color and glows through thin parts within subsurface_radius) and transmission with refraction (glass, water, resin, at an ior). Given values change; the rest stay. Saved in projects; one undo step.",
+        description: "Set how light passes into and through an object in lit shading: subsurface scattering (skin, wax, jade, marble: light enters, picks up subsurface_color and glows through thin parts within subsurface_radius) and transmission with refraction (glass, water, resin, at an ior); and its blend, opaque, dithered (see-through by a fine pattern at an opacity) or additive (adds its light, hides nothing). Given values change; the rest stay. Lit shading and the path render both show them. Saved in projects; one undo step.",
         keys: &[],
         hints: WRITE,
         schema: scene_cmds::material_schema,

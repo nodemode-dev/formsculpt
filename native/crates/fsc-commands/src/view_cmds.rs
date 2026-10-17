@@ -491,9 +491,9 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
         Vec::new()
     };
     let objects: Vec<RenderObject> = if smooth > 0 {
-        drawn.iter().zip(&smoothed).map(|(o, (m, mask))| RenderObject { mesh: m, mask, active: Some(o.id) == active }).collect()
+        drawn.iter().zip(&smoothed).map(|(o, (m, mask))| RenderObject { mesh: m, mask, active: Some(o.id) == active, material: o.material }).collect()
     } else {
-        drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active }).collect()
+        drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active, material: o.material }).collect()
     };
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
     let out = match args.get("render").and_then(Value::as_str).unwrap_or("preview") {

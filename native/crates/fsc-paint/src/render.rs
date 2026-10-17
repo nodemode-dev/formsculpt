@@ -10,6 +10,8 @@ pub struct RenderObject<'a> {
     pub mesh: &'a Mesh,
     pub mask: &'a [f32],
     pub active: bool,
+    /// Blend, opacity, transmission and ior, which the path render follows (the preview draws every object opaque).
+    pub material: fsc_core::Material,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -505,6 +507,31 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
         }
         best
     };
+    // Whether a shadow ray from p along d gets as far as max_t (the light's distance; infinity for the sun) past the
+    // surfaces that let light by: additive ones always, dithered ones by the share left out, transmissive ones by their
+    // transmission (no caustics: glass casts a lighter shadow, not a focused one).
+    let visible = |mut p: Vec3, d: Vec3, mut max_t: f32, rng: &mut Rng| -> bool {
+        for _ in 0..16 {
+            let Some((oi, h)) = hit(p, d) else { return true };
+            if h.t >= max_t {
+                return true;
+            }
+            let m = &objects[oi].material;
+            let gap = match m.blend {
+                fsc_core::MaterialBlend::Additive => 1.0,
+                fsc_core::MaterialBlend::Dithered => 1.0 - m.opacity.clamp(0.0, 1.0),
+                fsc_core::MaterialBlend::Opaque => 0.0,
+            };
+            let pass = 1.0 - (1.0 - gap) * (1.0 - m.transmission.clamp(0.0, 1.0));
+            if pass <= 0.0 || rng.next() >= pass {
+                return false;
+            }
+            let step = h.t + eps * 4.0;
+            p += d * step;
+            max_t -= step;
+        }
+        false
+    };
     // The window's key light as a sun of small angular size, in world space (the key follows the camera there).
     let sun_dir = (cam.right * KEY.x + cam.up * KEY.y - cam.fwd * KEY.z).normalize();
     let sun = Vec3::new(2.6, 2.45, 2.25);
@@ -574,11 +601,14 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
             let mut through = Vec3::ONE;
             let mut light = Vec3::ZERO;
             let mut first = true;
+            // Until the path scatters off a surface it still looks at the backdrop: passing through see-through, dithered
+            // and additive surfaces or refracting through glass does not turn the background into the sky's bounce light.
+            let mut straight = true;
             for _ in 0..bounces {
                 let Some((oi, h)) = hit(p, d) else {
-                    if first {
+                    if straight {
                         light += match view.background {
-                            Some(bg) => Vec3::from(bg).powf(2.2),
+                            Some(bg) => through * Vec3::from(bg).powf(2.2),
                             None => Vec3::ZERO,
                         };
                     } else {
@@ -591,17 +621,49 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                     first = false;
                 }
                 let (q, mut n, paint) = surface(&objects[oi], &h);
-                if n.dot(d) > 0.0 {
+                // Whether the path is leaving the object (its normal faces along the ray), for refraction.
+                let inside = n.dot(d) > 0.0;
+                if inside {
                     n = -n;
                 }
                 let albedo = Vec3::new(paint[0], paint[1], paint[2]).clamp(Vec3::ZERO, Vec3::ONE);
                 let (rough, metal, opacity, glow) = (paint[3].clamp(0.05, 1.0), paint[4].clamp(0.0, 1.0), paint[5].clamp(0.0, 1.0), paint[6].clamp(0.0, 1.0));
+                let material = &objects[oi].material;
                 if glow > 0.0 {
                     light += through * albedo * glow * 4.0;
                 }
-                // See-through paint: the path continues straight on with the chance it is not opaque.
+                // Additive: the surface adds its colour as light and hides nothing behind it.
+                if material.blend == fsc_core::MaterialBlend::Additive {
+                    light += through * albedo * material.opacity.clamp(0.0, 1.0);
+                    p = q + d * eps * 4.0;
+                    continue;
+                }
+                // See-through paint and dithered materials: the path continues straight on with the chance the surface
+                // is not there.
+                let opacity = if material.blend == fsc_core::MaterialBlend::Dithered { opacity * material.opacity.clamp(0.0, 1.0) } else { opacity };
                 if rng.next() > opacity {
                     p = q + d * eps * 4.0;
+                    continue;
+                }
+                // Transmission: a clear dielectric. Fresnel (Schlick) chooses reflection or refraction; total internal
+                // reflection reflects; each crossing tints by the square root of the colour, so a pass through tints once.
+                if material.transmission > 0.0 && rng.next() < material.transmission {
+                    // A bent ray no longer looks at the backdrop (a flat card behind the view) but at the surroundings.
+                    straight = false;
+                    let ior = material.ior.clamp(1.0, 2.5);
+                    let eta = if inside { ior } else { 1.0 / ior };
+                    let cos = (-d.dot(n)).clamp(0.0, 1.0);
+                    let f0 = ((1.0 - ior) / (1.0 + ior)).powi(2);
+                    let fresnel = f0 + (1.0 - f0) * (1.0 - cos).powi(5);
+                    let k = 1.0 - eta * eta * (1.0 - cos * cos);
+                    if k < 0.0 || rng.next() < fresnel {
+                        d = (d - n * 2.0 * d.dot(n)).normalize();
+                        p = q + n * eps * 4.0;
+                    } else {
+                        d = (d * eta + n * (eta * cos - k.sqrt())).normalize();
+                        p = q - n * eps * 4.0;
+                        through *= Vec3::new(albedo.x.sqrt(), albedo.y.sqrt(), albedo.z.sqrt());
+                    }
                     continue;
                 }
                 let origin = q + n * eps * 4.0;
@@ -609,7 +671,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                 for &(from, color) in &lights {
                     let s = (from + Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * 0.06).normalize();
                     let ndl = n.dot(s);
-                    if ndl > 0.0 && hit(origin, s).is_none() {
+                    if ndl > 0.0 && visible(origin, s, f32::INFINITY, &mut rng) {
                         let half = (s - d).normalize();
                         let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
                         let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
@@ -631,7 +693,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                         continue;
                     }
                     let reach = spot_reach(s, dist, axis, cone, softness, reference);
-                    if reach > 0.0 && hit(origin, s).is_none_or(|(_, h)| h.t >= dist) {
+                    if reach > 0.0 && visible(origin, s, dist, &mut rng) {
                         let half = (s - d).normalize();
                         let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
                         let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
@@ -640,6 +702,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                     }
                 }
                 // Next bounce: glossy reflection by metalness (and smoothness), otherwise diffuse.
+                straight = false;
                 let glossy = metal.max((1.0 - rough) * 0.25);
                 if rng.next() < glossy {
                     let r = d - n * 2.0 * d.dot(n);

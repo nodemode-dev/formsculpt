@@ -20,7 +20,7 @@ pub use mesh::{mix_paint, paint_channel, paint_from5, Aabb, Mesh, Paint, DEFAULT
 pub use multires::{Level, Multires, Stencil};
 pub use paint_layers::{Blend, LayerPaint, PaintLayer, PaintLayers, COVER};
 pub use primitives::Primitive;
-pub use scene::{Instance, Maps, Material, Object, ObjectId, SavedView, Scene};
+pub use scene::{Instance, MaterialBlend, Maps, Material, Object, ObjectId, SavedView, Scene};
 pub use selection::{ChannelState, SelectionSet, SET_CHANNELS};
 pub use texture::{Texture, TextureEdit};
 

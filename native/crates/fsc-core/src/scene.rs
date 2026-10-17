@@ -52,11 +52,50 @@ pub struct Material {
     pub transmission: f32,
     /// Index of refraction, 1 to 2.5 (water 1.33, glass 1.5, diamond 2.4).
     pub ior: f32,
+    /// How the surface is put over what is behind it.
+    pub blend: MaterialBlend,
+    /// 0 to 1: for Dithered, the share of the surface drawn; for Additive, how much light it adds. Opaque ignores it.
+    pub opacity: f32,
 }
 
 impl Default for Material {
     fn default() -> Material {
-        Material { subsurface: 0.0, subsurface_color: [1.0, 0.35, 0.25], subsurface_radius: 0.2, transmission: 0.0, ior: 1.45 }
+        Material { subsurface: 0.0, subsurface_color: [1.0, 0.35, 0.25], subsurface_radius: 0.2, transmission: 0.0, ior: 1.45, blend: MaterialBlend::Opaque, opacity: 1.0 }
+    }
+}
+
+/// A material's blending: how a surface covers what is behind it (paint layers' Blend is a separate thing, how a
+/// paint layer mixes with those under it).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MaterialBlend {
+    /// Covers what is behind it.
+    #[default]
+    Opaque,
+    /// See-through by leaving out a fine pattern of pixels (a share of 1 - opacity): needs no sorting, keeps depth and
+    /// shadows, and grows smooth with samples in a path render.
+    Dithered,
+    /// Adds its light to what is behind it and hides nothing: glows, holograms, light beams. Casts no shadow.
+    Additive,
+}
+
+impl MaterialBlend {
+    pub const NAMES: [&'static str; 3] = ["opaque", "dithered", "additive"];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            MaterialBlend::Opaque => "opaque",
+            MaterialBlend::Dithered => "dithered",
+            MaterialBlend::Additive => "additive",
+        }
+    }
+
+    pub fn parse(name: &str) -> Option<MaterialBlend> {
+        Some(match name {
+            "opaque" => MaterialBlend::Opaque,
+            "dithered" => MaterialBlend::Dithered,
+            "additive" => MaterialBlend::Additive,
+            _ => return None,
+        })
     }
 }
 
