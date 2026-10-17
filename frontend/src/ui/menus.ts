@@ -90,7 +90,7 @@ const VIEW: MenuItem[] = [
 ];
 
 const WINDOW: MenuItem[] = [
-  'view.tablet_layout', 'view.panel_left', { label: 'Interface Size', items: ['view.ui_small', 'view.ui_normal', 'view.ui_large'] }, 'view.clear_rail', 'plugin.run', 'plugin.reload', '-',
+  'view.tablet_layout', 'view.panel_left', { label: 'Interface Size', items: ['view.ui_small', 'view.ui_normal', 'view.ui_large'] }, { label: 'Theme', items: ['view.theme_nodemode', 'view.theme_dark', 'view.theme_light', 'view.theme_contrast'] }, 'view.translucent', 'view.clear_rail', 'plugin.run', 'plugin.reload', '-',
   'view.toolbar_new', 'view.tool_swap', 'view.bindings', 'view.layout_export', 'view.layout_import', '-',
   'view.terminal', 'view.newTerminal', 'agent.claude', 'agent.chat',
 ];

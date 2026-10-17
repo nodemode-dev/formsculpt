@@ -22,6 +22,8 @@ import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
 import { BindingsDialog, InputBindings } from './ui/bindings';
+import { applyTheme, loadTheme, parseTheme, saveTheme } from './ui/theme';
+import { familyOf } from './ui/tool-family';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
@@ -210,6 +212,8 @@ interface Shell {
   layout: PanelLayout;
   panelLeft: HTMLInputElement;
   uiSize: HTMLSelectElement;
+  themePick: HTMLSelectElement;
+  translucent: HTMLInputElement;
   menubar: HTMLElement;
   falloff: HTMLSelectElement;
   falloffCurve: SVGSVGElement;
@@ -720,7 +724,8 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(el('h2', 'gap', 'Brush'));
   const brushGrid = el('div', 'add-grid');
   const brushButtons = BRUSHES.map(([kind, label]) => {
-    const b = el('button', 'btn', label);
+    // Coloured by family (sculpt, mask, paint, cut, build, move, view), as the tablet palette's discs are.
+    const b = el('button', `btn tool-btn fam-${familyOf(kind)}`, label);
     b.type = 'button';
     b.dataset.brush = kind;
     b.setAttribute('aria-pressed', kind === 'draw' ? 'true' : 'false');
@@ -1248,6 +1253,21 @@ function buildShell(root: HTMLElement): Shell {
   const referencePlace = choices('Reference place', [['screen', 'Over the view'], ['front', 'Front plane'], ['side', 'Side plane'], ['top', 'Top plane']]);
   const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
   const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
+  // The theme here, or NodeMode's (the default); translucent panels let the viewport show through (ui/theme.ts).
+  const themePick = choices('Theme', [['nodemode', 'Follow NodeMode'], ['dark', 'Dark theme'], ['light', 'Light theme'], ['contrast', 'High contrast']]);
+  const translucent = input('checkbox', { 'aria-label': 'Translucent panels' });
+  {
+    const kept = loadTheme();
+    themePick.value = kept.theme;
+    translucent.checked = kept.translucent;
+    const change = (): void => {
+      const p = parseTheme({ theme: themePick.value, translucent: translucent.checked });
+      saveTheme(p);
+      applyTheme(p);
+    };
+    themePick.addEventListener('change', change);
+    translucent.addEventListener('change', change);
+  }
   const backdropMode = choices('Background', [['gradient', 'Gradient'], ['color', 'Flat colour']]);
   const backdropTop = input('color', { value: '#3c3c41', 'aria-label': 'Background top' });
   const backdropBottom = input('color', { value: '#17171a', 'aria-label': 'Background bottom' });
@@ -1279,7 +1299,7 @@ function buildShell(root: HTMLElement): Shell {
     }
   });
   viewFields.append(field('Second press swaps', toolSwap));
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Theme', themePick), field('Translucent panels', translucent), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -1484,7 +1504,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -3917,6 +3937,16 @@ class SceneView {
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
+      ...(['nodemode', 'dark', 'light', 'contrast'] as const).map((name) => ({
+        id: `view.theme_${name}`,
+        label: { nodemode: 'Follow NodeMode', dark: 'Dark theme', light: 'Light theme', contrast: 'High contrast' }[name],
+        run: () => {
+          s.themePick.value = name;
+          s.themePick.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        checked: () => s.themePick.value === name,
+      })),
+      { id: 'view.translucent', label: 'Translucent panels', run: () => toggle(s.translucent), checked: () => s.translucent.checked },
       { id: 'brush.radius_up', label: 'Larger Brush', keys: [']'], run: () => step(s.radius, 1.15) },
       { id: 'brush.radius_down', label: 'Smaller Brush', keys: ['['], run: () => step(s.radius, 1 / 1.15) },
       { id: 'brush.strength_up', label: 'Stronger Brush', run: () => step(s.strength, 0, 5) },
@@ -4188,6 +4218,10 @@ class SceneView {
     s.layout.reload();
     s.toolbars.load();
     this.inputs.load();
+    const theme = loadTheme();
+    s.themePick.value = theme.theme;
+    s.translucent.checked = theme.translucent;
+    applyTheme(theme);
     try {
       s.tablet.set(localStorage.getItem('formsculptor.tablet') === 'on', false);
       s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';

@@ -14,6 +14,7 @@
 
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
+import { familyOf } from './tool-family';
 
 const STORE = 'formsculptor.tablet';
 const WIDE_STORE = 'formsculptor.tablet.tools';
@@ -48,17 +49,6 @@ export interface TabletStats {
   active: { name: string; vertices: number } | null;
 }
 
-/** Tool families: each has its own colour, as the tool palette groups tools by what they do. */
-type Family = 'sculpt' | 'mask' | 'paint' | 'cut' | 'build' | 'move' | 'view';
-const FAMILY: Record<string, Family> = {
-  mask: 'mask', mask_box: 'mask', mask_lasso: 'mask', mask_topo: 'mask', mask_group: 'mask', hide_group: 'mask', group_brush: 'mask',
-  paint: 'paint', smudge: 'paint', eyedropper: 'paint',
-  trim: 'cut', cut: 'cut', trim_shape: 'cut', slice_curve: 'cut', trim_curve: 'cut', clip: 'cut', bevel_edge: 'cut',
-  tube: 'build', curve: 'build', insert: 'build', insert_brush: 'build', vdm: 'build', zsphere: 'build', retopo: 'build', retopo_patch: 'build', edge_loop: 'build', zmodeler: 'build', silhouette: 'build',
-  gizmo: 'move', lattice: 'move', pose_joint: 'move', grab: 'move', elastic: 'move', nudge: 'move', snake_hook: 'move',
-  orbit: 'view', groom_comb: 'view', groom_cut: 'view', plugin: 'view',
-};
-const familyOf = (kind: string): Family => FAMILY[kind] ?? 'sculpt';
 
 /** The palette's column, in order; the grid shows every tool. */
 const COLUMN = ['clay', 'draw', 'grab', 'smooth', 'flatten', 'crease', 'pinch', 'inflate', 'layer', 'trim', 'mask', 'paint', 'gizmo', 'tube', 'orbit'];

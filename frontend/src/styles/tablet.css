@@ -22,6 +22,11 @@
   grid-template-areas: "bar bar bar" "rail stage panel" "dock dock dock" "status status status";
 }
 #app.tablet:has(.tb-tools.wide) { --tb-tools-w: 284px; }
+/* Translucent panels (ui/theme.ts): the floating bars and panels let the model show through, blurred. */
+body.panels-translucent #app.tablet { --tb-panel: rgb(44 52 68 / 0.66); }
+body.panels-translucent #app.tablet :is(.tb-bar, .tb-tools, .tb-left, .tb-card, .tb-pill, .tb-float, .panel.tl-sheet) { backdrop-filter: blur(14px) saturate(1.2); }
+/* High contrast: the layout's slate turns black with white labels and outlined panels. */
+body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1c1c1c; --tb-sunk: #000000; --tb-text: #ffffff; --tb-dim: #d0d0d0; --tb-line: rgb(255 255 255 / 0.55); }
 #app.tablet :is(.appbar, .status, .rail) { display: none; }
 #app.tablet .panel { display: none; }
 #app.tablet .stage { background: #000; }
@@ -97,10 +102,11 @@
 .tb-vslider:nth-child(2) .tb-fill { background: linear-gradient(to top, #b03a3a, #e06a6a); }
 
 /* Bottom: the tool's pill and options card. */
-.tb-pill { position: absolute; z-index: var(--z-rail); left: 50%; bottom: 112px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border-radius: 999px; background: var(--tb-panel); border: 1px solid var(--tb-line); color: var(--tb-white); font: 600 13px/1 var(--font-sans); pointer-events: none; }
+.tb-pill { position: absolute; z-index: var(--z-rail); left: 50%; bottom: 164px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border-radius: 999px; background: var(--tb-panel); border: 1px solid var(--tb-line); color: var(--tb-white); font: 600 13px/1 var(--font-sans); pointer-events: none; }
 .tb-pill svg { width: 20px; height: 20px; color: var(--tb-blue); }
-#app.tablet .tb-pill:has(+ .tb-card[hidden]) { bottom: 16px; }
-.tb-card { position: absolute; z-index: var(--z-rail); left: 50%; bottom: 16px; transform: translateX(-50%); max-width: calc(100% - 2 * var(--tb-tools-w) - 120px); background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
+#app.tablet .tb-pill:has(+ .tb-card[hidden]) { bottom: 68px; }
+/* The card sits above the quick bar's row, as in the recording, so a wide card never runs into it. */
+.tb-card { position: absolute; z-index: var(--z-rail); left: 50%; bottom: 68px; transform: translateX(-50%); max-width: calc(100% - 2 * var(--tb-tools-w) - 120px); background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
 .tb-card[hidden] { display: none; }
 .tb-card-head { display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; height: 22px; padding: 0 4px; border-bottom: 1px solid var(--tb-line); }
 .tb-card-title { justify-self: center; color: var(--tb-dim); font: 600 11px/1 var(--font-sans); }

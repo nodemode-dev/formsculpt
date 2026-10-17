@@ -24,12 +24,31 @@
       light = s.theme === 'light' || s.theme === 'sand';
     }
   } catch (e) {}
+  // formsculptor's own theme choice (ui/theme.ts) wins over NodeMode's when it is not "follow NodeMode".
+  var contrast = false;
+  var translucent = false;
+  try {
+    var own = JSON.parse(localStorage.getItem('formsculptor.theme') || 'null');
+    if (own && typeof own === 'object') {
+      if (own.theme === 'light') light = true;
+      else if (own.theme === 'dark') light = false;
+      else if (own.theme === 'contrast') { light = false; contrast = true; }
+      translucent = own.translucent === true;
+    }
+  } catch (e) {}
   var root = document.documentElement;
   root.style.setProperty('--accent-color', accent);
   root.style.setProperty('--accent-color-dim', accent + '33');
-  if (light) {
-    root.style.background = '#ecebe6';
-    var apply = function () { if (document.body) { document.body.classList.add('theme-light'); return true; } return false; };
+  if (light) root.style.background = '#ecebe6';
+  if (contrast) root.style.background = '#000000';
+  if (light || contrast || translucent) {
+    var apply = function () {
+      if (!document.body) return false;
+      if (light) document.body.classList.add('theme-light');
+      if (contrast) document.body.classList.add('theme-contrast');
+      if (translucent) document.body.classList.add('panels-translucent');
+      return true;
+    };
     if (!apply()) { var mo = new MutationObserver(function () { if (apply()) mo.disconnect(); }); mo.observe(root, { childList: true }); }
   }
 })();

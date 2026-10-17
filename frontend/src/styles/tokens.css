@@ -64,6 +64,26 @@
   --z-debug: 100000;
 }
 
+/* High contrast: black grounds, white text, borders that read, a brighter accent wash; the axes stay as they are. */
+body.theme-contrast {
+  color-scheme: dark;
+  --accent-color-dim: color-mix(in srgb, var(--accent-color) 45%, transparent);
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-tertiary: #161616;
+  --border-color: #8c8c8c;
+  --border-light: #c8c8c8;
+  --text-primary: #ffffff;
+  --text-secondary: #f2f2f2;
+  --text-muted: #d4d4d4;
+  --canvas-bg: #000000;
+  --grid-color: #9a9a9a;
+  --viewport-top: #1e1e1e;
+  --viewport-bottom: #000000;
+  --viewport-grid: #e0e0e0;
+  --shadow-lg: 0 0 0 1px #c8c8c8;
+}
+
 body.theme-light {
   color-scheme: light;
   --bg-primary: #ecebe6;

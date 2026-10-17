@@ -150,6 +150,28 @@ button { font: inherit; color: inherit; }
 
 /* The tablet layout's rules live in tablet.css (ui/tablet-layout.ts). */
 
+/* Tool buttons coloured by family (ui/tool-family.ts), a stripe on the left edge, as the tablet palette's discs. */
+.tool-btn { position: relative; }
+.tool-btn::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 0 2px 2px 0; background: var(--fam, #4c78d8); }
+.tool-btn.fam-sculpt { --fam: #4c78d8; }
+.tool-btn.fam-mask { --fam: #8a94a8; }
+.tool-btn.fam-paint { --fam: #4fbf5a; }
+.tool-btn.fam-cut { --fam: #e05555; }
+.tool-btn.fam-build { --fam: #e2b93c; }
+.tool-btn.fam-move { --fam: #9a6ee0; }
+.tool-btn.fam-view { --fam: #3bbbd8; }
+
+/* High contrast: thicker focus rings and outlined buttons. */
+body.theme-contrast :focus-visible { outline: 3px solid var(--accent-color) !important; outline-offset: 2px; }
+body.theme-contrast .btn { border-width: 1px; border-color: var(--border-light); }
+body.theme-contrast .btn[aria-pressed="true"] { border-width: 2px; }
+
+/* Translucent panels: the viewport runs under the rail and panel, which turn see-through with a blur; menus, dialogs
+   and floating toolbars too. */
+body.panels-translucent #app:not(.tablet) .stage { grid-column: 1 / -1; grid-row: 2; }
+body.panels-translucent #app:not(.tablet) :is(.panel, .rail) { position: relative; z-index: var(--z-raised); background: color-mix(in srgb, var(--bg-secondary) 68%, transparent); backdrop-filter: blur(16px) saturate(1.2); }
+body.panels-translucent :is(.fs-menu, .fs-dialog, .ftb) { background: color-mix(in srgb, var(--bg-secondary) 76%, transparent); backdrop-filter: blur(18px) saturate(1.2); }
+
 /* Input bindings dialog: an input per row, its tap and hold commands beside it. */
 .bind-status { margin: 0 0 var(--space-2); font-size: 12px; color: var(--text-secondary); }
 .bind-table { display: grid; grid-template-columns: minmax(120px, 1fr) 1fr 1fr; gap: var(--space-1) var(--space-2); align-items: center; max-height: 60vh; overflow-y: auto; }
