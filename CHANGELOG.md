@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.65.0 · 2026-10-17
+
+### Added
+
+- Whole-object retopology templates in `retopo_patch`: `sphere` (a closed quad sphere) and `head` (with two eye loops and a mouth loop on the side facing `front`), scaled to the sculpt along up and front, wrapped onto its outer surface and evened out along it; the reply counts `folded` quads where the shape is not seen whole from its middle.
+- Window: Head (whole object) and Sphere (whole object) in the Retopo patch list, placed by a click with the face toward the camera; each patch kind sets its own counts when chosen.
+- 1027 interface strings in every language.
+
+### Fixed
+
+- The retopology wire and the crease path now appear as soon as their edges arrive, not only at the next camera move.
+
 ## 0.64.0 · 2026-10-17
 
 ### Added
