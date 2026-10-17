@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.74.0 · 2026-10-17
+
+### Added
+
+- Darken others (View section, or View > Darken Others): every object but the active one is drawn darker (0 to 90 percent), so the one you are working on stands out.
+- Wire on: the wireframe on all objects or only on the active one (View > Wire on Active Object Only).
+- Statistics overlay (View > Statistics Overlay): a readout over the viewport's corner with the visible objects and their vertex and triangle counts, the active object's counts and level, and the frame time. The tablet layout keeps its own counts and does not show it.
+- These settings are kept in this browser and travel in layout files.
+- 1149 interface strings in every language.
+
 ## 0.73.0 · 2026-10-17
 
 ### Added
