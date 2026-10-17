@@ -2,7 +2,7 @@ import { PAINT_FLOATS, type MeshBuffers, type VertexUpdate } from '../engine/ser
 import type { OrbitCamera } from './camera';
 import { mipChain, type EnvImage } from './environment';
 import { invert, lookAt, multiply, ortho } from './math';
-import { NO_POST, PostFx, type PostSettings } from './post';
+import { anyPost, NO_POST, PostFx, type PostSettings } from './post';
 
 const MESH_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -139,6 +139,8 @@ uniform float uIor;
 // The material's blend (0 opaque, 1 dithered, 2 additive) and its opacity.
 uniform float uBlend;
 uniform float uOpacity;
+// 1 while screen-space reflections are on: alpha then carries the pixel's reflectivity.
+uniform float uReflectOut;
 // How much material lies between this point and the key light, in world units, from the light's depth map; -1 when
 // there is no map.
 float thickness() {
@@ -228,6 +230,7 @@ void main() {
     if (vCol.x < 0.0 || vCol.x >= 10.0 || vCol.y < 0.0) albedo = vec3(0.85, 0.25, 0.2);
   }
   vec3 col;
+  float reflectivity = 0.0;
   if (uLit > 0.5) {
     float rough = clamp(vMat.x, 0.05, 1.0);
     float metal = clamp(vMat.y, 0.0, 1.0);
@@ -289,6 +292,11 @@ void main() {
       col = mix(col, behind * albedo + col * fres, uTrans * (1.0 - fres));
     }
     col = tonemap(col * uExposure);
+    // How much this pixel mirrors what is around it, for screen-space reflections: Fresnel at the view angle (from a
+    // dielectric's 4 percent up to a metal's full), weighed by smoothness.
+    float mirror0 = mix(0.04, 1.0, metal);
+    float mirror = mirror0 + (1.0 - mirror0) * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+    reflectivity = clamp(mirror * (1.0 - rough) * (1.0 - rough), 0.0, 1.0);
   } else if (uImage > 0.5) {
     // An image matcap: the view-space normal looks up the sphere picture; paint tints it.
     vec2 uv = n.xy * 0.49 + 0.5;
@@ -315,7 +323,10 @@ void main() {
   if (uPainted > 0.5 && vFx.y > 0.0) col = mix(col, pow(albedo, vec3(1.0 / 2.2)) * 1.15, clamp(vFx.y, 0.0, 1.0));
   col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
   // An additive material is drawn with additive blending after everything else, scaled by its opacity.
-  outColor = vec4(col * uDim * (uBlend > 1.5 ? uOpacity : 1.0), uAlpha);
+  // With screen-space reflections on (drawing offscreen, never in X-ray), alpha carries the reflectivity instead; an
+  // additive surface adds none.
+  float a = uReflectOut > 0.5 ? (uBlend > 1.5 ? 0.0 : reflectivity) : uAlpha;
+  outColor = vec4(col * uDim * (uBlend > 1.5 ? uOpacity : 1.0), a);
 }`;
 
 export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, number, number]; tint: [number, number, number] }> = {
@@ -832,7 +843,7 @@ export class GlRenderer {
   render(camera: OrbitCamera, width: number, height: number): void {
     const gl = this.gl;
     const p = this.postSettings;
-    const post = this.post && (p.ssao || p.bloom || p.dof || p.vignette || p.grain) ? this.post : null;
+    const post = this.post && anyPost(p) ? this.post : null;
     // The key light: its world direction (from azimuth and elevation, about the view when it follows the camera).
     const L = this.lighting;
     const az = (L.keyAzimuth * Math.PI) / 180;
@@ -954,6 +965,7 @@ export class GlRenderer {
     const ior = gl.getUniformLocation(this.meshProgram, 'uIor');
     // X-ray: every object drawn see-through without writing depth, so what is behind and inside shows.
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uAlpha'), this.xray ? 0.42 : 1);
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uReflectOut'), post && p.ssr && !this.xray ? 1 : 0);
     const dim = gl.getUniformLocation(this.meshProgram, 'uDim');
     if (this.xray) {
       gl.enable(gl.BLEND);
@@ -1039,10 +1051,14 @@ export class GlRenderer {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
+    // What is drawn over the meshes (wire, ground shadow, reference) keeps their reflectivity in alpha as it is.
+    const keepAlpha = post !== null && p.ssr;
+    if (keepAlpha) gl.colorMask(true, true, true, false);
     if (this.wireframe) this.drawWire(vp);
     gl.bindVertexArray(null);
     if (shadowMap && L.ground && this.shadow && this.groundBox) this.drawGround(vp, shadowMap);
     if (this.reference && this.referencePlace) this.drawReference(vp);
+    if (keepAlpha) gl.colorMask(true, true, true, true);
     if (post) {
       const proj = camera.projection();
       const inv = invert(proj);
@@ -1336,7 +1352,7 @@ export class GlRenderer {
   /** Turns post effects on or off; the offscreen pipeline is built on first use. */
   setPost(settings: PostSettings): void {
     this.postSettings = { ...settings };
-    if (!this.post && (settings.ssao || settings.bloom || settings.dof || settings.vignette || settings.grain)) this.post = new PostFx(this.gl);
+    if (!this.post && anyPost(settings)) this.post = new PostFx(this.gl);
   }
 
   private env: { tex: WebGLTexture; levels: number } | null = null;

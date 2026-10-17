@@ -11,9 +11,105 @@ export interface PostSettings {
   dof: boolean;
   vignette: boolean;
   grain: boolean;
+  /** Screen-space reflections: lit surfaces reflect what the frame shows, by their reflectivity (the scene target's
+   * alpha, which lit shading writes while this is on). */
+  ssr: boolean;
 }
 
-export const NO_POST: PostSettings = { ssao: false, bloom: false, dof: false, vignette: false, grain: false };
+export const NO_POST: PostSettings = { ssao: false, bloom: false, dof: false, vignette: false, grain: false, ssr: false };
+
+/** Whether any effect needs the offscreen pipeline. */
+export function anyPost(p: PostSettings): boolean {
+  return p.ssao || p.bloom || p.dof || p.vignette || p.grain || p.ssr;
+}
+
+const SSR_FS = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uColor;
+uniform sampler2D uDepth;
+uniform mat4 uProj;
+uniform mat4 uInvProj;
+// The framed size in view units: steps and the thickness a hit may have scale with it.
+uniform float uReach;
+out vec4 outColor;
+vec3 viewPos(vec2 uv) {
+  float d = texture(uDepth, uv).r;
+  vec4 p = uInvProj * vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+  return p.xyz / p.w;
+}
+vec2 toUv(vec3 q) {
+  vec4 c = uProj * vec4(q, 1.0);
+  return c.xy / c.w * 0.5 + 0.5;
+}
+// The surface normal from depth over a span of 4 texels each way, taking on each axis the side whose depth stays
+// closer (so an outline does not bend it). Neighbouring texels alone see the depth buffer's quantised steps on a
+// surface seen at a slant, and the normal then flips in bands.
+vec3 normalAt(vec2 uv) {
+  vec2 t = 4.0 / vec2(textureSize(uDepth, 0));
+  vec3 c = viewPos(uv);
+  vec3 l = viewPos(uv - vec2(t.x, 0.0));
+  vec3 r = viewPos(uv + vec2(t.x, 0.0));
+  vec3 d = viewPos(uv - vec2(0.0, t.y));
+  vec3 u = viewPos(uv + vec2(0.0, t.y));
+  vec3 dx = abs(r.z - c.z) < abs(c.z - l.z) ? r - c : c - l;
+  vec3 dy = abs(u.z - c.z) < abs(c.z - d.z) ? u - c : c - d;
+  return normalize(cross(dx, dy));
+}
+// The reflected colour in rgb and how much of it to use in a (0 where the ray found nothing), for a pixel whose
+// reflectivity the scene target's alpha holds.
+void main() {
+  float refl = texture(uColor, vUv).a;
+  float d = texture(uDepth, vUv).r;
+  if (refl < 0.01 || d >= 1.0) { outColor = vec4(0.0); return; }
+  vec3 p = viewPos(vUv);
+  vec3 n = normalAt(vUv);
+  if (dot(n, p) > 0.0) n = -n;
+  vec3 r = reflect(normalize(p), n);
+  // Rays toward the camera leave the frame at once: nothing to find.
+  if (r.z > 0.6) { outColor = vec4(0.0); return; }
+  // Even steps out to the framed size, and a fixed thickness: what the depth buffer shows is taken as a shell that
+  // deep. A reflected ray often meets an object on a side the frame does not show (a floor sees a ball's underside);
+  // the shell lets those count near the visible surface, and a thicker one smears objects behind themselves.
+  const int STEPS = 64;
+  float step = uReach * 0.016;
+  float thick = uReach * 0.035;
+  vec3 q = p + n * uReach * 0.003;
+  // A fixed 4 by 4 offset per pixel breaks the stepping into a fine pattern the upsample smooths.
+  vec2 cell = mod(floor(gl_FragCoord.xy), 4.0);
+  q += r * step * (cell.x * 4.0 + cell.y + 0.5) / 16.0;
+  bool front = true;
+  for (int i = 0; i < STEPS; i++) {
+    q += r * step;
+    vec2 uv = toUv(q);
+    if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) break;
+    float gap = viewPos(uv).z - q.z;
+    bool behind = gap > 0.0;
+    // Only where the ray crosses from in front of what the frame shows to behind it: the crossing found by halving
+    // does not depend on where the steps fell (no bands), and a crossing at an object's outline, where the depth
+    // jumps, is far off the surface and is passed over (no smear behind objects).
+    bool crossed = behind && front;
+    front = !behind;
+    if (crossed) {
+      // Refine between the last two points by halving, then keep the hit only if it lies on the surface.
+      vec3 a = q - r * step;
+      vec3 b = q;
+      for (int k = 0; k < 6; k++) {
+        vec3 m = (a + b) * 0.5;
+        if (viewPos(toUv(m)).z - m.z > 0.0) b = m; else a = m;
+      }
+      uv = toUv(b);
+      if (abs(viewPos(uv).z - b.z) > thick * 0.5) continue;
+      if (texture(uDepth, uv).r >= 1.0) break;
+      // Fade at the frame's edges and with distance, so reflections end softly where the frame has no more to show.
+      vec2 edge = smoothstep(0.0, 0.08, uv) * smoothstep(0.0, 0.08, 1.0 - uv);
+      float fade = edge.x * edge.y * smoothstep(1.0, 0.6, float(i) / float(STEPS));
+      outColor = vec4(texture(uColor, uv).rgb * fade, fade);
+      return;
+    }
+  }
+  outColor = vec4(0.0);
+}`;
 
 const FULLSCREEN_VS = `#version 300 es
 out vec2 vUv;
@@ -107,8 +203,10 @@ uniform sampler2D uColor;
 uniform sampler2D uDepth;
 uniform sampler2D uAo;
 uniform sampler2D uBloom;
+uniform sampler2D uSsr;
 uniform mat4 uInvProj;
 uniform vec2 uTexel;
+uniform float uSsrOn;
 uniform float uSsao;
 uniform float uBloomOn;
 uniform float uDof;
@@ -125,6 +223,18 @@ float viewDepth(vec2 uv) {
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
   vec3 c = texture(uColor, vUv).rgb;
+  if (uSsrOn > 0.5) {
+    // Reflections, found at half size, gathered over 2 by 2 so their stepping pattern smooths out; each pixel takes
+    // them by its own reflectivity (alpha), so a rough or matcap surface beside a mirror stays as it was.
+    float refl = texture(uColor, vUv).a;
+    if (refl > 0.01) {
+      vec4 s = vec4(0.0);
+      for (int x = -1; x <= 0; x++)
+        for (int y = -1; y <= 0; y++) s += texture(uSsr, vUv + (vec2(x, y) + 0.5) * uTexel * 2.0);
+      s /= 4.0;
+      if (s.a > 0.0) c = mix(c, s.rgb / s.a, refl * s.a);
+    }
+  }
   if (uDof > 0.5) {
     // Circle of confusion from the distance to the focus plane, up to 9 pixels; a golden-angle disc of samples
     // that ignores nearer, sharper samples so edges do not bleed onto the background.
@@ -195,6 +305,8 @@ function texture(gl: WebGL2RenderingContext, w: number, h: number): WebGLTexture
 }
 
 export class PostFx {
+  private ssr: WebGLProgram;
+  private reflections: Target | null = null;
   private ssao: WebGLProgram;
   private bright: WebGLProgram;
   private blur: WebGLProgram;
@@ -206,6 +318,7 @@ export class PostFx {
   private bloomB: Target | null = null;
 
   constructor(private gl: WebGL2RenderingContext) {
+    this.ssr = compile(gl, SSR_FS);
     this.ssao = compile(gl, SSAO_FS);
     this.bright = compile(gl, BRIGHT_FS);
     this.blur = compile(gl, BLUR_FS);
@@ -309,6 +422,17 @@ export class PostFx {
       gl.uniform1f(gl.getUniformLocation(this.ssao, 'uRadius'), radius);
       this.pass(this.ssao, this.ao, this.ao.w, this.ao.h);
     }
+    if (settings.ssr) {
+      // At half size, premultiplied by how much was found, which the composite gathers back up.
+      this.reflections = this.target(this.reflections, Math.max(1, w >> 1), Math.max(1, h >> 1));
+      gl.useProgram(this.ssr);
+      this.bind(this.ssr, 'uColor', 0, s.color);
+      this.bind(this.ssr, 'uDepth', 1, s.depth);
+      gl.uniformMatrix4fv(gl.getUniformLocation(this.ssr, 'uProj'), false, proj);
+      gl.uniformMatrix4fv(gl.getUniformLocation(this.ssr, 'uInvProj'), false, invProj);
+      gl.uniform1f(gl.getUniformLocation(this.ssr, 'uReach'), focus);
+      this.pass(this.ssr, this.reflections, this.reflections.w, this.reflections.h);
+    }
     if (settings.bloom) {
       const bw = Math.max(1, w >> 2);
       const bh = Math.max(1, h >> 2);
@@ -333,6 +457,8 @@ export class PostFx {
     this.bind(c, 'uDepth', 1, s.depth);
     this.bind(c, 'uAo', 2, this.ao?.tex ?? s.color);
     this.bind(c, 'uBloom', 3, this.bloomA?.tex ?? s.color);
+    this.bind(c, 'uSsr', 4, this.reflections?.tex ?? s.color);
+    gl.uniform1f(gl.getUniformLocation(c, 'uSsrOn'), settings.ssr ? 1 : 0);
     gl.uniformMatrix4fv(gl.getUniformLocation(c, 'uInvProj'), false, invProj);
     gl.uniform2f(gl.getUniformLocation(c, 'uTexel'), 1 / w, 1 / h);
     gl.uniform1f(gl.getUniformLocation(c, 'uSsao'), settings.ssao ? 1 : 0);
