@@ -97,10 +97,26 @@ uniform float uShadowOn;
 uniform mat4 uShadowVP;
 uniform sampler2D uShadowMap;
 uniform float uShadowBias;
-// Added lights beyond the key (view-space directions, linear colours times strength); they cast no shadows.
+// Added lights beyond the key (linear colours times strength); they cast no shadows. A directional light's
+// uExtraDir is its view-space direction; a spot's (uExtraSpot.x 1) is its view-space position, uExtraAim its axis,
+// and uExtraSpot.yzw the cosines of its outer and inner half angles and the distance at which it has full strength.
 uniform int uExtraCount;
 uniform vec3 uExtraDir[3];
 uniform vec3 uExtraColor[3];
+uniform vec4 uExtraSpot[3];
+uniform vec3 uExtraAim[3];
+// An added light's direction from a view-space point, and the share of it that arrives there (the engine's
+// fsc-paint spot_reach: the cone's fade times the falloff, 1 on the axis at the reference distance).
+vec3 extraLight(int i, vec3 pos, out float reach) {
+  reach = 1.0;
+  if (uExtraSpot[i].x < 0.5) return uExtraDir[i];
+  vec3 to = uExtraDir[i] - pos;
+  float d = max(length(to), 1e-4);
+  vec3 l = to / d;
+  float fade = smoothstep(uExtraSpot[i].y, uExtraSpot[i].z, dot(-l, uExtraAim[i]));
+  reach = fade * min(uExtraSpot[i].w * uExtraSpot[i].w / (d * d), 16.0);
+  return l;
+}
 // The key light's visibility from its shadow map: a 3 by 3 percentage-closer filter for a soft edge.
 float keyShadow() {
   if (uShadowOn < 0.5) return 1.0;
@@ -217,7 +233,11 @@ void main() {
       metal = clamp(mr.b, 0.0, 1.0);
     }
     col = light(n, v, uKeyDir, uKeyColor, albedo, rough, metal) * keyShadow();
-    for (int i = 0; i < 3; i++) if (i < uExtraCount) col += light(n, v, uExtraDir[i], uExtraColor[i], albedo, rough, metal);
+    for (int i = 0; i < 3; i++) if (i < uExtraCount) {
+      float reach;
+      vec3 l = extraLight(i, vViewPos, reach);
+      if (reach > 0.0) col += light(n, v, l, uExtraColor[i] * reach, albedo, rough, metal);
+    }
     col += light(n, v, normalize(vec3(0.6, 0.1, 0.5)), vec3(0.55, 0.62, 0.75), albedo, rough, metal);
     col += light(n, v, normalize(vec3(0.0, 0.35, -1.0)), vec3(0.9), albedo, rough, metal);
     if (uSss > 0.0) {
@@ -274,7 +294,11 @@ void main() {
     vec2 m = r.xy / (2.0 * sqrt(r.x * r.x + r.y * r.y + (r.z + 1.0) * (r.z + 1.0))) + 0.5;
     float key = clamp(dot(n, uKeyDir), 0.0, 1.0) * keyShadow() * dot(uKeyColor, vec3(0.1282));
     float fill = clamp(dot(n, normalize(vec3(0.6, 0.1, 0.5))), 0.0, 1.0) * 0.25;
-    for (int i = 0; i < 3; i++) if (i < uExtraCount) fill += clamp(dot(n, uExtraDir[i]), 0.0, 1.0) * dot(uExtraColor[i], vec3(0.1282)) * uCap.x;
+    for (int i = 0; i < 3; i++) if (i < uExtraCount) {
+      float reach;
+      vec3 l = extraLight(i, vViewPos, reach);
+      fill += clamp(dot(n, l), 0.0, 1.0) * reach * dot(uExtraColor[i], vec3(0.1282)) * uCap.x;
+    }
     float rim = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 3.0) * uCap.w;
     float spec = pow(clamp(1.0 - distance(m, vec2(0.34, 0.68)) * 2.2, 0.0, 1.0), uCap.z) * uCap.y;
     float cavity = mix(0.55, 1.0, smoothstep(-0.2, 0.9, n.y * 0.5 + 0.5));
@@ -884,16 +908,33 @@ export class GlRenderer {
     const extra = L.extra.slice(0, 3);
     const dirs = new Float32Array(9);
     const cols = new Float32Array(9);
+    const spots = new Float32Array(12);
+    const aims = new Float32Array(9);
+    const box = extra.some((x) => x.kind === 'spot') ? this.sceneBox() : null;
     extra.forEach((x, i) => {
       const a = (x.azimuth * Math.PI) / 180;
       const e = (x.elevation * Math.PI) / 180;
       const d: [number, number, number] = [Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a)];
-      dirs.set(x.followsView ? d : toView(d), i * 3);
+      const dView = x.followsView ? d : toView(d);
       cols.set([2.6 * x.intensity * x.color[0], 2.6 * x.intensity * x.color[1], 2.6 * x.intensity * x.color[2]], i * 3);
+      if (x.kind === 'spot' && box) {
+        // In view space: the scene's centre, the spot out along its direction from there, aiming back at the centre.
+        const c = box.center;
+        const cv: [number, number, number] = [view[0] * c[0] + view[4] * c[1] + view[8] * c[2] + view[12], view[1] * c[0] + view[5] * c[1] + view[9] * c[2] + view[13], view[2] * c[0] + view[6] * c[1] + view[10] * c[2] + view[14]];
+        const reach = Math.max(0.1, x.distance ?? 3) * box.radius;
+        dirs.set([cv[0] + dView[0] * reach, cv[1] + dView[1] * reach, cv[2] + dView[2] * reach], i * 3);
+        aims.set([-dView[0], -dView[1], -dView[2]], i * 3);
+        const half = ((Math.min(179, Math.max(1, x.cone ?? 45)) / 2) * Math.PI) / 180;
+        const outer = Math.cos(half);
+        const inner = Math.max(outer + 1e-4, Math.cos(half * (1 - Math.min(1, Math.max(0, x.softness ?? 0.25)))));
+        spots.set([1, outer, inner, reach], i * 4);
+      } else dirs.set(dView, i * 3);
     });
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uExtraCount'), extra.length);
     gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraDir'), dirs);
     gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraColor'), cols);
+    gl.uniform4fv(gl.getUniformLocation(this.meshProgram, 'uExtraSpot'), spots);
+    gl.uniform3fv(gl.getUniformLocation(this.meshProgram, 'uExtraAim'), aims);
     if (shadowVP) gl.uniformMatrix4fv(gl.getUniformLocation(this.meshProgram, 'uShadowVP'), false, shadowVP);
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, shadowMap && this.shadow ? this.shadow.tex : this.blankEnv);
@@ -986,6 +1027,18 @@ export class GlRenderer {
       const inv = invert(proj);
       if (inv) post.finish(p, proj, inv, camera.distance * 0.1, camera.distance);
     }
+  }
+
+  /** Every mesh's bounds as a centre and a radius (half the diagonal), where spot lights are placed about. */
+  private sceneBox(): { center: [number, number, number]; radius: number } {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const m of this.meshes.values()) for (let c = 0; c < 3; c++) {
+      lo[c] = Math.min(lo[c], m.lo[c]);
+      hi[c] = Math.max(hi[c], m.hi[c]);
+    }
+    if (!(lo[0] <= hi[0])) return { center: [0, 0, 0], radius: 1 };
+    return { center: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2], radius: Math.max(1e-3, Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2) };
   }
 
   /** The tone map and grade's uniforms (TONE_GLSL) on a program in use. */
@@ -1418,6 +1471,14 @@ export interface LightSpec {
   intensity: number;
   color: [number, number, number];
   followsView: boolean;
+  /** Added lights only: directional (shines alike everywhere) or a spot (a point shining in a cone, falling off with
+   * distance). A spot sits in the azimuth and elevation's direction from the scene's centre and aims at it. */
+  kind?: 'directional' | 'spot';
+  /** Spot: how far out it sits, in scene radii (its strength is `intensity` at the centre whatever the distance). */
+  distance?: number;
+  /** Spot: the cone's full angle in degrees, and how much of its edge fades (0 hard to 1). */
+  cone?: number;
+  softness?: number;
 }
 
 const BG_VS = `#version 300 es

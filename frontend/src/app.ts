@@ -15,6 +15,7 @@ interface PrintReport {
 }
 import { Viewport, type Ray } from './viewport/viewport';
 import { hexColor, type LightSpec } from './viewport/gl-renderer';
+import { kelvinColor, linearToHex } from './viewport/kelvin';
 import type { CameraPose, ViewName } from './viewport/camera';
 import { SceneDock } from './ui/scene-dock';
 import { FlyNav } from './ui/fly';
@@ -342,6 +343,11 @@ interface Shell {
   keyIntensity: HTMLInputElement;
   keyColor: HTMLInputElement;
   keyFollows: HTMLInputElement;
+  lightKelvin: HTMLInputElement;
+  lightKind: HTMLSelectElement;
+  lightDistance: HTMLInputElement;
+  lightCone: HTMLInputElement;
+  lightSoftness: HTMLInputElement;
   shadows: HTMLInputElement;
   groundShadow: HTMLInputElement;
   primSize: HTMLInputElement;
@@ -1434,6 +1440,13 @@ function buildShell(root: HTMLElement): Shell {
   const keyColor = input('color', { value: '#fff8ef', 'aria-label': 'Key light colour' });
   const keyFollows = input('checkbox', { 'aria-label': 'Key light follows the view' });
   keyFollows.checked = true;
+  // Colour temperature sets the light's colour (a colour picked after it replaces it); the kind and the spot's
+  // settings apply to added lights, since the key light keeps its shadow map's single direction.
+  const lightKelvin = input('range', { min: '1700', max: '12000', step: '100', value: '6500', 'aria-label': 'Colour temperature (K)' });
+  const lightKind = choices('Light type', [['directional', 'Directional'], ['spot', 'Spot']]);
+  const lightDistance = input('range', { min: '50', max: '1000', value: '300', 'aria-label': 'Spot distance' });
+  const lightCone = input('range', { min: '5', max: '150', value: '45', 'aria-label': 'Cone angle' });
+  const lightSoftness = input('range', { min: '0', max: '100', value: '25', 'aria-label': 'Cone softness' });
   const lightPick = choices('Light', [['0', 'Key light (casts shadows)']]);
   const shadows = input('checkbox', { 'aria-label': 'Shadows' });
   const groundShadow = input('checkbox', { 'aria-label': 'Ground shadow' });
@@ -1443,7 +1456,7 @@ function buildShell(root: HTMLElement): Shell {
   const postVignette = input('checkbox', { 'aria-label': 'Vignette' });
   const postGrain = input('checkbox', { 'aria-label': 'Film grain' });
   const lightFields = el('div', 'fields');
-  lightFields.append(field('Environment', envSelect), field('Rotate', envRotate), field('Exposure', exposure), field('Fixed lights', fixedLights), field('Tone mapping', tone), field('Contrast', toneContrast), field('Saturation', toneSaturation), field('White balance', toneTemperature), field('Show environment', envBackground), field('Background blur', envBlur), field('Light', lightPick), field('Light direction', keyAzimuth), field('Light height', keyElevation), field('Light strength', keyIntensity), field('Light colour', keyColor), field('Follows the view', keyFollows), field('Shadows', shadows), field('Ground shadow', groundShadow), field('Ambient occlusion', postSsao), field('Bloom', postBloom), field('Depth of field', postDof), field('Vignette', postVignette), field('Film grain', postGrain));
+  lightFields.append(field('Environment', envSelect), field('Rotate', envRotate), field('Exposure', exposure), field('Fixed lights', fixedLights), field('Tone mapping', tone), field('Contrast', toneContrast), field('Saturation', toneSaturation), field('White balance', toneTemperature), field('Show environment', envBackground), field('Background blur', envBlur), field('Light', lightPick), field('Light direction', keyAzimuth), field('Light height', keyElevation), field('Light strength', keyIntensity), field('Light colour', keyColor), field('Colour temperature (K)', lightKelvin), field('Follows the view', keyFollows), field('Light type', lightKind), field('Spot distance', lightDistance), field('Cone angle', lightCone), field('Cone softness', lightSoftness), field('Shadows', shadows), field('Ground shadow', groundShadow), field('Ambient occlusion', postSsao), field('Bloom', postBloom), field('Depth of field', postDof), field('Vignette', postVignette), field('Film grain', postGrain));
   panel.append(lightFields);
   const lightGrid = el('div', 'add-grid two after-fields');
   const envLoad = el('button', 'btn', 'Load HDRI');
@@ -1603,7 +1616,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1905,18 +1918,38 @@ class SceneView {
     for (const c of [shell.envRotate, shell.exposure, shell.fixedLights, shell.envBlur, shell.toneContrast, shell.toneSaturation, shell.toneTemperature]) c.addEventListener('input', () => this.applyLighting());
     for (const c of [shell.shadows, shell.groundShadow]) c.addEventListener('change', () => this.applyLighting());
     // The light fields edit the light chosen under Light: the key, or an added one.
-    const editLight = (): void => {
-      const spec = this.lightSpecs[Number(shell.lightPick.value)] ?? this.lightSpecs[0];
+    const editLight = (from?: 'kelvin' | 'color'): void => {
+      const i = Number(shell.lightPick.value);
+      const spec = this.lightSpecs[i] ?? this.lightSpecs[0];
       spec.azimuth = Number(shell.keyAzimuth.value);
       spec.elevation = Number(shell.keyElevation.value);
       spec.intensity = Number(shell.keyIntensity.value) / 100;
-      spec.color = hexToLinear(shell.keyColor.value);
-      spec.hex = shell.keyColor.value;
+      if (from === 'kelvin') {
+        // The exact black-body colour (the colour field shows it rounded).
+        spec.kelvin = Number(shell.lightKelvin.value);
+        spec.color = kelvinColor(spec.kelvin);
+        spec.hex = linearToHex(spec.color);
+        shell.keyColor.value = spec.hex;
+      } else if (from === 'color') {
+        spec.color = hexToLinear(shell.keyColor.value);
+        spec.hex = shell.keyColor.value;
+        spec.kelvin = 0;
+      }
       spec.followsView = shell.keyFollows.checked;
+      if (i > 0) {
+        spec.kind = shell.lightKind.value === 'spot' ? 'spot' : 'directional';
+        spec.distance = Number(shell.lightDistance.value) / 100;
+        spec.cone = Number(shell.lightCone.value);
+        spec.softness = Number(shell.lightSoftness.value) / 100;
+      }
+      this.showSpotFields();
       this.applyLighting();
     };
-    for (const c of [shell.keyAzimuth, shell.keyElevation, shell.keyIntensity, shell.keyColor]) c.addEventListener('input', editLight);
-    shell.keyFollows.addEventListener('change', editLight);
+    for (const c of [shell.keyAzimuth, shell.keyElevation, shell.keyIntensity, shell.lightDistance, shell.lightCone, shell.lightSoftness]) c.addEventListener('input', () => editLight());
+    shell.keyColor.addEventListener('input', () => editLight('color'));
+    shell.lightKelvin.addEventListener('input', () => editLight('kelvin'));
+    for (const c of [shell.keyFollows, shell.lightKind]) c.addEventListener('change', () => editLight());
+    this.showSpotFields();
     shell.lightPick.addEventListener('change', () => this.showLight());
     this.on(shell.lightAdd, () => {
       if (this.lightSpecs.length >= 4) {
@@ -1925,7 +1958,7 @@ class SceneView {
       }
       // A new light starts opposite the key, dimmer and cool, so it reads as a fill or rim.
       const key = this.lightSpecs[0];
-      this.lightSpecs.push({ azimuth: key.azimuth > 0 ? key.azimuth - 180 : key.azimuth + 180, elevation: 25, intensity: 0.4, color: hexToLinear('#dfe8ff'), hex: '#dfe8ff', followsView: key.followsView });
+      this.lightSpecs.push({ azimuth: key.azimuth > 0 ? key.azimuth - 180 : key.azimuth + 180, elevation: 25, intensity: 0.4, color: hexToLinear('#dfe8ff'), hex: '#dfe8ff', kelvin: 0, followsView: key.followsView, kind: 'directional', distance: 3, cone: 45, softness: 0.25 });
       this.patchLightList(this.lightSpecs.length - 1);
       this.applyLighting();
     });
@@ -3994,7 +4027,7 @@ class SceneView {
   private falloffWeights: number[] = Array.from({ length: FALLOFF_POINTS }, (_, i) => FALLOFFS.smooth(i / (FALLOFF_POINTS - 1)));
 
   /** The key light (first) and up to three added lights, as the Light fields edit them. */
-  private lightSpecs: (LightSpec & { hex: string })[] = [{ azimuth: -37, elevation: 41, intensity: 1, color: hexToLinear('#fff8ef'), hex: '#fff8ef', followsView: true }];
+  private lightSpecs: (LightSpec & { hex: string; kelvin: number })[] = [{ azimuth: -37, elevation: 41, intensity: 1, color: hexToLinear('#fff8ef'), hex: '#fff8ef', kelvin: 0, followsView: true }];
 
   /** Rebuilds the Light choices (reusing options) and selects `pick`. */
   private patchLightList(pick: number): void {
@@ -4018,8 +4051,24 @@ class SceneView {
     s.keyElevation.value = String(Math.round(spec.elevation));
     s.keyIntensity.value = String(Math.round(spec.intensity * 100));
     s.keyColor.value = spec.hex;
+    s.lightKelvin.value = String(spec.kelvin || 6500);
     s.keyFollows.checked = spec.followsView;
+    s.lightKind.value = spec.kind ?? 'directional';
+    s.lightDistance.value = String(Math.round((spec.distance ?? 3) * 100));
+    s.lightCone.value = String(Math.round(spec.cone ?? 45));
+    s.lightSoftness.value = String(Math.round((spec.softness ?? 0.25) * 100));
+    this.showSpotFields();
     scheduleChrome();
+  }
+
+  /** The key light is always directional (its shadow map has one direction), so the kind is for added lights, and
+   * a spot's settings only for spots. Disabled rather than hidden, so the panel does not shift. */
+  private showSpotFields(): void {
+    const s = this.shell;
+    const added = Number(s.lightPick.value) > 0;
+    s.lightKind.disabled = !added;
+    const spot = added && s.lightKind.value === 'spot';
+    for (const c of [s.lightDistance, s.lightCone, s.lightSoftness]) c.disabled = !spot;
   }
 
   /** Environments loaded from files this session, by their select value. */
