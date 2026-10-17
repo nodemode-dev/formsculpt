@@ -1171,5 +1171,14 @@
  "Scale": "Schalen",
  "Scale by": "Schalen met",
  "Turn": "Draaien",
- "Turn by (degrees)": "Draaien met (graden)"
+ "Turn by (degrees)": "Draaien met (graden)",
+ "Choose an object to see its layers": "Kies een object om de lagen te zien",
+ "Fold the panel": "Paneel inklappen",
+ "Invert": "Omkeren",
+ "Layers of": "Lagen van",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Lagen leggen streken los van het basismesh vast, zodat hun sterkte ze later kan afzwakken of versterken",
+ "Layout": "Indeling",
+ "Objects and layers": "Objecten en lagen",
+ "Search": "Zoeken",
+ "The scene is empty: add a sphere to start sculpting": "De scène is leeg: voeg een bol toe om te beginnen met boetseren"
 }

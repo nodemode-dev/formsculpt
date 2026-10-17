@@ -1171,5 +1171,14 @@
  "Scale": "Scala",
  "Scale by": "Scala di",
  "Turn": "Ruota",
- "Turn by (degrees)": "Ruota di (gradi)"
+ "Turn by (degrees)": "Ruota di (gradi)",
+ "Choose an object to see its layers": "Scegli un oggetto per vederne i livelli",
+ "Fold the panel": "Comprimi il pannello",
+ "Invert": "Inverti",
+ "Layers of": "Livelli di",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "I livelli registrano i tratti separati dalla mesh di base, così la loro intensità può attenuarli o accentuarli in seguito",
+ "Layout": "Disposizione",
+ "Objects and layers": "Oggetti e livelli",
+ "Search": "Cerca",
+ "The scene is empty: add a sphere to start sculpting": "La scena è vuota: aggiungi una sfera per iniziare a scolpire"
 }

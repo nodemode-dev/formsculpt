@@ -1171,5 +1171,14 @@
  "Scale": "Масштаб",
  "Scale by": "Масштабировать на",
  "Turn": "Повернуть",
- "Turn by (degrees)": "Повернуть на (градусы)"
+ "Turn by (degrees)": "Повернуть на (градусы)",
+ "Choose an object to see its layers": "Выберите объект, чтобы увидеть его слои",
+ "Fold the panel": "Свернуть панель",
+ "Invert": "Инвертировать",
+ "Layers of": "Слои объекта",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Слои записывают мазки отдельно от базовой сетки, поэтому их сила может потом ослабить или усилить их",
+ "Layout": "Раскладка",
+ "Objects and layers": "Объекты и слои",
+ "Search": "Поиск",
+ "The scene is empty: add a sphere to start sculpting": "Сцена пуста: добавьте сферу, чтобы начать лепить"
 }

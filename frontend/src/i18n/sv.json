@@ -1171,5 +1171,14 @@
  "Scale": "Skala",
  "Scale by": "Skala med",
  "Turn": "Vrid",
- "Turn by (degrees)": "Vrid med (grader)"
+ "Turn by (degrees)": "Vrid med (grader)",
+ "Choose an object to see its layers": "Välj ett objekt för att se dess lager",
+ "Fold the panel": "Fäll ihop panelen",
+ "Invert": "Invertera",
+ "Layers of": "Lager i",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Lager sparar penseldrag skilt från grundnätet, så deras styrka senare kan tona ned eller förstärka dem",
+ "Layout": "Layout",
+ "Objects and layers": "Objekt och lager",
+ "Search": "Sök",
+ "The scene is empty: add a sphere to start sculpting": "Scenen är tom: lägg till en sfär för att börja skulptera"
 }

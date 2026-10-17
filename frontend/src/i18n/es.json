@@ -1171,5 +1171,14 @@
  "Scale": "Escalar",
  "Scale by": "Escalar",
  "Turn": "Girar",
- "Turn by (degrees)": "Girar (grados)"
+ "Turn by (degrees)": "Girar (grados)",
+ "Choose an object to see its layers": "Elige un objeto para ver sus capas",
+ "Fold the panel": "Plegar el panel",
+ "Invert": "Invertir",
+ "Layers of": "Capas de",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Las capas guardan los trazos aparte de la malla base, así su intensidad puede atenuarlos o exagerarlos después",
+ "Layout": "Diseño",
+ "Objects and layers": "Objetos y capas",
+ "Search": "Buscar",
+ "The scene is empty: add a sphere to start sculpting": "La escena está vacía: añade una esfera para empezar a esculpir"
 }

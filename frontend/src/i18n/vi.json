@@ -1171,5 +1171,14 @@
  "Scale": "Co giãn",
  "Scale by": "Co giãn theo",
  "Turn": "Xoay",
- "Turn by (degrees)": "Xoay thêm (độ)"
+ "Turn by (degrees)": "Xoay thêm (độ)",
+ "Choose an object to see its layers": "Chọn một đối tượng để xem các lớp",
+ "Fold the panel": "Thu gọn bảng",
+ "Invert": "Đảo ngược",
+ "Layers of": "Các lớp của",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Lớp ghi nét riêng với lưới gốc, nên cường độ của nó có thể làm mờ hoặc làm rõ nét sau này",
+ "Layout": "Bố cục",
+ "Objects and layers": "Đối tượng và lớp",
+ "Search": "Tìm",
+ "The scene is empty: add a sphere to start sculpting": "Cảnh đang trống: thêm một hình cầu để bắt đầu điêu khắc"
 }

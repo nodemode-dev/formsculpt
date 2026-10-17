@@ -1171,5 +1171,14 @@
  "Scale": "Skaalaa",
  "Scale by": "Skaalaa",
  "Turn": "Kierrä",
- "Turn by (degrees)": "Kierrä (astetta)"
+ "Turn by (degrees)": "Kierrä (astetta)",
+ "Choose an object to see its layers": "Valitse objekti nähdäksesi sen tasot",
+ "Fold the panel": "Taita paneeli",
+ "Invert": "Käännä",
+ "Layers of": "Tasot:",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Tasot tallentavat vedot erillään perusverkosta, joten niiden voimakkuus voi myöhemmin heikentää tai korostaa niitä",
+ "Layout": "Asettelu",
+ "Objects and layers": "Objektit ja tasot",
+ "Search": "Haku",
+ "The scene is empty: add a sphere to start sculpting": "Näkymä on tyhjä: lisää pallo aloittaaksesi muotoilun"
 }

@@ -1171,5 +1171,14 @@
  "Scale": "Échelle",
  "Scale by": "Mettre à l'échelle de",
  "Turn": "Tourner",
- "Turn by (degrees)": "Tourner de (degrés)"
+ "Turn by (degrees)": "Tourner de (degrés)",
+ "Choose an object to see its layers": "Choisissez un objet pour voir ses calques",
+ "Fold the panel": "Replier le panneau",
+ "Invert": "Inverser",
+ "Layers of": "Calques de",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Les calques enregistrent les traits à part du maillage de base, leur intensité peut ensuite les atténuer ou les accentuer",
+ "Layout": "Disposition",
+ "Objects and layers": "Objets et calques",
+ "Search": "Rechercher",
+ "The scene is empty: add a sphere to start sculpting": "La scène est vide : ajoutez une sphère pour commencer à sculpter"
 }

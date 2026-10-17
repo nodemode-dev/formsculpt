@@ -1171,5 +1171,14 @@
  "Scale": "Skaler",
  "Scale by": "Skaler med",
  "Turn": "Drei",
- "Turn by (degrees)": "Drei med (grader)"
+ "Turn by (degrees)": "Drei med (grader)",
+ "Choose an object to see its layers": "Velg et objekt for å se lagene",
+ "Fold the panel": "Fell sammen panelet",
+ "Invert": "Inverter",
+ "Layers of": "Lag i",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Lag lagrer strøk atskilt fra grunnmeshet, så styrken deres senere kan dempe eller forsterke dem",
+ "Layout": "Oppsett",
+ "Objects and layers": "Objekter og lag",
+ "Search": "Søk",
+ "The scene is empty: add a sphere to start sculpting": "Scenen er tom: legg til en kule for å begynne å skulpturere"
 }

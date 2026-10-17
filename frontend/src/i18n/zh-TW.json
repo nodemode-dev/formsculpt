@@ -1171,5 +1171,14 @@
  "Scale": "縮放",
  "Scale by": "縮放量",
  "Turn": "旋轉",
- "Turn by (degrees)": "旋轉量（度）"
+ "Turn by (degrees)": "旋轉量（度）",
+ "Choose an object to see its layers": "選擇一個物件以查看其圖層",
+ "Fold the panel": "摺疊面板",
+ "Invert": "反轉",
+ "Layers of": "圖層：",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "圖層將筆觸與基礎網格分開記錄，之後可用強度減弱或誇大它們",
+ "Layout": "版面",
+ "Objects and layers": "物件與圖層",
+ "Search": "搜尋",
+ "The scene is empty: add a sphere to start sculpting": "場景是空的：加入一個球體開始雕塑"
 }

@@ -1171,5 +1171,14 @@
  "Scale": "Měřítko",
  "Scale by": "Změnit měřítko o",
  "Turn": "Otáčení",
- "Turn by (degrees)": "Otočit o (stupně)"
+ "Turn by (degrees)": "Otočit o (stupně)",
+ "Choose an object to see its layers": "Vyberte objekt a uvidíte jeho vrstvy",
+ "Fold the panel": "Sbalit panel",
+ "Invert": "Invertovat",
+ "Layers of": "Vrstvy objektu",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Vrstvy zaznamenávají tahy odděleně od základní sítě, takže jejich síla je může později zeslabit nebo zesílit",
+ "Layout": "Rozvržení",
+ "Objects and layers": "Objekty a vrstvy",
+ "Search": "Hledat",
+ "The scene is empty: add a sphere to start sculpting": "Scéna je prázdná: přidejte kouli a začněte modelovat"
 }

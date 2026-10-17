@@ -1171,5 +1171,14 @@
  "Scale": "크기",
  "Scale by": "크기 배율",
  "Turn": "회전",
- "Turn by (degrees)": "회전량 (도)"
+ "Turn by (degrees)": "회전량 (도)",
+ "Choose an object to see its layers": "오브젝트를 고르면 레이어가 보입니다",
+ "Fold the panel": "패널 접기",
+ "Invert": "반전",
+ "Layers of": "레이어:",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "레이어는 스트로크를 기본 메시와 따로 기록하므로 나중에 강도로 약하게 하거나 강조할 수 있습니다",
+ "Layout": "레이아웃",
+ "Objects and layers": "오브젝트와 레이어",
+ "Search": "검색",
+ "The scene is empty: add a sphere to start sculpting": "장면이 비어 있습니다. 구를 추가해 스컬프팅을 시작하세요"
 }

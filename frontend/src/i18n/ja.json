@@ -1171,5 +1171,14 @@
  "Scale": "拡大縮小",
  "Scale by": "拡大縮小率",
  "Turn": "回転",
- "Turn by (degrees)": "回転量 (度)"
+ "Turn by (degrees)": "回転量 (度)",
+ "Choose an object to see its layers": "オブジェクトを選ぶとレイヤーが表示されます",
+ "Fold the panel": "パネルを折りたたむ",
+ "Invert": "反転",
+ "Layers of": "レイヤー:",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "レイヤーはストロークをベースメッシュとは別に記録するので、あとから強さで弱めたり強調したりできます",
+ "Layout": "レイアウト",
+ "Objects and layers": "オブジェクトとレイヤー",
+ "Search": "検索",
+ "The scene is empty: add a sphere to start sculpting": "シーンが空です。球を追加してスカルプトを始めましょう"
 }

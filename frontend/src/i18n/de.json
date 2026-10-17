@@ -1171,5 +1171,14 @@
  "Scale": "Skalieren",
  "Scale by": "Skalieren um",
  "Turn": "Drehen",
- "Turn by (degrees)": "Drehen um (Grad)"
+ "Turn by (degrees)": "Drehen um (Grad)",
+ "Choose an object to see its layers": "Ein Objekt wählen, um seine Ebenen zu sehen",
+ "Fold the panel": "Bereich einklappen",
+ "Invert": "Umkehren",
+ "Layers of": "Ebenen von",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Ebenen speichern Striche getrennt vom Grundnetz, sodass ihre Stärke sie später abschwächen oder verstärken kann",
+ "Layout": "Layout",
+ "Objects and layers": "Objekte und Ebenen",
+ "Search": "Suchen",
+ "The scene is empty: add a sphere to start sculpting": "Die Szene ist leer: eine Kugel hinzufügen, um mit dem Modellieren zu beginnen"
 }

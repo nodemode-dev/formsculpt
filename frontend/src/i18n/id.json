@@ -1171,5 +1171,14 @@
  "Scale": "Skala",
  "Scale by": "Skalakan sebesar",
  "Turn": "Putar",
- "Turn by (degrees)": "Putar sebesar (derajat)"
+ "Turn by (degrees)": "Putar sebesar (derajat)",
+ "Choose an object to see its layers": "Pilih objek untuk melihat lapisannya",
+ "Fold the panel": "Lipat panel",
+ "Invert": "Balik",
+ "Layers of": "Lapisan",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Lapisan merekam goresan terpisah dari mesh dasar, sehingga kekuatannya dapat memudarkan atau menguatkannya nanti",
+ "Layout": "Tata letak",
+ "Objects and layers": "Objek dan lapisan",
+ "Search": "Cari",
+ "The scene is empty: add a sphere to start sculpting": "Adegan kosong: tambahkan bola untuk mulai memahat"
 }

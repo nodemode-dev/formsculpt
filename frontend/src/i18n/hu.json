@@ -1171,5 +1171,14 @@
  "Scale": "Méretezés",
  "Scale by": "Méretezés ennyivel",
  "Turn": "Forgatás",
- "Turn by (degrees)": "Forgatás (fok)"
+ "Turn by (degrees)": "Forgatás (fok)",
+ "Choose an object to see its layers": "Válasszon objektumot a rétegei megtekintéséhez",
+ "Fold the panel": "Panel összecsukása",
+ "Invert": "Megfordítás",
+ "Layers of": "Rétegek:",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "A rétegek az alaphálótól külön rögzítik a vonásokat, így erősségük később halványíthatja vagy felnagyíthatja őket",
+ "Layout": "Elrendezés",
+ "Objects and layers": "Objektumok és rétegek",
+ "Search": "Keresés",
+ "The scene is empty: add a sphere to start sculpting": "A jelenet üres: adjon hozzá egy gömböt a szobrászat kezdéséhez"
 }

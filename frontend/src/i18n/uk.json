@@ -1171,5 +1171,14 @@
  "Scale": "Масштаб",
  "Scale by": "Масштабувати на",
  "Turn": "Повернути",
- "Turn by (degrees)": "Повернути на (градуси)"
+ "Turn by (degrees)": "Повернути на (градуси)",
+ "Choose an object to see its layers": "Виберіть об'єкт, щоб побачити його шари",
+ "Fold the panel": "Згорнути панель",
+ "Invert": "Інвертувати",
+ "Layers of": "Шари об'єкта",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Шари записують мазки окремо від базової сітки, тож їхня сила може згодом послабити чи посилити їх",
+ "Layout": "Розкладка",
+ "Objects and layers": "Об'єкти й шари",
+ "Search": "Пошук",
+ "The scene is empty: add a sphere to start sculpting": "Сцена порожня: додайте сферу, щоб почати ліпити"
 }

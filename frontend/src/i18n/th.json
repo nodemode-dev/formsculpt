@@ -1171,5 +1171,14 @@
  "Scale": "ย่อขยาย",
  "Scale by": "ย่อขยายเป็น",
  "Turn": "หมุน",
- "Turn by (degrees)": "หมุน (องศา)"
+ "Turn by (degrees)": "หมุน (องศา)",
+ "Choose an object to see its layers": "เลือกวัตถุเพื่อดูเลเยอร์ของมัน",
+ "Fold the panel": "พับแผง",
+ "Invert": "กลับด้าน",
+ "Layers of": "เลเยอร์ของ",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "เลเยอร์บันทึกเส้นแยกจากเมชฐาน จึงปรับความแรงเพื่อทำให้จางลงหรือเด่นขึ้นได้ภายหลัง",
+ "Layout": "เค้าโครง",
+ "Objects and layers": "วัตถุและเลเยอร์",
+ "Search": "ค้นหา",
+ "The scene is empty: add a sphere to start sculpting": "ฉากว่างอยู่ เพิ่มทรงกลมเพื่อเริ่มปั้น"
 }

@@ -1171,5 +1171,14 @@
  "Scale": "Skaluj",
  "Scale by": "Skaluj o",
  "Turn": "Obróć",
- "Turn by (degrees)": "Obróć o (stopnie)"
+ "Turn by (degrees)": "Obróć o (stopnie)",
+ "Choose an object to see its layers": "Wybierz obiekt, aby zobaczyć jego warstwy",
+ "Fold the panel": "Zwiń panel",
+ "Invert": "Odwróć",
+ "Layers of": "Warstwy obiektu",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Warstwy zapisują pociągnięcia osobno od siatki bazowej, więc ich siła może je później osłabić lub wzmocnić",
+ "Layout": "Układ",
+ "Objects and layers": "Obiekty i warstwy",
+ "Search": "Szukaj",
+ "The scene is empty: add a sphere to start sculpting": "Scena jest pusta: dodaj kulę, aby zacząć rzeźbić"
 }

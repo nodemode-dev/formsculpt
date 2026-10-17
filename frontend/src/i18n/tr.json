@@ -1171,5 +1171,14 @@
  "Scale": "Ölçekle",
  "Scale by": "Ölçek oranı",
  "Turn": "Döndür",
- "Turn by (degrees)": "Döndürme (derece)"
+ "Turn by (degrees)": "Döndürme (derece)",
+ "Choose an object to see its layers": "Katmanlarını görmek için bir nesne seçin",
+ "Fold the panel": "Paneli daralt",
+ "Invert": "Ters çevir",
+ "Layers of": "Katmanları:",
+ "Layers record strokes apart from the base mesh, so their strength can fade or exaggerate them later": "Katmanlar fırça darbelerini temel ağdan ayrı kaydeder, böylece güçleri onları sonradan zayıflatabilir ya da abartabilir",
+ "Layout": "Düzen",
+ "Objects and layers": "Nesneler ve katmanlar",
+ "Search": "Ara",
+ "The scene is empty: add a sphere to start sculpting": "Sahne boş: yontmaya başlamak için bir küre ekleyin"
 }
