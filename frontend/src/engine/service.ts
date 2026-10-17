@@ -227,7 +227,8 @@ export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | n
     return buffer ? parseMesh(id, buffer) : null;
   }
   const response = await fetch(`/api/engine/mesh/${id}${smooth > 0 ? `?smooth=${smooth}` : ''}`, { cache: 'no-store' });
-  if (!response.ok) return null;
+  // 204: the object is already gone (see the service's mesh route).
+  if (!response.ok || response.status === 204) return null;
   return parseMesh(id, await response.arrayBuffer());
 }
 

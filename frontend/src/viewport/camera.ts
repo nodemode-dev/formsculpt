@@ -2,6 +2,15 @@ import { add, cross, invert, lookAt, multiply, normalize, ortho, perspective, sc
 
 export type ViewName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 
+/** A recorded view: the engine keeps one with each undo step (set_history_camera). Angles in degrees. */
+export interface CameraPose {
+  target: Vec3;
+  distance: number;
+  yaw: number;
+  pitch: number;
+  ortho: boolean;
+}
+
 const VIEWS: Record<ViewName, [number, number]> = {
   front: [0, 0],
   back: [Math.PI, 0],
@@ -137,6 +146,29 @@ export class OrbitCamera {
 
   worldPerPixel(height: number): number {
     return (2 * this.distance * Math.tan(this.fov / 2)) / Math.max(height, 1);
+  }
+
+  /** Where the view is, as a history step records it: target, distance, the eye's direction as yaw and pitch in
+   * degrees (the engine's get_view convention) and orthographic. A trackball view's roll is not kept. */
+  pose(): CameraPose {
+    const d = this.trackball ? this.dir : this.turntableDir();
+    const deg = 180 / Math.PI;
+    return { target: [...this.target], distance: this.distance, yaw: Math.atan2(d[0], d[2]) * deg, pitch: Math.asin(Math.max(-1, Math.min(1, d[1]))) * deg, ortho: this.orthographic };
+  }
+
+  /** Moves the view to a recorded pose; a trackball view comes back upright. */
+  setPose(p: CameraPose): void {
+    const rad = Math.PI / 180;
+    this.target = [p.target[0], p.target[1], p.target[2]];
+    this.distance = Math.max(1e-3, Math.min(1e5, p.distance));
+    this.yaw = p.yaw * rad;
+    this.pitch = Math.max(-Math.PI / 2 + 1e-3, Math.min(Math.PI / 2 - 1e-3, p.pitch * rad));
+    this.orthographic = p.ortho;
+    if (this.trackball) {
+      this.dir = this.turntableDir();
+      this.up = [0, 1, 0];
+      if (Math.abs(this.dir[1]) > 0.999) this.up = [0, 0, -Math.sign(this.dir[1])];
+    }
   }
 
   snap(view: ViewName): void {

@@ -15,7 +15,8 @@ interface PrintReport {
 }
 import { Viewport, type Ray } from './viewport/viewport';
 import { hexColor, type LightSpec } from './viewport/gl-renderer';
-import type { ViewName } from './viewport/camera';
+import type { CameraPose, ViewName } from './viewport/camera';
+import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, saveHistoryPrefs, type HistoryPrefs } from './ui/history-replay';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
 import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
@@ -52,6 +53,18 @@ interface PluginInfo {
   description: string;
   click?: boolean;
   params?: Record<string, { type: string; label?: string; default?: number | string | boolean; min?: number; max?: number; step?: number; options?: string[] }>;
+}
+
+/** get_history's reply; the depth fields are absent from engines before 0.73.0. */
+interface HistoryReply {
+  steps: string[];
+  done: number;
+  bytes?: number[];
+  total_bytes?: number;
+  cameras?: (CameraPose | null)[];
+  max_steps?: number;
+  max_memory_mb?: number;
+  recording_camera?: boolean;
 }
 
 interface Shell {
@@ -191,6 +204,12 @@ interface Shell {
   referenceOpacity: HTMLInputElement;
   viewButtons: HTMLButtonElement[];
   historyList: HTMLUListElement;
+  historyMemory: HTMLElement;
+  historyReplay: HTMLButtonElement;
+  replayRate: HTMLSelectElement;
+  cameraPerStep: HTMLInputElement;
+  maxSteps: HTMLInputElement;
+  maxMemory: HTMLInputElement;
   alpha: HTMLSelectElement;
   alphaAngle: HTMLInputElement;
   strokeMode: HTMLSelectElement;
@@ -1422,6 +1441,18 @@ function buildShell(root: HTMLElement): Shell {
   panel.append(kv);
 
   panel.append(el('h2', 'gap', 'History'));
+  // Depth (ui/history-replay.ts): replay from the start, a camera kept per step, and the engine's limits.
+  const historyReplay = el('button', 'btn', 'Replay');
+  historyReplay.type = 'button';
+  historyReplay.dataset.cmd = 'history.replay';
+  const replayRate = choices('Replay speed', REPLAY_RATES);
+  const cameraPerStep = input('checkbox', { 'aria-label': 'Camera per step' });
+  const maxSteps = input('number', { min: '1', max: '10000', step: '1', value: '200', 'aria-label': 'Max steps' });
+  const maxMemory = input('number', { min: '0', max: '65536', step: '64', value: '0', 'aria-label': 'Memory limit (MB)' });
+  const historyMemory = el('p', 'panel-hint history-memory', '');
+  const historyRow = el('div', 'add-grid');
+  historyRow.append(historyReplay);
+  panel.append(historyRow, field('Replay speed', replayRate), field('Camera per step', cameraPerStep), field('Max steps', maxSteps), field('Memory limit (MB)', maxMemory), historyMemory);
   const historyList = el('ul', 'history');
   historyList.setAttribute('aria-label', 'Undo history');
   panel.append(historyList);
@@ -1504,7 +1535,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1650,7 +1681,9 @@ class SceneView {
         }
         if (action === 'history_movie') {
           this.note('Recording the undo history');
-          void this.download(`/api/engine/history_movie?fps=4&size=384&turn=90&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'history.png');
+          // With a camera kept per step, each frame is seen from where its step was made rather than turning.
+          const camera = this.historyPrefs.cameraPerStep ? 'camera=steps&turn=0' : 'camera=fixed&turn=90';
+          void this.download(`/api/engine/history_movie?fps=4&size=384&${camera}&shading=${encodeURIComponent(shell.shading.value === 'pbr' ? 'pbr' : 'clay')}`, 'history.png');
           return;
         }
         if (action === 'anim_key' || action === 'anim_record' || action === 'anim_clear') {
@@ -1688,8 +1721,12 @@ class SceneView {
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
     shell.historyList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
-      if (row?.dataset.done !== undefined) void this.run('history_go_to', { done: Number(row.dataset.done) });
+      if (row?.dataset.done === undefined || this.replay.playing) return;
+      void this.goToStep(Number(row.dataset.done)).then((camera) => {
+        if (camera && this.historyPrefs.cameraPerStep) this.replay.ease(camera);
+      });
     });
+    this.wireHistory();
     // Under the smooth preview the drawn vertices are not the sculpted ones, so the stroke shows when it ends.
     this.strokes.onUpdate = (u) => {
       if (!this.smoothPreview) this.viewport.patchMesh(u);
@@ -2085,6 +2122,29 @@ class SceneView {
   private contextEvent: MouseEvent | null = null;
   private pinTarget = '';
   private readonly prompt = new PromptDialog();
+  private historyPrefs: HistoryPrefs = loadHistoryPrefs();
+  /** The pose last sent to the engine with set_history_camera, and the one seen at the last tick (to wait until the
+   * view settles before sending). */
+  private sentPose: CameraPose | null = null;
+  private seenPose: CameraPose | null = null;
+  /** Whether the window's limits have been given to this engine yet (once per engine, then only on a change). */
+  private limitsSent = false;
+  private readonly replay = new HistoryReplay({
+    goTo: (done) => this.goToStep(done),
+    pose: () => this.viewport.camera.pose(),
+    setPose: (p) => {
+      this.viewport.camera.setPose(p);
+      this.viewport.invalidate();
+    },
+    rate: () => this.historyPrefs.replayRate,
+    followCamera: () => this.historyPrefs.cameraPerStep,
+    onState: (playing, at, of) => {
+      setText(this.shell.historyReplay, t(playing ? 'Stop' : 'Replay'));
+      setAttr(this.shell.historyReplay, 'aria-pressed', playing ? 'true' : 'false');
+      this.note(playing ? `${t('Replaying history')} ${at} / ${of}` : '');
+      scheduleChrome();
+    },
+  });
 
   private on(button: HTMLButtonElement, fn: () => void): void {
     const id = button.dataset.cmd;
@@ -3937,6 +3997,7 @@ class SceneView {
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
+      { id: 'history.replay', label: 'Replay History', icon: 'refresh', run: () => this.toggleReplay(), checked: () => this.replay.playing },
       ...(['nodemode', 'dark', 'light', 'contrast'] as const).map((name) => ({
         id: `view.theme_${name}`,
         label: { nodemode: 'Follow NodeMode', dark: 'Dark theme', light: 'Light theme', contrast: 'High contrast' }[name],
@@ -4666,8 +4727,11 @@ class SceneView {
     }
     await this.apply(reply.result);
     void this.drawUv(false);
-    const history = await dispatch<{ steps: string[]; done: number }>('get_history');
-    if (history.ok) this.patchHistory(history.result.steps, history.result.done);
+    const history = await dispatch<HistoryReply>('get_history');
+    if (history.ok) {
+      this.patchHistory(history.result.steps, history.result.done, history.result.bytes ?? []);
+      this.syncHistoryEngine(history.result);
+    }
     await this.patchSets();
     await this.spotlight.sync();
     const textured = this.scene.objects.some((x) => x.id === this.scene.active && (x.texture_size ?? null) !== null);
@@ -4749,8 +4813,9 @@ class SceneView {
     pick.disabled = !names.length;
   }
 
-  /** One row per state: "Start", then each step; rows are reused so the list never rebuilds. */
-  private patchHistory(steps: string[], done: number): void {
+  /** One row per state: "Start", then each step with the memory it keeps; rows are reused so the list never
+   * rebuilds. */
+  private patchHistory(steps: string[], done: number, bytes: number[]): void {
     const list = this.shell.historyList;
     const rows = ['Start', ...steps];
     while (list.children.length > rows.length) list.lastElementChild?.remove();
@@ -4758,15 +4823,135 @@ class SceneView {
       let row = list.children[i] as HTMLLIElement | undefined;
       if (!row) {
         row = el('li', 'step', '');
+        row.append(el('span', 'step-name', ''), el('span', 'step-size', ''));
         list.append(row);
       }
       if (row.dataset.done !== String(i)) row.dataset.done = String(i);
-      setText(row, label);
+      setText(row.firstElementChild as HTMLElement, label);
+      setText(row.lastElementChild as HTMLElement, i > 0 && bytes[i - 1] !== undefined ? formatBytes(bytes[i - 1]) : '');
       setAttr(row, 'aria-current', i === done ? 'true' : 'false');
       setAttr(row, 'data-undone', i > done ? 'true' : 'false');
     });
     const current = list.children[done] as HTMLElement | undefined;
     if (current && (current.offsetTop < list.scrollTop || current.offsetTop > list.scrollTop + list.clientHeight - current.offsetHeight)) list.scrollTop = current.offsetTop - list.clientHeight / 2;
+  }
+
+  /** Goes to a step and redraws; resolves with the camera that step was made from, when one was recorded. */
+  private async goToStep(done: number): Promise<CameraPose | null> {
+    const reply = await dispatch<{ camera?: CameraPose | null }>('history_go_to', { done });
+    // During a replay the note shows its progress, so only a failure replaces it.
+    if (!reply.ok || !this.replay.playing) this.note(reply.ok ? '' : reply.error.message);
+    await this.refresh();
+    return reply.ok ? (reply.result.camera ?? null) : null;
+  }
+
+  private toggleReplay(): void {
+    if (this.replay.playing) {
+      this.replay.stop();
+      return;
+    }
+    void dispatch<HistoryReply>('get_history').then((h) => {
+      if (!h.ok) return;
+      if (h.result.done < 1) this.note(t('Nothing to replay yet'));
+      else void this.replay.play(h.result.done);
+    });
+  }
+
+  /** The History section's depth controls: limits and switches kept in this browser and given to the engine, the
+   * view sent as it settles (so each step keeps the camera it was made from), and input stopping a replay. */
+  private wireHistory(): void {
+    const s = this.shell;
+    const p = this.historyPrefs;
+    s.replayRate.value = String(p.replayRate);
+    s.cameraPerStep.checked = p.cameraPerStep;
+    s.maxSteps.value = String(p.maxSteps);
+    s.maxMemory.value = String(p.maxMemoryMb);
+    const save = (): void => {
+      const steps = Math.round(Number(s.maxSteps.value));
+      const memory = Math.round(Number(s.maxMemory.value));
+      this.historyPrefs = {
+        replayRate: Number(s.replayRate.value) || 2,
+        cameraPerStep: s.cameraPerStep.checked,
+        maxSteps: Number.isFinite(steps) ? Math.max(1, Math.min(10000, steps)) : p.maxSteps,
+        maxMemoryMb: Number.isFinite(memory) ? Math.max(0, Math.min(65536, memory)) : p.maxMemoryMb,
+      };
+      saveHistoryPrefs(this.historyPrefs);
+    };
+    s.replayRate.addEventListener('change', save);
+    s.cameraPerStep.addEventListener('change', () => {
+      save();
+      this.sentPose = null;
+      if (!this.historyPrefs.cameraPerStep) void dispatch('set_history_camera', { clear: true });
+      else this.sendPose(true);
+    });
+    const limits = (): void => {
+      save();
+      s.maxSteps.value = String(this.historyPrefs.maxSteps);
+      s.maxMemory.value = String(this.historyPrefs.maxMemoryMb);
+      void this.sendLimits().then(() => this.refresh());
+    };
+    s.maxSteps.addEventListener('change', limits);
+    s.maxMemory.addEventListener('change', limits);
+    // The view goes to the engine once it has held still for a tick, and at once when a press may start a step.
+    window.setInterval(() => this.sendPose(false), 400);
+    s.canvas.addEventListener('pointerdown', () => this.sendPose(true), { capture: true });
+    // During a replay a press in the viewport or Escape stops it, and the press does nothing else: a stroke on a
+    // half-replayed history would drop the steps after it.
+    s.canvas.parentElement?.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (!this.replay.playing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.replay.stop();
+      },
+      { capture: true },
+    );
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.replay.playing) {
+        e.preventDefault();
+        this.replay.stop();
+      }
+    });
+  }
+
+  private sendPose(now: boolean): void {
+    if (!this.historyPrefs.cameraPerStep || this.replay.playing) return;
+    const pose = this.viewport.camera.pose();
+    const settled = now || (this.seenPose !== null && samePose(pose, this.seenPose));
+    this.seenPose = pose;
+    if (!settled || (this.sentPose && samePose(pose, this.sentPose))) return;
+    this.sentPose = pose;
+    void dispatch('set_history_camera', { ...pose, target: [...pose.target] });
+  }
+
+  private async sendLimits(): Promise<void> {
+    const reply = await dispatch<{ dropped: number }>('set_history_limits', { max_steps: this.historyPrefs.maxSteps, max_memory_mb: this.historyPrefs.maxMemoryMb });
+    if (reply.ok && reply.result.dropped > 0) this.note(`${t('Oldest steps dropped')}: ${reply.result.dropped}`);
+  }
+
+  /** Keeps the window and the engine's history in step: the window's limits given to a new engine once, the
+   * engine's limits shown in the fields (an agent may change them), the camera sent again after a restart, and the
+   * total memory shown. */
+  private syncHistoryEngine(h: HistoryReply): void {
+    const s = this.shell;
+    if (h.max_steps === undefined || h.max_memory_mb === undefined) return;
+    if (!this.limitsSent) {
+      this.limitsSent = true;
+      if (h.max_steps !== this.historyPrefs.maxSteps || h.max_memory_mb !== this.historyPrefs.maxMemoryMb) {
+        void this.sendLimits().then(() => this.refresh());
+        return;
+      }
+    }
+    if (document.activeElement !== s.maxSteps) s.maxSteps.value = String(h.max_steps);
+    if (document.activeElement !== s.maxMemory) s.maxMemory.value = String(h.max_memory_mb);
+    if (this.historyPrefs.cameraPerStep && !h.recording_camera && !this.replay.playing) {
+      this.sentPose = null;
+      this.sendPose(true);
+    }
+    const total = h.total_bytes ?? 0;
+    const cap = h.max_memory_mb > 0 ? ` / ${h.max_memory_mb} MB` : '';
+    setText(s.historyMemory, `${t('Memory')}: ${formatBytes(total)}${cap} · ${t('Steps')}: ${h.steps.length} / ${h.max_steps}`);
   }
 
   private async apply(next: SceneSummary): Promise<void> {

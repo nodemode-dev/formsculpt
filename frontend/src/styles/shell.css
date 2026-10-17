@@ -126,7 +126,11 @@ button { font: inherit; color: inherit; }
 .object { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border-radius: var(--radius-sm); cursor: pointer; border: 1px solid transparent; }
 .object:hover { background: var(--bg-tertiary); }
 .history { list-style: none; margin: 0; padding: 0; height: 168px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 12px; }
-.history .step { height: 24px; line-height: 24px; padding: 0 var(--space-2); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid transparent; }
+.history .step { display: flex; gap: var(--space-2); height: 24px; line-height: 24px; padding: 0 var(--space-2); cursor: pointer; white-space: nowrap; border-left: 2px solid transparent; }
+.history .step-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The memory a step keeps, right-aligned in figures of one width so the column does not wobble. */
+.history .step-size { flex: none; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; }
+.history-memory { font-variant-numeric: tabular-nums; }
 .history .step:hover { background: var(--bg-tertiary); }
 .history .step[data-undone="true"] { color: var(--text-muted); }
 .history .step[aria-current="true"] { border-left-color: var(--accent-color); background: var(--accent-color-dim); }

@@ -29,7 +29,7 @@ const FILE: MenuItem[] = [
 ];
 
 const EDIT: MenuItem[] = [
-  'history.undo', 'history.redo', '-',
+  'history.undo', 'history.redo', 'history.replay', '-',
   'object.duplicate', 'object.delete', 'object.rename', '-',
   { label: 'Transform', items: [...tool('gizmo', 'lattice'), '-', 'object.bend', 'object.twist', 'object.taper', '-', 'object.align', 'object.distribute'] },
   { label: 'Channels', items: ['channel.copy_mask', 'channel.paste_mask', 'channel.clear_mask', '-', 'channel.copy_groups', 'channel.paste_groups', 'channel.clear_groups', '-', 'channel.copy_paint', 'channel.paste_paint', 'channel.clear_paint'] }, '-',
