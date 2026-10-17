@@ -1970,16 +1970,53 @@ pub fn find(name: &str) -> Option<&'static Command> {
 
 pub fn dispatch(session: &mut Session, name: &str, args: &Value) -> Result<Value, CommandError> {
     let command = find(name).ok_or_else(|| CommandError::new("unknown_command", format!("no command named {name}")))?;
-    let args = if args.is_null() { json!({}) } else { args.clone() };
+    let mut args = if args.is_null() { json!({}) } else { args.clone() };
     if !args.is_object() {
         return Err(CommandError::new("bad_arguments", "arguments must be a JSON object"));
     }
+    coerce_scalars(command, &mut args);
     let result = (command.run)(session, &args);
     // Linked copies follow any change the command made to their originals (undo and redo included).
     if result.is_ok() {
         place_cmds::sync_instances(session);
     }
     result
+}
+
+/// Agents' tool clients sometimes send a scalar as text ("strength": "1.0", "symmetry_x": "true"). Where the command's
+/// schema says a top-level argument is a number, an integer or a boolean and the text reads as one, it is passed on as
+/// that type, so the call does what was meant instead of failing on the quoting. Anything else is left for the command
+/// to judge.
+fn coerce_scalars(command: &Command, args: &mut Value) {
+    let Some(map) = args.as_object_mut() else { return };
+    if !map.values().any(Value::is_string) {
+        return;
+    }
+    let schema = (command.schema)();
+    let Some(props) = schema.get("properties").and_then(Value::as_object) else { return };
+    for (key, value) in map.iter_mut() {
+        let Some(text) = value.as_str().map(str::trim) else { continue };
+        let Some(spec) = props.get(key) else { continue };
+        let types: Vec<&str> = match spec.get("type") {
+            Some(Value::String(t)) => vec![t.as_str()],
+            Some(Value::Array(ts)) => ts.iter().filter_map(Value::as_str).collect(),
+            _ => continue,
+        };
+        if types.contains(&"string") {
+            continue;
+        }
+        if types.contains(&"integer") || types.contains(&"number") {
+            if let Ok(x) = text.parse::<f64>() {
+                if x.is_finite() {
+                    *value = if types.contains(&"integer") && !types.contains(&"number") && x.fract() == 0.0 { json!(x as i64) } else { json!(x) };
+                    continue;
+                }
+            }
+        }
+        if types.contains(&"boolean") && (text == "true" || text == "false") {
+            *value = json!(text == "true");
+        }
+    }
 }
 
 /// Brings linked copies up to date; the window's live strokes call it when a stroke ends.

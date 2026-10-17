@@ -92,11 +92,40 @@ pub fn voxel_remesh_thick(mesh: &Mesh, bvh: &Bvh, resolution: u32, thicken: f32)
         return Err("the mesh is empty".into());
     }
     let grid = Grid::around(mesh.bounds(), resolution)?;
-    let mut field = narrow_band(mesh, bvh, &grid, grid.cell * 2.0);
+    let band = grid.cell * 2.0;
+    let parts = crate::deform::split_parts(mesh);
+    let mut field = if parts.len() <= 1 {
+        narrow_band(mesh, bvh, &grid, band)
+    } else {
+        // Overlapping parts (primitives merged into one object) are unioned, as DynaMesh and Nomad's remesher do: one
+        // signed field per loose part with its inside filled, joined by their minimum. Signing every grid point by the
+        // nearest triangle of the whole mesh instead calls a point inside one part but near another part's buried wall
+        // "outside", so the buried walls came through as sheets and the result was open and non-manifold.
+        let mut joined: Option<Vec<f32>> = None;
+        for part in &parts {
+            let part_bvh = Bvh::build(part);
+            let mut f = narrow_band(part, &part_bvh, &grid, band);
+            fill_signs(&mut f, &grid, band);
+            joined = Some(match joined {
+                None => f,
+                Some(mut acc) => {
+                    for (a, b) in acc.iter_mut().zip(f) {
+                        *a = a.min(b);
+                    }
+                    acc
+                }
+            });
+        }
+        joined.unwrap_or_default()
+    };
     let r = thicken.clamp(0.0, 1.0) * grid.cell * 0.5;
     if r > 0.0 {
+        // The solid joined with a shell of radius r is the set where f < r, whose distance is f - r: inside and
+        // outside are the same as min(f, |f| - r) (both are negative wherever f < r), but that form bends into a V
+        // just inside the old surface, and the linear placement of surface vertices then strays by an amount that
+        // follows the grid, which shades as rings on curved parts. f - r keeps a true distance.
         for f in field.iter_mut() {
-            *f = f.min(f.abs() - r);
+            *f -= r;
         }
     }
     surface_nets(&field, &grid)
@@ -422,6 +451,7 @@ fn surface_nets(field: &[f32], g: &Grid) -> Result<Mesh, String> {
     if indices.is_empty() {
         return Err("no surface was found at this resolution".into());
     }
+    snap_to_surface(field, g, &mut positions);
     let mut out = Mesh::new(positions, indices);
     if signed_volume(&out) < 0.0 {
         for t in out.indices.chunks_mut(3) {
@@ -430,6 +460,68 @@ fn surface_nets(field: &[f32], g: &Grid) -> Result<Mesh, String> {
         out.recompute_normals();
     }
     Ok(out)
+}
+
+/// Moves each surface-nets vertex onto the field's zero level. A vertex placed at the mean of its cell's edge crossings
+/// sits off a curved surface by a varying fraction of a voxel, which shades as faint terraces (rings on a sphere). Two
+/// Newton steps along the trilinear field's gradient put it on the surface; a step is capped at half a voxel and kept
+/// inside the vertex's own cell, so sharp corners (where the gradient is poor) cannot fold, and a cell with an unknown
+/// corner is left as it was.
+fn snap_to_surface(field: &[f32], g: &Grid, positions: &mut [[f32; 3]]) {
+    let (origin, cell, dims) = (g.origin, g.cell, g.dims);
+    let idx = |i: usize, j: usize, k: usize| (k * dims[1] + j) * dims[0] + i;
+    // The field and its gradient (per world unit) at a grid-space point, trilinear in the cell holding it.
+    let probe = |q: Vec3| -> Option<(f32, Vec3)> {
+        let base = q.floor();
+        if base.min_element() < 0.0 {
+            return None;
+        }
+        let (i, j, k) = (base.x as usize, base.y as usize, base.z as usize);
+        if i + 1 >= dims[0] || j + 1 >= dims[1] || k + 1 >= dims[2] {
+            return None;
+        }
+        let f = q - base;
+        let mut c = [[[0f32; 2]; 2]; 2];
+        for (dk, plane) in c.iter_mut().enumerate() {
+            for (dj, row) in plane.iter_mut().enumerate() {
+                for (di, v) in row.iter_mut().enumerate() {
+                    let x = field[idx(i + di, j + dj, k + dk)];
+                    if !x.is_finite() {
+                        return None;
+                    }
+                    *v = x;
+                }
+            }
+        }
+        let lerp = |a: f32, b: f32, t: f32| a + (b - a) * t;
+        // c[dk][dj][di]: the cell's corner values.
+        let along_x = |dj: usize, dk: usize| lerp(c[dk][dj][0], c[dk][dj][1], f.x);
+        let value = lerp(lerp(along_x(0, 0), along_x(1, 0), f.y), lerp(along_x(0, 1), along_x(1, 1), f.y), f.z);
+        let gx = lerp(lerp(c[0][0][1] - c[0][0][0], c[0][1][1] - c[0][1][0], f.y), lerp(c[1][0][1] - c[1][0][0], c[1][1][1] - c[1][1][0], f.y), f.z);
+        let gy = lerp(lerp(c[0][1][0] - c[0][0][0], c[0][1][1] - c[0][0][1], f.x), lerp(c[1][1][0] - c[1][0][0], c[1][1][1] - c[1][0][1], f.x), f.z);
+        let gz = lerp(lerp(c[1][0][0] - c[0][0][0], c[1][0][1] - c[0][0][1], f.x), lerp(c[1][1][0] - c[0][1][0], c[1][1][1] - c[0][1][1], f.x), f.y);
+        Some((value, Vec3::new(gx, gy, gz) / cell))
+    };
+    for p in positions.iter_mut() {
+        let start = (Vec3::from_array(*p) - origin) / cell;
+        let home = start.floor();
+        let mut q = start;
+        for _ in 0..2 {
+            let Some((d, grad)) = probe(q) else { break };
+            let len2 = grad.length_squared();
+            if len2 < 1e-12 {
+                break;
+            }
+            // Newton step in world units, then back to grid units, capped at half a voxel.
+            let mut step = grad * (d / len2) / cell;
+            let n = step.length();
+            if n > 0.5 {
+                step *= 0.5 / n;
+            }
+            q = (q - step).clamp(home, home + Vec3::ONE);
+        }
+        *p = (origin + q * cell).to_array();
+    }
 }
 
 pub(crate) fn signed_volume(mesh: &Mesh) -> f32 {
