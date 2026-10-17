@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.67.0 · 2026-10-17
+
+### Added
+
+- Tablet layout (Window > Tablet Layout): the viewport fills the window; a mini rail of tool icons runs down the left with tall Radius and Intensity sliders beside it; the active tool's name and its options (sculpt toggles, tube and curve settings, paint channels, mask actions, ZModeler settings) float at the bottom; a quick bar holds Undo, Redo, Voxel remesh, Wireframe, X-ray, Floor grid and Solo; icons at the top open the panel's sections as a floating sheet (File, Scene, Tool settings, Topology, Paint and material, Lighting, View, More); Frame, Orthographic and the command palette sit top right. Every control runs the same command or panel control as the panel layout, and the choice is remembered.
+- Wireframe (Shift+W): every object's edges over it, quad edges on quad meshes. X-ray (Alt+X): every object drawn see-through. Both in View, the View menu and the quick bar.
+- 1038 interface strings in every language.
+
 ## 0.66.0 · 2026-10-17
 
 ### Added
