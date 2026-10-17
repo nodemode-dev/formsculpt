@@ -1211,5 +1211,11 @@
  "Directional": "Suunnattu",
  "Light type": "Valon tyyppi",
  "Spot": "Kohdevalo",
- "Spot distance": "Kohdevalon etäisyys"
+ "Spot distance": "Kohdevalon etäisyys",
+ "Additive": "Additiivinen",
+ "Dithered": "Rasteroitu",
+ "Material opacity": "Materiaalin peittävyys",
+ "Material type": "Materiaalin tyyppi",
+ "Opaque": "Läpinäkymätön",
+ "Refraction": "Taittuminen"
 }

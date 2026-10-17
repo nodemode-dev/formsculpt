@@ -1211,5 +1211,11 @@
  "Directional": "방향광",
  "Light type": "조명 종류",
  "Spot": "스포트",
- "Spot distance": "스포트 거리"
+ "Spot distance": "스포트 거리",
+ "Additive": "가산",
+ "Dithered": "디더",
+ "Material opacity": "재질 불투명도",
+ "Material type": "재질 종류",
+ "Opaque": "불투명",
+ "Refraction": "굴절"
 }

@@ -1211,5 +1211,11 @@
  "Directional": "Định hướng",
  "Light type": "Loại đèn",
  "Spot": "Đèn rọi",
- "Spot distance": "Khoảng cách đèn rọi"
+ "Spot distance": "Khoảng cách đèn rọi",
+ "Additive": "Cộng sáng",
+ "Dithered": "Phối điểm",
+ "Material opacity": "Độ mờ đục của vật liệu",
+ "Material type": "Loại vật liệu",
+ "Opaque": "Đục",
+ "Refraction": "Khúc xạ"
 }

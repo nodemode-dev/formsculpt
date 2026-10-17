@@ -1211,5 +1211,11 @@
  "Directional": "Riktat",
  "Light type": "Ljustyp",
  "Spot": "Spot",
- "Spot distance": "Spotavstånd"
+ "Spot distance": "Spotavstånd",
+ "Additive": "Additiv",
+ "Dithered": "Rastrerad",
+ "Material opacity": "Materialets opacitet",
+ "Material type": "Materialtyp",
+ "Opaque": "Ogenomskinlig",
+ "Refraction": "Ljusbrytning"
 }

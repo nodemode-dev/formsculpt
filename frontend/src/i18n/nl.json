@@ -1211,5 +1211,11 @@
  "Directional": "Gericht",
  "Light type": "Lichttype",
  "Spot": "Spot",
- "Spot distance": "Spotafstand"
+ "Spot distance": "Spotafstand",
+ "Additive": "Additief",
+ "Dithered": "Gerasterd",
+ "Material opacity": "Dekking van het materiaal",
+ "Material type": "Materiaaltype",
+ "Opaque": "Ondoorzichtig",
+ "Refraction": "Breking"
 }

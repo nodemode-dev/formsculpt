@@ -1211,5 +1211,11 @@
  "Directional": "Direcional",
  "Light type": "Tipo de luz",
  "Spot": "Spot",
- "Spot distance": "Distância do spot"
+ "Spot distance": "Distância do spot",
+ "Additive": "Aditivo",
+ "Dithered": "Pontilhado",
+ "Material opacity": "Opacidade do material",
+ "Material type": "Tipo de material",
+ "Opaque": "Opaco",
+ "Refraction": "Refração"
 }

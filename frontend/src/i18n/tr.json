@@ -1211,5 +1211,11 @@
  "Directional": "Yönlü",
  "Light type": "Işık türü",
  "Spot": "Spot",
- "Spot distance": "Spot uzaklığı"
+ "Spot distance": "Spot uzaklığı",
+ "Additive": "Toplamsal",
+ "Dithered": "Taramalı",
+ "Material opacity": "Malzeme opaklığı",
+ "Material type": "Malzeme türü",
+ "Opaque": "Opak",
+ "Refraction": "Kırılma"
 }

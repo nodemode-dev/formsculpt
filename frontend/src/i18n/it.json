@@ -1211,5 +1211,11 @@
  "Directional": "Direzionale",
  "Light type": "Tipo di luce",
  "Spot": "Faretto",
- "Spot distance": "Distanza del faretto"
+ "Spot distance": "Distanza del faretto",
+ "Additive": "Additivo",
+ "Dithered": "Retinato",
+ "Material opacity": "Opacità del materiale",
+ "Material type": "Tipo di materiale",
+ "Opaque": "Opaco",
+ "Refraction": "Rifrazione"
 }

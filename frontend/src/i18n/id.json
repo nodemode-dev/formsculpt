@@ -1211,5 +1211,11 @@
  "Directional": "Terarah",
  "Light type": "Jenis cahaya",
  "Spot": "Sorot",
- "Spot distance": "Jarak lampu sorot"
+ "Spot distance": "Jarak lampu sorot",
+ "Additive": "Aditif",
+ "Dithered": "Dither",
+ "Material opacity": "Opasitas material",
+ "Material type": "Jenis material",
+ "Opaque": "Buram",
+ "Refraction": "Refraksi"
 }

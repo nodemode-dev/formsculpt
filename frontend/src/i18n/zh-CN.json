@@ -1211,5 +1211,11 @@
  "Directional": "平行光",
  "Light type": "灯光类型",
  "Spot": "聚光灯",
- "Spot distance": "聚光灯距离"
+ "Spot distance": "聚光灯距离",
+ "Additive": "叠加",
+ "Dithered": "抖动",
+ "Material opacity": "材质不透明度",
+ "Material type": "材质类型",
+ "Opaque": "不透明",
+ "Refraction": "折射"
 }

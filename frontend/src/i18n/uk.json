@@ -1211,5 +1211,11 @@
  "Directional": "Спрямоване",
  "Light type": "Тип світла",
  "Spot": "Прожектор",
- "Spot distance": "Відстань прожектора"
+ "Spot distance": "Відстань прожектора",
+ "Additive": "Адитивний",
+ "Dithered": "Растрований",
+ "Material opacity": "Непрозорість матеріалу",
+ "Material type": "Тип матеріалу",
+ "Opaque": "Непрозорий",
+ "Refraction": "Заломлення"
 }

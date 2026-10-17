@@ -1211,5 +1211,11 @@
  "Directional": "平行光源",
  "Light type": "ライトの種類",
  "Spot": "スポット",
- "Spot distance": "スポットの距離"
+ "Spot distance": "スポットの距離",
+ "Additive": "加算",
+ "Dithered": "ディザ",
+ "Material opacity": "マテリアルの不透明度",
+ "Material type": "マテリアルの種類",
+ "Opaque": "不透明",
+ "Refraction": "屈折"
 }

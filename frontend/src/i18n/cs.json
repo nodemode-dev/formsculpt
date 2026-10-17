@@ -1211,5 +1211,11 @@
  "Directional": "Směrové",
  "Light type": "Typ světla",
  "Spot": "Bodové",
- "Spot distance": "Vzdálenost bodového světla"
+ "Spot distance": "Vzdálenost bodového světla",
+ "Additive": "Aditivní",
+ "Dithered": "Rastrovaný",
+ "Material opacity": "Krytí materiálu",
+ "Material type": "Typ materiálu",
+ "Opaque": "Neprůhledný",
+ "Refraction": "Lom"
 }

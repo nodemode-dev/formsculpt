@@ -1211,5 +1211,11 @@
  "Directional": "Kierunkowe",
  "Light type": "Rodzaj światła",
  "Spot": "Reflektor",
- "Spot distance": "Odległość reflektora"
+ "Spot distance": "Odległość reflektora",
+ "Additive": "Addytywny",
+ "Dithered": "Rastrowany",
+ "Material opacity": "Krycie materiału",
+ "Material type": "Rodzaj materiału",
+ "Opaque": "Nieprzezroczysty",
+ "Refraction": "Załamanie"
 }

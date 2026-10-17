@@ -1211,5 +1211,11 @@
  "Directional": "Irányított",
  "Light type": "Fény típusa",
  "Spot": "Spotlámpa",
- "Spot distance": "Spotlámpa távolsága"
+ "Spot distance": "Spotlámpa távolsága",
+ "Additive": "Additív",
+ "Dithered": "Raszteres",
+ "Material opacity": "Anyag átlátszatlansága",
+ "Material type": "Anyag típusa",
+ "Opaque": "Átlátszatlan",
+ "Refraction": "Fénytörés"
 }

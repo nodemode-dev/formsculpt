@@ -1211,5 +1211,11 @@
  "Directional": "Retningsbestemt",
  "Light type": "Lystype",
  "Spot": "Spot",
- "Spot distance": "Spotafstand"
+ "Spot distance": "Spotafstand",
+ "Additive": "Additiv",
+ "Dithered": "Rastreret",
+ "Material opacity": "Materialets opacitet",
+ "Material type": "Materialetype",
+ "Opaque": "Uigennemsigtig",
+ "Refraction": "Lysbrydning"
 }

@@ -1211,5 +1211,11 @@
  "Directional": "Gerichtet",
  "Light type": "Lichtart",
  "Spot": "Spot",
- "Spot distance": "Spot-Abstand"
+ "Spot distance": "Spot-Abstand",
+ "Additive": "Additiv",
+ "Dithered": "Gerastert",
+ "Material opacity": "Materialdeckkraft",
+ "Material type": "Materialart",
+ "Opaque": "Deckend",
+ "Refraction": "Brechung"
 }

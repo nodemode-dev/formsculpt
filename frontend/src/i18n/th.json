@@ -1211,5 +1211,11 @@
  "Directional": "แบบทิศทาง",
  "Light type": "ชนิดแสง",
  "Spot": "สปอต",
- "Spot distance": "ระยะสปอต"
+ "Spot distance": "ระยะสปอต",
+ "Additive": "แบบบวก",
+ "Dithered": "แบบดิเธอร์",
+ "Material opacity": "ความทึบของวัสดุ",
+ "Material type": "ชนิดวัสดุ",
+ "Opaque": "ทึบ",
+ "Refraction": "การหักเห"
 }

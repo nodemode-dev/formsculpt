@@ -1211,5 +1211,11 @@
  "Directional": "Направленный",
  "Light type": "Тип света",
  "Spot": "Прожектор",
- "Spot distance": "Расстояние прожектора"
+ "Spot distance": "Расстояние прожектора",
+ "Additive": "Аддитивный",
+ "Dithered": "Растрированный",
+ "Material opacity": "Непрозрачность материала",
+ "Material type": "Тип материала",
+ "Opaque": "Непрозрачный",
+ "Refraction": "Преломление"
 }
