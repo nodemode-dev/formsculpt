@@ -986,7 +986,7 @@
  "Uncrease point": "Ta bort punktveck",
  "Align edge loop": "Räta upp kantslinga",
  "Get Creases": "Hämta veck",
- "Slide amount %": "Glidmängd %",
+ "Amount %": "Mängd %",
  "Slide edge loop": "Skjut kantslinga",
  "Slide point": "Skjut punkt",
  "Disc": "Skiva",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Fält-remesh",
  "Hard angle": "Skarp vinkel",
  "Curve as guide": "Kurva som guide",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Kurva som guide behöver en kurva: rita en med Kurv-verktyget först"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurva som guide behöver en kurva: rita en med Kurv-verktyget först",
+ "First point kept; click the point to weld it to": "Första punkten sparad; klicka på punkten den ska svetsas till",
+ "Inset edge loop": "Infälld kantslinga",
+ "Inset edge loop, border only": "Infälld kantslinga, bara kanter",
+ "Split point": "Dela punkt",
+ "Stitch points": "Sy ihop punkter"
 }

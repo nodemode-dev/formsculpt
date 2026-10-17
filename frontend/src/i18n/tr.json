@@ -986,7 +986,7 @@
  "Uncrease point": "Nokta kırışığını kaldır",
  "Align edge loop": "Kenar döngüsünü hizala",
  "Get Creases": "Kırışıkları al",
- "Slide amount %": "Kaydırma miktarı %",
+ "Amount %": "Miktar %",
  "Slide edge loop": "Kenar döngüsünü kaydır",
  "Slide point": "Noktayı kaydır",
  "Disc": "Disk",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Sert kenar açısı",
  "Curve as guide": "Eğri kılavuz olarak",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Eğri kılavuz olarak bir eğri gerektirir: önce Eğri aracıyla bir tane çizin"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Eğri kılavuz olarak bir eğri gerektirir: önce Eğri aracıyla bir tane çizin",
+ "First point kept; click the point to weld it to": "İlk nokta tutuldu; kaynaklanacağı noktaya tıklayın",
+ "Inset edge loop": "Kenar döngüsünü içe al",
+ "Inset edge loop, border only": "Kenar döngüsünü içe al, yalnızca kenarlar",
+ "Split point": "Noktayı böl",
+ "Stitch points": "Noktaları dik"
 }

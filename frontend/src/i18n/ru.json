@@ -986,7 +986,7 @@
  "Uncrease point": "Снять заострение точки",
  "Align edge loop": "Выровнять петлю рёбер",
  "Get Creases": "Получить складки",
- "Slide amount %": "Величина сдвига %",
+ "Amount %": "Величина %",
  "Slide edge loop": "Сдвинуть петлю рёбер",
  "Slide point": "Сдвинуть точку",
  "Disc": "Диск",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Ремеш по полю",
  "Hard angle": "Угол жёсткого ребра",
  "Curve as guide": "Кривая как направляющая",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Для «Кривая как направляющая» нужна кривая: сначала нарисуйте её инструментом «Кривая»"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Для «Кривая как направляющая» нужна кривая: сначала нарисуйте её инструментом «Кривая»",
+ "First point kept; click the point to weld it to": "Первая точка запомнена; щёлкните точку, к которой её приварить",
+ "Inset edge loop": "Вставить петлю рёбер внутрь",
+ "Inset edge loop, border only": "Вставить петлю рёбер внутрь, только края",
+ "Split point": "Разделить точку",
+ "Stitch points": "Сшить точки"
 }

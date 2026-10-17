@@ -986,7 +986,7 @@
  "Uncrease point": "Puntvouw opheffen",
  "Align edge loop": "Randlus uitlijnen",
  "Get Creases": "Vouwen ophalen",
- "Slide amount %": "Schuifafstand %",
+ "Amount %": "Hoeveelheid %",
  "Slide edge loop": "Randlus verschuiven",
  "Slide point": "Punt verschuiven",
  "Disc": "Schijf",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Hoek scherpe rand",
  "Curve as guide": "Curve als gids",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Curve als gids heeft een curve nodig: teken er eerst een met het Curve-gereedschap"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curve als gids heeft een curve nodig: teken er eerst een met het Curve-gereedschap",
+ "First point kept; click the point to weld it to": "Eerste punt bewaard; klik op het punt om het aan te lassen",
+ "Inset edge loop": "Randlus inzetten",
+ "Inset edge loop, border only": "Randlus inzetten, alleen randen",
+ "Split point": "Punt splitsen",
+ "Stitch points": "Punten naaien"
 }

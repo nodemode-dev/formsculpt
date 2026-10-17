@@ -986,7 +986,7 @@
  "Uncrease point": "Punktschärfe entfernen",
  "Align edge loop": "Kantenschleife ausrichten",
  "Get Creases": "Scharfe Kanten holen",
- "Slide amount %": "Verschiebung %",
+ "Amount %": "Betrag %",
  "Slide edge loop": "Kantenschleife verschieben",
  "Slide point": "Punkt verschieben",
  "Disc": "Scheibe",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Feld-Remesh",
  "Hard angle": "Kantenwinkel",
  "Curve as guide": "Kurve als Führung",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve als Führung braucht eine Kurve: zeichnen Sie zuerst eine mit dem Kurvenwerkzeug"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve als Führung braucht eine Kurve: zeichnen Sie zuerst eine mit dem Kurvenwerkzeug",
+ "First point kept; click the point to weld it to": "Erster Punkt gemerkt; klicken Sie den Punkt an, mit dem er verschweißt wird",
+ "Inset edge loop": "Kantenschleife einsetzen",
+ "Inset edge loop, border only": "Kantenschleife einsetzen, nur Ränder",
+ "Split point": "Punkt teilen",
+ "Stitch points": "Punkte verschweißen"
 }

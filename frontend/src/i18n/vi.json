@@ -986,7 +986,7 @@
  "Uncrease point": "Bỏ gấp điểm",
  "Align edge loop": "Căn thẳng vòng cạnh",
  "Get Creases": "Lấy nếp gấp",
- "Slide amount %": "Mức trượt %",
+ "Amount %": "Mức %",
  "Slide edge loop": "Trượt vòng cạnh",
  "Slide point": "Trượt điểm",
  "Disc": "Đĩa",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Góc cạnh cứng",
  "Curve as guide": "Đường cong làm dẫn hướng",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Đường cong làm dẫn hướng cần một đường cong: hãy vẽ trước bằng công cụ Đường cong"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Đường cong làm dẫn hướng cần một đường cong: hãy vẽ trước bằng công cụ Đường cong",
+ "First point kept; click the point to weld it to": "Đã giữ điểm đầu; nhấp vào điểm cần hàn vào",
+ "Inset edge loop": "Thu vòng cạnh vào",
+ "Inset edge loop, border only": "Thu vòng cạnh vào, chỉ viền",
+ "Split point": "Tách điểm",
+ "Stitch points": "Khâu điểm"
 }

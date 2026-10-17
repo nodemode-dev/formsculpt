@@ -986,7 +986,7 @@
  "Uncrease point": "ยกเลิกการพับจุด",
  "Align edge loop": "จัดแนวลูปขอบ",
  "Get Creases": "ดึงรอยพับ",
- "Slide amount %": "ระยะเลื่อน %",
+ "Amount %": "ปริมาณ %",
  "Slide edge loop": "เลื่อนลูปขอบ",
  "Slide point": "เลื่อนจุด",
  "Disc": "จาน",
@@ -1017,5 +1017,10 @@
  "Field remesh": "รีเมชตามฟิลด์",
  "Hard angle": "มุมขอบแข็ง",
  "Curve as guide": "ใช้เส้นโค้งเป็นไกด์",
- "Curve as guide needs a curve: draw one with the Curve tool first": "ใช้เส้นโค้งเป็นไกด์ต้องมีเส้นโค้ง: วาดด้วยเครื่องมือเส้นโค้งก่อน"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "ใช้เส้นโค้งเป็นไกด์ต้องมีเส้นโค้ง: วาดด้วยเครื่องมือเส้นโค้งก่อน",
+ "First point kept; click the point to weld it to": "เก็บจุดแรกแล้ว คลิกจุดที่จะเชื่อมเข้าด้วยกัน",
+ "Inset edge loop": "แทรกลูปขอบด้านใน",
+ "Inset edge loop, border only": "แทรกลูปขอบด้านใน เฉพาะขอบ",
+ "Split point": "แยกจุด",
+ "Stitch points": "เย็บจุด"
 }

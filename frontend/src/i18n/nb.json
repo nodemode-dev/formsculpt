@@ -986,7 +986,7 @@
  "Uncrease point": "Fjern fold fra punkt",
  "Align edge loop": "Juster kantløkke",
  "Get Creases": "Hent folder",
- "Slide amount %": "Glidemengde %",
+ "Amount %": "Mengde %",
  "Slide edge loop": "Skyv kantløkke",
  "Slide point": "Skyv punkt",
  "Disc": "Skive",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Felt-remesh",
  "Hard angle": "Skarp vinkel",
  "Curve as guide": "Kurve som guide",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve som guide trenger en kurve: tegn en med Kurve-verktøyet først"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve som guide trenger en kurve: tegn en med Kurve-verktøyet først",
+ "First point kept; click the point to weld it to": "Første punkt lagret; klikk punktet det skal sveises til",
+ "Inset edge loop": "Senk kantløkke",
+ "Inset edge loop, border only": "Senk kantløkke, bare kanter",
+ "Split point": "Del punkt",
+ "Stitch points": "Sy sammen punkter"
 }

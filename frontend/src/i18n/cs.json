@@ -986,7 +986,7 @@
  "Uncrease point": "Zrušit ostření bodu",
  "Align edge loop": "Zarovnat smyčku hran",
  "Get Creases": "Zjistit ostré hrany",
- "Slide amount %": "Míra posunu %",
+ "Amount %": "Míra %",
  "Slide edge loop": "Posunout smyčku hran",
  "Slide point": "Posunout bod",
  "Disc": "Disk",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Úhel ostré hrany",
  "Curve as guide": "Křivka jako vodítko",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Křivka jako vodítko potřebuje křivku: nejprve ji nakreslete nástrojem Křivka"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Křivka jako vodítko potřebuje křivku: nejprve ji nakreslete nástrojem Křivka",
+ "First point kept; click the point to weld it to": "První bod uložen; klikněte na bod, ke kterému se má přivařit",
+ "Inset edge loop": "Vsadit smyčku hran",
+ "Inset edge loop, border only": "Vsadit smyčku hran, jen okraje",
+ "Split point": "Rozdělit bod",
+ "Stitch points": "Sešít body"
 }

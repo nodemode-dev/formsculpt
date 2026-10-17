@@ -986,7 +986,7 @@
  "Uncrease point": "点のクリースを解除",
  "Align edge loop": "エッジループを整列",
  "Get Creases": "クリースを取得",
- "Slide amount %": "スライド量 %",
+ "Amount %": "量 %",
  "Slide edge loop": "エッジループをスライド",
  "Slide point": "点をスライド",
  "Disc": "ディスク",
@@ -1017,5 +1017,10 @@
  "Field remesh": "フィールドリメッシュ",
  "Hard angle": "ハードエッジ角度",
  "Curve as guide": "カーブをガイドに",
- "Curve as guide needs a curve: draw one with the Curve tool first": "カーブをガイドにするにはカーブが必要です。先にカーブツールで描いてください"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "カーブをガイドにするにはカーブが必要です。先にカーブツールで描いてください",
+ "First point kept; click the point to weld it to": "最初の点を保持しました。溶接先の点をクリックしてください",
+ "Inset edge loop": "エッジループを差し込み",
+ "Inset edge loop, border only": "エッジループを差し込み（境界のみ）",
+ "Split point": "点を分割",
+ "Stitch points": "点を縫合"
 }

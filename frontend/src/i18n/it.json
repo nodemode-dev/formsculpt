@@ -986,7 +986,7 @@
  "Uncrease point": "Togli piega al punto",
  "Align edge loop": "Allinea loop di spigoli",
  "Get Creases": "Ottieni pieghe",
- "Slide amount %": "Scorrimento %",
+ "Amount %": "Quantità %",
  "Slide edge loop": "Scorri loop di spigoli",
  "Slide point": "Scorri punto",
  "Disc": "Disco",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Angolo spigolo vivo",
  "Curve as guide": "Curva come guida",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Curva come guida richiede una curva: disegnane prima una con lo strumento Curva"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curva come guida richiede una curva: disegnane prima una con lo strumento Curva",
+ "First point kept; click the point to weld it to": "Primo punto tenuto; fai clic sul punto a cui saldarlo",
+ "Inset edge loop": "Inserto loop di spigoli",
+ "Inset edge loop, border only": "Inserto loop di spigoli, solo bordi",
+ "Split point": "Dividi punto",
+ "Stitch points": "Cuci punti"
 }

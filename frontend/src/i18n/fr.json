@@ -986,7 +986,7 @@
  "Uncrease point": "Retirer le pli du point",
  "Align edge loop": "Aligner la boucle d'arêtes",
  "Get Creases": "Obtenir les plis",
- "Slide amount %": "Glissement %",
+ "Amount %": "Quantité %",
  "Slide edge loop": "Glisser la boucle d'arêtes",
  "Slide point": "Glisser le point",
  "Disc": "Disque",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Remaillage par champ",
  "Hard angle": "Angle d’arête vive",
  "Curve as guide": "Courbe comme guide",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Courbe comme guide nécessite une courbe : dessinez-en d’abord une avec l’outil Courbe"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Courbe comme guide nécessite une courbe : dessinez-en d’abord une avec l’outil Courbe",
+ "First point kept; click the point to weld it to": "Premier point retenu ; cliquez sur le point auquel le souder",
+ "Inset edge loop": "Incruster la boucle d’arêtes",
+ "Inset edge loop, border only": "Incruster la boucle d’arêtes, bords seuls",
+ "Split point": "Scinder le point",
+ "Stitch points": "Coudre les points"
 }

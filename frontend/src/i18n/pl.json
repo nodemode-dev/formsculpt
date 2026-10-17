@@ -986,7 +986,7 @@
  "Uncrease point": "Usuń zagięcie punktu",
  "Align edge loop": "Wyrównaj pętlę krawędzi",
  "Get Creases": "Pobierz zagięcia",
- "Slide amount %": "Przesunięcie %",
+ "Amount %": "Wielkość %",
  "Slide edge loop": "Przesuń pętlę krawędzi",
  "Slide point": "Przesuń punkt",
  "Disc": "Dysk",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Remesh polowy",
  "Hard angle": "Kąt ostrej krawędzi",
  "Curve as guide": "Krzywa jako prowadnica",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Krzywa jako prowadnica wymaga krzywej: najpierw narysuj ją narzędziem Krzywa"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Krzywa jako prowadnica wymaga krzywej: najpierw narysuj ją narzędziem Krzywa",
+ "First point kept; click the point to weld it to": "Pierwszy punkt zapamiętany; kliknij punkt, do którego go zgrzać",
+ "Inset edge loop": "Wstaw pętlę krawędzi do środka",
+ "Inset edge loop, border only": "Wstaw pętlę krawędzi do środka, tylko brzegi",
+ "Split point": "Podziel punkt",
+ "Stitch points": "Zszyj punkty"
 }

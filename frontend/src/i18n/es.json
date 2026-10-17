@@ -986,7 +986,7 @@
  "Uncrease point": "Quitar pliegue de punto",
  "Align edge loop": "Alinear bucle de aristas",
  "Get Creases": "Obtener pliegues",
- "Slide amount %": "Cantidad de deslizamiento %",
+ "Amount %": "Cantidad %",
  "Slide edge loop": "Deslizar bucle de aristas",
  "Slide point": "Deslizar punto",
  "Disc": "Disco",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Remallado por campo",
  "Hard angle": "Ángulo de arista dura",
  "Curve as guide": "Curva como guía",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Curva como guía necesita una curva: dibuja una primero con la herramienta Curva"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curva como guía necesita una curva: dibuja una primero con la herramienta Curva",
+ "First point kept; click the point to weld it to": "Primer punto guardado; haz clic en el punto al que soldarlo",
+ "Inset edge loop": "Insertar bucle de aristas hacia dentro",
+ "Inset edge loop, border only": "Insertar bucle de aristas hacia dentro, solo bordes",
+ "Split point": "Dividir punto",
+ "Stitch points": "Coser puntos"
 }

@@ -986,7 +986,7 @@
  "Uncrease point": "Poista pisteen taite",
  "Align edge loop": "Suorista reunasilmukka",
  "Get Creases": "Hae taitteet",
- "Slide amount %": "Liu'utuksen määrä %",
+ "Amount %": "Määrä %",
  "Slide edge loop": "Liu'uta reunasilmukkaa",
  "Slide point": "Liu'uta pistettä",
  "Disc": "Kiekko",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Terävä kulma",
  "Curve as guide": "Käyrä ohjaimena",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Käyrä ohjaimena tarvitsee käyrän: piirrä ensin sellainen Käyrä-työkalulla"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Käyrä ohjaimena tarvitsee käyrän: piirrä ensin sellainen Käyrä-työkalulla",
+ "First point kept; click the point to weld it to": "Ensimmäinen piste talletettu; napsauta pistettä, johon se hitsataan",
+ "Inset edge loop": "Upota reunasilmukka",
+ "Inset edge loop, border only": "Upota reunasilmukka, vain reunat",
+ "Split point": "Jaa piste",
+ "Stitch points": "Ompele pisteet"
 }

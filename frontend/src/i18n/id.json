@@ -986,7 +986,7 @@
  "Uncrease point": "Hapus lipatan titik",
  "Align edge loop": "Luruskan loop tepi",
  "Get Creases": "Ambil lipatan",
- "Slide amount %": "Jumlah geser %",
+ "Amount %": "Jumlah %",
  "Slide edge loop": "Geser loop tepi",
  "Slide point": "Geser titik",
  "Disc": "Cakram",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Sudut tepi tajam",
  "Curve as guide": "Kurva sebagai panduan",
- "Curve as guide needs a curve: draw one with the Curve tool first": "Kurva sebagai panduan memerlukan kurva: gambar dulu dengan alat Kurva"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurva sebagai panduan memerlukan kurva: gambar dulu dengan alat Kurva",
+ "First point kept; click the point to weld it to": "Titik pertama disimpan; klik titik tujuan penyatuannya",
+ "Inset edge loop": "Inset loop tepi",
+ "Inset edge loop, border only": "Inset loop tepi, hanya batas",
+ "Split point": "Pecah titik",
+ "Stitch points": "Jahit titik"
 }

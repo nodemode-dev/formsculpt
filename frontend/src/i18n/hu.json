@@ -986,7 +986,7 @@
  "Uncrease point": "Pont élesítésének törlése",
  "Align edge loop": "Élhurok igazítása",
  "Get Creases": "Éles élek lekérése",
- "Slide amount %": "Csúsztatás mértéke %",
+ "Amount %": "Mérték %",
  "Slide edge loop": "Élhurok csúsztatása",
  "Slide point": "Pont csúsztatása",
  "Disc": "Korong",
@@ -1017,5 +1017,10 @@
  "Field remesh": "Field remesh",
  "Hard angle": "Éles él szöge",
  "Curve as guide": "Görbe vezetőként",
- "Curve as guide needs a curve: draw one with the Curve tool first": "A Görbe vezetőként egy görbét igényel: előbb rajzoljon egyet a Görbe eszközzel"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "A Görbe vezetőként egy görbét igényel: előbb rajzoljon egyet a Görbe eszközzel",
+ "First point kept; click the point to weld it to": "Első pont megjegyezve; kattintson a pontra, amelyhez hegeszteni kell",
+ "Inset edge loop": "Élhurok besüllyesztése",
+ "Inset edge loop, border only": "Élhurok besüllyesztése, csak szélek",
+ "Split point": "Pont szétosztása",
+ "Stitch points": "Pontok összevarrása"
 }

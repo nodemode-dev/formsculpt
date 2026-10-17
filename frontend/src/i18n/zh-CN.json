@@ -986,7 +986,7 @@
  "Uncrease point": "取消点折痕",
  "Align edge loop": "对齐循环边",
  "Get Creases": "获取折痕",
- "Slide amount %": "滑动量 %",
+ "Amount %": "数量 %",
  "Slide edge loop": "滑动循环边",
  "Slide point": "滑动点",
  "Disc": "圆盘",
@@ -1017,5 +1017,10 @@
  "Field remesh": "场向重构网格",
  "Hard angle": "硬边角度",
  "Curve as guide": "曲线作为引导",
- "Curve as guide needs a curve: draw one with the Curve tool first": "曲线作为引导需要一条曲线：请先用曲线工具绘制"
+ "Curve as guide needs a curve: draw one with the Curve tool first": "曲线作为引导需要一条曲线：请先用曲线工具绘制",
+ "First point kept; click the point to weld it to": "已记住第一个点；点击要焊接到的点",
+ "Inset edge loop": "内插循环边",
+ "Inset edge loop, border only": "内插循环边（仅边框）",
+ "Split point": "拆分点",
+ "Stitch points": "缝合点"
 }

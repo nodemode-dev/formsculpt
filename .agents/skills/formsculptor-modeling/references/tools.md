@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.62.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.63.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -772,12 +772,13 @@ Note: read-only.
 
 ZModeler edge actions on a quad mesh, aimed by point or ray at the edge nearest it: insert puts an edge loop across the ring of quads through that edge at fraction at (0.5 is the middle; measured from the same side all round); extrude pulls an open-border edge out in its face's plane as a new quad (distance, default the edge's length); close fills the hole that border edge belongs to with quads (one quad for four sides, a fan around a centre for more; an even number of sides); crease and uncrease mark the edge to stay sharp under subdivision (multires_divide, subdivide, the smooth preview) or clear it, keeping UVs; align straightens the edge loop through the edge (an open loop onto the line between its ends, a closed loop onto its best-fit plane) and slide moves that loop toward the aimed face's side by amount (both keep UVs and record into an active sculpt layer; the loop runs through four-edge corners and stops at poles and borders). insert with crease true creases the new loop (auto-crease), and a creased edge the loop splits stays creased. Creases are saved in projects. The mesh stays all quads; UVs and textures are dropped as for any topology change. One undo step.
 
-- `action`: string (insert | extrude | close | crease | uncrease | align | slide); required; insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount.
-- `amount`: number; default 0.25; range 0 to 0.95; slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge.
+- `action`: string (insert | inset | extrude | close | crease | uncrease | align | slide); required; insert: an edge loop across the ring of quads through the edge, at fraction at; inset: supporting loops on both sides of the edge loop through the edge, the same distance from it all along (amount of the shortest edge leaving the loop), keeping the loop or not (keep); extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount.
+- `amount`: number; range 0 to 0.95; slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge (0.25 when omitted). inset: how far the side loops sit from the loop, as a share of the shortest edge leaving it (0.02 to 0.45, 0.2 when omitted).
 - `at`: number; default 0.5; range 0.02 to 0.98; insert: where the loop crosses each quad, from one side of the ring to the other.
-- `crease`: boolean; default false; insert: crease the new loop's edges (auto-crease).
+- `crease`: boolean; default false; insert and inset: crease the new loops' edges (auto-crease).
 - `distance`: number; range -1000 to 1000; extrude: how far, in world units; the edge's own length when omitted.
 - `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `keep`: string (center_and_border | border_only); default "center_and_border"; inset: keep the original loop between the new ones, or remove it (border only), leaving one row of quads between the side loops.
 - `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
 - `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
 
@@ -797,11 +798,15 @@ ZModeler face actions on a quad mesh, aimed by point or ray at the face under it
 
 ZModeler point actions on a quad mesh, aimed by point or ray at the nearest corner of the face under it: slide moves that corner toward `to`, kept in its tangent plane so the surface does not lift (recorded into the active sculpt layer when there is one); crease and uncrease mark every quad edge meeting that corner to stay sharp under subdivision, or clear them. One undo step.
 
-- `action`: string (slide | crease | uncrease); required; slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared.
+- `action`: string (slide | crease | uncrease | split | stitch); required; slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared; split: a circular inset round the corner (each quad meeting it becomes three, the corner keeps quads in the middle) at amount of its shortest edge; stitch: the corner welded to the corner nearest `to` (a quad with both as opposite corners collapses; two corners sharing an edge are refused, as that would leave triangles; two border corners join the borders there).
+- `align`: string (end | mid | start); default "end"; stitch: weld at the second corner (end), halfway (mid) or at the first (start).
+- `amount`: number; default 0.4; range 0.05 to 0.9; split: the ring's radius as a share of the corner's shortest edge.
+- `crease`: boolean; default false; split: crease the new ring.
+- `equalize`: boolean; default true; split: put the ring on a circle (ZModeler's equalize radius); false keeps the inner points along the diagonals.
 - `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
 - `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
 - `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
-- `to`: array of number; slide: where the corner goes, in object space (projected onto its tangent plane).
+- `to`: array of number; slide: where the corner goes, in object space (projected onto its tangent plane). stitch: a point near the second corner.
 
 ## send_to_substance
 
