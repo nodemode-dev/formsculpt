@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.61.0 · 2026-10-17
+
+### Added
+
+- Dynamic topology modes on `sculpt_stroke` and live strokes: `dyntopo_mode` (speed, balanced as before, quality), `dyntopo_method` (subdivide only, collapse only, both) and `dyntopo_protect_mask` (masked areas keep their triangles).
+- Window: Dyntopo mode, Dyntopo method and Protect masked beside Dyntopo.
+- 1013 interface strings in every language.
+
 ## 0.60.0 · 2026-10-17
 
 ### Added
