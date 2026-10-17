@@ -1200,5 +1200,9 @@
  "That saved view is gone": "該已儲存視圖已不存在",
  "View replaced": "視圖已取代",
  "View saved": "視圖已儲存",
- "Views": "視圖"
+ "Views": "視圖",
+ "AgX": "AgX",
+ "Contrast": "對比",
+ "Neutral": "中性",
+ "White balance": "白平衡"
 }

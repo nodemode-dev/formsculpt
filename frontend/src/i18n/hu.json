@@ -1200,5 +1200,9 @@
  "That saved view is gone": "Ez a mentett nézet már nincs meg",
  "View replaced": "Nézet lecserélve",
  "View saved": "Nézet mentve",
- "Views": "Nézetek"
+ "Views": "Nézetek",
+ "AgX": "AgX",
+ "Contrast": "Kontraszt",
+ "Neutral": "Semleges",
+ "White balance": "Fehéregyensúly"
 }

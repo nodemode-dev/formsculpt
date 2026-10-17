@@ -1200,5 +1200,9 @@
  "That saved view is gone": "その保存ビューはもうありません",
  "View replaced": "ビューを置き換えました",
  "View saved": "ビューを保存しました",
- "Views": "ビュー"
+ "Views": "ビュー",
+ "AgX": "AgX",
+ "Contrast": "コントラスト",
+ "Neutral": "ニュートラル",
+ "White balance": "ホワイトバランス"
 }

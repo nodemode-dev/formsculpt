@@ -1200,5 +1200,9 @@
  "That saved view is gone": "มุมมองที่บันทึกนั้นไม่มีแล้ว",
  "View replaced": "แทนที่มุมมองแล้ว",
  "View saved": "บันทึกมุมมองแล้ว",
- "Views": "มุมมอง"
+ "Views": "มุมมอง",
+ "AgX": "AgX",
+ "Contrast": "คอนทราสต์",
+ "Neutral": "เป็นกลาง",
+ "White balance": "สมดุลแสงขาว"
 }

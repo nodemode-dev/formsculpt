@@ -1200,5 +1200,9 @@
  "That saved view is gone": "Этого сохранённого вида больше нет",
  "View replaced": "Вид заменён",
  "View saved": "Вид сохранён",
- "Views": "Виды"
+ "Views": "Виды",
+ "AgX": "AgX",
+ "Contrast": "Контраст",
+ "Neutral": "Нейтральный",
+ "White balance": "Баланс белого"
 }

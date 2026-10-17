@@ -1200,5 +1200,9 @@
  "That saved view is gone": "Tallennettua näkymää ei enää ole",
  "View replaced": "Näkymä korvattu",
  "View saved": "Näkymä tallennettu",
- "Views": "Näkymät"
+ "Views": "Näkymät",
+ "AgX": "AgX",
+ "Contrast": "Kontrasti",
+ "Neutral": "Neutraali",
+ "White balance": "Valkotasapaino"
 }

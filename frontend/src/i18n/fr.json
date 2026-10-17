@@ -1200,5 +1200,9 @@
  "That saved view is gone": "Cette vue enregistrée n'existe plus",
  "View replaced": "Vue remplacée",
  "View saved": "Vue enregistrée",
- "Views": "Vues"
+ "Views": "Vues",
+ "AgX": "AgX",
+ "Contrast": "Contraste",
+ "Neutral": "Neutre",
+ "White balance": "Balance des blancs"
 }
