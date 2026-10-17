@@ -74,7 +74,8 @@ pub(crate) fn field_schema() -> Value {
             "faces": {"type": "integer", "minimum": 100, "maximum": 200000, "default": 2000, "description": "Target number of quads (the result lands near it, more where the form is busy)."},
             "hard_angle": {"type": "number", "minimum": 1, "maximum": 180, "default": 40, "description": "Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off."},
             "density_from_paint": {"type": "boolean", "default": false, "description": "Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even."},
-            "iterations": {"type": "integer", "minimum": 4, "maximum": 200, "default": 40, "description": "Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer."}
+            "iterations": {"type": "integer", "minimum": 4, "maximum": 200, "default": 40, "description": "Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer."},
+            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as ZRemesher's curves steer it."}
         },
         "required": [],
         "additionalProperties": false
@@ -95,7 +96,14 @@ pub(crate) fn field_remesh(s: &mut Session, args: &Value) -> Result<Value, Comma
     };
     let started = Instant::now();
     let object = s.scene.get(id).expect("checked");
-    let out = fsc_topo::field_remesh(&object.mesh, &object.bvh, opts).map_err(|e| CommandError::new("remesh_failed", e))?;
+    let guides: Vec<Vec<Vec3>> = match args.get("guides").and_then(Value::as_array) {
+        Some(list) => list.iter().map(crate::curve_cmds::guide_positions).collect::<Result<_, _>>()?,
+        None => Vec::new(),
+    };
+    if args.get("guides").and_then(Value::as_array).is_some_and(|list| list.iter().any(|g| g.as_array().is_none_or(|p| p.len() < 2))) {
+        return Err(bad("each guide needs at least two points"));
+    }
+    let out = fsc_topo::field_remesh_guided(&object.mesh, &object.bvh, opts, &guides).map_err(|e| CommandError::new("remesh_failed", e))?;
     let quads = out.mesh.triangle_count() / 2;
     let open = fsc_topo::boundary_edges(&out.mesh).len();
     let mask = vec![0.0; out.mesh.vertex_count()];
@@ -103,6 +111,7 @@ pub(crate) fn field_remesh(s: &mut Session, args: &Value) -> Result<Value, Comma
     reply["quads"] = json!(quads);
     reply["hard_edges"] = json!(out.hard_edges);
     reply["holes_filled"] = json!(out.holes_filled);
+    reply["guided_vertices"] = json!(out.guided_vertices);
     reply["open_edges"] = json!(open);
     reply["ms"] = json!(started.elapsed().as_millis());
     Ok(reply)

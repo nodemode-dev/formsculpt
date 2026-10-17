@@ -39,6 +39,8 @@ pub struct FieldRemesh {
     pub hard_edges: usize,
     /// Small holes the lattice left (near singular points) closed with quad fans.
     pub holes_filled: usize,
+    /// Vertices of the working mesh whose direction a guide curve set.
+    pub guided_vertices: usize,
 }
 
 /// The direction in `n`'s plane among the four rotations of `o` that is closest to `to`.
@@ -56,6 +58,64 @@ fn tangent(v: Vec3, n: Vec3) -> Option<Vec3> {
 fn lattice_nearest(t: Vec3, a: Vec3, b: Vec3, s: f32, p: Vec3) -> Vec3 {
     let d = p - t;
     t + a * (s * (d.dot(a) / s).round()) + b * (s * (d.dot(b) / s).round())
+}
+
+/// Every hole's border as simple cycles of vertices. A border that passes through one vertex twice (a pinch, where
+/// two gaps touch at a corner) is walked edge by edge and cut at the repeated vertex into separate cycles, so each
+/// piece can be closed on its own; border_loops would stop at the repeat and lose the rest of the loop.
+fn border_cycles(mesh: &Mesh) -> Vec<Vec<u32>> {
+    let mut directed: HashSet<(u32, u32)> = HashSet::new();
+    for t in mesh.indices.chunks_exact(3) {
+        for k in 0..3 {
+            directed.insert((t[k], t[(k + 1) % 3]));
+        }
+    }
+    let mut border: Vec<(u32, u32)> = directed.iter().copied().filter(|&(a, b)| !directed.contains(&(b, a))).collect();
+    border.sort_unstable();
+    let mut out_edges: HashMap<u32, Vec<u32>> = HashMap::new();
+    for &(a, b) in &border {
+        out_edges.entry(a).or_default().push(b);
+    }
+    let mut cycles = Vec::new();
+    for &(a0, _) in &border {
+        // Walk one closed border from a0, taking any unused edge out of each vertex.
+        let mut walk = vec![a0];
+        let mut at = a0;
+        while let Some(list) = out_edges.get_mut(&at) {
+            let Some(next) = list.pop() else { break };
+            at = next;
+            if at == a0 {
+                break;
+            }
+            walk.push(at);
+            if walk.len() > border.len() {
+                break;
+            }
+        }
+        if walk.len() < 3 || at != a0 {
+            continue;
+        }
+        // Cut the closed walk into simple cycles at repeated vertices.
+        let mut stack: Vec<u32> = Vec::new();
+        let mut on_stack: HashMap<u32, usize> = HashMap::new();
+        for &v in &walk {
+            if let Some(&i) = on_stack.get(&v) {
+                let cycle: Vec<u32> = stack.drain(i..).collect();
+                for u in &cycle {
+                    on_stack.remove(u);
+                }
+                if cycle.len() >= 3 {
+                    cycles.push(cycle);
+                }
+            }
+            on_stack.insert(v, stack.len());
+            stack.push(v);
+        }
+        if stack.len() >= 3 {
+            cycles.push(stack);
+        }
+    }
+    cycles
 }
 
 struct Dsu(Vec<u32>);
@@ -84,6 +144,13 @@ impl Dsu {
 }
 
 pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldRemesh, String> {
+    field_remesh_guided(mesh, bvh, opts, &[])
+}
+
+/// field_remesh with guide curves (polylines near the surface): along each one the direction field is held to the
+/// curve's direction, so edge loops run along it, as ZRemesher's curves steer it; elsewhere the field blends between
+/// the guides and the hard edges.
+pub fn field_remesh_guided(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions, guides: &[Vec<Vec3>]) -> Result<FieldRemesh, String> {
     let area: f32 = mesh.face_normals().iter().map(|n| n.length() * 0.5).sum();
     if area <= 0.0 || mesh.triangle_count() == 0 {
         return Err("the mesh has no area".into());
@@ -174,6 +241,53 @@ pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldR
             if let Some(d) = tangent(dir, n[v as usize]) {
                 o[v as usize] = if fixed[v as usize] { closest_rotation(d, n[v as usize], o[v as usize]) } else { d };
                 fixed[v as usize] = true;
+            }
+        }
+    }
+
+    // Guide curves: sampled at a quarter cell, and every vertex within about half a cell of a sample (and not already
+    // held by a hard edge) takes the curve's direction there and keeps it.
+    let mut guided_vertices = 0;
+    if guides.iter().any(|g| g.len() >= 2) {
+        let cell = scale * 0.6;
+        let key = |q: Vec3| ((q.x / cell).floor() as i32, (q.y / cell).floor() as i32, (q.z / cell).floor() as i32);
+        let mut grid: HashMap<(i32, i32, i32), Vec<u32>> = HashMap::new();
+        for (v, &q) in p.iter().enumerate() {
+            grid.entry(key(q)).or_default().push(v as u32);
+        }
+        let mut by_guide = vec![false; nv];
+        for g in guides {
+            for seg in g.windows(2) {
+                let dir = seg[1] - seg[0];
+                let len = dir.length();
+                if len <= 1e-9 {
+                    continue;
+                }
+                let steps = (len / (scale * 0.25)).ceil().max(1.0) as usize;
+                for k in 0..=steps {
+                    let q = seg[0] + dir * (k as f32 / steps as f32);
+                    let (cx, cy, cz) = key(q);
+                    for dx in -1..=1 {
+                        for dy in -1..=1 {
+                            for dz in -1..=1 {
+                                let Some(list) = grid.get(&(cx + dx, cy + dy, cz + dz)) else { continue };
+                                for &v in list {
+                                    let vi = v as usize;
+                                    if p[vi].distance(q) > cell || (fixed[vi] && !by_guide[vi]) {
+                                        continue;
+                                    }
+                                    let Some(d) = tangent(dir, n[vi]) else { continue };
+                                    o[vi] = if by_guide[vi] { closest_rotation(d, n[vi], o[vi]) } else { d };
+                                    if !by_guide[vi] {
+                                        guided_vertices += 1;
+                                    }
+                                    by_guide[vi] = true;
+                                    fixed[vi] = true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -406,6 +520,90 @@ pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldR
             f.reverse();
         }
     }
+    // At a sharp rim the averaged normals can disagree with a face's true facing, so some faces come out wound against
+    // their neighbours. Winding is made consistent across shared edges, spreading from the faces whose facing agrees
+    // most clearly with the surface (an edge shared by more than two faces is skipped).
+    {
+        let mut confidence: Vec<(f32, usize)> = faces
+            .iter()
+            .enumerate()
+            .map(|(i, f)| {
+                let c = f.iter().map(|&k| cpos[k as usize]).sum::<Vec3>() / f.len() as f32;
+                let mut fnrm = Vec3::ZERO;
+                for j in 0..f.len() {
+                    fnrm += (cpos[f[j] as usize] - c).cross(cpos[f[(j + 1) % f.len()] as usize] - c);
+                }
+                let surf = f.iter().map(|&k| cnrm[k as usize]).sum::<Vec3>();
+                (fnrm.normalize_or_zero().dot(surf.normalize_or_zero()), i)
+            })
+            .collect();
+        confidence.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+        let mut by_edge: HashMap<(u32, u32), Vec<usize>> = HashMap::new();
+        for (i, f) in faces.iter().enumerate() {
+            for j in 0..f.len() {
+                let (a, b) = (f[j], f[(j + 1) % f.len()]);
+                by_edge.entry((a.min(b), a.max(b))).or_default().push(i);
+            }
+        }
+        let has_directed = |f: &[u32], a: u32, b: u32| (0..f.len()).any(|j| f[j] == a && f[(j + 1) % f.len()] == b);
+        let mut done = vec![false; faces.len()];
+        for &(_, seed) in &confidence {
+            if done[seed] {
+                continue;
+            }
+            done[seed] = true;
+            let mut queue = VecDeque::from([seed]);
+            while let Some(i) = queue.pop_front() {
+                let f = faces[i].clone();
+                for j in 0..f.len() {
+                    let (a, b) = (f[j], f[(j + 1) % f.len()]);
+                    let Some(list) = by_edge.get(&(a.min(b), a.max(b))) else { continue };
+                    if list.len() != 2 {
+                        continue;
+                    }
+                    let other = if list[0] == i { list[1] } else { list[0] };
+                    if done[other] {
+                        continue;
+                    }
+                    if has_directed(&faces[other], a, b) {
+                        faces[other].reverse();
+                    }
+                    done[other] = true;
+                    queue.push_back(other);
+                }
+            }
+        }
+        // Where winding still conflicts (an odd cycle of flips round a singular point) or more than two faces share an
+        // edge, the less certain faces are dropped; the holes they leave have even sides and close with the fans below.
+        let mut rank = vec![0usize; faces.len()];
+        for (r, &(_, i)) in confidence.iter().enumerate() {
+            rank[i] = r;
+        }
+        let mut drop = vec![false; faces.len()];
+        let mut directed: HashMap<(u32, u32), Vec<usize>> = HashMap::new();
+        for (i, f) in faces.iter().enumerate() {
+            for j in 0..f.len() {
+                directed.entry((f[j], f[(j + 1) % f.len()])).or_default().push(i);
+            }
+        }
+        // (faces on one edge, how many of them may stay): one per direction, two per edge.
+        let mut groups: Vec<(Vec<usize>, usize)> = directed.into_values().filter(|l| l.len() > 1).map(|l| (l, 1)).collect();
+        groups.extend(by_edge.into_values().filter(|l| l.len() > 2).map(|l| (l, 2)));
+        groups.sort();
+        for (mut list, keep) in groups {
+            list.sort_by_key(|&i| rank[i]);
+            list.dedup();
+            let extra: Vec<usize> = list.iter().copied().filter(|&i| !drop[i]).skip(keep).collect();
+            for i in extra {
+                drop[i] = true;
+            }
+        }
+        let mut k = 0;
+        faces.retain(|_| {
+            k += 1;
+            !drop[k - 1]
+        });
+    }
     let quad_polygons = faces.iter().filter(|f| f.len() == 4).count();
 
     // Split every polygon into quads (centre, edge midpoints, corners), so the result is all quads and stays
@@ -454,7 +652,7 @@ pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldR
     let mut extra: Vec<[u32; 4]> = Vec::new();
     let mut fill_pos: Vec<[f32; 3]> = out.positions.clone();
     let closed_source = crate::edges::boundary_edges(mesh).is_empty();
-    for lp in crate::loops::border_loops(&out) {
+    for lp in border_cycles(&out) {
         let k = lp.len();
         if !closed_source || k < 4 || k % 2 == 1 {
             continue;
@@ -498,5 +696,5 @@ pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldR
         out.recompute_normals();
     }
     out.quads = true;
-    Ok(FieldRemesh { mesh: out, polygons: faces.len(), quad_polygons, hard_edges, holes_filled })
+    Ok(FieldRemesh { mesh: out, polygons: faces.len(), quad_polygons, hard_edges, holes_filled, guided_vertices })
 }

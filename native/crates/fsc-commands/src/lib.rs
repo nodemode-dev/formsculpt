@@ -1406,7 +1406,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "field_remesh",
         group: Group::Topo,
         label: "Field Remesh",
-        description: "Rebuild an object as all quads whose edge loops follow its form: a smoothed direction field (four-way, like Instant Meshes) runs along the curvature and the hard edges, a position field lays a lattice on it, and the lattice is read off as polygons split into quads. Hard edges above hard_angle keep their loops; density_from_paint reads red as finer and blue as coarser. Small gaps near the field's singular points are closed on watertight objects; open_edges in the reply counts any left. Slower than quad_remesh. One undo step; the mask is cleared, paint is carried over.",
+        description: "Rebuild an object as all quads whose edge loops follow its form: a smoothed direction field (four-way, like Instant Meshes) runs along the curvature and the hard edges, a position field lays a lattice on it, and the lattice is read off as polygons split into quads. Hard edges above hard_angle keep their loops; guides (curves on the surface) make loops run along them; density_from_paint reads red as finer and blue as coarser. Small gaps near the field's singular points are closed on watertight objects (pinched ones too); open_edges in the reply counts any left. Slower than quad_remesh. One undo step; the mask is cleared, paint is carried over.",
         keys: &[],
         hints: WRITE,
         schema: model_cmds::field_schema,
