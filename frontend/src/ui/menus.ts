@@ -91,6 +91,7 @@ const VIEW: MenuItem[] = [
 
 const WINDOW: MenuItem[] = [
   'view.tablet_layout', 'view.panel_left', { label: 'Interface Size', items: ['view.ui_small', 'view.ui_normal', 'view.ui_large'] }, 'view.clear_rail', 'plugin.run', 'plugin.reload', '-',
+  'view.toolbar_new', 'view.tool_swap', 'view.layout_export', 'view.layout_import', '-',
   'view.terminal', 'view.newTerminal', 'agent.claude', 'agent.chat',
 ];
 
@@ -105,7 +106,10 @@ export const VIEWPORT_MENU: MenuItem[] = [
 
 export const OBJECT_ROW_MENU: MenuItem[] = ['object.rename', 'object.duplicate', 'object.delete', '-', 'object.hide', 'object.isolate', 'object.show_all', '-', 'object.merge'];
 
-export const PIN_MENU = (id: string): MenuItem[] => [id, '-', 'rail.pin'];
+export const PIN_MENU = (id: string): MenuItem[] => [id, '-', 'rail.pin', 'toolbar.add'];
+
+/** A floating toolbar's grip menu. */
+export const TOOLBAR_MENU: MenuItem[] = ['toolbar.add_command', 'toolbar.rename', 'toolbar.turn', '-', 'toolbar.delete'];
 
 export function menuDefs(): MenuDef[] {
   const def = (label: string, items: MenuItem[]): MenuDef => ({ label, items: () => tidy(items) });

@@ -88,6 +88,15 @@ export class PanelLayout {
     }
   }
 
+  /** Re-reads the kept layout (after an import) and applies its folds, side, size and rail; listeners stay as they are. */
+  reload(): void {
+    this.prefs = load();
+    for (const h of Array.from(this.panel.querySelectorAll<HTMLHeadingElement>(':scope > h2'))) this.fold(h, this.prefs.collapsed.includes(h.textContent ?? ''), false);
+    this.setSide(this.prefs.panelLeft, false);
+    this.setSize(this.prefs.size, false);
+    this.drawRail();
+  }
+
   get panelLeft(): boolean {
     return this.prefs.panelLeft;
   }

@@ -19,6 +19,8 @@ import type { ViewName } from './viewport/camera';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
 import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet';
+import { Toolbars } from './ui/toolbars';
+import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
@@ -27,9 +29,9 @@ import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
 import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
 import { overlayOpen } from './ui/dialog';
 import { AboutDialog, PromptDialog, ShortcutsDialog } from './ui/app-dialogs';
-import { CommandPalette } from './ui/command-palette';
+import { CommandPalette, fuzzyScore } from './ui/command-palette';
 import { MenuBar, PopupMenu } from './ui/menu';
-import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
+import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, TOOLBAR_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
 import { scheduleChrome } from './ui/chrome';
 import { language, languages, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
@@ -115,6 +117,8 @@ interface Shell {
   xray: HTMLInputElement;
   tablet: TabletLayout;
   thicken: HTMLInputElement;
+  toolSwap: HTMLInputElement;
+  toolbars: Toolbars;
   gizmoPivot: HTMLSelectElement;
   pickPivot: HTMLButtonElement;
   angleSnap: HTMLSelectElement;
@@ -1259,6 +1263,21 @@ function buildShell(root: HTMLElement): Shell {
   const wireframe = input('checkbox', { 'aria-label': 'Wireframe' });
   const xray = input('checkbox', { 'aria-label': 'X-ray' });
   viewFields.append(field('Wireframe', wireframe), field('X-ray', xray));
+  // Choosing the tool already in hand goes back to the one before it (kept in this browser).
+  const toolSwap = input('checkbox', { 'aria-label': 'Second press swaps' });
+  try {
+    toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
+  } catch {
+    // storage blocked; the switch starts off
+  }
+  toolSwap.addEventListener('change', () => {
+    try {
+      localStorage.setItem(TOOL_SWAP_STORE, toolSwap.checked ? 'on' : 'off');
+    } catch {
+      // storage blocked; the choice lasts for this session
+    }
+  });
+  viewFields.append(field('Second press swaps', toolSwap));
   viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
@@ -1407,6 +1426,9 @@ function buildShell(root: HTMLElement): Shell {
   uiSize.value = layout.size;
   panelLeft.addEventListener('change', () => layout.setSide(panelLeft.checked));
   uiSize.addEventListener('change', () => layout.setSize(uiSize.value));
+  // Floating toolbars the person builds from commands, over the viewport.
+  const toolbars = new Toolbars(stage, (id) => commands.get(id));
+  toolbars.onDraw = scheduleChrome;
   // The tablet layout over the same controls: each tool's options strip lists the panel controls it mirrors.
   const sculptOptions: [string, HTMLInputElement | HTMLSelectElement][] = [['Invert', invert], ['Mirror X', symX], ['Radial', radial], ['Dyntopo', dyntopo], ['Lazy mouse', lazy], ['Front faces only', frontFacing], ['Accumulate', accumulate]];
   const maskActions = actionButtons.filter((b) => (b.dataset.action ?? '').startsWith('mask_'));
@@ -1458,7 +1480,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1511,7 +1533,10 @@ class SceneView {
     shell.addButtons.forEach((b) => this.on(b, () => void this.add(b.dataset.kind ?? 'sphere')));
     shell.brushButtons.forEach((b) =>
       this.on(b, () => {
-        const next = b.dataset.brush ?? 'draw';
+        let next = b.dataset.brush ?? 'draw';
+        // With Second press swaps on, choosing the tool already in hand goes back to the one before it.
+        if (next === this.brush && shell.toolSwap.checked && this.previousTool && this.previousTool !== next) next = this.previousTool;
+        if (next !== this.brush) this.previousTool = this.brush;
         // With Shared radius off, each brush keeps the radius and strength it was last used with.
         if (!shell.sharedRadius.checked && next !== this.brush) {
           this.perBrush.set(this.brush, { radius: shell.radius.value, strength: shell.strength.value });
@@ -2005,6 +2030,8 @@ class SceneView {
   }
 
   private brush = 'draw';
+  /** The tool in hand before the current one, for Second press swaps. */
+  private previousTool = '';
   private strokes = new StrokeClient();
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
@@ -3100,7 +3127,8 @@ class SceneView {
 
   /** Waits on a curve made outside the Curve tool's drag: switches to the Curve tool, keeping the brush it will apply. */
   private adoptCurve(handles: Vec3[], wpp: number, closed: boolean, brush?: string): void {
-    this.shell.brushButtons.find((b) => b.dataset.brush === 'curve')?.click();
+    // Only a change of tool clicks the button: a second press would switch back to the previous tool.
+    if (this.brush !== 'curve') this.shell.brushButtons.find((b) => b.dataset.brush === 'curve')?.click();
     if (brush) this.lastBrush = brush;
     this.shell.curveClosed.checked = closed;
     this.curve = { handles, wpp, sharp: handles.map(() => false), round: handles.map(() => 0), radius: handles.map(() => 1), twist: handles.map(() => 0), samples: null };
@@ -3261,7 +3289,7 @@ class SceneView {
         control.dispatchEvent(new Event('input', { bubbles: true }));
         control.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      s.brushButtons.find((b) => b.dataset.brush === preset.brush)?.click();
+      if (this.brush !== preset.brush) s.brushButtons.find((b) => b.dataset.brush === preset.brush)?.click();
     });
     for (const b of s.presetButtons) {
       this.on(b, () => {
@@ -3710,6 +3738,7 @@ class SceneView {
       });
     }
     commands.add(...fresh);
+    this.shell.toolbars.draw();
     applyShortcuts(commands);
     const legacy = Object.entries(takeLegacyKeys());
     for (const [raw, action] of legacy) {
@@ -3766,6 +3795,16 @@ class SceneView {
       { id: 'view.wireframe', label: 'Wireframe', keys: ['Shift+W'], run: () => toggle(s.wireframe), checked: () => s.wireframe.checked },
       { id: 'view.xray', label: 'X-ray', keys: ['Alt+X'], run: () => toggle(s.xray), checked: () => s.xray.checked },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
+      { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
+      { id: 'view.toolbar_new', label: 'New Toolbar…', run: () => void this.newToolbar() },
+      { id: 'view.layout_export', label: 'Export Layout…', run: () => this.exportLayoutFile() },
+      { id: 'view.layout_import', label: 'Import Layout…', run: () => this.importLayoutFile() },
+      { id: 'toolbar.add', label: 'Add to Toolbar', run: () => this.addToToolbar(this.pinTarget), enabled: () => !!commands.get(this.pinTarget) },
+      { id: 'toolbar.add_command', label: 'Add Command…', run: () => void this.addCommandToToolbar() },
+      { id: 'toolbar.rename', label: 'Rename Toolbar…', run: () => void this.renameToolbar(), enabled: () => s.toolbars.target !== null },
+      { id: 'toolbar.turn', label: 'Turn Toolbar', run: () => s.toolbars.target && s.toolbars.turn(s.toolbars.target.toolbar), enabled: () => s.toolbars.target !== null },
+      { id: 'toolbar.remove_item', label: 'Remove from Toolbar', run: () => s.toolbars.target && s.toolbars.removeItem(s.toolbars.target.toolbar, s.toolbars.target.item), enabled: () => (s.toolbars.target?.item ?? -1) >= 0 },
+      { id: 'toolbar.delete', label: 'Delete Toolbar', run: () => s.toolbars.target && s.toolbars.remove(s.toolbars.target.toolbar), enabled: () => s.toolbars.target !== null },
       { id: 'view.backdrop_gradient', label: 'Gradient Background', run: () => { s.backdropMode.value = s.backdropMode.value === 'gradient' ? 'color' : 'gradient'; s.backdropMode.dispatchEvent(new Event('change', { bubbles: true })); }, checked: () => s.backdropMode.value === 'gradient' },
       { id: 'sculpt.mirror_x', label: 'Mirror X', run: () => toggle(s.symX), checked: () => s.symX.checked },
       { id: 'sculpt.invert', label: 'Invert Brush', run: () => toggle(s.invert), checked: () => s.invert.checked },
@@ -3846,6 +3885,8 @@ class SceneView {
     }
     commands.blocked = (cmd) => (NEEDS_OBJECT.has(cmd.id) && this.scene.active === null ? t('Select an object first') : '');
     commands.add(...list);
+    // Toolbars drawn before the registry was filled show command ids; draw them again with the labels.
+    s.toolbars.draw();
     s.layout.onDraw = scheduleChrome;
     scheduleChrome();
   }
@@ -3925,6 +3966,106 @@ class SceneView {
       pin.setItems(tidy(PIN_MENU(id)));
       pin.openAt(x, y);
     };
+    // Toolbar menus: on the grip the toolbar's own commands, on a button the button's command and its removal.
+    const bars = standalone();
+    s.toolbars.onGripMenu = (_id, x, y) => {
+      bars.setItems(tidy(TOOLBAR_MENU));
+      bars.openAt(x, y);
+    };
+    s.toolbars.onItemMenu = (id, item, x, y) => {
+      const cmd = s.toolbars.list.find((d) => d.id === id)?.items[item];
+      bars.setItems(tidy([...(cmd && commands.get(cmd) ? [cmd, '-'] : []), 'toolbar.remove_item', '-', ...TOOLBAR_MENU]));
+      bars.openAt(x, y);
+    };
+  }
+
+  /** A new empty toolbar, named by the person; buttons go on with Add to Toolbar or Add Command. */
+  private async newToolbar(): Promise<void> {
+    const name = await this.prompt.ask(t('New toolbar name'), t('Toolbar'));
+    if (name === null) return;
+    this.shell.toolbars.create(name);
+    this.note(t('Toolbar made: right-click a panel button and choose Add to Toolbar'));
+  }
+
+  private addToToolbar(id: string): void {
+    if (!commands.get(id)) return;
+    const added = this.shell.toolbars.add(id);
+    this.note(added ? t('Added to the toolbar') : t('Already on the toolbar'));
+  }
+
+  /** Adds any command by name: the best fuzzy match among every command's label. */
+  private async addCommandToToolbar(): Promise<void> {
+    const query = await this.prompt.ask(t('Command to add'), '');
+    if (query === null) return;
+    let best: { id: string; score: number } | null = null;
+    for (const c of commands.all()) {
+      const label = typeof c.label === 'function' ? c.label() : c.label;
+      const score = fuzzyScore(query, t(label)) ?? fuzzyScore(query, label);
+      if (score !== null && (!best || score > best.score)) best = { id: c.id, score };
+    }
+    if (!best) {
+      this.note(t('No command matches that name'));
+      return;
+    }
+    const target = this.shell.toolbars.target?.toolbar ?? this.shell.toolbars.current;
+    const added = this.shell.toolbars.add(best.id, target);
+    this.note(added ? t('Added to the toolbar') : t('Already on the toolbar'));
+  }
+
+  private async renameToolbar(): Promise<void> {
+    const bars = this.shell.toolbars;
+    const target = bars.target;
+    if (!target) return;
+    const name = await this.prompt.ask(t('Rename toolbar'), bars.list.find((d) => d.id === target.toolbar)?.name ?? '');
+    if (name !== null) bars.rename(target.toolbar, name);
+  }
+
+  /** Saves the panel folds, side and size, the rail, the toolbars, the tablet switch and the shortcuts as one file. */
+  private exportLayoutFile(): void {
+    saveBlob(new Blob([exportLayout(VERSION)], { type: 'application/json' }), 'formsculptor-layout.json');
+    this.note(t('Layout exported'));
+  }
+
+  private layoutInput: HTMLInputElement | null = null;
+
+  /** Reads a layout file and applies it at once: panel, rail, toolbars, tablet layout, shortcuts and the second-press setting. */
+  private importLayoutFile(): void {
+    let picker = this.layoutInput;
+    if (!picker) {
+      picker = document.createElement('input');
+      picker.type = 'file';
+      picker.accept = '.json,application/json';
+      picker.hidden = true;
+      picker.setAttribute('aria-label', 'Choose a layout file');
+      document.body.append(picker);
+      picker.addEventListener('change', () => {
+        const file = picker?.files?.[0];
+        if (picker) picker.value = '';
+        if (file) void file.text().then((text) => this.applyLayoutText(text));
+      });
+      this.layoutInput = picker;
+    }
+    picker.click();
+  }
+
+  private applyLayoutText(text: string): void {
+    const result = importLayout(text);
+    if ('error' in result) {
+      this.note(`${t('Layout not imported')}: ${result.error}`);
+      return;
+    }
+    const s = this.shell;
+    s.layout.reload();
+    s.toolbars.load();
+    try {
+      s.tablet.set(localStorage.getItem('formsculptor.tablet') === 'on', false);
+      s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
+    } catch {
+      // storage blocked; the switches stay as they are
+    }
+    applyShortcuts(commands);
+    scheduleChrome();
+    this.note(t('Layout imported'));
   }
 
   /** Tools that act once on the clicked point: topology mask, group mask, hide group, insert. */
@@ -4926,7 +5067,7 @@ class SceneView {
     if (!name) return;
     const plugin = this.plugins.find((p) => p.name === name);
     if (plugin?.click && !at) {
-      this.shell.brushButtons.find((b) => b.dataset.brush === 'plugin')?.click();
+      if (this.brush !== 'plugin') this.shell.brushButtons.find((b) => b.dataset.brush === 'plugin')?.click();
       this.note(`Click a surface to run ${plugin.title}`);
       return;
     }

@@ -40,6 +40,21 @@ button { font: inherit; color: inherit; }
 .stage { grid-area: stage; position: relative; z-index: var(--z-base); background: linear-gradient(to bottom, var(--viewport-top), var(--viewport-bottom)); display: grid; place-items: center; }
 .viewport { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 .stage-reference { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: var(--z-raised); }
+/* Floating toolbars the person builds: a grip to move it and a strip of command buttons, across or down. */
+.ftb { position: absolute; z-index: var(--z-rail); display: flex; align-items: stretch; gap: 2px; padding: 3px; max-width: calc(100% - 8px); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); }
+.ftb.vertical { flex-direction: column; max-width: none; max-height: calc(100% - 8px); }
+.ftb-grip { display: flex; align-items: center; gap: 4px; padding: 0 6px; cursor: grab; touch-action: none; user-select: none; color: var(--text-muted); font: 600 11px/1 var(--font-sans); white-space: nowrap; }
+.ftb.vertical .ftb-grip { padding: 4px 6px; justify-content: center; }
+.ftb-grip:active { cursor: grabbing; }
+.ftb-dots { width: 6px; height: 14px; background: radial-gradient(circle, var(--text-muted) 1px, transparent 1.5px) 0 0 / 3px 3px; }
+.ftb-name { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; }
+.ftb.vertical .ftb-name { display: none; }
+.ftb.empty { border-style: dashed; }
+.ftb-btn { min-width: 36px; height: 30px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-secondary); font: 500 12px/1 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 16ch; cursor: pointer; }
+.ftb-btn:hover { color: var(--text-primary); border-color: var(--accent-color-dim); }
+.ftb-btn[aria-pressed="true"] { color: var(--accent-color); border-color: var(--accent-color); }
+.ftb-btn:disabled { opacity: 0.4; cursor: default; }
+.ftb-btn:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 1px; }
 .stage-reference[hidden] { display: none; }
 .spotlight { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: var(--z-raised); }
 .spotlight-image { position: absolute; left: 0; top: 0; transform-origin: center; pointer-events: none; user-select: none; outline: 1px dashed transparent; }
