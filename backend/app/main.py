@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core import config
+from app.core import config, quiet_log
 from app.core.isolation import CrossOriginIsolation
 from app.routers import commands, engine, events, mcp, nodemode, plugins, system, terminal_socket
 from app.services import autosave, claude_code, cmd_chat, cmd_terminal, terminal
@@ -16,6 +16,8 @@ WINDOW_COMMANDS = (cmd_terminal, claude_code, cmd_chat)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Installed at startup, after uvicorn has set up its loggers (a filter added at import can be replaced).
+    quiet_log.install()
     loop = asyncio.get_running_loop()
     bus.bind(loop)
     terminal.start(loop)
