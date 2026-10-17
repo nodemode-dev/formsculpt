@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.77.0 · 2026-10-17
+
+### Added
+
+- Saved camera views: a Views tab in the Objects and Layers panel lists them; click one to move there, the cross deletes it, Save view keeps the current view under a name. In the panel layout, Save view, Previous view and Next view sit in the View section, and the View menu has a Saved Views submenu. Views are saved in projects.
+- Fly navigation (View > Fly Navigation, Shift+F): walk with W A S D or the arrow keys, Q and E to go down and up, Shift to go faster and Alt slower, drag to look around; Escape leaves. A badge says it is on, and a drag never sculpts while it is.
+- For agents: `save_view`, `list_views` and `delete_view`; `get_scene` lists the views' names; `get_view` takes `saved` to look from one.
+- 1202 interface strings in every language.
+
 ## 0.76.0 · 2026-10-17
 
 ### Added
