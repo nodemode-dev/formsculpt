@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Diseño para tableta",
  "Tool settings": "Ajustes de herramienta",
  "Wireframe": "Malla de alambre",
- "X-ray": "Rayos X"
+ "X-ray": "Rayos X",
+ "Angle snap (degrees)": "Ajuste de ángulo (grados)",
+ "Bounds centre": "Centro de los límites",
+ "Click on the object to set the pivot": "Haz clic en el objeto para fijar el pivote",
+ "Gizmo pivot": "Pivote del gizmo",
+ "Locked": "Bloqueado",
+ "Locked: strokes and tool clicks leave it alone": "Bloqueado: los trazos y clics de herramienta no lo cambian",
+ "Move snap": "Ajuste de movimiento",
+ "Pick pivot": "Elegir pivote",
+ "Picked point": "Punto elegido",
+ "Pivot set; the gizmo turns and scales about it": "Pivote fijado; el gizmo gira y escala a su alrededor",
+ "Thicken thin parts %": "Engrosar partes finas %",
+ "Unlocked": "Desbloqueado",
+ "World origin": "Origen del mundo"
 }

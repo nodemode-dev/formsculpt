@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Układ tabletowy",
  "Tool settings": "Ustawienia narzędzia",
  "Wireframe": "Siatka krawędzi",
- "X-ray": "Prześwietlenie"
+ "X-ray": "Prześwietlenie",
+ "Angle snap (degrees)": "Skok kąta (stopnie)",
+ "Bounds centre": "Środek obwiedni",
+ "Click on the object to set the pivot": "Kliknij obiekt, aby ustawić punkt obrotu",
+ "Gizmo pivot": "Punkt obrotu manipulatora",
+ "Locked": "Zablokowany",
+ "Locked: strokes and tool clicks leave it alone": "Zablokowany: pociągnięcia i kliknięcia narzędzi go nie zmieniają",
+ "Move snap": "Skok przesunięcia",
+ "Pick pivot": "Wybierz punkt obrotu",
+ "Picked point": "Wybrany punkt",
+ "Pivot set; the gizmo turns and scales about it": "Punkt obrotu ustawiony; manipulator obraca i skaluje wokół niego",
+ "Thicken thin parts %": "Pogrub cienkie części %",
+ "Unlocked": "Odblokowany",
+ "World origin": "Początek świata"
 }

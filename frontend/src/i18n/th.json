@@ -1036,5 +1036,18 @@
  "Tablet Layout": "เลย์เอาต์แท็บเล็ต",
  "Tool settings": "การตั้งค่าเครื่องมือ",
  "Wireframe": "โครงลวด",
- "X-ray": "เอกซเรย์"
+ "X-ray": "เอกซเรย์",
+ "Angle snap (degrees)": "ขั้นมุม (องศา)",
+ "Bounds centre": "กึ่งกลางกรอบ",
+ "Click on the object to set the pivot": "คลิกที่วัตถุเพื่อตั้งจุดหมุน",
+ "Gizmo pivot": "จุดหมุนของกิซโม",
+ "Locked": "ล็อกอยู่",
+ "Locked: strokes and tool clicks leave it alone": "ล็อกอยู่: การลากและการคลิกเครื่องมือจะไม่เปลี่ยนวัตถุ",
+ "Move snap": "ขั้นการย้าย",
+ "Pick pivot": "เลือกจุดหมุน",
+ "Picked point": "จุดที่เลือก",
+ "Pivot set; the gizmo turns and scales about it": "ตั้งจุดหมุนแล้ว กิซโมจะหมุนและปรับขนาดรอบจุดนี้",
+ "Thicken thin parts %": "เพิ่มความหนาส่วนที่บาง %",
+ "Unlocked": "ปลดล็อก",
+ "World origin": "จุดกำเนิดโลก"
 }

@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Nettbrettoppsett",
  "Tool settings": "Verktøyinnstillinger",
  "Wireframe": "Trådmodell",
- "X-ray": "Røntgen"
+ "X-ray": "Røntgen",
+ "Angle snap (degrees)": "Vinkeltrinn (grader)",
+ "Bounds centre": "Avgrensningens midtpunkt",
+ "Click on the object to set the pivot": "Klikk på objektet for å sette pivotpunktet",
+ "Gizmo pivot": "Gizmo-pivot",
+ "Locked": "Låst",
+ "Locked: strokes and tool clicks leave it alone": "Låst: strøk og verktøyklikk endrer det ikke",
+ "Move snap": "Flyttetrinn",
+ "Pick pivot": "Velg pivot",
+ "Picked point": "Valgt punkt",
+ "Pivot set; the gizmo turns and scales about it": "Pivot satt; gizmoen roterer og skalerer rundt det",
+ "Thicken thin parts %": "Gjør tynne deler tykkere %",
+ "Unlocked": "Låst opp",
+ "World origin": "Verdens origo"
 }

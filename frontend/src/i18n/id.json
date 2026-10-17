@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Tata letak tablet",
  "Tool settings": "Pengaturan alat",
  "Wireframe": "Rangka kawat",
- "X-ray": "Sinar-X"
+ "X-ray": "Sinar-X",
+ "Angle snap (degrees)": "Langkah sudut (derajat)",
+ "Bounds centre": "Pusat batas",
+ "Click on the object to set the pivot": "Klik objek untuk menetapkan pivot",
+ "Gizmo pivot": "Pivot gizmo",
+ "Locked": "Terkunci",
+ "Locked: strokes and tool clicks leave it alone": "Terkunci: goresan dan klik alat tidak mengubahnya",
+ "Move snap": "Langkah geser",
+ "Pick pivot": "Pilih pivot",
+ "Picked point": "Titik terpilih",
+ "Pivot set; the gizmo turns and scales about it": "Pivot ditetapkan; gizmo memutar dan menskalakan di sekitarnya",
+ "Thicken thin parts %": "Pertebal bagian tipis %",
+ "Unlocked": "Tidak terkunci",
+ "World origin": "Titik asal dunia"
 }

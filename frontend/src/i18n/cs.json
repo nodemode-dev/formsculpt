@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Rozvržení pro tablet",
  "Tool settings": "Nastavení nástroje",
  "Wireframe": "Drátový model",
- "X-ray": "Rentgen"
+ "X-ray": "Rentgen",
+ "Angle snap (degrees)": "Přichytit úhel (stupně)",
+ "Bounds centre": "Střed ohraničení",
+ "Click on the object to set the pivot": "Klikněte na objekt a nastavte pivot",
+ "Gizmo pivot": "Pivot manipulátoru",
+ "Locked": "Zamčeno",
+ "Locked: strokes and tool clicks leave it alone": "Zamčeno: tahy a kliknutí nástrojů jej nezmění",
+ "Move snap": "Přichytit posun",
+ "Pick pivot": "Vybrat pivot",
+ "Picked point": "Vybraný bod",
+ "Pivot set; the gizmo turns and scales about it": "Pivot nastaven; manipulátor kolem něj otáčí a mění měřítko",
+ "Thicken thin parts %": "Zesílit tenké části %",
+ "Unlocked": "Odemčeno",
+ "World origin": "Počátek světa"
 }

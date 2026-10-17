@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Планшетная раскладка",
  "Tool settings": "Настройки инструмента",
  "Wireframe": "Каркас",
- "X-ray": "Рентген"
+ "X-ray": "Рентген",
+ "Angle snap (degrees)": "Шаг угла (градусы)",
+ "Bounds centre": "Центр габаритов",
+ "Click on the object to set the pivot": "Щёлкните объект, чтобы задать опорную точку",
+ "Gizmo pivot": "Опорная точка гизмо",
+ "Locked": "Заблокирован",
+ "Locked: strokes and tool clicks leave it alone": "Заблокирован: мазки и щелчки инструментов его не меняют",
+ "Move snap": "Шаг перемещения",
+ "Pick pivot": "Выбрать опорную точку",
+ "Picked point": "Выбранная точка",
+ "Pivot set; the gizmo turns and scales about it": "Опорная точка задана; гизмо вращает и масштабирует вокруг неё",
+ "Thicken thin parts %": "Утолщить тонкие части %",
+ "Unlocked": "Разблокирован",
+ "World origin": "Начало координат"
 }

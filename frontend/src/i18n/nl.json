@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Tabletindeling",
  "Tool settings": "Gereedschapsinstellingen",
  "Wireframe": "Draadmodel",
- "X-ray": "Röntgen"
+ "X-ray": "Röntgen",
+ "Angle snap (degrees)": "Hoekstap (graden)",
+ "Bounds centre": "Midden van de begrenzing",
+ "Click on the object to set the pivot": "Klik op het object om het draaipunt te zetten",
+ "Gizmo pivot": "Draaipunt van de gizmo",
+ "Locked": "Vergrendeld",
+ "Locked: strokes and tool clicks leave it alone": "Vergrendeld: streken en gereedschapsklikken veranderen het niet",
+ "Move snap": "Verplaatsstap",
+ "Pick pivot": "Draaipunt kiezen",
+ "Picked point": "Gekozen punt",
+ "Pivot set; the gizmo turns and scales about it": "Draaipunt gezet; de gizmo draait en schaalt eromheen",
+ "Thicken thin parts %": "Dunne delen verdikken %",
+ "Unlocked": "Ontgrendeld",
+ "World origin": "Wereldoorsprong"
 }

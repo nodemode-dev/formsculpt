@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Планшетне розташування",
  "Tool settings": "Налаштування інструмента",
  "Wireframe": "Каркас",
- "X-ray": "Рентген"
+ "X-ray": "Рентген",
+ "Angle snap (degrees)": "Крок кута (градуси)",
+ "Bounds centre": "Центр габаритів",
+ "Click on the object to set the pivot": "Клацніть об’єкт, щоб задати опорну точку",
+ "Gizmo pivot": "Опорна точка гізмо",
+ "Locked": "Заблоковано",
+ "Locked: strokes and tool clicks leave it alone": "Заблоковано: мазки й клацання інструментів його не змінюють",
+ "Move snap": "Крок переміщення",
+ "Pick pivot": "Вибрати опорну точку",
+ "Picked point": "Вибрана точка",
+ "Pivot set; the gizmo turns and scales about it": "Опорну точку задано; гізмо обертає й масштабує навколо неї",
+ "Thicken thin parts %": "Потовщити тонкі частини %",
+ "Unlocked": "Розблоковано",
+ "World origin": "Початок координат"
 }

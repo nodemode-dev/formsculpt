@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Bố cục máy tính bảng",
  "Tool settings": "Cài đặt công cụ",
  "Wireframe": "Khung dây",
- "X-ray": "X-quang"
+ "X-ray": "X-quang",
+ "Angle snap (degrees)": "Bước góc (độ)",
+ "Bounds centre": "Tâm khung bao",
+ "Click on the object to set the pivot": "Nhấp vào đối tượng để đặt điểm xoay",
+ "Gizmo pivot": "Điểm xoay của gizmo",
+ "Locked": "Đã khóa",
+ "Locked: strokes and tool clicks leave it alone": "Đã khóa: nét vẽ và cú nhấp công cụ không thay đổi nó",
+ "Move snap": "Bước di chuyển",
+ "Pick pivot": "Chọn điểm xoay",
+ "Picked point": "Điểm đã chọn",
+ "Pivot set; the gizmo turns and scales about it": "Đã đặt điểm xoay; gizmo xoay và co giãn quanh điểm này",
+ "Thicken thin parts %": "Làm dày phần mỏng %",
+ "Unlocked": "Đã mở khóa",
+ "World origin": "Gốc thế giới"
 }

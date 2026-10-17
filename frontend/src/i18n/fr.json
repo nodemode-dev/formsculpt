@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Disposition tablette",
  "Tool settings": "Réglages de l’outil",
  "Wireframe": "Filaire",
- "X-ray": "Rayons X"
+ "X-ray": "Rayons X",
+ "Angle snap (degrees)": "Pas d’angle (degrés)",
+ "Bounds centre": "Centre des limites",
+ "Click on the object to set the pivot": "Cliquez sur l’objet pour placer le pivot",
+ "Gizmo pivot": "Pivot du gizmo",
+ "Locked": "Verrouillé",
+ "Locked: strokes and tool clicks leave it alone": "Verrouillé : les traits et les clics d’outil ne le modifient pas",
+ "Move snap": "Pas de déplacement",
+ "Pick pivot": "Choisir le pivot",
+ "Picked point": "Point choisi",
+ "Pivot set; the gizmo turns and scales about it": "Pivot placé ; le gizmo tourne et met à l’échelle autour de lui",
+ "Thicken thin parts %": "Épaissir les parties fines %",
+ "Unlocked": "Déverrouillé",
+ "World origin": "Origine du monde"
 }

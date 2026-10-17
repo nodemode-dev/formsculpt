@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Tablet-Layout",
  "Tool settings": "Werkzeugeinstellungen",
  "Wireframe": "Drahtgitter",
- "X-ray": "Röntgen"
+ "X-ray": "Röntgen",
+ "Angle snap (degrees)": "Winkelraster (Grad)",
+ "Bounds centre": "Mitte der Begrenzung",
+ "Click on the object to set the pivot": "Klicken Sie auf das Objekt, um den Drehpunkt zu setzen",
+ "Gizmo pivot": "Gizmo-Drehpunkt",
+ "Locked": "Gesperrt",
+ "Locked: strokes and tool clicks leave it alone": "Gesperrt: Striche und Werkzeugklicks lassen es unverändert",
+ "Move snap": "Verschieberaster",
+ "Pick pivot": "Drehpunkt wählen",
+ "Picked point": "Gewählter Punkt",
+ "Pivot set; the gizmo turns and scales about it": "Drehpunkt gesetzt; das Gizmo dreht und skaliert um ihn",
+ "Thicken thin parts %": "Dünne Teile verdicken %",
+ "Unlocked": "Entsperrt",
+ "World origin": "Weltursprung"
 }

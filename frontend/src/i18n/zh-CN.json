@@ -1036,5 +1036,18 @@
  "Tablet Layout": "平板布局",
  "Tool settings": "工具设置",
  "Wireframe": "线框",
- "X-ray": "X 光"
+ "X-ray": "X 光",
+ "Angle snap (degrees)": "角度吸附（度）",
+ "Bounds centre": "包围盒中心",
+ "Click on the object to set the pivot": "点击对象以设置轴心",
+ "Gizmo pivot": "控制器轴心",
+ "Locked": "已锁定",
+ "Locked: strokes and tool clicks leave it alone": "已锁定：笔触和工具点击不会改变它",
+ "Move snap": "移动吸附",
+ "Pick pivot": "拾取轴心",
+ "Picked point": "拾取的点",
+ "Pivot set; the gizmo turns and scales about it": "已设置轴心；控制器围绕它旋转和缩放",
+ "Thicken thin parts %": "加厚薄的部分 %",
+ "Unlocked": "已解锁",
+ "World origin": "世界原点"
 }

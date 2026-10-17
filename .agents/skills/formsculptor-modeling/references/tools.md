@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.65.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.67.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -1224,6 +1224,7 @@ Rebuild an object as an even, closed mesh by sampling its surface on a voxel gri
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `resolution`: integer; default 128; range 8 to 320; Voxels along the object's longest side; higher keeps more detail and makes more triangles.
+- `thicken`: number; default 0; range 0 to 100; Thicken thin parts, in percent: at 100 every part comes out at least a voxel thick, so sheets and strands thinner than a voxel survive the remesh; the rest of the surface moves out by up to half a voxel.
 
 Note: in the window: Mod+R.
 
@@ -1367,6 +1368,7 @@ Give an object a new name.
 Move, rotate (degrees about x, y, z) and scale an object's vertices around its bounds centre. Masked vertices stay put in proportion to the mask, so a mask works as topology masking. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `pivot`: array of number; Turn and scale about this world point instead of the bounds centre (the transform gizmo's picked pivot or the world origin).
 - `rotate`: array of number; Degrees about x, y and z (applied in that order) around the object's bounds centre.
 - `scale`: ['number', 'array']; A factor or [x, y, z] factors around the bounds centre.
 - `translate`: array of number; World offset.

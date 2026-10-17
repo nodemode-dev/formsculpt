@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Tablet düzeni",
  "Tool settings": "Araç ayarları",
  "Wireframe": "Tel kafes",
- "X-ray": "Röntgen"
+ "X-ray": "Röntgen",
+ "Angle snap (degrees)": "Açı adımı (derece)",
+ "Bounds centre": "Sınırların merkezi",
+ "Click on the object to set the pivot": "Pivotu ayarlamak için nesneye tıklayın",
+ "Gizmo pivot": "Gizmo pivotu",
+ "Locked": "Kilitli",
+ "Locked: strokes and tool clicks leave it alone": "Kilitli: fırça darbeleri ve araç tıklamaları onu değiştirmez",
+ "Move snap": "Taşıma adımı",
+ "Pick pivot": "Pivot seç",
+ "Picked point": "Seçilen nokta",
+ "Pivot set; the gizmo turns and scales about it": "Pivot ayarlandı; gizmo onun çevresinde döndürür ve ölçekler",
+ "Thicken thin parts %": "İnce kısımları kalınlaştır %",
+ "Unlocked": "Kilit açık",
+ "World origin": "Dünya orijini"
 }

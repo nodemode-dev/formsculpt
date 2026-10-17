@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Táblagépes elrendezés",
  "Tool settings": "Eszközbeállítások",
  "Wireframe": "Drótváz",
- "X-ray": "Röntgen"
+ "X-ray": "Röntgen",
+ "Angle snap (degrees)": "Szöglépés (fok)",
+ "Bounds centre": "Befoglaló doboz közepe",
+ "Click on the object to set the pivot": "Kattintson az objektumra a forgáspont megadásához",
+ "Gizmo pivot": "Gizmo forgáspontja",
+ "Locked": "Zárolva",
+ "Locked: strokes and tool clicks leave it alone": "Zárolva: a vonások és eszközkattintások nem változtatják",
+ "Move snap": "Mozgatási lépés",
+ "Pick pivot": "Forgáspont kijelölése",
+ "Picked point": "Kijelölt pont",
+ "Pivot set; the gizmo turns and scales about it": "Forgáspont beállítva; a gizmo körülötte forgat és méretez",
+ "Thicken thin parts %": "Vékony részek vastagítása %",
+ "Unlocked": "Feloldva",
+ "World origin": "Világ origója"
 }

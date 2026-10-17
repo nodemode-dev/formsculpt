@@ -1036,5 +1036,18 @@
  "Tablet Layout": "Tablettiasettelu",
  "Tool settings": "Työkalun asetukset",
  "Wireframe": "Rautalankamalli",
- "X-ray": "Röntgen"
+ "X-ray": "Röntgen",
+ "Angle snap (degrees)": "Kulman askel (astetta)",
+ "Bounds centre": "Rajojen keskipiste",
+ "Click on the object to set the pivot": "Napsauta kohdetta asettaaksesi kääntöpisteen",
+ "Gizmo pivot": "Gizmon kääntöpiste",
+ "Locked": "Lukittu",
+ "Locked: strokes and tool clicks leave it alone": "Lukittu: vedot ja työkalujen napsautukset eivät muuta sitä",
+ "Move snap": "Siirron askel",
+ "Pick pivot": "Valitse kääntöpiste",
+ "Picked point": "Valittu piste",
+ "Pivot set; the gizmo turns and scales about it": "Kääntöpiste asetettu; gizmo kääntää ja skaalaa sen ympäri",
+ "Thicken thin parts %": "Paksunna ohuet osat %",
+ "Unlocked": "Lukitus avattu",
+ "World origin": "Maailman origo"
 }

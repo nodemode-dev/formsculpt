@@ -1036,5 +1036,18 @@
  "Tablet Layout": "태블릿 레이아웃",
  "Tool settings": "도구 설정",
  "Wireframe": "와이어프레임",
- "X-ray": "엑스레이"
+ "X-ray": "엑스레이",
+ "Angle snap (degrees)": "각도 스냅 (도)",
+ "Bounds centre": "경계 중심",
+ "Click on the object to set the pivot": "객체를 클릭해 피벗을 정하세요",
+ "Gizmo pivot": "기즈모 피벗",
+ "Locked": "잠김",
+ "Locked: strokes and tool clicks leave it alone": "잠김: 스트로크와 도구 클릭으로 바뀌지 않습니다",
+ "Move snap": "이동 스냅",
+ "Pick pivot": "피벗 지정",
+ "Picked point": "지정한 점",
+ "Pivot set; the gizmo turns and scales about it": "피벗을 정했습니다. 기즈모가 이 점을 중심으로 회전·크기 조절합니다",
+ "Thicken thin parts %": "얇은 부분 두껍게 %",
+ "Unlocked": "잠금 해제",
+ "World origin": "월드 원점"
 }

@@ -1036,5 +1036,18 @@
  "Tablet Layout": "タブレットレイアウト",
  "Tool settings": "ツール設定",
  "Wireframe": "ワイヤーフレーム",
- "X-ray": "X線"
+ "X-ray": "X線",
+ "Angle snap (degrees)": "角度スナップ（度）",
+ "Bounds centre": "バウンディングの中心",
+ "Click on the object to set the pivot": "オブジェクトをクリックしてピボットを設定",
+ "Gizmo pivot": "ギズモのピボット",
+ "Locked": "ロック中",
+ "Locked: strokes and tool clicks leave it alone": "ロック中: ストロークやツールのクリックでは変更されません",
+ "Move snap": "移動スナップ",
+ "Pick pivot": "ピボットを指定",
+ "Picked point": "指定した点",
+ "Pivot set; the gizmo turns and scales about it": "ピボットを設定しました。ギズモはここを中心に回転・拡縮します",
+ "Thicken thin parts %": "薄い部分を厚くする %",
+ "Unlocked": "ロック解除",
+ "World origin": "ワールド原点"
 }
