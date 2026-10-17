@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.75.1 · 2026-10-17
+
+### Fixed
+
+- The interface rebuilt to the owner's recording (black viewport, corner bars, coloured tool palette, side sliders, options card, quick bar) is now what opens. It had stayed behind Window > Tablet Layout, so a first start showed the older panel layout. A browser that had it switched off from an earlier version opens it once; after that your choice holds.
+- The panel layout's tool rail is no longer an empty strip on a first start: it holds Draw, Clay, Smooth, Grab, Inflate, Crease, Flatten, Pinch, Mask and Transform. Right-click any panel button to add it, or a rail button to take it off.
+
 ## 0.75.0 · 2026-10-17
 
 ### Added
