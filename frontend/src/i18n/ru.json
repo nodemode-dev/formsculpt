@@ -1025,5 +1025,6 @@
  "Stitch points": "Сшить точки",
  "Head (whole object)": "Голова (весь объект)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Ретопология: {faces} граней, {folded} перевёрнуто (форма не видна целиком из своего центра)",
- "Sphere (whole object)": "Сфера (весь объект)"
+ "Sphere (whole object)": "Сфера (весь объект)",
+ "Skeleton (whole object)": "Скелет (весь объект)"
 }

@@ -1025,5 +1025,6 @@
  "Stitch points": "Coser puntos",
  "Head (whole object)": "Cabeza (objeto entero)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopología: {faces} caras, {folded} plegadas (la forma no se ve entera desde su centro)",
- "Sphere (whole object)": "Esfera (objeto entero)"
+ "Sphere (whole object)": "Esfera (objeto entero)",
+ "Skeleton (whole object)": "Esqueleto (objeto entero)"
 }

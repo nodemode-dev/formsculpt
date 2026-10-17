@@ -1025,5 +1025,6 @@
  "Stitch points": "Sy sammen punkter",
  "Head (whole object)": "Hode (hele objektet)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} flater, {folded} brettet (formen sees ikke hel fra midten)",
- "Sphere (whole object)": "Kule (hele objektet)"
+ "Sphere (whole object)": "Kule (hele objektet)",
+ "Skeleton (whole object)": "Skjelett (hele objektet)"
 }

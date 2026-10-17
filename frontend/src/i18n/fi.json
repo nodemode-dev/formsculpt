@@ -1025,5 +1025,6 @@
  "Stitch points": "Ompele pisteet",
  "Head (whole object)": "Pää (koko kohde)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologia: {faces} tahkoa, {folded} taittunutta (muoto ei näy keskeltään kokonaan)",
- "Sphere (whole object)": "Pallo (koko kohde)"
+ "Sphere (whole object)": "Pallo (koko kohde)",
+ "Skeleton (whole object)": "Luuranko (koko kohde)"
 }

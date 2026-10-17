@@ -1025,5 +1025,6 @@
  "Stitch points": "Khâu điểm",
  "Head (whole object)": "Đầu (toàn bộ đối tượng)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopology: {faces} mặt, {folded} bị gập (không thấy toàn bộ hình từ tâm của nó)",
- "Sphere (whole object)": "Cầu (toàn bộ đối tượng)"
+ "Sphere (whole object)": "Cầu (toàn bộ đối tượng)",
+ "Skeleton (whole object)": "Bộ xương (toàn bộ đối tượng)"
 }

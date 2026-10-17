@@ -1025,5 +1025,6 @@
  "Stitch points": "Coudre les points",
  "Head (whole object)": "Tête (objet entier)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie : {faces} faces, {folded} repliées (la forme n’est pas visible en entier depuis son centre)",
- "Sphere (whole object)": "Sphère (objet entier)"
+ "Sphere (whole object)": "Sphère (objet entier)",
+ "Skeleton (whole object)": "Squelette (objet entier)"
 }

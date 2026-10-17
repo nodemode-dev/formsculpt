@@ -1025,5 +1025,6 @@
  "Stitch points": "Noktaları dik",
  "Head (whole object)": "Kafa (tüm nesne)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopoloji: {faces} yüz, {folded} katlanmış (şekil ortasından bütünüyle görünmüyor)",
- "Sphere (whole object)": "Küre (tüm nesne)"
+ "Sphere (whole object)": "Küre (tüm nesne)",
+ "Skeleton (whole object)": "İskelet (tüm nesne)"
 }

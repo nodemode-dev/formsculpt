@@ -1025,5 +1025,6 @@
  "Stitch points": "Zszyj punkty",
  "Head (whole object)": "Głowa (cały obiekt)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologia: {faces} ścian, {folded} złożonych (kształtu nie widać w całości z jego środka)",
- "Sphere (whole object)": "Kula (cały obiekt)"
+ "Sphere (whole object)": "Kula (cały obiekt)",
+ "Skeleton (whole object)": "Szkielet (cały obiekt)"
 }

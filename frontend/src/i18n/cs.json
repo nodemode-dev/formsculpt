@@ -1025,5 +1025,6 @@
  "Stitch points": "Sešít body",
  "Head (whole object)": "Hlava (celý objekt)",
  "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie: {faces} ploch, {folded} přeložených (tvar není ze středu vidět celý)",
- "Sphere (whole object)": "Koule (celý objekt)"
+ "Sphere (whole object)": "Koule (celý objekt)",
+ "Skeleton (whole object)": "Kostra (celý objekt)"
 }
