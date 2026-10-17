@@ -16,6 +16,8 @@
   --tb-blue: #6f9cf0;
   --tb-radius: 8px;
   --tb-tools-w: 70px;
+  /* Where things start under the top bars (their buttons carry a word under the icon). */
+  --tb-under: 76px;
   position: relative;
   grid-template-rows: 0 minmax(0, 1fr) var(--dock-h, 0px) 0;
   grid-template-columns: 0 1fr 0;
@@ -42,19 +44,27 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 :is(.tb-icon, .tb-small, .tb-qbtn, .tb-side, .tb-opt, .tb-tool):disabled { opacity: 0.4; cursor: default; }
 :is(.tb-icon, .tb-small, .tb-qbtn, .tb-side, .tb-opt, .tb-tool, .tb-head-btn, .tb-big):focus-visible { outline: 2px solid var(--tb-yellow); outline-offset: 1px; }
 .tb-label { font: 600 10px/1.1 var(--font-sans); white-space: nowrap; }
+/* Corner bar buttons with a word under the icon, so each one says what it opens or does. */
+.tb-icon.tb-worded { width: auto; min-width: 54px; padding: 0 5px; height: 52px; grid-template-rows: auto auto; align-content: center; gap: 3px; }
+.tb-icon.tb-worded svg { width: 22px; height: 22px; }
+.tb-icon.tb-worded .tb-label { color: var(--tb-dim); font-size: 10px; }
+.tb-icon.tb-worded:is(:hover, [aria-pressed="true"]) .tb-label { color: inherit; }
+.tb-icon.tb-worded[data-menu]::after { display: none; }
 
 /* Top left: scene menus and the counts under them. */
 .tb-tl { left: 8px; top: 8px; }
-.tb-stats { position: absolute; z-index: var(--z-rail); left: 12px; top: 62px; display: grid; gap: 3px; color: var(--tb-text); font: 600 11px/1.2 var(--font-sans); text-shadow: 0 1px 2px #000; pointer-events: none; }
+.tb-stats { position: absolute; z-index: var(--z-rail); left: 12px; top: var(--tb-under); display: grid; gap: 3px; color: var(--tb-text); font: 600 11px/1.2 var(--font-sans); text-shadow: 0 1px 2px #000; pointer-events: none; }
 .tb-stats[hidden] { display: none; }
+/* One fixed-height line each, so the first counts written in never move anything. */
+.tb-stat { display: flex; align-items: center; height: 16px; white-space: nowrap; }
 .tb-stat-active::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--tb-blue); }
 
 /* Top right: tool menus and toggles; view buttons and the view cube under them, left of the palette. */
 .tb-tr { right: 8px; top: 8px; }
-.tb-views { position: absolute; z-index: var(--z-rail); top: 66px; right: calc(var(--tb-tools-w) + 100px); display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
+.tb-views { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 4px); right: calc(var(--tb-tools-w) + 100px); display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
 .tb-small { width: 36px; height: 32px; color: var(--tb-white); filter: drop-shadow(0 1px 2px #000); }
 .tb-small svg { width: 20px; height: 20px; }
-.tb-cube { position: absolute; z-index: var(--z-rail); top: 70px; right: calc(var(--tb-tools-w) + 26px); width: 60px; height: 60px; perspective: 400px; }
+.tb-cube { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 8px); right: calc(var(--tb-tools-w) + 26px); width: 60px; height: 60px; perspective: 400px; }
 .tb-cube-body { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 80ms linear; }
 .tb-face { position: absolute; inset: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #fff; font: 700 10px/1 var(--font-sans); cursor: pointer; backface-visibility: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
 .tb-face.front { background: #3a6fe0; transform: translateZ(30px); }
@@ -65,7 +75,7 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 .tb-face.bottom { background: #2b8250; transform: rotateX(-90deg) translateZ(30px); }
 
 /* Right: the tool palette, one column of the usual tools or every tool in a grid. */
-.tb-tools { position: absolute; z-index: var(--z-rail); right: 8px; top: 62px; max-height: calc(100% - 70px); width: var(--tb-tools-w); display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; overflow-y: auto; scrollbar-width: none; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
+.tb-tools { position: absolute; z-index: var(--z-rail); right: 8px; top: var(--tb-under); max-height: calc(100% - var(--tb-under) - 8px); width: var(--tb-tools-w); display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; overflow-y: auto; scrollbar-width: none; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
 .tb-tools::-webkit-scrollbar { display: none; }
 .tb-tools.wide { display: grid; grid-template-columns: repeat(4, 1fr); align-content: start; }
 .tb-tools:not(.wide) .tb-tool:not(.in-column) { display: none; }
@@ -90,7 +100,7 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 .tb-tool[aria-pressed="true"] .tb-label { color: var(--tb-white); }
 
 /* Left: symmetry, quick swaps, and the tall Radius and Intensity sliders. */
-.tb-left { position: absolute; z-index: var(--z-rail); left: 8px; top: 112px; max-height: calc(100% - 180px); overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; padding: 4px; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
+.tb-left { position: absolute; z-index: var(--z-rail); left: 8px; top: calc(var(--tb-under) + 46px); max-height: calc(100% - var(--tb-under) - 120px); overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; padding: 4px; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); }
 .tb-side { display: grid; justify-items: center; gap: 2px; width: 100%; padding: 5px 0; border: 0; border-radius: 6px; background: transparent; color: var(--tb-text); cursor: pointer; }
 .tb-side svg { width: 20px; height: 20px; }
 .tb-side[aria-pressed="true"] { color: var(--tb-yellow); background: rgb(233 208 116 / 0.12); }
@@ -100,6 +110,62 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 .tb-vslider .tb-name { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%) rotate(180deg); writing-mode: vertical-rl; color: var(--tb-white); font: 600 10px/1 var(--font-sans); text-shadow: 0 1px 2px #000; pointer-events: none; }
 .tb-vslider .tb-num { position: absolute; left: 0; right: 0; top: 5px; text-align: center; color: var(--tb-white); font: 600 9px/1 var(--font-mono); text-shadow: 0 1px 2px #000; pointer-events: none; }
 .tb-vslider:nth-child(2) .tb-fill { background: linear-gradient(to top, #b03a3a, #e06a6a); }
+
+/* The Objects and Layers dock (ui/scene-dock.ts): beside the left strip, two tabs over a list and its actions. */
+.tb-dock { position: absolute; z-index: var(--z-rail); left: 80px; top: calc(var(--tb-under) + 46px); width: 248px; max-height: calc(100% - var(--tb-under) - 130px); display: flex; flex-direction: column; color: var(--tb-text); background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); overflow: hidden; }
+#app:not(.tablet) :is(.tb-dock, .tb-toast) { display: none; }
+/* The window's note, over the viewport above the tool's pill; it takes no pointer, so it never gets in the way. */
+.tb-toast { position: absolute; z-index: var(--z-raised); left: 50%; bottom: 204px; transform: translateX(-50%); max-width: min(560px, calc(100% - 640px)); padding: 7px 14px; border-radius: 8px; background: rgb(20 24 32 / 0.9); border: 1px solid var(--tb-line); color: var(--tb-white); font: 500 12px/1.4 var(--font-sans); text-align: center; pointer-events: none; }
+.tb-toast[hidden] { display: none; }
+body.panels-translucent #app.tablet .tb-dock { backdrop-filter: blur(14px) saturate(1.2); }
+.tb-dock-head { display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--tb-sunk); border-bottom: 1px solid var(--tb-line); }
+.tb-dock-tab { flex: 1; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--tb-dim); font: 600 12px/1 var(--font-sans); cursor: pointer; }
+.tb-dock-tab[aria-selected="true"] { background: var(--tb-raised); color: var(--tb-white); }
+.tb-dock-tab:hover:not([aria-selected="true"]) { color: var(--tb-text); }
+.tb-dock-fold svg { transition: transform var(--transition-fast); }
+.tb-dock.folded .tb-dock-fold svg { transform: rotate(-90deg); }
+.tb-dock.folded .tb-dock-body { display: none; }
+.tb-dock.folded .tb-dock-tab[aria-selected="true"] { background: transparent; }
+.tb-dock-body { display: flex; flex-direction: column; min-height: 0; }
+/* Each page keeps one size whatever its list holds, so the actions under it never move when rows come and go. */
+.tb-dock-page { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.tb-dock-page[hidden] { display: none; }
+.tb-dock-owner { margin: 0; height: 26px; box-sizing: border-box; padding: 8px 10px 2px; color: var(--tb-dim); font: 600 11px/1.3 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-dock-list { list-style: none; margin: 0; padding: 4px; overflow-y: auto; height: 214px; box-sizing: border-box; display: grid; gap: 2px; align-content: start; }
+.tb-dock-row { display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 4px 0 10px; border-radius: 6px; cursor: pointer; border-left: 3px solid transparent; }
+.tb-dock-row:hover { background: rgb(255 255 255 / 0.05); }
+.tb-dock-row[aria-current="true"] { background: var(--tb-select); color: var(--tb-white); border-left-color: var(--tb-yellow); }
+.tb-dock-row[data-hidden="true"] .tb-dock-name { opacity: 0.5; }
+.tb-dock-row:focus-visible { outline: 2px solid var(--tb-yellow); outline-offset: -2px; }
+.tb-dock-layer { padding-left: 4px; }
+.tb-dock-name { flex: 1; min-width: 0; font: 600 12px/1.2 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-dock-count { color: var(--tb-dim); font: 500 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.tb-dock-row[aria-current="true"] .tb-dock-count { color: var(--tb-text); }
+.tb-dock-toggle { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--tb-dim); cursor: pointer; opacity: 0.55; }
+.tb-dock-toggle svg { width: 16px; height: 16px; }
+.tb-dock-toggle[aria-pressed="true"] { opacity: 1; color: inherit; }
+.tb-dock-toggle:hover { background: rgb(255 255 255 / 0.08); opacity: 1; }
+.tb-dock-toggle:disabled { cursor: default; opacity: 0.8; }
+.tb-dock-toggle:disabled:hover { background: transparent; }
+.tb-dock-strength { position: relative; flex: none; width: 74px; height: 20px; border-radius: 4px; background: var(--tb-sunk); overflow: hidden; cursor: ew-resize; touch-action: none; box-shadow: inset 0 0 0 1px var(--tb-line); }
+.tb-dock-strength-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--share, 50%); background: linear-gradient(to right, #3d64c8, var(--tb-blue)); }
+/* The 100 percent mark: half the bar. */
+.tb-dock-strength::after { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 1px; background: rgb(255 255 255 / 0.35); }
+.tb-dock-strength-num { position: absolute; inset: 0; display: grid; place-items: center; color: var(--tb-white); font: 600 10px/1 var(--font-mono); text-shadow: 0 1px 2px #000; pointer-events: none; }
+.tb-dock-strength:focus-visible { outline: 2px solid var(--tb-yellow); outline-offset: 1px; }
+/* The empty-list hint sits over the list's free space rather than taking room of its own. */
+.tb-dock-empty { position: absolute; left: 0; right: 0; top: 10px; margin: 0; padding: 0 14px; color: var(--tb-dim); font: 500 11px/1.4 var(--font-sans); pointer-events: none; }
+.tb-dock-owner ~ .tb-dock-empty { top: 74px; }
+.tb-dock-empty[hidden] { display: none; }
+.tb-dock-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 2px; padding: 4px; border-top: 1px solid var(--tb-line); }
+.tb-dock-act { display: grid; justify-items: center; gap: 2px; padding: 5px 0; border: 0; border-radius: 6px; background: transparent; color: var(--tb-text); cursor: pointer; }
+.tb-dock-act svg { width: 18px; height: 18px; }
+/* Longer words (in other languages) wrap onto a second line inside their own button. */
+.tb-dock-act .tb-label { max-width: 100%; padding: 0 1px; font-size: 9.5px; white-space: normal; text-align: center; hyphens: auto; }
+.tb-dock-act { align-content: start; min-height: 48px; }
+.tb-dock-act:hover:not(:disabled) { background: rgb(255 255 255 / 0.07); }
+.tb-dock-act:disabled { opacity: 0.4; cursor: default; }
+.tb-dock-act:focus-visible, .tb-dock-tab:focus-visible { outline: 2px solid var(--tb-yellow); outline-offset: 1px; }
 
 /* Bottom: the tool's pill and options card. */
 .tb-pill { position: absolute; z-index: var(--z-rail); left: 50%; bottom: 164px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 8px; border-radius: 999px; background: var(--tb-panel); border: 1px solid var(--tb-line); color: var(--tb-white); font: 600 13px/1 var(--font-sans); pointer-events: none; }

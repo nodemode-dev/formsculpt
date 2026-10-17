@@ -16,6 +16,7 @@ interface PrintReport {
 import { Viewport, type Ray } from './viewport/viewport';
 import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { CameraPose, ViewName } from './viewport/camera';
+import { SceneDock } from './ui/scene-dock';
 import { DIM_ON, loadOverlays, parseOverlays, saveOverlays, StatsOverlay } from './ui/overlays';
 import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, saveHistoryPrefs, type HistoryPrefs } from './ui/history-replay';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
@@ -1532,6 +1533,7 @@ function buildShell(root: HTMLElement): Shell {
     root,
     stage,
     panel,
+    message,
     brushButtons,
     radius,
     strength,
@@ -1623,10 +1625,7 @@ class SceneView {
         const shown = this.scene.objects.find((o) => o.id === id)?.visible ?? true;
         void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
       } else if (act === 'lock') {
-        if (this.locked.has(id)) this.locked.delete(id);
-        else this.locked.add(id);
-        this.note(this.locked.has(id) ? t('Locked: strokes and tool clicks leave it alone') : t('Unlocked'));
-        this.patchList(this.scene);
+        this.toggleLock(id);
       } else void this.run('select_object', { id });
     });
     shell.addButtons.forEach((b) => this.on(b, () => void this.add(b.dataset.kind ?? 'sphere')));
@@ -2281,9 +2280,28 @@ class SceneView {
    * The tablet layout's look and readouts: the viewport on black and the orange clay shading while it is on (both given
    * back when it is left, the floor grid too), the scene's counts under its top left bar and the camera for its cube.
    */
+  /** Locks an object against strokes and tool clicks in this window, or unlocks it (scene list and dock alike). */
+  private toggleLock(id: number): void {
+    if (this.locked.has(id)) this.locked.delete(id);
+    else this.locked.add(id);
+    this.note(this.locked.has(id) ? t('Locked: strokes and tool clicks leave it alone') : t('Unlocked'));
+    this.patchList(this.scene);
+    this.dock?.update(this.scene);
+  }
+
+  /** The tablet layout's Objects and Layers dock. */
+  private dock: SceneDock | null = null;
+
   private wireTablet(): void {
     const s = this.shell;
     const tablet = s.tablet;
+    this.dock = new SceneDock({
+      run: (name, args) => this.run(name, args),
+      isLocked: (id) => this.locked.has(id),
+      toggleLock: (id) => this.toggleLock(id),
+    });
+    s.canvas.parentElement?.append(this.dock.element);
+    this.dock.update(this.scene);
     tablet.statsOf = () => {
       const objects = this.scene.objects.filter((o) => o.visible);
       const active = this.scene.objects.find((o) => o.id === this.scene.active) ?? null;
@@ -5195,6 +5213,7 @@ class SceneView {
     this.viewport.setActive(next.active);
     this.patchList(next);
     this.shell.statsReadout.update(next);
+    this.dock?.update(next);
     const active = next.objects.find((o) => o.id === next.active);
     setText(this.shell.statVerts, active ? active.vertices.toLocaleString('en-US') : '0');
     setText(this.shell.statTris, active ? active.triangles.toLocaleString('en-US') : '0');

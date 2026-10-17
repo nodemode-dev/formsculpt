@@ -43,6 +43,8 @@ export interface TabletParts {
   voxelThicken: HTMLInputElement;
   /** The undo history list, read for the undo and redo counts. */
   history: HTMLUListElement;
+  /** The panel's note line (hidden with the panel), shown here as a short note over the viewport. */
+  message: HTMLElement;
 }
 
 export interface TabletStats {
@@ -169,6 +171,14 @@ const GLYPHS: Record<string, string> = {
   angle: '<path d="M5 19h14M5 19L16 6"/><path d="M11 19a6 6 0 0 0-1.7-4.2"/>',
   snap: '<path d="M5 12h12M13 7l5 5-5 5"/>',
   mask_action: '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/>',
+  // The Objects and Layers dock (ui/scene-dock.ts).
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  duplicate: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/>',
+  rename: '<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
+  base: '<path d="M4 17l8 4 8-4M4 13l8 4 8-4"/><path d="M12 3l8 4-8 4-8-4z"/>',
 };
 
 /** An option's glyph from its label (the English one, before translation). */
@@ -185,7 +195,7 @@ function optionGlyph(label: string): string {
   return 'tool';
 }
 
-function glyph(name: string): SVGSVGElement {
+export function glyph(name: string): SVGSVGElement {
   const svg = document.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
@@ -199,7 +209,7 @@ function glyph(name: string): SVGSVGElement {
 }
 
 /** An icon-over-label button (the bars, the quick bar, the options card); `label` is English and shown translated. */
-function labelled(icon: string, label: string, cls: string): HTMLButtonElement {
+export function labelled(icon: string, label: string, cls: string): HTMLButtonElement {
   const b = el('button', cls);
   b.type = 'button';
   b.title = t(label);
@@ -208,7 +218,7 @@ function labelled(icon: string, label: string, cls: string): HTMLButtonElement {
   return b;
 }
 
-function iconOnly(icon: string, label: string, cls: string): HTMLButtonElement {
+export function iconOnly(icon: string, label: string, cls: string): HTMLButtonElement {
   const b = el('button', cls);
   b.type = 'button';
   b.title = t(label);
@@ -294,18 +304,19 @@ class DragValue {
   }
 }
 
-/** Menus the corner bars open as floating panels: [glyph, title, the panel's sections by their English headings]. */
-const LEFT_MENUS: [string, string, string[]][] = [
-  ['files', 'File', ['File']],
-  ['scene', 'Scene', ['Scene', 'Object', 'Add', 'Build', 'Selection Sets']],
-  ['remesh', 'Topology', ['Topology', 'Multiresolution', 'Edit']],
-  ['material', 'Paint and material', ['Paint', 'Layers', 'UV']],
-  ['light', 'Lighting', ['Lighting']],
-  ['camera', 'View', ['View']],
-  ['history', 'History', ['History']],
-  ['more', 'More', ['Keys', 'Plugins', 'Active mesh', 'Engine']],
+/** Menus the corner bars open as floating panels: [glyph, title, the panel's sections by their English headings, the
+ * short word shown under the button]. */
+const LEFT_MENUS: [string, string, string[], string][] = [
+  ['files', 'File', ['File'], 'File'],
+  ['scene', 'Scene', ['Scene', 'Object', 'Add', 'Build', 'Selection Sets'], 'Scene'],
+  ['remesh', 'Topology', ['Topology', 'Multiresolution', 'Edit'], 'Topology'],
+  ['material', 'Paint and material', ['Paint', 'Layers', 'UV'], 'Paint'],
+  ['light', 'Lighting', ['Lighting'], 'Light'],
+  ['camera', 'View', ['View'], 'View'],
+  ['history', 'History', ['History'], 'History'],
+  ['more', 'More', ['Keys', 'Plugins', 'Active mesh', 'Engine'], 'More'],
 ];
-const RIGHT_MENUS: [string, string, string[]][] = [['tool', 'Tool settings', ['Brush']]];
+const RIGHT_MENUS: [string, string, string[], string][] = [['tool', 'Tool settings', ['Brush'], 'Tool']];
 
 export class TabletLayout {
   private on = false;
@@ -336,6 +347,10 @@ export class TabletLayout {
   private readonly sheetHead = el('div', 'tb-sheet-head');
   private readonly sheetTitle = el('span', 'tb-sheet-title');
   private readonly voxel = el('div', 'tb-float tb-voxel');
+  /** The window's latest note (what a click did, or why it did nothing), shown for a few seconds. */
+  private readonly toast = el('div', 'tb-toast');
+  private toastText = '';
+  private toastAt = 0;
   private readonly sliders: DragValue[] = [];
   private readonly voxelFields: DragValue[] = [];
   /** Re-reads every stand-in in the options card from the control it mirrors; set when the card is drawn. */
@@ -358,9 +373,11 @@ export class TabletLayout {
     for (const b of parts.brushButtons) this.toolLabels.set(b.dataset.brush ?? '', b.textContent ?? '');
 
     // Top left: the scene menus, and the counts under them.
-    for (const [g, title, sections] of LEFT_MENUS) {
+    for (const [g, title, sections, word] of LEFT_MENUS) {
       this.menus.set(g, [title, sections, 'left']);
-      const b = iconOnly(g, title, 'tb-icon');
+      const b = labelled(g, word, 'tb-icon tb-worded');
+      b.title = t(title);
+      b.setAttribute('aria-label', t(title));
       b.dataset.menu = g;
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => this.openSheet(this.sheet === g ? null : g));
@@ -369,9 +386,10 @@ export class TabletLayout {
     this.stats.append(this.statsScene, this.statsActive);
 
     // Top right: tool settings, the stroke toggles, the palette's grid and the way back to the panel layout.
-    for (const [g, title, sections] of RIGHT_MENUS) {
+    for (const [g, title, sections, word] of RIGHT_MENUS) {
       this.menus.set(g, [title, sections, 'right']);
-      const b = iconOnly(g, title, 'tb-icon');
+      const b = labelled(g, word, 'tb-icon tb-worded');
+      b.title = t(title);
       b.dataset.menu = g;
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => this.openSheet(this.sheet === g ? null : g));
@@ -383,12 +401,22 @@ export class TabletLayout {
       into.append(b);
       return b;
     };
-    cmd('symmetry', t('Mirror X'), 'sculpt.mirror_x', this.tr);
-    cmd('dyntopo', t('Dynamic Topology'), 'sculpt.dyntopo', this.tr);
-    cmd('stroke', t('Invert Brush'), 'sculpt.invert', this.tr);
-    cmd('search', t('Command palette'), 'app.palette', this.tr);
-    cmd('interface', t('Panel layout'), 'view.tablet_layout', this.tr);
-    const grid = iconOnly('palette', t('All tools'), 'tb-icon tb-grid-toggle');
+    // The top right bar's buttons carry a word too; the full name stays in the tooltip.
+    const worded = (g: string, word: string, title: string, id: string): HTMLButtonElement => {
+      const b = labelled(g, word, 'tb-icon tb-worded');
+      b.title = t(title);
+      b.setAttribute('aria-label', t(title));
+      b.dataset.cmd = id;
+      this.tr.append(b);
+      return b;
+    };
+    worded('symmetry', 'Mirror', 'Mirror X', 'sculpt.mirror_x');
+    worded('dyntopo', 'Dyntopo', 'Dynamic Topology', 'sculpt.dyntopo');
+    // Words wrapped in t() here so the string extractor sees them (the helper's own t() then leaves them as they are).
+    worded('stroke', t('Invert'), 'Invert Brush', 'sculpt.invert');
+    worded('search', t('Search'), t('Command palette'), 'app.palette');
+    worded('interface', t('Layout'), t('Panel layout'), 'view.tablet_layout');
+    const grid = labelled('palette', t('All tools'), 'tb-icon tb-worded tb-grid-toggle');
     grid.addEventListener('click', () => this.setWide(!this.wide));
     this.tr.append(grid);
 
@@ -510,7 +538,10 @@ export class TabletLayout {
     this.sheetHead.append(this.sheetTitle, close);
     parts.panel.prepend(this.sheetHead);
 
-    parts.stage.append(this.tl, this.stats, this.tr, this.views, this.cube, this.tools, this.left, this.pill, this.card, this.quick, this.voxel);
+    this.toast.setAttribute('role', 'status');
+    this.toast.setAttribute('aria-live', 'polite');
+    this.toast.hidden = true;
+    parts.stage.append(this.tl, this.stats, this.tr, this.views, this.cube, this.tools, this.left, this.pill, this.card, this.quick, this.voxel, this.toast);
 
     try {
       this.wide = localStorage.getItem(WIDE_STORE) !== 'column';
@@ -650,6 +681,15 @@ export class TabletLayout {
       setText(this.statsScene, `${t('Vertices')} ${fmt(st.vertices)} · ${t('Triangles')} ${fmt(st.triangles)}`);
       setText(this.statsActive, st.active ? `${st.active.name} · ${fmt(st.active.vertices)}` : t('No object selected'));
     }
+    // The note: shown when it changes, gone five seconds later (or at once when the window clears it).
+    const note = this.parts.message.textContent ?? '';
+    if (note !== this.toastText) {
+      this.toastText = note;
+      this.toastAt = performance.now();
+      setText(this.toast, note);
+    }
+    const showNote = note !== '' && performance.now() - this.toastAt < 5000;
+    if (this.toast.hidden === showNote) this.toast.hidden = !showNote;
     const cam = this.camera?.();
     if (cam) {
       const tf = `rotateX(${(-cam.pitch * 180) / Math.PI}deg) rotateY(${(cam.yaw * 180) / Math.PI}deg)`;
