@@ -114,6 +114,11 @@ interface Shell {
   wireframe: HTMLInputElement;
   xray: HTMLInputElement;
   tablet: TabletLayout;
+  thicken: HTMLInputElement;
+  gizmoPivot: HTMLSelectElement;
+  pickPivot: HTMLButtonElement;
+  angleSnap: HTMLSelectElement;
+  moveSnap: HTMLSelectElement;
   zmodelAt: HTMLInputElement;
   zmodelCrease: HTMLInputElement;
   zmodelAmount: HTMLInputElement;
@@ -1107,7 +1112,9 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
   // Slide's distance, the inset's spacing and the split's radius, each as a share of the edges around the target.
   const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'ZModeler amount' });
-  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
+  // Thin parts survive the voxel remesh at this share of half a voxel's thickening (0 leaves the surface as it is).
+  const thicken = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Thicken thin parts' });
+  topoFields.append(field('Voxel resolution', resolution), field('Thicken thin parts %', thicken), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
   const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc'], ['head', 'Head (whole object)'], ['sphere', 'Sphere (whole object)'], ['skeleton', 'Skeleton (whole object)']]);
   const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
@@ -1151,6 +1158,13 @@ function buildShell(root: HTMLElement): Shell {
   const folderName = input('text', { maxlength: '80', value: 'Folder 1', 'aria-label': 'Folder name', spellcheck: 'false' });
   const fuseBlend = input('number', { min: '0', max: '10', step: '0.02', value: '0', 'aria-label': 'Boolean blend' });
   const liveBoolean = choices('Live boolean', [['', 'Off'], ['union', 'Union'], ['difference', 'Difference'], ['intersection', 'Intersection']]);
+  // The transform gizmo: where it turns and scales about, and the steps its turns and moves snap to (0 is off).
+  const gizmoPivot = choices('Gizmo pivot', [['center', 'Bounds centre'], ['origin', 'World origin'], ['picked', 'Picked point']]);
+  const pickPivot = el('button', 'btn', 'Pick pivot');
+  pickPivot.type = 'button';
+  const angleSnap = choices('Angle snap (degrees)', [['0', 'Off'], ['5', '5'], ['15', '15'], ['45', '45'], ['90', '90']]);
+  const moveSnap = choices('Move snap', [['0', 'Off'], ['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.25', '0.25'], ['0.5', '0.5'], ['1', '1']]);
+  objectFields.append(field('Gizmo pivot', gizmoPivot), pickPivot, field('Angle snap (degrees)', angleSnap), field('Move snap', moveSnap));
   objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName), field('Boolean blend', fuseBlend), field('Live boolean', liveBoolean));
   panel.append(objectFields);
 
@@ -1409,7 +1423,8 @@ function buildShell(root: HTMLElement): Shell {
       if (tool === 'mask') return list([['Invert', invert], ['Mirror X', symX], ...maskActions.map((b): [string, TabletControl] => [b.textContent ?? '', b])]);
       if (tool === 'paint' || tool === 'smudge') return list([['Colour', paintColor], ['Roughness', paintRough], ['Metalness', paintMetal], ['Material preset', materialPreset], ['Paint into texture', paintTexture], ['Mirror X', symX]]);
       if (tool === 'zmodeler') return list([['ZModeler action', zmodelAction], ['Amount %', zmodelAmount], ['Loop position %', zmodelAt], ['Auto-crease', zmodelCrease]]);
-      if (tool === 'gizmo' || tool === 'lattice' || tool === 'orbit') return [];
+      if (tool === 'gizmo') return list([['Gizmo pivot', gizmoPivot], ['Pick pivot', pickPivot], ['Angle snap (degrees)', angleSnap], ['Move snap', moveSnap]]);
+      if (tool === 'lattice' || tool === 'orbit') return [];
       return list(sculptOptions);
     },
   });
@@ -1443,7 +1458,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1480,7 +1495,18 @@ class SceneView {
     });
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
-      if (row?.dataset.id) void this.run('select_object', { id: Number(row.dataset.id) });
+      if (!row?.dataset.id) return;
+      const id = Number(row.dataset.id);
+      const act = (e.target as HTMLElement).closest<HTMLElement>('[data-row-act]')?.dataset.rowAct;
+      if (act === 'visible') {
+        const shown = this.scene.objects.find((o) => o.id === id)?.visible ?? true;
+        void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
+      } else if (act === 'lock') {
+        if (this.locked.has(id)) this.locked.delete(id);
+        else this.locked.add(id);
+        this.note(this.locked.has(id) ? t('Locked: strokes and tool clicks leave it alone') : t('Unlocked'));
+        this.patchList(this.scene);
+      } else void this.run('select_object', { id });
     });
     shell.addButtons.forEach((b) => this.on(b, () => void this.add(b.dataset.kind ?? 'sphere')));
     shell.brushButtons.forEach((b) =>
@@ -1600,6 +1626,11 @@ class SceneView {
       this.viewport.renderer.setXray(shell.xray.checked);
       this.viewport.invalidate();
     });
+    shell.pickPivot.addEventListener('click', () => {
+      this.pivotPicking = true;
+      this.note(t('Click on the object to set the pivot'));
+    });
+    shell.gizmoPivot.addEventListener('change', () => this.drawTools());
     shell.uvChecker.addEventListener('change', () => void this.syncChecker());
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     this.wireBackdrop();
@@ -1629,7 +1660,11 @@ class SceneView {
     shell.topoButtons.forEach((b) =>
       this.on(b, () => {
         const args = JSON.parse(b.dataset.args ?? '{}') as Record<string, unknown>;
-        if (b.dataset.action === 'remesh_voxel') args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
+        if (b.dataset.action === 'remesh_voxel') {
+          args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
+          const thick = Number(shell.thicken.value) || 0;
+          if (thick > 0) args.thicken = Math.min(100, thick);
+        }
         if (b.dataset.action === 'quad_remesh') args.faces = Math.max(100, Math.min(400000, Number(shell.quadTarget.value) || 4000));
         if (b.dataset.action === 'field_remesh') {
           Object.assign(args, {
@@ -1934,7 +1969,8 @@ class SceneView {
     });
     this.strokes.warm();
     viewport.strokes = {
-      enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null),
+      // A locked active object takes no strokes or tool clicks; a press turns the view instead.
+      enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null && !this.locked.has(this.scene.active)),
       begin: (ray, pressure, wpp, inv, tilt) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
         else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
@@ -2760,11 +2796,41 @@ class SceneView {
     return this.scene.objects.find((o) => o.id === this.scene.active && o.visible);
   }
 
-  /** The gizmo's centre (the bounds centre, as transform_object turns and scales about it) and arrow length. */
-  private gizmoFrame(o: ObjectSummary): { center: Vec3; len: number } {
+  /** The gizmo's centre, the point it turns and scales about (the bounds centre, the world origin or a picked point,
+   * from Gizmo pivot), and its arrow length. */
+  private gizmoFrame(o: ObjectSummary): { center: Vec3; len: number; pivot: boolean } {
     const { min, max } = o.bounds;
-    const center: Vec3 = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
-    return { center, len: this.viewport.camera.worldPerPixel(this.shell.canvas.clientHeight) * 90 };
+    const mode = this.shell.gizmoPivot.value;
+    const bounds: Vec3 = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+    const center: Vec3 = mode === 'origin' ? [0, 0, 0] : mode === 'picked' && this.gizmoPivotPoint ? this.gizmoPivotPoint : bounds;
+    return { center, len: this.viewport.camera.worldPerPixel(this.shell.canvas.clientHeight) * 90, pivot: center !== bounds };
+  }
+
+  /** Objects locked in the scene list (this window only): strokes and tool clicks leave them alone. */
+  private locked = new Set<number>();
+
+  /** The point Pick pivot set, and whether the next press on the object sets it. */
+  private gizmoPivotPoint: Vec3 | null = null;
+  private pivotPicking = false;
+
+  /** Sets the gizmo's pivot to the surface under a canvas point (from a press while Pick pivot is waiting). */
+  private async pickGizmoPivot(p: [number, number]): Promise<void> {
+    this.pivotPicking = false;
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const ray = this.viewport.rayAtClient(rect.left + p[0], rect.top + p[1]);
+    const hit = ray ? await dispatch<{ hit: boolean; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir }) : null;
+    if (!hit?.ok || !hit.result.hit || !hit.result.point) {
+      this.note(t('Click on the object to set the pivot'));
+      this.pivotPicking = true;
+      return;
+    }
+    this.gizmoPivotPoint = hit.result.point;
+    if (this.shell.gizmoPivot.value !== 'picked') {
+      this.shell.gizmoPivot.value = 'picked';
+      this.shell.gizmoPivot.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    this.note(t('Pivot set; the gizmo turns and scales about it'));
+    this.drawTools();
   }
 
   /** The lattice's control points around an object, as lattice_deform places them (bounds grown by 2 percent). */
@@ -2794,6 +2860,12 @@ class SceneView {
     if (shape.kind === 'gizmo') {
       const { center, len } = this.gizmoFrame(o);
       if (first) {
+        if (this.pivotPicking) {
+          // Pick pivot is waiting: this press sets the pivot rather than grabbing a handle.
+          shape.miss = true;
+          void this.pickGizmoPivot(p);
+          return;
+        }
         const handle = Gizmo.hit(p, center, len, project);
         if (!handle) {
           shape.miss = true;
@@ -2806,6 +2878,11 @@ class SceneView {
       if (!drag) return;
       const eye = this.viewport.camera.eye();
       Gizmo.update(drag, p, center, len, project, normalize(sub(eye, center)));
+      // Snapping: turns to whole steps of Angle snap, moves to whole steps of Move snap on each axis.
+      const angleStep = Number(this.shell.angleSnap.value) || 0;
+      const moveStep = Number(this.shell.moveSnap.value) || 0;
+      if (angleStep > 0) drag.degrees = Math.round(drag.degrees / angleStep) * angleStep;
+      if (moveStep > 0) drag.translate = drag.translate.map((v) => Math.round(v / moveStep) * moveStep) as Vec3;
       this.viewport.renderer.setPreview(o.id, Gizmo.matrix(drag, center));
       this.viewport.invalidate();
       return;
@@ -2850,7 +2927,9 @@ class SceneView {
     }
     const rotate: Vec3 = [0, 0, 0];
     if (drag.handle.kind === 'rotate') rotate[drag.handle.axis] = drag.degrees;
-    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate: drag.translate, rotate, scale: drag.scale });
+    // The engine turns and scales about the bounds centre unless given the gizmo's own pivot.
+    const frame = this.gizmoFrame(o);
+    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate: drag.translate, rotate, scale: drag.scale, ...(frame.pivot ? { pivot: frame.center } : {}) });
     if (!reply.ok) {
       // The preview goes on failure; on success it stays until the new geometry replaces it, so nothing jumps.
       this.viewport.renderer.setPreview(o.id, null);
@@ -4994,13 +5073,26 @@ class SceneView {
       if (!row) {
         row = el('li', 'object', '');
         row.dataset.id = String(o.id);
-        row.append(el('span', 'name', o.name), el('span', 'count', ''));
+        // Per-row toggles, as a scene list on a tablet has them: shown or hidden, and locked against sculpting.
+        const eye = el('button', 'row-toggle', '');
+        eye.type = 'button';
+        eye.dataset.rowAct = 'visible';
+        eye.setAttribute('aria-label', 'Visible');
+        eye.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+        const lock = el('button', 'row-toggle', '');
+        lock.type = 'button';
+        lock.dataset.rowAct = 'lock';
+        lock.setAttribute('aria-label', 'Locked');
+        lock.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+        row.append(el('span', 'name', o.name), el('span', 'count', ''), eye, lock);
         this.shell.objectList.append(row);
         this.rows.set(o.id, row);
       }
       setText(row.children[0], o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(row.children[1], `${o.triangles.toLocaleString('en-US')} tris`);
       setAttr(row, 'aria-current', o.id === next.active ? 'true' : 'false');
+      setAttr(row.children[2], 'aria-pressed', o.visible ? 'true' : 'false');
+      setAttr(row.children[3], 'aria-pressed', this.locked.has(o.id) ? 'true' : 'false');
     }
   }
 

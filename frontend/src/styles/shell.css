@@ -117,6 +117,13 @@ button { font: inherit; color: inherit; }
 .history .step[aria-current="true"] { border-left-color: var(--accent-color); background: var(--accent-color-dim); }
 .object[aria-current="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
 .object .count { font: 11px/1 var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.object .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.object .row-toggle { display: grid; place-items: center; width: 22px; height: 22px; flex: none; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); cursor: pointer; }
+.object .row-toggle svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.object .row-toggle:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.object .row-toggle[data-row-act="visible"][aria-pressed="false"] { opacity: 0.45; }
+.object .row-toggle[data-row-act="lock"][aria-pressed="true"] { color: var(--accent-color); }
+.object .row-toggle[data-row-act="lock"][aria-pressed="false"] { opacity: 0.45; }
 /* A fixed three-line box: notes of any length never move the sections below (a longer one scrolls inside it). */
 .panel-note { margin: var(--space-2) 0 0; height: 48px; line-height: 16px; overflow-y: auto; font-size: 12px; color: var(--warn-color); }
 
