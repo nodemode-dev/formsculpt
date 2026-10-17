@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.78.0 · 2026-10-17
+
+### Added
+
+- Two new tone maps for Lit (PBR) shading. AgX takes bright, saturated light toward white the way film does, so hot colours keep their hue. Neutral leaves base colours almost exact and softens only the highlights. Find them in Light > Tone mapping, beside Reinhard, ACES filmic and None.
+- Colour grading after Tone mapping: Contrast, Saturation and White balance (cooler to warmer). The defaults change nothing, and the environment backdrop is graded with the model.
+- For agents: `get_view`'s path render takes `tone` (reinhard, aces, agx, neutral, none), `exposure`, `contrast`, `saturation` and `temperature`. It runs the same curves as the window, so a render matches the viewport.
+- 1206 interface strings in every language.
+
 ## 0.77.0 · 2026-10-17
 
 ### Added
