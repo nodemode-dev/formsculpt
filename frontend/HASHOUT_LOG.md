@@ -603,3 +603,9 @@ The three ride in strokeOptions, the bag every live stroke and replayed stroke a
 - kind: rationale
 - logged: v0.62.0 · 2026-10-17
 Field remesh shares Target quads with Quad remesh rather than adding a second count, clamped to the field's own range (100 to 200000, against 400000 for the voxel one, since the field works on an upsampled copy). Its two own fields sit with the other topology options: Hard angle (40 like the engine) and Density from paint (off). The registry entry reaches the Topology menu and the palette through the command map like every other button.
+
+### Curve as guide
+- refers-to: app.ts :: remeshGuide, the topoButtons handler (guides from curvePoints)
+- kind: rationale
+- logged: v0.63.0 · 2026-10-17
+The guide is the curve already waiting on the surface from the Curve stroke tool, sent as its handles (with corners and rounds) so the engine smooths it the same way a stroke along it would; no second curve editor was added. It steers both Quad remesh and Field remesh, which until now had a guides argument no window control could reach. With the box on and no curve, the button notes what is missing and runs nothing, rather than quietly remeshing unguided.
