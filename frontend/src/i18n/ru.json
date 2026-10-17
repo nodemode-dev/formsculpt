@@ -1121,5 +1121,21 @@
  "Dark theme": "Тёмная тема",
  "Light theme": "Светлая тема",
  "High contrast": "Высокая контрастность",
- "Translucent panels": "Полупрозрачные панели"
+ "Translucent panels": "Полупрозрачные панели",
+ "Camera per step": "Камера для каждого шага",
+ "Fast": "Быстро",
+ "History Camera": "Камера истории",
+ "History Limits": "Пределы истории",
+ "Max steps": "Макс. шагов",
+ "Memory": "Память",
+ "Memory limit (MB)": "Предел памяти (МБ)",
+ "Nothing to replay yet": "Пока нечего воспроизводить",
+ "Oldest steps dropped": "Удалены самые старые шаги",
+ "Replay": "Воспроизвести",
+ "Replay History": "Воспроизвести историю",
+ "Replay speed": "Скорость воспроизведения",
+ "Replaying history": "Воспроизведение истории",
+ "Slow": "Медленно",
+ "Steps": "Шаги",
+ "Very fast": "Очень быстро"
 }

@@ -1121,5 +1121,21 @@
  "Dark theme": "Tmavý motiv",
  "Light theme": "Světlý motiv",
  "High contrast": "Vysoký kontrast",
- "Translucent panels": "Průsvitné panely"
+ "Translucent panels": "Průsvitné panely",
+ "Camera per step": "Kamera pro každý krok",
+ "Fast": "Rychle",
+ "History Camera": "Kamera historie",
+ "History Limits": "Limity historie",
+ "Max steps": "Max. kroků",
+ "Memory": "Paměť",
+ "Memory limit (MB)": "Limit paměti (MB)",
+ "Nothing to replay yet": "Zatím není co přehrát",
+ "Oldest steps dropped": "Zahozené nejstarší kroky",
+ "Replay": "Přehrát",
+ "Replay History": "Přehrát historii",
+ "Replay speed": "Rychlost přehrávání",
+ "Replaying history": "Přehrávání historie",
+ "Slow": "Pomalu",
+ "Steps": "Kroky",
+ "Very fast": "Velmi rychle"
 }

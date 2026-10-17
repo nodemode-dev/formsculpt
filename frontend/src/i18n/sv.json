@@ -1121,5 +1121,21 @@
  "Dark theme": "Mörkt tema",
  "Light theme": "Ljust tema",
  "High contrast": "Hög kontrast",
- "Translucent panels": "Genomskinliga paneler"
+ "Translucent panels": "Genomskinliga paneler",
+ "Camera per step": "Kamera för varje steg",
+ "Fast": "Snabb",
+ "History Camera": "Historikkamera",
+ "History Limits": "Historikgränser",
+ "Max steps": "Max. steg",
+ "Memory": "Minne",
+ "Memory limit (MB)": "Minnesgräns (MB)",
+ "Nothing to replay yet": "Inget att spela upp ännu",
+ "Oldest steps dropped": "Äldsta stegen borttagna",
+ "Replay": "Spela upp",
+ "Replay History": "Spela upp historik",
+ "Replay speed": "Uppspelningshastighet",
+ "Replaying history": "Spelar upp historik",
+ "Slow": "Långsam",
+ "Steps": "Steg",
+ "Very fast": "Mycket snabb"
 }

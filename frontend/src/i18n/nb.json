@@ -1121,5 +1121,21 @@
  "Dark theme": "Mørkt tema",
  "Light theme": "Lyst tema",
  "High contrast": "Høy kontrast",
- "Translucent panels": "Gjennomskinnelige paneler"
+ "Translucent panels": "Gjennomskinnelige paneler",
+ "Camera per step": "Kamera for hvert trinn",
+ "Fast": "Rask",
+ "History Camera": "Historikkamera",
+ "History Limits": "Historikkgrenser",
+ "Max steps": "Maks. trinn",
+ "Memory": "Minne",
+ "Memory limit (MB)": "Minnegrense (MB)",
+ "Nothing to replay yet": "Ingenting å spille av ennå",
+ "Oldest steps dropped": "Eldste trinn forkastet",
+ "Replay": "Spill av",
+ "Replay History": "Spill av historikk",
+ "Replay speed": "Avspillingshastighet",
+ "Replaying history": "Spiller av historikk",
+ "Slow": "Sakte",
+ "Steps": "Trinn",
+ "Very fast": "Svært rask"
 }

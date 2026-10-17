@@ -1121,5 +1121,21 @@
  "Dark theme": "深色主題",
  "Light theme": "淺色主題",
  "High contrast": "高對比",
- "Translucent panels": "半透明面板"
+ "Translucent panels": "半透明面板",
+ "Camera per step": "每步記錄相機",
+ "Fast": "快",
+ "History Camera": "歷史相機",
+ "History Limits": "歷史限制",
+ "Max steps": "最大步數",
+ "Memory": "記憶體",
+ "Memory limit (MB)": "記憶體上限 (MB)",
+ "Nothing to replay yet": "還沒有可回放的內容",
+ "Oldest steps dropped": "已捨棄最早的步驟",
+ "Replay": "回放",
+ "Replay History": "回放歷史",
+ "Replay speed": "回放速度",
+ "Replaying history": "正在回放歷史",
+ "Slow": "慢",
+ "Steps": "步數",
+ "Very fast": "很快"
 }

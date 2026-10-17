@@ -1121,5 +1121,21 @@
  "Dark theme": "深色主题",
  "Light theme": "浅色主题",
  "High contrast": "高对比度",
- "Translucent panels": "半透明面板"
+ "Translucent panels": "半透明面板",
+ "Camera per step": "每步记录相机",
+ "Fast": "快",
+ "History Camera": "历史相机",
+ "History Limits": "历史限制",
+ "Max steps": "最大步数",
+ "Memory": "内存",
+ "Memory limit (MB)": "内存上限 (MB)",
+ "Nothing to replay yet": "还没有可回放的内容",
+ "Oldest steps dropped": "已丢弃最早的步骤",
+ "Replay": "回放",
+ "Replay History": "回放历史",
+ "Replay speed": "回放速度",
+ "Replaying history": "正在回放历史",
+ "Slow": "慢",
+ "Steps": "步数",
+ "Very fast": "很快"
 }

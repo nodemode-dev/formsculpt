@@ -1121,5 +1121,21 @@
  "Dark theme": "어두운 테마",
  "Light theme": "밝은 테마",
  "High contrast": "고대비",
- "Translucent panels": "반투명 패널"
+ "Translucent panels": "반투명 패널",
+ "Camera per step": "단계별 카메라",
+ "Fast": "빠르게",
+ "History Camera": "기록 카메라",
+ "History Limits": "기록 한도",
+ "Max steps": "최대 단계 수",
+ "Memory": "메모리",
+ "Memory limit (MB)": "메모리 한도 (MB)",
+ "Nothing to replay yet": "아직 재생할 것이 없습니다",
+ "Oldest steps dropped": "가장 오래된 단계 삭제됨",
+ "Replay": "재생",
+ "Replay History": "기록 재생",
+ "Replay speed": "재생 속도",
+ "Replaying history": "기록 재생 중",
+ "Slow": "느리게",
+ "Steps": "단계",
+ "Very fast": "매우 빠르게"
 }

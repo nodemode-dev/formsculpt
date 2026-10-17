@@ -1121,5 +1121,21 @@
  "Dark theme": "Thème sombre",
  "Light theme": "Thème clair",
  "High contrast": "Contraste élevé",
- "Translucent panels": "Panneaux translucides"
+ "Translucent panels": "Panneaux translucides",
+ "Camera per step": "Caméra par étape",
+ "Fast": "Rapide",
+ "History Camera": "Caméra de l'historique",
+ "History Limits": "Limites de l'historique",
+ "Max steps": "Étapes max.",
+ "Memory": "Mémoire",
+ "Memory limit (MB)": "Limite de mémoire (Mo)",
+ "Nothing to replay yet": "Rien à rejouer pour l'instant",
+ "Oldest steps dropped": "Étapes les plus anciennes supprimées",
+ "Replay": "Rejouer",
+ "Replay History": "Rejouer l'historique",
+ "Replay speed": "Vitesse de lecture",
+ "Replaying history": "Lecture de l'historique",
+ "Slow": "Lent",
+ "Steps": "Étapes",
+ "Very fast": "Très rapide"
 }

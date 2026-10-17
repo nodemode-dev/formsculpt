@@ -1121,5 +1121,21 @@
  "Dark theme": "Chủ đề tối",
  "Light theme": "Chủ đề sáng",
  "High contrast": "Độ tương phản cao",
- "Translucent panels": "Bảng mờ trong suốt"
+ "Translucent panels": "Bảng mờ trong suốt",
+ "Camera per step": "Camera cho mỗi bước",
+ "Fast": "Nhanh",
+ "History Camera": "Camera lịch sử",
+ "History Limits": "Giới hạn lịch sử",
+ "Max steps": "Số bước tối đa",
+ "Memory": "Bộ nhớ",
+ "Memory limit (MB)": "Giới hạn bộ nhớ (MB)",
+ "Nothing to replay yet": "Chưa có gì để phát lại",
+ "Oldest steps dropped": "Đã bỏ các bước cũ nhất",
+ "Replay": "Phát lại",
+ "Replay History": "Phát lại lịch sử",
+ "Replay speed": "Tốc độ phát lại",
+ "Replaying history": "Đang phát lại lịch sử",
+ "Slow": "Chậm",
+ "Steps": "Bước",
+ "Very fast": "Rất nhanh"
 }

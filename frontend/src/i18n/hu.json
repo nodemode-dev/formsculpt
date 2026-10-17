@@ -1121,5 +1121,21 @@
  "Dark theme": "Sötét téma",
  "Light theme": "Világos téma",
  "High contrast": "Nagy kontraszt",
- "Translucent panels": "Áttetsző panelek"
+ "Translucent panels": "Áttetsző panelek",
+ "Camera per step": "Kamera lépésenként",
+ "Fast": "Gyors",
+ "History Camera": "Előzmények kamerája",
+ "History Limits": "Előzmények korlátai",
+ "Max steps": "Lépések max.",
+ "Memory": "Memória",
+ "Memory limit (MB)": "Memóriakorlát (MB)",
+ "Nothing to replay yet": "Még nincs mit visszajátszani",
+ "Oldest steps dropped": "Legrégebbi lépések elvetve",
+ "Replay": "Visszajátszás",
+ "Replay History": "Előzmények visszajátszása",
+ "Replay speed": "Visszajátszási sebesség",
+ "Replaying history": "Előzmények visszajátszása folyik",
+ "Slow": "Lassú",
+ "Steps": "Lépések",
+ "Very fast": "Nagyon gyors"
 }

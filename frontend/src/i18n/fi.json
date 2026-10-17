@@ -1121,5 +1121,21 @@
  "Dark theme": "Tumma teema",
  "Light theme": "Vaalea teema",
  "High contrast": "Suuri kontrasti",
- "Translucent panels": "Läpikuultavat paneelit"
+ "Translucent panels": "Läpikuultavat paneelit",
+ "Camera per step": "Kamera joka vaiheelle",
+ "Fast": "Nopea",
+ "History Camera": "Historian kamera",
+ "History Limits": "Historian rajat",
+ "Max steps": "Vaiheita enintään",
+ "Memory": "Muisti",
+ "Memory limit (MB)": "Muistiraja (Mt)",
+ "Nothing to replay yet": "Ei vielä toistettavaa",
+ "Oldest steps dropped": "Vanhimpia vaiheita poistettu",
+ "Replay": "Toista",
+ "Replay History": "Toista historia",
+ "Replay speed": "Toistonopeus",
+ "Replaying history": "Toistetaan historiaa",
+ "Slow": "Hidas",
+ "Steps": "Vaiheet",
+ "Very fast": "Hyvin nopea"
 }

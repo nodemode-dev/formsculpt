@@ -1121,5 +1121,21 @@
  "Dark theme": "Dunkles Design",
  "Light theme": "Helles Design",
  "High contrast": "Hoher Kontrast",
- "Translucent panels": "Durchscheinende Bereiche"
+ "Translucent panels": "Durchscheinende Bereiche",
+ "Camera per step": "Kamera je Schritt",
+ "Fast": "Schnell",
+ "History Camera": "Verlaufskamera",
+ "History Limits": "Verlaufsgrenzen",
+ "Max steps": "Max. Schritte",
+ "Memory": "Speicher",
+ "Memory limit (MB)": "Speichergrenze (MB)",
+ "Nothing to replay yet": "Noch nichts abzuspielen",
+ "Oldest steps dropped": "Älteste Schritte verworfen",
+ "Replay": "Abspielen",
+ "Replay History": "Verlauf abspielen",
+ "Replay speed": "Abspieltempo",
+ "Replaying history": "Verlauf wird abgespielt",
+ "Slow": "Langsam",
+ "Steps": "Schritte",
+ "Very fast": "Sehr schnell"
 }

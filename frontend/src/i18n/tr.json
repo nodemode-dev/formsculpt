@@ -1121,5 +1121,21 @@
  "Dark theme": "Koyu tema",
  "Light theme": "Açık tema",
  "High contrast": "Yüksek karşıtlık",
- "Translucent panels": "Yarı saydam paneller"
+ "Translucent panels": "Yarı saydam paneller",
+ "Camera per step": "Adım başına kamera",
+ "Fast": "Hızlı",
+ "History Camera": "Geçmiş kamerası",
+ "History Limits": "Geçmiş sınırları",
+ "Max steps": "En fazla adım",
+ "Memory": "Bellek",
+ "Memory limit (MB)": "Bellek sınırı (MB)",
+ "Nothing to replay yet": "Henüz oynatılacak bir şey yok",
+ "Oldest steps dropped": "En eski adımlar atıldı",
+ "Replay": "Oynat",
+ "Replay History": "Geçmişi oynat",
+ "Replay speed": "Oynatma hızı",
+ "Replaying history": "Geçmiş oynatılıyor",
+ "Slow": "Yavaş",
+ "Steps": "Adımlar",
+ "Very fast": "Çok hızlı"
 }

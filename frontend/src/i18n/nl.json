@@ -1121,5 +1121,21 @@
  "Dark theme": "Donker thema",
  "Light theme": "Licht thema",
  "High contrast": "Hoog contrast",
- "Translucent panels": "Doorschijnende panelen"
+ "Translucent panels": "Doorschijnende panelen",
+ "Camera per step": "Camera per stap",
+ "Fast": "Snel",
+ "History Camera": "Geschiedeniscamera",
+ "History Limits": "Geschiedenislimieten",
+ "Max steps": "Max. stappen",
+ "Memory": "Geheugen",
+ "Memory limit (MB)": "Geheugenlimiet (MB)",
+ "Nothing to replay yet": "Nog niets om af te spelen",
+ "Oldest steps dropped": "Oudste stappen verwijderd",
+ "Replay": "Afspelen",
+ "Replay History": "Geschiedenis afspelen",
+ "Replay speed": "Afspeelsnelheid",
+ "Replaying history": "Geschiedenis wordt afgespeeld",
+ "Slow": "Langzaam",
+ "Steps": "Stappen",
+ "Very fast": "Zeer snel"
 }

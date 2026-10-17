@@ -1121,5 +1121,21 @@
  "Dark theme": "ダークテーマ",
  "Light theme": "ライトテーマ",
  "High contrast": "ハイコントラスト",
- "Translucent panels": "半透明パネル"
+ "Translucent panels": "半透明パネル",
+ "Camera per step": "ステップごとのカメラ",
+ "Fast": "速い",
+ "History Camera": "履歴カメラ",
+ "History Limits": "履歴の上限",
+ "Max steps": "最大ステップ数",
+ "Memory": "メモリ",
+ "Memory limit (MB)": "メモリ上限 (MB)",
+ "Nothing to replay yet": "まだ再生するものがありません",
+ "Oldest steps dropped": "古いステップを削除",
+ "Replay": "再生",
+ "Replay History": "履歴を再生",
+ "Replay speed": "再生速度",
+ "Replaying history": "履歴を再生中",
+ "Slow": "遅い",
+ "Steps": "ステップ",
+ "Very fast": "とても速い"
 }

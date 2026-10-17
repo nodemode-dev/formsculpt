@@ -1121,5 +1121,21 @@
  "Dark theme": "Темна тема",
  "Light theme": "Світла тема",
  "High contrast": "Висока контрастність",
- "Translucent panels": "Напівпрозорі панелі"
+ "Translucent panels": "Напівпрозорі панелі",
+ "Camera per step": "Камера для кожного кроку",
+ "Fast": "Швидко",
+ "History Camera": "Камера історії",
+ "History Limits": "Межі історії",
+ "Max steps": "Макс. кроків",
+ "Memory": "Пам'ять",
+ "Memory limit (MB)": "Межа пам'яті (МБ)",
+ "Nothing to replay yet": "Поки що нічого відтворювати",
+ "Oldest steps dropped": "Вилучено найстаріші кроки",
+ "Replay": "Відтворити",
+ "Replay History": "Відтворити історію",
+ "Replay speed": "Швидкість відтворення",
+ "Replaying history": "Відтворення історії",
+ "Slow": "Повільно",
+ "Steps": "Кроки",
+ "Very fast": "Дуже швидко"
 }

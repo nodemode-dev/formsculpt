@@ -1121,5 +1121,21 @@
  "Dark theme": "Mørkt tema",
  "Light theme": "Lyst tema",
  "High contrast": "Høj kontrast",
- "Translucent panels": "Gennemsigtige paneler"
+ "Translucent panels": "Gennemsigtige paneler",
+ "Camera per step": "Kamera for hvert trin",
+ "Fast": "Hurtig",
+ "History Camera": "Historikkamera",
+ "History Limits": "Historikgrænser",
+ "Max steps": "Maks. trin",
+ "Memory": "Hukommelse",
+ "Memory limit (MB)": "Hukommelsesgrænse (MB)",
+ "Nothing to replay yet": "Intet at afspille endnu",
+ "Oldest steps dropped": "Ældste trin fjernet",
+ "Replay": "Afspil",
+ "Replay History": "Afspil historik",
+ "Replay speed": "Afspilningshastighed",
+ "Replaying history": "Afspiller historik",
+ "Slow": "Langsom",
+ "Steps": "Trin",
+ "Very fast": "Meget hurtig"
 }

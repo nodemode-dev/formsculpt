@@ -1121,5 +1121,21 @@
  "Dark theme": "Tema scuro",
  "Light theme": "Tema chiaro",
  "High contrast": "Contrasto elevato",
- "Translucent panels": "Pannelli traslucidi"
+ "Translucent panels": "Pannelli traslucidi",
+ "Camera per step": "Inquadratura per passo",
+ "Fast": "Veloce",
+ "History Camera": "Inquadratura della cronologia",
+ "History Limits": "Limiti della cronologia",
+ "Max steps": "Passi massimi",
+ "Memory": "Memoria",
+ "Memory limit (MB)": "Limite di memoria (MB)",
+ "Nothing to replay yet": "Ancora niente da riprodurre",
+ "Oldest steps dropped": "Passi più vecchi scartati",
+ "Replay": "Riproduci",
+ "Replay History": "Riproduci cronologia",
+ "Replay speed": "Velocità di riproduzione",
+ "Replaying history": "Riproduzione della cronologia",
+ "Slow": "Lento",
+ "Steps": "Passi",
+ "Very fast": "Molto veloce"
 }

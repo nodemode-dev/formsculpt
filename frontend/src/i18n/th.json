@@ -1121,5 +1121,21 @@
  "Dark theme": "ธีมมืด",
  "Light theme": "ธีมสว่าง",
  "High contrast": "คอนทราสต์สูง",
- "Translucent panels": "แผงโปร่งแสง"
+ "Translucent panels": "แผงโปร่งแสง",
+ "Camera per step": "กล้องต่อขั้นตอน",
+ "Fast": "เร็ว",
+ "History Camera": "กล้องของประวัติ",
+ "History Limits": "ขีดจำกัดประวัติ",
+ "Max steps": "ขั้นตอนสูงสุด",
+ "Memory": "หน่วยความจำ",
+ "Memory limit (MB)": "ขีดจำกัดหน่วยความจำ (MB)",
+ "Nothing to replay yet": "ยังไม่มีอะไรให้เล่นซ้ำ",
+ "Oldest steps dropped": "ทิ้งขั้นตอนที่เก่าที่สุดแล้ว",
+ "Replay": "เล่นซ้ำ",
+ "Replay History": "เล่นประวัติซ้ำ",
+ "Replay speed": "ความเร็วการเล่นซ้ำ",
+ "Replaying history": "กำลังเล่นประวัติซ้ำ",
+ "Slow": "ช้า",
+ "Steps": "ขั้นตอน",
+ "Very fast": "เร็วมาก"
 }

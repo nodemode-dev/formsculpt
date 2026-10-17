@@ -1121,5 +1121,21 @@
  "Dark theme": "Tema gelap",
  "Light theme": "Tema terang",
  "High contrast": "Kontras tinggi",
- "Translucent panels": "Panel tembus pandang"
+ "Translucent panels": "Panel tembus pandang",
+ "Camera per step": "Kamera per langkah",
+ "Fast": "Cepat",
+ "History Camera": "Kamera riwayat",
+ "History Limits": "Batas riwayat",
+ "Max steps": "Langkah maks.",
+ "Memory": "Memori",
+ "Memory limit (MB)": "Batas memori (MB)",
+ "Nothing to replay yet": "Belum ada yang bisa diputar ulang",
+ "Oldest steps dropped": "Langkah terlama dibuang",
+ "Replay": "Putar ulang",
+ "Replay History": "Putar ulang riwayat",
+ "Replay speed": "Kecepatan putar ulang",
+ "Replaying history": "Memutar ulang riwayat",
+ "Slow": "Lambat",
+ "Steps": "Langkah",
+ "Very fast": "Sangat cepat"
 }
