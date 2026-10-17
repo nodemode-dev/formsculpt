@@ -1002,5 +1002,14 @@
  "Strip": "Dải",
  "Keep groups": "Giữ nhóm",
  "Keep paint": "Giữ màu sơn",
- "Keep UVs": "Giữ UV"
+ "Keep UVs": "Giữ UV",
+ "Balanced": "Cân bằng",
+ "Collapse only": "Chỉ gộp",
+ "Dyntopo method": "Phương pháp dyntopo",
+ "Dyntopo mode": "Chế độ dyntopo",
+ "Protect masked": "Bảo vệ vùng che",
+ "Quality": "Chất lượng",
+ "Speed": "Tốc độ",
+ "Subdivide and collapse": "Chia nhỏ và gộp",
+ "Subdivide only": "Chỉ chia nhỏ"
 }

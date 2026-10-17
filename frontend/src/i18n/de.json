@@ -1002,5 +1002,14 @@
  "Strip": "Streifen",
  "Keep groups": "Gruppen behalten",
  "Keep paint": "Farbe behalten",
- "Keep UVs": "UVs behalten"
+ "Keep UVs": "UVs behalten",
+ "Balanced": "Ausgewogen",
+ "Collapse only": "Nur zusammenführen",
+ "Dyntopo method": "Dyntopo-Methode",
+ "Dyntopo mode": "Dyntopo-Modus",
+ "Protect masked": "Maskiertes schützen",
+ "Quality": "Qualität",
+ "Speed": "Geschwindigkeit",
+ "Subdivide and collapse": "Unterteilen und zusammenführen",
+ "Subdivide only": "Nur unterteilen"
 }

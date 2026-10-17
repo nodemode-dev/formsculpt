@@ -1002,5 +1002,14 @@
  "Strip": "Strip",
  "Keep groups": "Pertahankan grup",
  "Keep paint": "Pertahankan cat",
- "Keep UVs": "Pertahankan UV"
+ "Keep UVs": "Pertahankan UV",
+ "Balanced": "Seimbang",
+ "Collapse only": "Hanya gabungkan",
+ "Dyntopo method": "Metode dyntopo",
+ "Dyntopo mode": "Mode dyntopo",
+ "Protect masked": "Lindungi yang dimasker",
+ "Quality": "Kualitas",
+ "Speed": "Kecepatan",
+ "Subdivide and collapse": "Bagi dan gabungkan",
+ "Subdivide only": "Hanya bagi"
 }

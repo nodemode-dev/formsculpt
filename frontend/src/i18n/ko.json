@@ -1002,5 +1002,14 @@
  "Strip": "띠",
  "Keep groups": "그룹 유지",
  "Keep paint": "페인트 유지",
- "Keep UVs": "UV 유지"
+ "Keep UVs": "UV 유지",
+ "Balanced": "균형",
+ "Collapse only": "병합만",
+ "Dyntopo method": "다이나토포 방식",
+ "Dyntopo mode": "다이나토포 모드",
+ "Protect masked": "마스크 영역 보호",
+ "Quality": "품질",
+ "Speed": "속도",
+ "Subdivide and collapse": "분할 및 병합",
+ "Subdivide only": "분할만"
 }

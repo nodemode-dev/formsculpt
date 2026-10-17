@@ -1002,5 +1002,14 @@
  "Strip": "Stripe",
  "Keep groups": "Behold grupper",
  "Keep paint": "Behold maling",
- "Keep UVs": "Behold UV-er"
+ "Keep UVs": "Behold UV-er",
+ "Balanced": "Balansert",
+ "Collapse only": "Bare slå sammen",
+ "Dyntopo method": "Dyntopo-metode",
+ "Dyntopo mode": "Dyntopo-modus",
+ "Protect masked": "Beskytt maskerte",
+ "Quality": "Kvalitet",
+ "Speed": "Hastighet",
+ "Subdivide and collapse": "Del opp og slå sammen",
+ "Subdivide only": "Bare del opp"
 }

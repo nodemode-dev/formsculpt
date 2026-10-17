@@ -1002,5 +1002,14 @@
  "Strip": "Pasek",
  "Keep groups": "Zachowaj grupy",
  "Keep paint": "Zachowaj malowanie",
- "Keep UVs": "Zachowaj UV"
+ "Keep UVs": "Zachowaj UV",
+ "Balanced": "Zrównoważony",
+ "Collapse only": "Tylko scalanie",
+ "Dyntopo method": "Metoda dyntopo",
+ "Dyntopo mode": "Tryb dyntopo",
+ "Protect masked": "Chroń zamaskowane",
+ "Quality": "Jakość",
+ "Speed": "Szybkość",
+ "Subdivide and collapse": "Podział i scalanie",
+ "Subdivide only": "Tylko podział"
 }

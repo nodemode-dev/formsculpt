@@ -1002,5 +1002,14 @@
  "Strip": "Pás",
  "Keep groups": "Zachovat skupiny",
  "Keep paint": "Zachovat malbu",
- "Keep UVs": "Zachovat UV"
+ "Keep UVs": "Zachovat UV",
+ "Balanced": "Vyvážený",
+ "Collapse only": "Jen slučovat",
+ "Dyntopo method": "Metoda dyntopo",
+ "Dyntopo mode": "Režim dyntopo",
+ "Protect masked": "Chránit maskované",
+ "Quality": "Kvalita",
+ "Speed": "Rychlost",
+ "Subdivide and collapse": "Dělit i slučovat",
+ "Subdivide only": "Jen dělit"
 }

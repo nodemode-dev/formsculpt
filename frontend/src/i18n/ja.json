@@ -1002,5 +1002,14 @@
  "Strip": "ストリップ",
  "Keep groups": "グループを保持",
  "Keep paint": "ペイントを保持",
- "Keep UVs": "UVを保持"
+ "Keep UVs": "UVを保持",
+ "Balanced": "バランス",
+ "Collapse only": "結合のみ",
+ "Dyntopo method": "ダイナトポの方法",
+ "Dyntopo mode": "ダイナトポのモード",
+ "Protect masked": "マスク部分を保護",
+ "Quality": "品質",
+ "Speed": "速度",
+ "Subdivide and collapse": "分割と結合",
+ "Subdivide only": "分割のみ"
 }

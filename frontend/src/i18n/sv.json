@@ -1002,5 +1002,14 @@
  "Strip": "Remsa",
  "Keep groups": "Behåll grupper",
  "Keep paint": "Behåll färg",
- "Keep UVs": "Behåll UV:er"
+ "Keep UVs": "Behåll UV:er",
+ "Balanced": "Balanserad",
+ "Collapse only": "Bara slå ihop",
+ "Dyntopo method": "Dyntopo-metod",
+ "Dyntopo mode": "Dyntopo-läge",
+ "Protect masked": "Skydda maskerat",
+ "Quality": "Kvalitet",
+ "Speed": "Hastighet",
+ "Subdivide and collapse": "Dela upp och slå ihop",
+ "Subdivide only": "Bara dela upp"
 }

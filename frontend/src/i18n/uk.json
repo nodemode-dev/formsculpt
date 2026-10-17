@@ -1002,5 +1002,14 @@
  "Strip": "Смуга",
  "Keep groups": "Зберігати групи",
  "Keep paint": "Зберігати розпис",
- "Keep UVs": "Зберігати UV"
+ "Keep UVs": "Зберігати UV",
+ "Balanced": "Збалансований",
+ "Collapse only": "Лише злиття",
+ "Dyntopo method": "Метод dyntopo",
+ "Dyntopo mode": "Режим dyntopo",
+ "Protect masked": "Захищати маску",
+ "Quality": "Якість",
+ "Speed": "Швидкість",
+ "Subdivide and collapse": "Поділ і злиття",
+ "Subdivide only": "Лише поділ"
 }

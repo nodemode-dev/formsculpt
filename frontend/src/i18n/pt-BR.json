@@ -1002,5 +1002,14 @@
  "Strip": "Faixa",
  "Keep groups": "Manter grupos",
  "Keep paint": "Manter pintura",
- "Keep UVs": "Manter UVs"
+ "Keep UVs": "Manter UVs",
+ "Balanced": "Equilibrado",
+ "Collapse only": "Só colapsar",
+ "Dyntopo method": "Método do dyntopo",
+ "Dyntopo mode": "Modo do dyntopo",
+ "Protect masked": "Proteger o mascarado",
+ "Quality": "Qualidade",
+ "Speed": "Velocidade",
+ "Subdivide and collapse": "Subdividir e colapsar",
+ "Subdivide only": "Só subdividir"
 }

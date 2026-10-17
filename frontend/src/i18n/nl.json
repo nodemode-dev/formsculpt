@@ -1002,5 +1002,14 @@
  "Strip": "Strook",
  "Keep groups": "Groepen behouden",
  "Keep paint": "Verf behouden",
- "Keep UVs": "UV's behouden"
+ "Keep UVs": "UV's behouden",
+ "Balanced": "Gebalanceerd",
+ "Collapse only": "Alleen samenvoegen",
+ "Dyntopo method": "Dyntopo-methode",
+ "Dyntopo mode": "Dyntopo-modus",
+ "Protect masked": "Gemaskeerd beschermen",
+ "Quality": "Kwaliteit",
+ "Speed": "Snelheid",
+ "Subdivide and collapse": "Onderverdelen en samenvoegen",
+ "Subdivide only": "Alleen onderverdelen"
 }

@@ -1002,5 +1002,14 @@
  "Strip": "Bande",
  "Keep groups": "Garder les groupes",
  "Keep paint": "Garder la peinture",
- "Keep UVs": "Garder les UV"
+ "Keep UVs": "Garder les UV",
+ "Balanced": "Équilibré",
+ "Collapse only": "Fusionner seulement",
+ "Dyntopo method": "Méthode dyntopo",
+ "Dyntopo mode": "Mode dyntopo",
+ "Protect masked": "Protéger le masqué",
+ "Quality": "Qualité",
+ "Speed": "Vitesse",
+ "Subdivide and collapse": "Subdiviser et fusionner",
+ "Subdivide only": "Subdiviser seulement"
 }

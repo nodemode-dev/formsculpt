@@ -1002,5 +1002,14 @@
  "Strip": "Striscia",
  "Keep groups": "Mantieni i gruppi",
  "Keep paint": "Mantieni la pittura",
- "Keep UVs": "Mantieni le UV"
+ "Keep UVs": "Mantieni le UV",
+ "Balanced": "Bilanciato",
+ "Collapse only": "Solo collassa",
+ "Dyntopo method": "Metodo dyntopo",
+ "Dyntopo mode": "Modalità dyntopo",
+ "Protect masked": "Proteggi il mascherato",
+ "Quality": "Qualità",
+ "Speed": "Velocità",
+ "Subdivide and collapse": "Suddividi e collassa",
+ "Subdivide only": "Solo suddividi"
 }

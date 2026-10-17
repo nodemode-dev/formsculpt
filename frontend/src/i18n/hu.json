@@ -1002,5 +1002,14 @@
  "Strip": "Sáv",
  "Keep groups": "Csoportok megtartása",
  "Keep paint": "Festés megtartása",
- "Keep UVs": "UV-k megtartása"
+ "Keep UVs": "UV-k megtartása",
+ "Balanced": "Kiegyensúlyozott",
+ "Collapse only": "Csak összevonás",
+ "Dyntopo method": "Dyntopo-módszer",
+ "Dyntopo mode": "Dyntopo-mód",
+ "Protect masked": "Maszkolt védelme",
+ "Quality": "Minőség",
+ "Speed": "Sebesség",
+ "Subdivide and collapse": "Felosztás és összevonás",
+ "Subdivide only": "Csak felosztás"
 }

@@ -1002,5 +1002,14 @@
  "Strip": "条带",
  "Keep groups": "保留分组",
  "Keep paint": "保留绘制",
- "Keep UVs": "保留 UV"
+ "Keep UVs": "保留 UV",
+ "Balanced": "均衡",
+ "Collapse only": "仅合并",
+ "Dyntopo method": "动态拓扑方法",
+ "Dyntopo mode": "动态拓扑模式",
+ "Protect masked": "保护遮罩区域",
+ "Quality": "质量",
+ "Speed": "速度",
+ "Subdivide and collapse": "细分并合并",
+ "Subdivide only": "仅细分"
 }

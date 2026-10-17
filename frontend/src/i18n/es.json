@@ -1002,5 +1002,14 @@
  "Strip": "Tira",
  "Keep groups": "Conservar grupos",
  "Keep paint": "Conservar pintura",
- "Keep UVs": "Conservar UV"
+ "Keep UVs": "Conservar UV",
+ "Balanced": "Equilibrado",
+ "Collapse only": "Solo colapsar",
+ "Dyntopo method": "Método de dyntopo",
+ "Dyntopo mode": "Modo de dyntopo",
+ "Protect masked": "Proteger lo enmascarado",
+ "Quality": "Calidad",
+ "Speed": "Velocidad",
+ "Subdivide and collapse": "Subdividir y colapsar",
+ "Subdivide only": "Solo subdividir"
 }

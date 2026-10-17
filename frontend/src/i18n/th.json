@@ -1002,5 +1002,14 @@
  "Strip": "แถบ",
  "Keep groups": "คงกลุ่มไว้",
  "Keep paint": "คงสีที่ระบายไว้",
- "Keep UVs": "คง UV ไว้"
+ "Keep UVs": "คง UV ไว้",
+ "Balanced": "สมดุล",
+ "Collapse only": "รวมเท่านั้น",
+ "Dyntopo method": "วิธีไดนาโทโป",
+ "Dyntopo mode": "โหมดไดนาโทโป",
+ "Protect masked": "ป้องกันส่วนที่มาสก์",
+ "Quality": "คุณภาพ",
+ "Speed": "ความเร็ว",
+ "Subdivide and collapse": "แบ่งย่อยและรวม",
+ "Subdivide only": "แบ่งย่อยเท่านั้น"
 }

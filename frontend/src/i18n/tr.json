@@ -1002,5 +1002,14 @@
  "Strip": "Şerit",
  "Keep groups": "Grupları koru",
  "Keep paint": "Boyayı koru",
- "Keep UVs": "UV'leri koru"
+ "Keep UVs": "UV'leri koru",
+ "Balanced": "Dengeli",
+ "Collapse only": "Yalnızca birleştir",
+ "Dyntopo method": "Dyntopo yöntemi",
+ "Dyntopo mode": "Dyntopo modu",
+ "Protect masked": "Maskeliyi koru",
+ "Quality": "Kalite",
+ "Speed": "Hız",
+ "Subdivide and collapse": "Böl ve birleştir",
+ "Subdivide only": "Yalnızca böl"
 }

@@ -1002,5 +1002,14 @@
  "Strip": "Kaista",
  "Keep groups": "Säilytä ryhmät",
  "Keep paint": "Säilytä maali",
- "Keep UVs": "Säilytä UV:t"
+ "Keep UVs": "Säilytä UV:t",
+ "Balanced": "Tasapainoinen",
+ "Collapse only": "Vain yhdistä",
+ "Dyntopo method": "Dyntopo-menetelmä",
+ "Dyntopo mode": "Dyntopo-tila",
+ "Protect masked": "Suojaa maskatut",
+ "Quality": "Laatu",
+ "Speed": "Nopeus",
+ "Subdivide and collapse": "Jaa ja yhdistä",
+ "Subdivide only": "Vain jaa"
 }

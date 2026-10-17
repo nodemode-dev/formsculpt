@@ -1002,5 +1002,14 @@
  "Strip": "Strimmel",
  "Keep groups": "Bevar grupper",
  "Keep paint": "Bevar maling",
- "Keep UVs": "Bevar UV'er"
+ "Keep UVs": "Bevar UV'er",
+ "Balanced": "Afbalanceret",
+ "Collapse only": "Kun sammenfold",
+ "Dyntopo method": "Dyntopo-metode",
+ "Dyntopo mode": "Dyntopo-tilstand",
+ "Protect masked": "Beskyt maskerede",
+ "Quality": "Kvalitet",
+ "Speed": "Hastighed",
+ "Subdivide and collapse": "Opdel og sammenfold",
+ "Subdivide only": "Kun opdel"
 }
