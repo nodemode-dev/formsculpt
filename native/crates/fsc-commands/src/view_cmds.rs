@@ -29,6 +29,11 @@ pub(crate) fn view_schema() -> Value {
             "render": {"type": "string", "enum": ["preview", "path"], "default": "preview", "description": "preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise)."},
             "samples": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 32, "description": "Path render: paths per pixel; 32 is a quick look, 256 a clean final image."},
             "bounces": {"type": "integer", "minimum": 1, "maximum": 8, "default": 4, "description": "Path render: how many times light may bounce."},
+            "tone": {"type": "string", "enum": fsc_paint::Tone::NAMES, "default": "reinhard", "description": "Path render: how light is brought to the screen. reinhard is soft; aces filmic and contrasty; agx keeps hot colours from skewing, fading them toward white as film does; neutral keeps base colours almost exact and only compresses highlights; none clips."},
+            "exposure": {"type": "number", "minimum": 0, "maximum": 16, "default": 1, "description": "Path render grade: a multiplier on the light (2 is a stop brighter)."},
+            "contrast": {"type": "number", "minimum": 0.25, "maximum": 2.5, "default": 1, "description": "Path render grade: contrast about mid grey (1 as rendered)."},
+            "saturation": {"type": "number", "minimum": 0, "maximum": 2, "default": 1, "description": "Path render grade: 0 grey, 1 as rendered, 2 doubled."},
+            "temperature": {"type": "number", "minimum": -1, "maximum": 1, "default": 0, "description": "Path render grade: white balance, negative cooler, positive warmer."},
             "pass": {"type": "string", "enum": ["beauty", "depth", "normal", "ao"], "default": "beauty", "description": "Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion)."},
             "lights": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {"from": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "World direction the light shines from."}, "color": {"type": "array", "items": {"type": "number", "minimum": 0}, "minItems": 3, "maxItems": 3, "default": [1, 1, 1]}, "intensity": {"type": "number", "minimum": 0, "maximum": 100, "default": 2.5}}, "required": ["from"], "additionalProperties": false}, "description": "Path render: directional lights added to the key light (a rim or fill)."},
             "sun": {"type": "boolean", "default": true, "description": "Path render: keep the window's key light."},
@@ -487,6 +492,10 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
                 other => return Err(bad(format!("pass must be beauty, depth, normal or ao, not {other}"))),
             };
             options.sun = args.get("sun").and_then(Value::as_bool).unwrap_or(true);
+            let tone = args.get("tone").and_then(Value::as_str).unwrap_or("reinhard");
+            options.tone = fsc_paint::Tone::parse(tone).ok_or_else(|| bad(format!("tone must be one of {}, not {tone}", fsc_paint::Tone::NAMES.join(", "))))?;
+            let num = |k: &str, d: f64, lo: f64, hi: f64| args.get(k).and_then(Value::as_f64).unwrap_or(d).clamp(lo, hi) as f32;
+            options.grade = fsc_paint::Grade { exposure: num("exposure", 1.0, 0.0, 16.0), contrast: num("contrast", 1.0, 0.25, 2.5), saturation: num("saturation", 1.0, 0.0, 2.0), temperature: num("temperature", 0.0, -1.0, 1.0) };
             options.aperture = args.get("aperture").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 1.0) as f32;
             options.focus = args.get("focus").and_then(Value::as_f64).filter(|f| *f > 0.0).map(|f| f as f32);
             let three = |v: Option<&Value>, d: [f32; 3]| -> [f32; 3] {

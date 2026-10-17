@@ -40,6 +40,8 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `aperture`: number; default 0; range 0 to 1; Path render: depth of field lens size as a fraction of the framed size; 0 keeps everything sharp, 0.05 is a gentle blur.
 - `background`: string (dark | light | transparent); default "dark"
 - `bounces`: integer; default 4; range 1 to 8; Path render: how many times light may bounce.
+- `contrast`: number; default 1; range 0.25 to 2.5; Path render grade: contrast about mid grey (1 as rendered).
+- `exposure`: number; default 1; range 0 to 16; Path render grade: a multiplier on the light (2 is a stop brighter).
 - `focus`: number; range 0 to inf; Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted.
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
 - `height`: integer; default 640; range 64 to 2048
@@ -49,10 +51,13 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
 - `render`: string (preview | path); default "preview"; preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise).
 - `samples`: integer; default 32; range 1 to 1024; Path render: paths per pixel; 32 is a quick look, 256 a clean final image.
+- `saturation`: number; default 1; range 0 to 2; Path render grade: 0 grey, 1 as rendered, 2 doubled.
 - `saved`: string; Look from a saved view's direction (save_view, list_views); overrides view.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
 - `sun`: boolean; default true; Path render: keep the window's key light.
+- `temperature`: number; default 0; range -1 to 1; Path render grade: white balance, negative cooler, positive warmer.
+- `tone`: string (reinhard | aces | none | agx | neutral); default "reinhard"; Path render: how light is brought to the screen. reinhard is soft; aces filmic and contrasty; agx keeps hot colours from skewing, fading them toward white as film does; neutral keeps base colours almost exact and only compresses highlights; none clips.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
 - `width`: integer; default 640; range 64 to 2048
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.

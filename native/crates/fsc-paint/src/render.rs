@@ -428,11 +428,14 @@ pub struct PathOptions {
     /// Distance from the camera that is sharp; the framed centre when None.
     pub focus: Option<f32>,
     pub pass: Pass,
+    /// How the beauty pass's light is brought to the display, and the grade before it (passes are left linear).
+    pub tone: crate::Tone,
+    pub grade: crate::Grade,
 }
 
 impl PathOptions {
     pub fn new(samples: u32, bounces: u32) -> Self {
-        PathOptions { samples, bounces, lights: Vec::new(), sun: true, aperture: 0.0, focus: None, pass: Pass::Beauty }
+        PathOptions { samples, bounces, lights: Vec::new(), sun: true, aperture: 0.0, focus: None, pass: Pass::Beauty, tone: crate::Tone::Reinhard, grade: crate::Grade::default() }
     }
 }
 
@@ -593,7 +596,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
             total += light;
         }
         let c = total / samples as f32;
-        let c = if options.pass == Pass::Beauty { (c / (c + Vec3::ONE)).powf(1.0 / 2.2) } else { c };
+        let c = if options.pass == Pass::Beauty { crate::tone::display(c, options.tone, &options.grade) } else { c };
         let a = if view.background.is_some() { 1.0 } else { alpha / samples as f32 };
         let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
         [q(c.x), q(c.y), q(c.z), q(a)]
