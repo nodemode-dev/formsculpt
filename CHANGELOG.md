@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.71.0 · 2026-10-17
+
+### Added
+
+- Pen and gamepad bindings with tap against hold (Window > Input Bindings): each input runs one command when tapped and another when held. A held tool is a temporary tool, back to the previous tool on release; an input with nothing bound to hold taps without waiting.
+  - Pen: the barrel button held while drawing sculpts with its hold tool (Smooth by default) instead of panning; clicked while hovering it taps (Undo by default). The eraser end draws with its own tool (Mask by default).
+  - Gamepads: all 16 buttons of a standard gamepad can be bound (defaults include undo and redo, brush size on the bumpers, strength on the D-pad, Smooth and Mask held on the triggers). The left stick turns the camera; the right stick pans and zooms.
+  - Bindings are kept in this browser and travel in layout files.
+- Larger Brush and Smaller Brush (] and [), Stronger Brush and Weaker Brush.
+- 1117 interface strings in every language.
+
 ## 0.70.0 · 2026-10-17
 
 ### Changed
