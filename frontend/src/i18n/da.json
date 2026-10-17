@@ -1137,5 +1137,15 @@
  "Replaying history": "Afspiller historik",
  "Slow": "Langsom",
  "Steps": "Trin",
- "Very fast": "Meget hurtig"
+ "Very fast": "Meget hurtig",
+ "Active object": "Aktivt objekt",
+ "All objects": "Alle objekter",
+ "Darken others": "Gør andre mørkere",
+ "Darken Others": "Gør andre mørkere",
+ "No active object": "Intet aktivt objekt",
+ "Statistics": "Statistik",
+ "Statistics overlay": "Statistik over visningen",
+ "Statistics Overlay": "Statistik over visningen",
+ "Wire on": "Trådnet på",
+ "Wire on Active Object Only": "Trådnet kun på aktivt objekt"
 }

@@ -1137,5 +1137,15 @@
  "Replaying history": "Spiller av historikk",
  "Slow": "Sakte",
  "Steps": "Trinn",
- "Very fast": "Svært rask"
+ "Very fast": "Svært rask",
+ "Active object": "Aktivt objekt",
+ "All objects": "Alle objekter",
+ "Darken others": "Gjør andre mørkere",
+ "Darken Others": "Gjør andre mørkere",
+ "No active object": "Ingen aktivt objekt",
+ "Statistics": "Statistikk",
+ "Statistics overlay": "Statistikk over visningen",
+ "Statistics Overlay": "Statistikk over visningen",
+ "Wire on": "Trådnett på",
+ "Wire on Active Object Only": "Trådnett bare på aktivt objekt"
 }

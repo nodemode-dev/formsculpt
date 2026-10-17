@@ -1137,5 +1137,15 @@
  "Replaying history": "正在回放历史",
  "Slow": "慢",
  "Steps": "步数",
- "Very fast": "很快"
+ "Very fast": "很快",
+ "Active object": "活动对象",
+ "All objects": "所有对象",
+ "Darken others": "其他对象变暗",
+ "Darken Others": "其他对象变暗",
+ "No active object": "没有活动对象",
+ "Statistics": "统计",
+ "Statistics overlay": "统计叠加",
+ "Statistics Overlay": "统计叠加",
+ "Wire on": "线框显示于",
+ "Wire on Active Object Only": "仅在活动对象上显示线框"
 }

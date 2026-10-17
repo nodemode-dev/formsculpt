@@ -1137,5 +1137,15 @@
  "Replaying history": "Reproduciendo historial",
  "Slow": "Lento",
  "Steps": "Pasos",
- "Very fast": "Muy rápido"
+ "Very fast": "Muy rápido",
+ "Active object": "Objeto activo",
+ "All objects": "Todos los objetos",
+ "Darken others": "Oscurecer los demás",
+ "Darken Others": "Oscurecer los demás",
+ "No active object": "Ningún objeto activo",
+ "Statistics": "Estadísticas",
+ "Statistics overlay": "Estadísticas superpuestas",
+ "Statistics Overlay": "Estadísticas superpuestas",
+ "Wire on": "Malla en",
+ "Wire on Active Object Only": "Malla solo en el objeto activo"
 }

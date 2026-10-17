@@ -1137,5 +1137,15 @@
  "Replaying history": "Přehrávání historie",
  "Slow": "Pomalu",
  "Steps": "Kroky",
- "Very fast": "Velmi rychle"
+ "Very fast": "Velmi rychle",
+ "Active object": "Aktivní objekt",
+ "All objects": "Všechny objekty",
+ "Darken others": "Ztmavit ostatní",
+ "Darken Others": "Ztmavit ostatní",
+ "No active object": "Žádný aktivní objekt",
+ "Statistics": "Statistiky",
+ "Statistics overlay": "Překryv se statistikami",
+ "Statistics Overlay": "Překryv se statistikami",
+ "Wire on": "Drátový model na",
+ "Wire on Active Object Only": "Drátový model jen na aktivním objektu"
 }

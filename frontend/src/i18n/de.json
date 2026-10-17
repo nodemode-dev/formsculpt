@@ -1137,5 +1137,15 @@
  "Replaying history": "Verlauf wird abgespielt",
  "Slow": "Langsam",
  "Steps": "Schritte",
- "Very fast": "Sehr schnell"
+ "Very fast": "Sehr schnell",
+ "Active object": "Aktives Objekt",
+ "All objects": "Alle Objekte",
+ "Darken others": "Andere abdunkeln",
+ "Darken Others": "Andere abdunkeln",
+ "No active object": "Kein aktives Objekt",
+ "Statistics": "Statistik",
+ "Statistics overlay": "Statistik-Einblendung",
+ "Statistics Overlay": "Statistik-Einblendung",
+ "Wire on": "Drahtgitter auf",
+ "Wire on Active Object Only": "Drahtgitter nur auf aktivem Objekt"
 }

@@ -1137,5 +1137,15 @@
  "Replaying history": "กำลังเล่นประวัติซ้ำ",
  "Slow": "ช้า",
  "Steps": "ขั้นตอน",
- "Very fast": "เร็วมาก"
+ "Very fast": "เร็วมาก",
+ "Active object": "วัตถุที่ใช้งาน",
+ "All objects": "วัตถุทั้งหมด",
+ "Darken others": "ทำให้วัตถุอื่นมืดลง",
+ "Darken Others": "ทำให้วัตถุอื่นมืดลง",
+ "No active object": "ไม่มีวัตถุที่ใช้งาน",
+ "Statistics": "สถิติ",
+ "Statistics overlay": "แสดงสถิติบนมุมมอง",
+ "Statistics Overlay": "แสดงสถิติบนมุมมอง",
+ "Wire on": "โครงลวดบน",
+ "Wire on Active Object Only": "โครงลวดเฉพาะวัตถุที่ใช้งาน"
 }

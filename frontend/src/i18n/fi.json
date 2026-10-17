@@ -1137,5 +1137,15 @@
  "Replaying history": "Toistetaan historiaa",
  "Slow": "Hidas",
  "Steps": "Vaiheet",
- "Very fast": "Hyvin nopea"
+ "Very fast": "Hyvin nopea",
+ "Active object": "Aktiivinen objekti",
+ "All objects": "Kaikki objektit",
+ "Darken others": "Tummenna muut",
+ "Darken Others": "Tummenna muut",
+ "No active object": "Ei aktiivista objektia",
+ "Statistics": "Tilastot",
+ "Statistics overlay": "Tilastot näkymän päällä",
+ "Statistics Overlay": "Tilastot näkymän päällä",
+ "Wire on": "Rautalanka kohteessa",
+ "Wire on Active Object Only": "Rautalanka vain aktiivisessa objektissa"
 }

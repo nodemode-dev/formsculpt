@@ -1137,5 +1137,15 @@
  "Replaying history": "Geschiedenis wordt afgespeeld",
  "Slow": "Langzaam",
  "Steps": "Stappen",
- "Very fast": "Zeer snel"
+ "Very fast": "Zeer snel",
+ "Active object": "Actief object",
+ "All objects": "Alle objecten",
+ "Darken others": "Andere donkerder",
+ "Darken Others": "Andere donkerder",
+ "No active object": "Geen actief object",
+ "Statistics": "Statistieken",
+ "Statistics overlay": "Statistieken over de weergave",
+ "Statistics Overlay": "Statistieken over de weergave",
+ "Wire on": "Draadmodel op",
+ "Wire on Active Object Only": "Draadmodel alleen op actief object"
 }

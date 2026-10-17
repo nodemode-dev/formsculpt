@@ -1137,5 +1137,15 @@
  "Replaying history": "Geçmiş oynatılıyor",
  "Slow": "Yavaş",
  "Steps": "Adımlar",
- "Very fast": "Çok hızlı"
+ "Very fast": "Çok hızlı",
+ "Active object": "Etkin nesne",
+ "All objects": "Tüm nesneler",
+ "Darken others": "Diğerlerini karart",
+ "Darken Others": "Diğerlerini karart",
+ "No active object": "Etkin nesne yok",
+ "Statistics": "İstatistikler",
+ "Statistics overlay": "Görünüm üstünde istatistikler",
+ "Statistics Overlay": "Görünüm üstünde istatistikler",
+ "Wire on": "Tel kafes",
+ "Wire on Active Object Only": "Tel kafes yalnızca etkin nesnede"
 }

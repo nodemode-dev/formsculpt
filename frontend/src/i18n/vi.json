@@ -1137,5 +1137,15 @@
  "Replaying history": "Đang phát lại lịch sử",
  "Slow": "Chậm",
  "Steps": "Bước",
- "Very fast": "Rất nhanh"
+ "Very fast": "Rất nhanh",
+ "Active object": "Đối tượng đang chọn",
+ "All objects": "Mọi đối tượng",
+ "Darken others": "Làm tối các đối tượng khác",
+ "Darken Others": "Làm tối các đối tượng khác",
+ "No active object": "Không có đối tượng đang chọn",
+ "Statistics": "Thống kê",
+ "Statistics overlay": "Thống kê trên khung nhìn",
+ "Statistics Overlay": "Thống kê trên khung nhìn",
+ "Wire on": "Khung dây trên",
+ "Wire on Active Object Only": "Khung dây chỉ trên đối tượng đang chọn"
 }

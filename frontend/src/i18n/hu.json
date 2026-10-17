@@ -1137,5 +1137,15 @@
  "Replaying history": "Előzmények visszajátszása folyik",
  "Slow": "Lassú",
  "Steps": "Lépések",
- "Very fast": "Nagyon gyors"
+ "Very fast": "Nagyon gyors",
+ "Active object": "Aktív objektum",
+ "All objects": "Minden objektum",
+ "Darken others": "Többi sötétítése",
+ "Darken Others": "Többi sötétítése",
+ "No active object": "Nincs aktív objektum",
+ "Statistics": "Statisztika",
+ "Statistics overlay": "Statisztika a nézeten",
+ "Statistics Overlay": "Statisztika a nézeten",
+ "Wire on": "Drótváz ezen",
+ "Wire on Active Object Only": "Drótváz csak az aktív objektumon"
 }

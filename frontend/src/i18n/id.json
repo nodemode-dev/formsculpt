@@ -1137,5 +1137,15 @@
  "Replaying history": "Memutar ulang riwayat",
  "Slow": "Lambat",
  "Steps": "Langkah",
- "Very fast": "Sangat cepat"
+ "Very fast": "Sangat cepat",
+ "Active object": "Objek aktif",
+ "All objects": "Semua objek",
+ "Darken others": "Gelapkan yang lain",
+ "Darken Others": "Gelapkan yang lain",
+ "No active object": "Tidak ada objek aktif",
+ "Statistics": "Statistik",
+ "Statistics overlay": "Statistik di atas tampilan",
+ "Statistics Overlay": "Statistik di atas tampilan",
+ "Wire on": "Rangka kawat pada",
+ "Wire on Active Object Only": "Rangka kawat hanya pada objek aktif"
 }

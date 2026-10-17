@@ -1137,5 +1137,15 @@
  "Replaying history": "履歴を再生中",
  "Slow": "遅い",
  "Steps": "ステップ",
- "Very fast": "とても速い"
+ "Very fast": "とても速い",
+ "Active object": "アクティブなオブジェクト",
+ "All objects": "すべてのオブジェクト",
+ "Darken others": "他を暗くする",
+ "Darken Others": "他を暗くする",
+ "No active object": "アクティブなオブジェクトなし",
+ "Statistics": "統計",
+ "Statistics overlay": "統計オーバーレイ",
+ "Statistics Overlay": "統計オーバーレイ",
+ "Wire on": "ワイヤーの対象",
+ "Wire on Active Object Only": "アクティブなオブジェクトだけにワイヤー"
 }

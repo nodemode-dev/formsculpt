@@ -1137,5 +1137,15 @@
  "Replaying history": "Воспроизведение истории",
  "Slow": "Медленно",
  "Steps": "Шаги",
- "Very fast": "Очень быстро"
+ "Very fast": "Очень быстро",
+ "Active object": "Активный объект",
+ "All objects": "Все объекты",
+ "Darken others": "Затемнить остальные",
+ "Darken Others": "Затемнить остальные",
+ "No active object": "Нет активного объекта",
+ "Statistics": "Статистика",
+ "Statistics overlay": "Статистика поверх вида",
+ "Statistics Overlay": "Статистика поверх вида",
+ "Wire on": "Сетка на",
+ "Wire on Active Object Only": "Сетка только на активном объекте"
 }

@@ -1137,5 +1137,15 @@
  "Replaying history": "기록 재생 중",
  "Slow": "느리게",
  "Steps": "단계",
- "Very fast": "매우 빠르게"
+ "Very fast": "매우 빠르게",
+ "Active object": "활성 오브젝트",
+ "All objects": "모든 오브젝트",
+ "Darken others": "나머지 어둡게",
+ "Darken Others": "나머지 어둡게",
+ "No active object": "활성 오브젝트 없음",
+ "Statistics": "통계",
+ "Statistics overlay": "통계 오버레이",
+ "Statistics Overlay": "통계 오버레이",
+ "Wire on": "와이어 대상",
+ "Wire on Active Object Only": "활성 오브젝트에만 와이어"
 }
