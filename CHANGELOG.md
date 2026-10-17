@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.72.0 · 2026-10-17
+
+### Added
+
+- Themes (Window > Theme, or Theme in the View section): Follow NodeMode (as before), Dark theme, Light theme and High contrast (black grounds, white text, strong borders and focus rings). The choice is applied before the window first paints and travels in layout files.
+- Translucent panels: the viewport runs under the panel and the tool rail, and the panel, rail, menus, dialogs and floating toolbars are see-through with a blur. The tablet layout's floating panels follow the same switch.
+- Tool buttons in the panel carry a colour stripe by family (sculpt blue, mask grey, paint green, cut red, build yellow, move purple, view cyan), the same colours as the tablet palette.
+- 1123 interface strings in every language.
+
+### Fixed
+
+- In the tablet layout on shorter screens the options card no longer runs into the quick bar; it and the tool pill sit above the quick bar's row.
+
 ## 0.71.0 · 2026-10-17
 
 ### Added
