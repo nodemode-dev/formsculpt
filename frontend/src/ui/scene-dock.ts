@@ -15,9 +15,13 @@ export interface DockHooks {
   run: (name: string, args: Record<string, unknown>) => Promise<void>;
   isLocked: (id: number) => boolean;
   toggleLock: (id: number) => void;
+  /** Moves the view to a saved view; saves the current view under a new name; deletes one. */
+  recallView: (name: string) => void;
+  saveView: () => void;
+  deleteView: (name: string) => void;
 }
 
-type Tab = 'objects' | 'layers';
+type Tab = 'objects' | 'layers' | 'views';
 const TAB_STORE = 'formsculptor.dock';
 
 const count = (n: number): string => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e5 ? 0 : 1)}k` : String(n));
@@ -108,6 +112,11 @@ export class SceneDock {
   private readonly layerActions: HTMLButtonElement[] = [];
   private readonly emptyObjects = el('p', 'tb-dock-empty', '');
   private readonly emptyLayers = el('p', 'tb-dock-empty', '');
+  private readonly viewList = el('ul', 'tb-dock-list');
+  private readonly viewRows = new Map<string, HTMLLIElement>();
+  private readonly emptyViews = el('p', 'tb-dock-empty', '');
+  /** The saved view last recalled, marked in the list until another is chosen. */
+  private lastView = '';
   private tab: Tab = 'objects';
   private scene: SceneSummary = { objects: [], active: null };
   /** The strength a hidden layer had, so showing it again gives it back (per object id and layer position). */
@@ -117,7 +126,7 @@ export class SceneDock {
     this.element.setAttribute('aria-label', t('Objects and layers'));
     const head = el('div', 'tb-dock-head');
     head.setAttribute('role', 'tablist');
-    for (const [tab, label] of [['objects', 'Objects'], ['layers', 'Layers']] as const) {
+    for (const [tab, label] of [['objects', 'Objects'], ['layers', 'Layers'], ['views', 'Views']] as const) {
       const b = el('button', 'tb-dock-tab', t(label));
       b.type = 'button';
       b.setAttribute('role', 'tab');
@@ -175,13 +184,34 @@ export class SceneDock {
     this.layerList.setAttribute('aria-label', t('Layers'));
     layers.append(this.layerOwner, this.layerList, this.emptyLayers, layerActions);
 
+    // Views: the scene's saved camera views; a row moves the view there, its cross deletes it; Save view keeps the
+    // current one under a new name.
+    const views = el('div', 'tb-dock-page');
+    const viewActions = el('div', 'tb-dock-actions');
+    const save = labelled('plus', t('Save view'), 'tb-dock-act');
+    save.addEventListener('click', () => this.hooks.saveView());
+    viewActions.append(save);
+    setText(this.emptyViews, t('No saved views yet: turn the view where you want it, then Save view'));
+    this.viewList.setAttribute('aria-label', t('Views'));
+    this.viewList.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const row = target.closest<HTMLLIElement>('li');
+      const name = row?.dataset.view;
+      if (!row || name === undefined) return;
+      if (target.closest('[data-act="delete"]')) this.hooks.deleteView(name);
+      else this.recall(name);
+    });
+    views.append(this.viewList, this.emptyViews, viewActions);
+
     this.pages.set('objects', objects);
     this.pages.set('layers', layers);
+    this.pages.set('views', views);
     const body = el('div', 'tb-dock-body');
-    body.append(objects, layers);
+    body.append(objects, layers, views);
     this.element.append(head, body);
     try {
-      if (localStorage.getItem(TAB_STORE) === 'layers') this.tab = 'layers';
+      const kept = localStorage.getItem(TAB_STORE);
+      if (kept === 'layers' || kept === 'views') this.tab = kept;
     } catch {
       // storage blocked; the dock opens on Objects
     }
@@ -210,6 +240,51 @@ export class SceneDock {
     this.scene = scene;
     this.patchObjects();
     this.patchLayers();
+    this.patchViews();
+  }
+
+  /** Moves to a saved view and marks it as the one in use. */
+  recall(name: string): void {
+    this.lastView = name;
+    this.hooks.recallView(name);
+    this.patchViews();
+  }
+
+  private patchViews(): void {
+    const names = this.scene.views ?? [];
+    const keep = new Set(names);
+    for (const [name, row] of this.viewRows) {
+      if (!keep.has(name)) {
+        row.remove();
+        this.viewRows.delete(name);
+      }
+    }
+    names.forEach((name, i) => {
+      let row = this.viewRows.get(name);
+      if (!row) {
+        row = el('li', 'tb-dock-row');
+        row.dataset.view = name;
+        row.tabIndex = 0;
+        const icon = el('span', 'tb-dock-glyph');
+        icon.append(glyph('camera'));
+        const del = iconOnly('close', t('Delete view'), 'tb-dock-toggle');
+        del.dataset.act = 'delete';
+        del.setAttribute('aria-pressed', 'true');
+        row.append(icon, el('span', 'tb-dock-name', name), del);
+        const r = row;
+        row.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            r.click();
+          }
+        });
+        this.viewRows.set(name, row);
+      }
+      if (this.viewList.children[i] !== row) this.viewList.insertBefore(row, this.viewList.children[i] ?? null);
+      setAttr(row, 'aria-current', name === this.lastView ? 'true' : 'false');
+    });
+    const empty = names.length === 0;
+    if (this.emptyViews.hidden !== !empty) this.emptyViews.hidden = !empty;
   }
 
   private patchObjects(): void {

@@ -148,6 +148,26 @@ export class OrbitCamera {
     return (2 * this.distance * Math.tan(this.fov / 2)) / Math.max(height, 1);
   }
 
+  /** First-person look: turns the view about the eye (the eye stays put, the target swings round it). Drags in
+   * pixels, the same feel as orbiting. */
+  look(dx: number, dy: number): void {
+    const eye = this.eye();
+    if (this.trackball) this.setTrackball(false);
+    this.yaw += dx * 0.004;
+    this.pitch = Math.max(-Math.PI / 2 + 1e-3, Math.min(Math.PI / 2 - 1e-3, this.pitch + dy * 0.004));
+    // The target is put back in front of the eye along the new direction, at the same distance.
+    const d = this.turntableDir();
+    this.target = sub(eye, scale(d, this.distance));
+  }
+
+  /** First-person move: forward along the view, right across it and up the world's vertical, in world units. The
+   * eye and the target move together. */
+  walk(forward: number, right: number, up: number): void {
+    const f = normalize(sub(this.target, this.eye()));
+    const r = normalize(cross(f, [0, 1, 0]));
+    this.target = add(this.target, add(add(scale(f, forward), scale(r, right)), [0, up, 0]));
+  }
+
   /** Where the view is, as a history step records it: target, distance, the eye's direction as yaw and pitch in
    * degrees (the engine's get_view convention) and orthographic. A trackball view's roll is not kept. */
   pose(): CameraPose {

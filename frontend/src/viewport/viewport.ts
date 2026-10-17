@@ -187,7 +187,8 @@ export class Viewport {
     }
     // Alt and Shift turn and pan the view, except on a tool handle that takes them as modifiers (the gizmo's).
     const modified = e.altKey || e.shiftKey;
-    const sculpt = (e.button === 0 || held) && (!modified || (this.grabsModified?.(e.offsetX, e.offsetY) ?? false)) && this.strokes?.enabled();
+    // In fly navigation every drag looks around; nothing is sculpted.
+    const sculpt = !this.flying && (e.button === 0 || held) && (!modified || (this.grabsModified?.(e.offsetX, e.offsetY) ?? false)) && this.strokes?.enabled();
     // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
     const pending = sculpt && e.pointerType === 'touch';
     this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera' };
@@ -246,7 +247,8 @@ export class Viewport {
     this.drag.x = e.clientX;
     this.drag.y = e.clientY;
     const panning = this.drag.button === 1 || this.drag.button === 2 || e.shiftKey;
-    if (panning) this.camera.pan(dx, dy, this.canvas.clientHeight);
+    if (this.flying && !panning) this.camera.look(dx, dy);
+    else if (panning) this.camera.pan(dx, dy, this.canvas.clientHeight);
     else if (e.ctrlKey || e.metaKey) this.camera.zoom(Math.exp(dy * 0.01));
     else this.camera.orbit(dx, dy);
     this.invalidate();
@@ -284,6 +286,9 @@ export class Viewport {
   penHold: ((which: 'barrel' | 'eraser', down: boolean) => boolean) | null = null;
   /** Set by the app: the barrel button pressed (true) or let go (false) while the pen hovers. */
   penHover: ((down: boolean) => void) | null = null;
+  /** Fly navigation (first person): drags look around from the eye instead of orbiting, and never sculpt. The keys
+   * that walk are the app's. */
+  flying = false;
   /** Set by the app: whether a press with Alt or Shift at this canvas point lands on a tool handle that takes the
    * modifier itself (the gizmo's), rather than turning or panning the view. */
   grabsModified: ((x: number, y: number) => boolean) | null = null;

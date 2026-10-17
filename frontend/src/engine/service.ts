@@ -51,6 +51,8 @@ export interface ObjectSummary {
 export interface SceneSummary {
   objects: ObjectSummary[];
   active: number | null;
+  /** The saved camera views' names, in order (engines before 0.77.0 leave it out). */
+  views?: string[];
 }
 
 export interface CommandError {

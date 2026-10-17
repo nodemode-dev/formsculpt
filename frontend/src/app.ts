@@ -17,6 +17,7 @@ import { Viewport, type Ray } from './viewport/viewport';
 import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { CameraPose, ViewName } from './viewport/camera';
 import { SceneDock } from './ui/scene-dock';
+import { FlyNav } from './ui/fly';
 import { DIM_ON, loadOverlays, parseOverlays, saveOverlays, StatsOverlay } from './ui/overlays';
 import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, saveHistoryPrefs, type HistoryPrefs } from './ui/history-replay';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
@@ -137,6 +138,7 @@ interface Shell {
   dimOthers: HTMLInputElement;
   statsOverlay: HTMLInputElement;
   statsReadout: StatsOverlay;
+  flyBadge: HTMLElement;
   tablet: TabletLayout;
   thicken: HTMLInputElement;
   toolSwap: HTMLInputElement;
@@ -1347,6 +1349,11 @@ function buildShell(root: HTMLElement): Shell {
   const statsOverlay = input('checkbox', { 'aria-label': 'Statistics overlay' });
   const statsReadout = new StatsOverlay();
   stage.append(statsReadout.element);
+  // While fly navigation is on, a badge at the top of the viewport says so and how to leave it.
+  const flyBadge = el('div', 'fly-badge', 'Fly navigation · W A S D, Q E, drag to look · Esc to leave');
+  flyBadge.setAttribute('role', 'status');
+  flyBadge.hidden = true;
+  stage.append(flyBadge);
   viewFields.append(field('Wireframe', wireframe), field('Wire on', wireScope), field('X-ray', xray), field('Darken others', dimOthers), field('Statistics overlay', statsOverlay));
   // Choosing the tool already in hand goes back to the one before it (kept in this browser).
   const toolSwap = input('checkbox', { 'aria-label': 'Second press swaps' });
@@ -1393,6 +1400,15 @@ function buildShell(root: HTMLElement): Shell {
   clearRail.type = 'button';
   viewGrid.append(clearRail);
   panel.append(viewGrid);
+  // Saved camera views (kept with the scene and in projects) and fly navigation, as registry commands.
+  const savedGrid = el('div', 'add-grid');
+  for (const [cmd, label] of [['view.save_current', 'Save view'], ['view.prev_saved', 'Previous view'], ['view.next_saved', 'Next view'], ['view.fly', 'Fly']] as const) {
+    const b = el('button', 'btn', label);
+    b.type = 'button';
+    b.dataset.cmd = cmd;
+    savedGrid.append(b);
+  }
+  panel.append(savedGrid);
   panel.append(el('p', 'panel-hint', 'Right-click any button to pin it to the tool rail.'));
 
   panel.append(el('h2', 'gap', 'Lighting'));
@@ -1581,7 +1597,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -2291,6 +2307,66 @@ class SceneView {
 
   /** The tablet layout's Objects and Layers dock. */
   private dock: SceneDock | null = null;
+  /** The saved view last gone to, so Next and Previous Saved View step on from it. */
+  private lastSavedView = '';
+
+  /** Moves the view to a saved view, easing there. */
+  private async recallView(name: string): Promise<void> {
+    const reply = await dispatch<{ views: { name: string; target: Vec3; distance: number; yaw: number; pitch: number; ortho: boolean }[] }>('list_views');
+    const v = reply.ok ? reply.result.views.find((x) => x.name === name) : undefined;
+    if (!v) {
+      this.note(t('That saved view is gone'));
+      return;
+    }
+    this.lastSavedView = name;
+    if (this.fly.active) this.fly.set(false);
+    this.replay.ease({ target: [...v.target] as Vec3, distance: v.distance, yaw: v.yaw, pitch: v.pitch, ortho: v.ortho });
+    this.note(`${t('View')}: ${name}`);
+  }
+
+  /** Saves the current view under a name asked for (a name already used is replaced). */
+  private async saveViewAs(): Promise<void> {
+    const names = this.scene.views ?? [];
+    let n = names.length + 1;
+    while (names.includes(`${t('View')} ${n}`)) n++;
+    const name = (await this.prompt.ask(t('Save view as'), `${t('View')} ${n}`))?.trim();
+    if (!name) return;
+    const pose = this.viewport.camera.pose();
+    const reply = await dispatch<{ replaced: boolean }>('save_view', { name: name.slice(0, 60), ...pose, target: [...pose.target] });
+    this.note(reply.ok ? `${reply.result.replaced ? t('View replaced') : t('View saved')}: ${name}` : reply.error.message);
+    if (reply.ok) this.lastSavedView = name;
+    await this.refresh();
+  }
+
+  /** Steps through the saved views in order (wrapping round), from the one last gone to. */
+  private cycleView(step: number): void {
+    const names = this.scene.views ?? [];
+    if (names.length === 0) {
+      this.note(t('No saved views yet: turn the view where you want it, then Save view'));
+      return;
+    }
+    const at = names.indexOf(this.lastSavedView);
+    const next = names[(((at < 0 ? (step > 0 ? -1 : 0) : at) + step) % names.length + names.length) % names.length];
+    this.dock?.recall(next);
+    if (!this.dock) void this.recallView(next);
+  }
+
+  /** First-person navigation (ui/fly.ts); the badge says how to use it while it is on. */
+  private readonly fly = new FlyNav({
+    walk: (f, r, u) => {
+      this.viewport.camera.walk(f, r, u);
+      this.viewport.invalidate();
+    },
+    speed: () => this.viewport.camera.distance * 0.6,
+    onToggle: (on) => {
+      this.viewport.flying = on;
+      this.shell.flyBadge.hidden = !on;
+      // No brush ring while flying: a drag looks, it does not sculpt.
+      this.shell.canvas.closest('#app')?.classList.toggle('flying', on);
+      this.note(on ? t('Fly navigation: W A S D to move, Q and E down and up, drag to look, Esc to leave') : '');
+      scheduleChrome();
+    },
+  });
 
   private wireTablet(): void {
     const s = this.shell;
@@ -2299,6 +2375,9 @@ class SceneView {
       run: (name, args) => this.run(name, args),
       isLocked: (id) => this.locked.has(id),
       toggleLock: (id) => this.toggleLock(id),
+      recallView: (name) => void this.recallView(name),
+      saveView: () => void this.saveViewAs(),
+      deleteView: (name) => void this.run('delete_view', { name }),
     });
     s.canvas.parentElement?.append(this.dock.element);
     this.dock.update(this.scene);
@@ -4185,6 +4264,10 @@ class SceneView {
         checked: () => Number(s.dimOthers.value) > 0,
       },
       { id: 'view.stats', label: 'Statistics Overlay', run: () => toggle(s.statsOverlay), checked: () => s.statsOverlay.checked },
+      { id: 'view.fly', label: 'Fly Navigation', keys: ['Shift+F'], run: () => this.fly.toggle(), checked: () => this.fly.active },
+      { id: 'view.save_current', label: 'Save View…', run: () => void this.saveViewAs() },
+      { id: 'view.next_saved', label: 'Next Saved View', run: () => this.cycleView(1), enabled: () => (this.scene.views?.length ?? 0) > 0 },
+      { id: 'view.prev_saved', label: 'Previous Saved View', run: () => this.cycleView(-1), enabled: () => (this.scene.views?.length ?? 0) > 0 },
       ...(
         [
           ['all', 'Gizmo: All Handles'],
