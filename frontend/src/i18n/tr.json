@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Kenar döngüsünü içe al",
  "Inset edge loop, border only": "Kenar döngüsünü içe al, yalnızca kenarlar",
  "Split point": "Noktayı böl",
- "Stitch points": "Noktaları dik"
+ "Stitch points": "Noktaları dik",
+ "Head (whole object)": "Kafa (tüm nesne)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopoloji: {faces} yüz, {folded} katlanmış (şekil ortasından bütünüyle görünmüyor)",
+ "Sphere (whole object)": "Küre (tüm nesne)"
 }

@@ -1022,5 +1022,8 @@
  "Inset edge loop": "แทรกลูปขอบด้านใน",
  "Inset edge loop, border only": "แทรกลูปขอบด้านใน เฉพาะขอบ",
  "Split point": "แยกจุด",
- "Stitch points": "เย็บจุด"
+ "Stitch points": "เย็บจุด",
+ "Head (whole object)": "ศีรษะ (ทั้งวัตถุ)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "รีโทโพโลยี: {faces} หน้า, พับ {folded} หน้า (มองรูปทรงจากกึ่งกลางไม่เห็นทั้งหมด)",
+ "Sphere (whole object)": "ทรงกลม (ทั้งวัตถุ)"
 }

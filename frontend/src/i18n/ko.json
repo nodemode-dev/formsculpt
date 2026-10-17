@@ -1022,5 +1022,8 @@
  "Inset edge loop": "엣지 루프 인셋",
  "Inset edge loop, border only": "엣지 루프 인셋, 경계만",
  "Split point": "점 분할",
- "Stitch points": "점 봉합"
+ "Stitch points": "점 봉합",
+ "Head (whole object)": "머리 (객체 전체)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "리토폴로지: 면 {faces}개, 접힘 {folded}개 (형태가 중심에서 전부 보이지 않음)",
+ "Sphere (whole object)": "구 (객체 전체)"
 }

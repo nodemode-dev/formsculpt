@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Inset loop tepi",
  "Inset edge loop, border only": "Inset loop tepi, hanya batas",
  "Split point": "Pecah titik",
- "Stitch points": "Jahit titik"
+ "Stitch points": "Jahit titik",
+ "Head (whole object)": "Kepala (seluruh objek)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} muka, {folded} terlipat (bentuk tidak terlihat utuh dari tengahnya)",
+ "Sphere (whole object)": "Bola (seluruh objek)"
 }

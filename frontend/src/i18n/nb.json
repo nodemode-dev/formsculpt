@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Senk kantløkke",
  "Inset edge loop, border only": "Senk kantløkke, bare kanter",
  "Split point": "Del punkt",
- "Stitch points": "Sy sammen punkter"
+ "Stitch points": "Sy sammen punkter",
+ "Head (whole object)": "Hode (hele objektet)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} flater, {folded} brettet (formen sees ikke hel fra midten)",
+ "Sphere (whole object)": "Kule (hele objektet)"
 }

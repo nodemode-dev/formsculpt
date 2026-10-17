@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Infälld kantslinga",
  "Inset edge loop, border only": "Infälld kantslinga, bara kanter",
  "Split point": "Dela punkt",
- "Stitch points": "Sy ihop punkter"
+ "Stitch points": "Sy ihop punkter",
+ "Head (whole object)": "Huvud (hela objektet)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} ytor, {folded} vikta (formen syns inte hel från sin mitt)",
+ "Sphere (whole object)": "Sfär (hela objektet)"
 }

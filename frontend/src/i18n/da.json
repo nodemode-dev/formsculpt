@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Indsæt kantløkke indad",
  "Inset edge loop, border only": "Indsæt kantløkke indad, kun kanter",
  "Split point": "Del punkt",
- "Stitch points": "Sy punkter sammen"
+ "Stitch points": "Sy punkter sammen",
+ "Head (whole object)": "Hoved (hele objektet)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologi: {faces} flader, {folded} foldet (formen ses ikke helt fra sin midte)",
+ "Sphere (whole object)": "Kugle (hele objektet)"
 }

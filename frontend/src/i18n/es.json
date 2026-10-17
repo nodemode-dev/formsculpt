@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Insertar bucle de aristas hacia dentro",
  "Inset edge loop, border only": "Insertar bucle de aristas hacia dentro, solo bordes",
  "Split point": "Dividir punto",
- "Stitch points": "Coser puntos"
+ "Stitch points": "Coser puntos",
+ "Head (whole object)": "Cabeza (objeto entero)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopología: {faces} caras, {folded} plegadas (la forma no se ve entera desde su centro)",
+ "Sphere (whole object)": "Esfera (objeto entero)"
 }

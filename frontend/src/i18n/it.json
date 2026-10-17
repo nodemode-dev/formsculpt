@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Inserto loop di spigoli",
  "Inset edge loop, border only": "Inserto loop di spigoli, solo bordi",
  "Split point": "Dividi punto",
- "Stitch points": "Cuci punti"
+ "Stitch points": "Cuci punti",
+ "Head (whole object)": "Testa (oggetto intero)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologia: {faces} facce, {folded} ripiegate (la forma non si vede intera dal suo centro)",
+ "Sphere (whole object)": "Sfera (oggetto intero)"
 }

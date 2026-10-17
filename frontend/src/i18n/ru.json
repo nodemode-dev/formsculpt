@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Вставить петлю рёбер внутрь",
  "Inset edge loop, border only": "Вставить петлю рёбер внутрь, только края",
  "Split point": "Разделить точку",
- "Stitch points": "Сшить точки"
+ "Stitch points": "Сшить точки",
+ "Head (whole object)": "Голова (весь объект)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Ретопология: {faces} граней, {folded} перевёрнуто (форма не видна целиком из своего центра)",
+ "Sphere (whole object)": "Сфера (весь объект)"
 }

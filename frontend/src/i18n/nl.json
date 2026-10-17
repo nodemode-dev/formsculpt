@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Randlus inzetten",
  "Inset edge loop, border only": "Randlus inzetten, alleen randen",
  "Split point": "Punt splitsen",
- "Stitch points": "Punten naaien"
+ "Stitch points": "Punten naaien",
+ "Head (whole object)": "Hoofd (heel object)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie: {faces} vlakken, {folded} gevouwen (de vorm is vanuit het midden niet helemaal te zien)",
+ "Sphere (whole object)": "Bol (heel object)"
 }

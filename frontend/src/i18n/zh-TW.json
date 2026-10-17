@@ -1022,5 +1022,8 @@
  "Inset edge loop": "內插循環邊",
  "Inset edge loop, border only": "內插循環邊（僅邊框）",
  "Split point": "拆分點",
- "Stitch points": "縫合點"
+ "Stitch points": "縫合點",
+ "Head (whole object)": "頭部（整個物件）",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "重新拓撲：{faces} 個面，{folded} 個翻折（從形體中心無法看見其全部）",
+ "Sphere (whole object)": "球體（整個物件）"
 }

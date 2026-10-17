@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Kantenschleife einsetzen",
  "Inset edge loop, border only": "Kantenschleife einsetzen, nur Ränder",
  "Split point": "Punkt teilen",
- "Stitch points": "Punkte verschweißen"
+ "Stitch points": "Punkte verschweißen",
+ "Head (whole object)": "Kopf (ganzes Objekt)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie: {faces} Flächen, {folded} gefaltet (die Form ist von ihrer Mitte aus nicht ganz sichtbar)",
+ "Sphere (whole object)": "Kugel (ganzes Objekt)"
 }

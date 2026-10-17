@@ -1022,5 +1022,8 @@
  "Inset edge loop": "エッジループを差し込み",
  "Inset edge loop, border only": "エッジループを差し込み（境界のみ）",
  "Split point": "点を分割",
- "Stitch points": "点を縫合"
+ "Stitch points": "点を縫合",
+ "Head (whole object)": "頭部（オブジェクト全体）",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "リトポロジー: {faces} 面、{folded} 面が折り返し（形状が中心から全体を見通せません）",
+ "Sphere (whole object)": "球（オブジェクト全体）"
 }

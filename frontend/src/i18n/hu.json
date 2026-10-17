@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Élhurok besüllyesztése",
  "Inset edge loop, border only": "Élhurok besüllyesztése, csak szélek",
  "Split point": "Pont szétosztása",
- "Stitch points": "Pontok összevarrása"
+ "Stitch points": "Pontok összevarrása",
+ "Head (whole object)": "Fej (teljes objektum)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopológia: {faces} lap, {folded} visszahajlott (az alak a közepéről nem látszik egészben)",
+ "Sphere (whole object)": "Gömb (teljes objektum)"
 }

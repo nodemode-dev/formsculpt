@@ -1022,5 +1022,8 @@
  "Inset edge loop": "Incruster la boucle d’arêtes",
  "Inset edge loop, border only": "Incruster la boucle d’arêtes, bords seuls",
  "Split point": "Scinder le point",
- "Stitch points": "Coudre les points"
+ "Stitch points": "Coudre les points",
+ "Head (whole object)": "Tête (objet entier)",
+ "Retopology: {faces} faces, {folded} folded (the shape is not seen whole from its middle)": "Retopologie : {faces} faces, {folded} repliées (la forme n’est pas visible en entier depuis son centre)",
+ "Sphere (whole object)": "Sphère (objet entier)"
 }
