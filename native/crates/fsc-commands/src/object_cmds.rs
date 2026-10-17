@@ -79,7 +79,8 @@ pub(crate) fn transform_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "translate": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "World offset."},
             "rotate": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Degrees about x, y and z (applied in that order) around the object's bounds centre."},
-            "scale": {"type": ["number", "array"], "items": {"type": "number"}, "description": "A factor or [x, y, z] factors around the bounds centre."}
+            "scale": {"type": ["number", "array"], "items": {"type": "number"}, "description": "A factor or [x, y, z] factors around the bounds centre."},
+            "pivot": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Turn and scale about this world point instead of the bounds centre (the transform gizmo's picked pivot or the world origin)."}
         },
         "required": [],
         "additionalProperties": false
@@ -88,8 +89,20 @@ pub(crate) fn transform_schema() -> Value {
 
 pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
-    let d = Deformer::Transform { translate: vec3(args, "translate", Vec3::ZERO)?, rotate_deg: vec3(args, "rotate", Vec3::ZERO)?, scale: vec3(args, "scale", Vec3::ONE)? };
+    let (translate, rotate_deg, scale) = (vec3(args, "translate", Vec3::ZERO)?, vec3(args, "rotate", Vec3::ZERO)?, vec3(args, "scale", Vec3::ONE)?);
     let object = s.scene.get(id).expect("checked");
+    // The deformer turns and scales about the bounds centre C; about a pivot P instead is the same change plus a move:
+    // P + t + RS(p - P) = C + t' + RS(p - C) with t' = t + (P - C) - RS(P - C).
+    let translate = match args.get("pivot").filter(|v| !v.is_null()) {
+        None => translate,
+        Some(_) => {
+            let pivot = vec3(args, "pivot", Vec3::ZERO)?;
+            let c = object.mesh.bounds().center();
+            let r = glam::Quat::from_euler(glam::EulerRot::XYZ, rotate_deg.x.to_radians(), rotate_deg.y.to_radians(), rotate_deg.z.to_radians());
+            translate + (pivot - c) - r * ((pivot - c) * scale)
+        }
+    };
+    let d = Deformer::Transform { translate, rotate_deg, scale };
     let positions = fsc_topo::deform(&object.mesh, &object.mask, d);
     Ok(set_positions(s, id, "Transform", positions))
 }

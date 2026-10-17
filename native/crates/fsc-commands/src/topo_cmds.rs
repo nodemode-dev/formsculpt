@@ -71,7 +71,8 @@ pub(crate) fn remesh_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "resolution": {"type": "integer", "minimum": 8, "maximum": 320, "default": 128, "description": "Voxels along the object's longest side; higher keeps more detail and makes more triangles."}
+            "resolution": {"type": "integer", "minimum": 8, "maximum": 320, "default": 128, "description": "Voxels along the object's longest side; higher keeps more detail and makes more triangles."},
+            "thicken": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Thicken thin parts, in percent: at 100 every part comes out at least a voxel thick, so sheets and strands thinner than a voxel survive the remesh; the rest of the surface moves out by up to half a voxel."}
         },
         "required": [],
         "additionalProperties": false
@@ -85,8 +86,12 @@ pub(crate) fn remesh_voxel(s: &mut Session, args: &Value) -> Result<Value, Comma
     if !(8..=320).contains(&resolution) {
         return Err(bad("resolution must be 8 to 320"));
     }
+    let thicken = match args.get("thicken") {
+        None | Some(Value::Null) => 0.0,
+        Some(v) => v.as_f64().filter(|t| (0.0..=100.0).contains(t)).ok_or_else(|| bad("thicken must be 0 to 100"))?,
+    };
     let object = s.scene.get(id).expect("checked");
-    let mesh = fsc_topo::voxel_remesh(&object.mesh, &object.bvh, resolution as u32).map_err(|e| CommandError::new("remesh_failed", e))?;
+    let mesh = fsc_topo::voxel_remesh_thick(&object.mesh, &object.bvh, resolution as u32, (thicken / 100.0) as f32).map_err(|e| CommandError::new("remesh_failed", e))?;
     let mask = vec![0.0; mesh.vertex_count()];
     apply(s, id, "Voxel Remesh", mesh, mask)
 }

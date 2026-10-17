@@ -81,11 +81,24 @@ impl Grid {
 }
 
 pub fn voxel_remesh(mesh: &Mesh, bvh: &Bvh, resolution: u32) -> Result<Mesh, String> {
+    voxel_remesh_thick(mesh, bvh, resolution, 0.0)
+}
+
+/// voxel_remesh that keeps thin parts: with `thicken` (0 to 1) the field is joined with a shell of radius r = thicken
+/// times half a voxel around the surface, so every part comes out at least 2r thick (a sheet or strand thinner than a
+/// voxel survives instead of breaking up) while the rest of the surface moves out by r, under the voxel size.
+pub fn voxel_remesh_thick(mesh: &Mesh, bvh: &Bvh, resolution: u32, thicken: f32) -> Result<Mesh, String> {
     if mesh.triangle_count() == 0 {
         return Err("the mesh is empty".into());
     }
     let grid = Grid::around(mesh.bounds(), resolution)?;
-    let field = narrow_band(mesh, bvh, &grid, grid.cell * 2.0);
+    let mut field = narrow_band(mesh, bvh, &grid, grid.cell * 2.0);
+    let r = thicken.clamp(0.0, 1.0) * grid.cell * 0.5;
+    if r > 0.0 {
+        for f in field.iter_mut() {
+            *f = f.min(f.abs() - r);
+        }
+    }
     surface_nets(&field, &grid)
 }
 
