@@ -18,6 +18,7 @@ import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { ViewName } from './viewport/camera';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
+import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
@@ -110,6 +111,9 @@ interface Shell {
   fieldHardAngle: HTMLInputElement;
   fieldDensity: HTMLInputElement;
   remeshGuide: HTMLInputElement;
+  wireframe: HTMLInputElement;
+  xray: HTMLInputElement;
+  tablet: TabletLayout;
   zmodelAt: HTMLInputElement;
   zmodelCrease: HTMLInputElement;
   zmodelAmount: HTMLInputElement;
@@ -1237,6 +1241,10 @@ function buildShell(root: HTMLElement): Shell {
   langPick.value = language();
   langPick.addEventListener('change', () => { if (isLang(langPick.value)) void setLanguage(langPick.value); });
   const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
+  // Wireframe draws every object's edges over it; X-ray draws every object see-through.
+  const wireframe = input('checkbox', { 'aria-label': 'Wireframe' });
+  const xray = input('checkbox', { 'aria-label': 'X-ray' });
+  viewFields.append(field('Wireframe', wireframe), field('X-ray', xray));
   viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
@@ -1385,6 +1393,26 @@ function buildShell(root: HTMLElement): Shell {
   uiSize.value = layout.size;
   panelLeft.addEventListener('change', () => layout.setSide(panelLeft.checked));
   uiSize.addEventListener('change', () => layout.setSize(uiSize.value));
+  // The tablet layout over the same controls: each tool's options strip lists the panel controls it mirrors.
+  const sculptOptions: [string, HTMLInputElement | HTMLSelectElement][] = [['Invert', invert], ['Mirror X', symX], ['Radial', radial], ['Dyntopo', dyntopo], ['Lazy mouse', lazy], ['Front faces only', frontFacing], ['Accumulate', accumulate]];
+  const maskActions = actionButtons.filter((b) => (b.dataset.action ?? '').startsWith('mask_'));
+  const tablet = new TabletLayout({
+    root,
+    stage,
+    panel,
+    brushButtons,
+    radius,
+    strength,
+    options: (tool) => {
+      const list = (pairs: [string, TabletControl][]): TabletOption[] => pairs.map(([label, control]) => ({ label, control }));
+      if (tool === 'tube' || tool === 'curve') return list([['Closed path', curveClosed], ['Mirror X', symX], ['Path shape', curveInterp], ['Corner round', curveRound], ['Tube radius', tubeRadius], ['Tube ends', tubeCap], ['Pipe wall', tubeHole], ['Tube profile', tubeProfile], ['Apply curve', curveButtons[1]], ['Clear curve', curveButtons[2]]]);
+      if (tool === 'mask') return list([['Invert', invert], ['Mirror X', symX], ...maskActions.map((b): [string, TabletControl] => [b.textContent ?? '', b])]);
+      if (tool === 'paint' || tool === 'smudge') return list([['Colour', paintColor], ['Roughness', paintRough], ['Metalness', paintMetal], ['Material preset', materialPreset], ['Paint into texture', paintTexture], ['Mirror X', symX]]);
+      if (tool === 'zmodeler') return list([['ZModeler action', zmodelAction], ['Amount %', zmodelAmount], ['Loop position %', zmodelAt], ['Auto-crease', zmodelCrease]]);
+      if (tool === 'gizmo' || tool === 'lattice' || tool === 'orbit') return [];
+      return list(sculptOptions);
+    },
+  });
   const tag = (list: HTMLButtonElement[], group: string, by: (b: HTMLButtonElement) => string | undefined): void => {
     for (const b of list) {
       const spec = PANEL_CMDS[group][by(b) ?? ''];
@@ -1415,7 +1443,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1562,6 +1590,14 @@ class SceneView {
     shell.fov.addEventListener('input', () => this.viewport.setFov(Number(shell.fov.value)));
     shell.showGroups.addEventListener('change', () => {
       this.viewport.renderer.setShowGroups(shell.showGroups.checked);
+      this.viewport.invalidate();
+    });
+    shell.wireframe.addEventListener('change', () => {
+      this.viewport.renderer.setWireframe(shell.wireframe.checked);
+      this.viewport.invalidate();
+    });
+    shell.xray.addEventListener('change', () => {
+      this.viewport.renderer.setXray(shell.xray.checked);
       this.viewport.invalidate();
     });
     shell.uvChecker.addEventListener('change', () => void this.syncChecker());
@@ -3648,6 +3684,9 @@ class SceneView {
       { id: 'view.uv_checker', label: 'UV Checker', run: () => toggle(s.uvChecker), checked: () => s.uvChecker.checked },
       { id: 'view.trackball', label: 'Trackball Rotation', run: () => toggle(s.trackball), checked: () => s.trackball.checked },
       { id: 'view.floor_grid', label: 'Floor Grid', keys: ['Shift+P'], run: () => toggle(s.floorGrid), checked: () => s.floorGrid.checked },
+      { id: 'view.wireframe', label: 'Wireframe', keys: ['Shift+W'], run: () => toggle(s.wireframe), checked: () => s.wireframe.checked },
+      { id: 'view.xray', label: 'X-ray', keys: ['Alt+X'], run: () => toggle(s.xray), checked: () => s.xray.checked },
+      { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.backdrop_gradient', label: 'Gradient Background', run: () => { s.backdropMode.value = s.backdropMode.value === 'gradient' ? 'color' : 'gradient'; s.backdropMode.dispatchEvent(new Event('change', { bubbles: true })); }, checked: () => s.backdropMode.value === 'gradient' },
       { id: 'sculpt.mirror_x', label: 'Mirror X', run: () => toggle(s.symX), checked: () => s.symX.checked },
       { id: 'sculpt.invert', label: 'Invert Brush', run: () => toggle(s.invert), checked: () => s.invert.checked },

@@ -84,13 +84,13 @@ const PAINT: MenuItem[] = [
 
 const VIEW: MenuItem[] = [
   'view.front', 'view.back', 'view.right', 'view.left', 'view.top', 'view.bottom', 'view.ortho', 'view.frame', 'view.set_pivot', '-',
-  'view.groups', 'view.uv_checker', 'view.trackball', 'view.floor_grid', 'view.backdrop_gradient', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
+  'view.groups', 'view.uv_checker', 'view.trackball', 'view.floor_grid', 'view.wireframe', 'view.xray', 'view.backdrop_gradient', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
   'view.reference', 'view.clear_reference', 'view.matcap', 'light.load_hdri', 'light.add', 'light.remove', '-',
   'view.turntable', 'view.history_movie', 'view.path_render', 'view.anim_key', 'view.anim_record', 'view.anim_clear', 'view.spacemouse',
 ];
 
 const WINDOW: MenuItem[] = [
-  'view.panel_left', { label: 'Interface Size', items: ['view.ui_small', 'view.ui_normal', 'view.ui_large'] }, 'view.clear_rail', 'plugin.run', 'plugin.reload', '-',
+  'view.tablet_layout', 'view.panel_left', { label: 'Interface Size', items: ['view.ui_small', 'view.ui_normal', 'view.ui_large'] }, 'view.clear_rail', 'plugin.run', 'plugin.reload', '-',
   'view.terminal', 'view.newTerminal', 'agent.claude', 'agent.chat',
 ];
 
