@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.75.0 · 2026-10-17
+
+### Added
+
+- Gizmo mode (Object section, the tablet's Transform options, Edit > Transform): all handles, or only the move arrows, the turn rings or the scale squares, so the one you want is easy to grab.
+- Pin gizmo: the gizmo stays at its point in the world while the object moves under it, and turns and scales about that point. Pivot to view pins it at the surface in the middle of the view.
+- Modifier gestures on the gizmo: Alt-drag an arrow or the centre to move the gizmo itself (the object stays put); Ctrl or Cmd for fine control (a tenth of the travel); Shift to snap to 15 degrees and 0.1 when the snap settings are off. The amount shows while dragging.
+- Typed values: Move by, Turn by (degrees) and Scale by for x, y and z, applied about the gizmo's pivot as one undo step (Apply transform, or Enter in a field).
+- 1173 interface strings in every language.
+
+### Changed
+
+- Alt and Shift presses on a gizmo handle now go to the gizmo; elsewhere in the viewport they still turn and pan the view.
+
 ## 0.74.0 · 2026-10-17
 
 ### Added
