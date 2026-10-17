@@ -90,6 +90,8 @@ uniform sampler2D uPaintTex;
 uniform sampler2D uPaintMr;
 uniform float uPaintMrOn;
 uniform float uLit;
+// 1 normally; below 1 for X-ray, which draws every object see-through.
+uniform float uAlpha;
 uniform vec4 uCap;
 uniform vec3 uTint;
 uniform float uEnvOn;
@@ -238,7 +240,7 @@ void main() {
   // Emissive paint glows in its own colour whatever the light or matcap.
   if (uPainted > 0.5 && vFx.y > 0.0) col = mix(col, pow(albedo, vec3(1.0 / 2.2)) * 1.15, clamp(vFx.y, 0.0, 1.0));
   col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
-  outColor = vec4(col, 1.0);
+  outColor = vec4(col, uAlpha);
 }`;
 
 export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, number, number]; tint: [number, number, number] }> = {
@@ -275,6 +277,9 @@ interface GpuMesh {
   /** Bounds at upload, for fitting the shadow map (strokes move vertices only a little). */
   lo: [number, number, number];
   hi: [number, number, number];
+  /** Edges for the wireframe overlay, built when it is first shown; they share the position buffer, so strokes move
+   * them too. */
+  lines: { vao: WebGLVertexArrayObject; buf: WebGLBuffer; count: number } | null;
 }
 
 interface Expanded {
@@ -466,7 +471,7 @@ export class GlRenderer {
         if (x > hi[c]) hi[c] = x;
       }
     }
-    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, paintTexture: null, paintMr: null, lo, hi };
+    const gpu: GpuMesh = { vao, buffers: paintBuf ? [pos, nrm, idx, msk, paintBuf] : [pos, nrm, idx, msk], count: drawn.length, revision: mesh.revision, cpu, paintBuf, drawn, drawnTris, expanded: null, checker: null, paintTexture: null, paintMr: null, lo, hi, lines: null };
     this.meshes.set(mesh.id, gpu);
     if (this.showGroups && groups) gpu.expanded = this.expand(gpu);
   }
@@ -736,6 +741,10 @@ export class GlRenderer {
     const m = this.meshes.get(id);
     if (!m) return;
     this.dropExpanded(m);
+    if (m.lines) {
+      this.gl.deleteBuffer(m.lines.buf);
+      this.gl.deleteVertexArray(m.lines.vao);
+    }
     m.buffers.forEach((b) => this.gl.deleteBuffer(b));
     this.gl.deleteVertexArray(m.vao);
     this.meshes.delete(id);
@@ -847,6 +856,13 @@ export class GlRenderer {
     const sssRadius = gl.getUniformLocation(this.meshProgram, 'uSssRadius');
     const trans = gl.getUniformLocation(this.meshProgram, 'uTrans');
     const ior = gl.getUniformLocation(this.meshProgram, 'uIor');
+    // X-ray: every object drawn see-through without writing depth, so what is behind and inside shows.
+    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uAlpha'), this.xray ? 0.42 : 1);
+    if (this.xray) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false);
+    }
     for (const [id, m] of this.meshes) {
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
       const mat = this.materials.get(id);
@@ -905,6 +921,11 @@ export class GlRenderer {
       }
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
     }
+    if (this.xray) {
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+    }
+    if (this.wireframe) this.drawWire(vp);
     gl.bindVertexArray(null);
     if (shadowMap && L.ground && this.shadow && this.groundBox) this.drawGround(vp, shadowMap);
     if (this.reference && this.referencePlace) this.drawReference(vp);
@@ -913,6 +934,86 @@ export class GlRenderer {
       const inv = invert(proj);
       if (inv) post.finish(p, proj, inv, camera.distance * 0.1, camera.distance);
     }
+  }
+
+  private wireframe = false;
+  private xray = false;
+  private lineProgram: WebGLProgram | null = null;
+
+  /** Draws every object's edges over it (a quad mesh's quad edges, else its triangle edges). */
+  setWireframe(on: boolean): void {
+    this.wireframe = on;
+  }
+
+  /** Draws every object see-through. */
+  setXray(on: boolean): void {
+    this.xray = on;
+  }
+
+  /** The mesh's edges as a line index buffer over its own positions. When every pair of triangles is a quad's two
+   * halves (a, b, c, then a, c, d), the shared diagonal is left out so the wire shows quads. */
+  private ensureLines(m: GpuMesh): NonNullable<GpuMesh['lines']> {
+    if (m.lines) return m.lines;
+    const gl = this.gl;
+    const t = m.drawn;
+    let quads = t.length % 6 === 0 && t.length > 0;
+    for (let i = 0; quads && i < t.length; i += 6) quads = t[i + 3] === t[i] && t[i + 4] === t[i + 2];
+    const seen = new Set<number>();
+    const n = m.cpu.positions.length / 3;
+    const out: number[] = [];
+    const edge = (a: number, b: number): void => {
+      const key = Math.min(a, b) * n + Math.max(a, b);
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(a, b);
+    };
+    if (quads) {
+      for (let i = 0; i < t.length; i += 6) {
+        const [a, b, c, d] = [t[i], t[i + 1], t[i + 2], t[i + 5]];
+        edge(a, b);
+        edge(b, c);
+        edge(c, d);
+        edge(d, a);
+      }
+    } else {
+      for (let i = 0; i < t.length; i += 3) {
+        edge(t[i], t[i + 1]);
+        edge(t[i + 1], t[i + 2]);
+        edge(t[i + 2], t[i]);
+      }
+    }
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, m.buffers[0]);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(out), gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    m.lines = { vao, buf, count: out.length };
+    return m.lines;
+  }
+
+  /** The wire, drawn after the surfaces and pulled a little toward the camera so the surface under it never hides it. */
+  private drawWire(vp: Float32Array): void {
+    const gl = this.gl;
+    if (!this.lineProgram) this.lineProgram = compile(gl, LINE_VS, LINE_FS);
+    gl.useProgram(this.lineProgram);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.lineProgram, 'uViewProj'), false, vp);
+    const model = gl.getUniformLocation(this.lineProgram, 'uModel');
+    const color = gl.getUniformLocation(this.lineProgram, 'uColor');
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    for (const [id, m] of this.meshes) {
+      const lines = this.ensureLines(m);
+      gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
+      gl.uniform4f(color, 0.08, 0.09, 0.11, id === this.active ? 0.55 : 0.35);
+      gl.bindVertexArray(lines.vao);
+      gl.drawElements(gl.LINES, lines.count, gl.UNSIGNED_INT, 0);
+    }
+    gl.disable(gl.BLEND);
+    gl.useProgram(this.meshProgram);
   }
 
   private post: PostFx | null = null;
@@ -1169,6 +1270,22 @@ void main() {
   float fade = 1.0 - smoothstep(0.6, 1.0, length(vLocal));
   outColor = vec4(0.0, 0.0, 0.0, shade / 25.0 * 0.55 * fade);
 }`;
+
+const LINE_VS = `#version 300 es
+layout(location=0) in vec3 aPos;
+uniform mat4 uViewProj;
+uniform mat4 uModel;
+void main() {
+  gl_Position = uViewProj * uModel * vec4(aPos, 1.0);
+  // Pulled toward the camera by a small share of depth so the wire wins against the surface it lies on.
+  gl_Position.z -= 0.0006 * gl_Position.w;
+}`;
+
+const LINE_FS = `#version 300 es
+precision mediump float;
+uniform vec4 uColor;
+out vec4 outColor;
+void main() { outColor = uColor; }`;
 
 const SHADOW_FS = `#version 300 es
 precision mediump float;
