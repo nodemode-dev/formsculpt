@@ -39,7 +39,7 @@ pub use exact::exact_boolean;
 pub use loops::{border_loops, bridge_borders, insert_edge_loop};
 pub use field::{field_remesh, field_remesh_guided, FieldOptions, FieldRemesh};
 pub use patches::{patch, Patch, PATCH_KINDS};
-pub use zmodel::{close_border, delete_face, edge_loop, extrude_edge, loop_moves, inset_face, insert_loop_at, poly_hit, quads_of, set_creases, PolyHit};
+pub use zmodel::{close_border, delete_face, edge_loop, extrude_edge, inset_edge, loop_moves, inset_face, insert_loop_at, poly_hit, quads_of, set_creases, split_point, stitch_points, PolyHit, StitchAlign};
 pub use voxel::{round_edges, voxel_boolean, voxel_boolean_blend, voxel_remesh, BooleanOp, RoundEdges};
 
 pub fn engine_version() -> &'static str {

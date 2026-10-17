@@ -186,9 +186,10 @@ fn aimed(s: &mut Session, args: &Value, what: &str) -> Result<(ObjectId, PolyHit
 
 pub(crate) fn edge_schema() -> Value {
     let mut p = aim_props();
-    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "extrude", "close", "crease", "uncrease", "align", "slide"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount."}));
-    p.insert("amount".into(), json!({"type": "number", "minimum": 0, "maximum": 0.95, "default": 0.25, "description": "slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge."}));
-    p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "insert: crease the new loop's edges (auto-crease)."}));
+    p.insert("action".into(), json!({"type": "string", "enum": ["insert", "inset", "extrude", "close", "crease", "uncrease", "align", "slide"], "description": "insert: an edge loop across the ring of quads through the edge, at fraction at; inset: supporting loops on both sides of the edge loop through the edge, the same distance from it all along (amount of the shortest edge leaving the loop), keeping the loop or not (keep); extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount."}));
+    p.insert("amount".into(), json!({"type": "number", "minimum": 0, "maximum": 0.95, "description": "slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge (0.25 when omitted). inset: how far the side loops sit from the loop, as a share of the shortest edge leaving it (0.02 to 0.45, 0.2 when omitted)."}));
+    p.insert("keep".into(), json!({"type": "string", "enum": ["center_and_border", "border_only"], "default": "center_and_border", "description": "inset: keep the original loop between the new ones, or remove it (border only), leaving one row of quads between the side loops."}));
+    p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "insert and inset: crease the new loops' edges (auto-crease)."}));
     p.insert("at".into(), json!({"type": "number", "minimum": 0.02, "maximum": 0.98, "default": 0.5, "description": "insert: where the loop crosses each quad, from one side of the ring to the other."}));
     p.insert("distance".into(), json!({"type": "number", "minimum": -1000, "maximum": 1000, "description": "extrude: how far, in world units; the edge's own length when omitted."}));
     json!({"type": "object", "properties": p, "required": ["action"], "additionalProperties": false})
@@ -217,6 +218,16 @@ pub(crate) fn zmodel_edge(s: &mut Session, args: &Value) -> Result<Value, Comman
             let (m, n) = fsc_topo::insert_loop_at(mesh, point, at, flag(args, "crease")?).map_err(|e| CommandError::new("not_quads", e))?;
             (m, json!({"quads_split": n}))
         }
+        "inset" => {
+            let amount = num(args, "amount", 0.2, 0.02, 0.45)?;
+            let keep_centre = match args.get("keep").and_then(Value::as_str) {
+                None | Some("center_and_border") => true,
+                Some("border_only") => false,
+                Some(other) => return Err(bad(format!("keep is center_and_border or border_only, not {other}"))),
+            };
+            let (m, n) = fsc_topo::inset_edge(mesh, &hit, amount, keep_centre, flag(args, "crease")?).map_err(|e| CommandError::new("cannot_inset", e))?;
+            (m, json!({"loop_vertices": n, "kept_center": keep_centre}))
+        }
         "extrude" => {
             let len = mesh.position(hit.edge.0).distance(mesh.position(hit.edge.1));
             let d = num(args, "distance", len, -1000.0, 1000.0)?;
@@ -229,10 +240,11 @@ pub(crate) fn zmodel_edge(s: &mut Session, args: &Value) -> Result<Value, Comman
             let (m, n) = fsc_topo::close_border(mesh, &hit).map_err(|e| CommandError::new("cannot_close", e))?;
             (m, json!({"quads_added": n}))
         }
-        other => return Err(bad(format!("unknown action {other}; use insert, extrude, close, crease or uncrease"))),
+        other => return Err(bad(format!("unknown action {other}; use insert, inset, extrude, close, crease, uncrease, align or slide"))),
     };
     let label = match action {
         "insert" => "Insert Edge Loop",
+        "inset" => "Inset Edge Loop",
         "extrude" => "Extrude Edge",
         _ => "Close Hole",
     };
@@ -278,8 +290,12 @@ pub(crate) fn zmodel_face(s: &mut Session, args: &Value) -> Result<Value, Comman
 
 pub(crate) fn point_schema() -> Value {
     let mut p = aim_props();
-    p.insert("action".into(), json!({"type": "string", "enum": ["slide", "crease", "uncrease"], "description": "slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared."}));
-    p.insert("to".into(), json!({"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "slide: where the corner goes, in object space (projected onto its tangent plane)."}));
+    p.insert("action".into(), json!({"type": "string", "enum": ["slide", "crease", "uncrease", "split", "stitch"], "description": "slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared; split: a circular inset round the corner (each quad meeting it becomes three, the corner keeps quads in the middle) at amount of its shortest edge; stitch: the corner welded to the corner nearest `to` (a quad with both as opposite corners collapses; two corners sharing an edge are refused, as that would leave triangles; two border corners join the borders there)."}));
+    p.insert("to".into(), json!({"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "slide: where the corner goes, in object space (projected onto its tangent plane). stitch: a point near the second corner."}));
+    p.insert("amount".into(), json!({"type": "number", "minimum": 0.05, "maximum": 0.9, "default": 0.4, "description": "split: the ring's radius as a share of the corner's shortest edge."}));
+    p.insert("equalize".into(), json!({"type": "boolean", "default": true, "description": "split: put the ring on a circle (ZModeler's equalize radius); false keeps the inner points along the diagonals."}));
+    p.insert("crease".into(), json!({"type": "boolean", "default": false, "description": "split: crease the new ring."}));
+    p.insert("align".into(), json!({"type": "string", "enum": ["end", "mid", "start"], "default": "end", "description": "stitch: weld at the second corner (end), halfway (mid) or at the first (start)."}));
     json!({"type": "object", "properties": p, "required": ["action"], "additionalProperties": false})
 }
 
@@ -292,8 +308,35 @@ pub(crate) fn zmodel_point(s: &mut Session, args: &Value) -> Result<Value, Comma
         let after = crease_step(s, id, if action == "crease" { "Crease Point" } else { "Uncrease Point" }, list);
         return Ok(json!({"object": after, "action": action, "vertex": hit.vertex, "edges_changed": changed}));
     }
+    if action == "split" {
+        let amount = num(args, "amount", 0.4, 0.05, 0.9)?;
+        let equalize = match args.get("equalize") {
+            None | Some(Value::Null) => true,
+            Some(Value::Bool(b)) => *b,
+            Some(_) => return Err(bad("equalize is true or false")),
+        };
+        let crease = flag(args, "crease")?;
+        let (id, hit, _) = aimed(s, args, "A ZModeler point action")?;
+        let (out, n) = fsc_topo::split_point(&s.scene.get(id).expect("checked").mesh, &hit, amount, equalize, crease).map_err(|e| CommandError::new("cannot_split", e))?;
+        let after = replace(s, id, "Split Point", out);
+        return Ok(json!({"object": after, "action": action, "vertex": hit.vertex, "quads_split": n, "quads_added": 2 * n}));
+    }
+    if action == "stitch" {
+        let align = match args.get("align").and_then(Value::as_str) {
+            None | Some("end") => fsc_topo::StitchAlign::End,
+            Some("mid") => fsc_topo::StitchAlign::Mid,
+            Some("start") => fsc_topo::StitchAlign::Start,
+            Some(other) => return Err(bad(format!("align is end, mid or start, not {other}"))),
+        };
+        let to = args.get("to").filter(|v| !v.is_null()).ok_or_else(|| bad("to is required: a point near the second corner"))?.clone();
+        let (id, first, _) = aimed(s, args, "A ZModeler point action")?;
+        let (second, _) = aim(s, id, &json!({"point": to}))?.ok_or_else(|| CommandError::new("no_hit", "the second point is not on the object"))?;
+        let (out, removed) = fsc_topo::stitch_points(&s.scene.get(id).expect("checked").mesh, first.vertex, second.vertex, align).map_err(|e| CommandError::new("cannot_stitch", e))?;
+        let after = replace(s, id, "Stitch Points", out);
+        return Ok(json!({"object": after, "action": action, "vertices": [first.vertex, second.vertex], "quads_removed": removed}));
+    }
     if action != "slide" {
-        return Err(bad(format!("unknown action {action}; use slide, crease or uncrease")));
+        return Err(bad(format!("unknown action {action}; use slide, crease, uncrease, split or stitch")));
     }
     let to = vec3_of(args.get("to").ok_or_else(|| bad("to is required"))?, "to")?;
     let (id, hit, _) = aimed(s, args, "A ZModeler point action")?;

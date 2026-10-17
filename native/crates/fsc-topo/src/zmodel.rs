@@ -427,3 +427,236 @@ pub fn delete_face(mesh: &Mesh, hit: &PolyHit) -> Result<Mesh, String> {
     let faces: Vec<[u32; 4]> = quads.iter().enumerate().filter(|(q, _)| *q != hit.quad).map(|(_, f)| *f).collect();
     Ok(Builder::new(mesh).mesh(&faces))
 }
+
+/// Splits every quad that has two of the given edges as opposite sides, through the new vertex on each (`mids`, keyed
+/// by edge), so a strip of quads gains a loop along it. Quads with none of the edges pass through unchanged.
+fn split_by_mids(quads: &[[u32; 4]], mids: &HashMap<(u32, u32), u32>) -> Result<Vec<[u32; 4]>, String> {
+    let mut out = Vec::with_capacity(quads.len() * 2);
+    for f in quads {
+        let hits = (0..4).filter(|&k| mids.contains_key(&key(f[k], f[(k + 1) % 4]))).count();
+        if hits == 0 {
+            out.push(*f);
+            continue;
+        }
+        let k = (0..4)
+            .find(|&k| mids.contains_key(&key(f[k], f[(k + 1) % 4])) && mids.contains_key(&key(f[(k + 3) % 4], f[(k + 2) % 4])))
+            .filter(|_| hits == 2)
+            .ok_or("a face would get a vertex on only one side; the loop must run through quads only")?;
+        let v = |i: usize| f[(k + i) % 4];
+        let m1 = mids[&key(v(0), v(1))];
+        let m2 = mids[&key(v(3), v(2))];
+        out.push([v(0), m1, m2, v(3)]);
+        out.push([m1, v(1), v(2), m2]);
+    }
+    Ok(out)
+}
+
+/// Edge inset: supporting loops on both sides of the edge loop through the picked edge, each `amount` of the shortest
+/// edge leaving the loop away from it (the same distance all along, ZModeler's equidistant spacing). With `keep_centre`
+/// false the original loop is removed between them (border only). With `crease` the new loops are creased. The loop
+/// must close or end on open borders: at a pole the side loops would leave a face with a vertex on one side only.
+/// Returns the mesh and the loop's vertex count.
+pub fn inset_edge(mesh: &Mesh, hit: &PolyHit, amount: f32, keep_centre: bool, crease: bool) -> Result<(Mesh, usize), String> {
+    let quads = quads_of(mesh)?;
+    let counts = edge_counts(&quads);
+    let (order, side_a, closed) = edge_loop(mesh, hit)?;
+    // The quad across the picked edge gives the loop's other side.
+    let other = quads
+        .iter()
+        .enumerate()
+        .find(|(q, f)| *q != hit.quad && (0..4).any(|k| key(f[k], f[(k + 1) % 4]) == key(hit.edge.0, hit.edge.1)))
+        .map(|(q, _)| q);
+    let side_b: Vec<Option<u32>> = match other {
+        Some(q) => {
+            let flip = PolyHit { quad: q, corners: quads[q], edge: hit.edge, edge_index: 0, vertex: hit.vertex, border: false };
+            let (o2, s2, _) = edge_loop(mesh, &flip)?;
+            order.iter().map(|v| o2.iter().position(|x| x == v).and_then(|i| s2[i])).collect()
+        }
+        None => vec![None; order.len()],
+    };
+    let n = order.len();
+    if !closed {
+        let on_border = |v: u32| quads.iter().flat_map(|f| (0..4).map(move |k| (f[k], f[(k + 1) % 4]))).any(|(a, b)| (a == v || b == v) && counts.get(&key(a, b)) == Some(&1));
+        if !on_border(order[0]) || !on_border(order[n - 1]) {
+            return Err("the edge loop ends at a pole (a corner with other than four edges); edge inset needs a loop that closes or runs border to border".into());
+        }
+    }
+    let p = |v: u32| mesh.position(v);
+    let shortest = order
+        .iter()
+        .enumerate()
+        .flat_map(|(i, &v)| [side_a[i], side_b[i]].into_iter().flatten().map(move |s| p(v).distance(p(s))))
+        .fold(f32::INFINITY, f32::min);
+    if !shortest.is_finite() || shortest <= 1e-9 {
+        return Err("the loop has no edges leaving it".into());
+    }
+    let dist = shortest * amount.clamp(0.02, 0.45);
+    let mut b = Builder::new(mesh);
+    let mut mids: HashMap<(u32, u32), u32> = HashMap::new();
+    let mut ring_a: Vec<Option<u32>> = Vec::with_capacity(n);
+    let mut ring_b: Vec<Option<u32>> = Vec::with_capacity(n);
+    for (i, &v) in order.iter().enumerate() {
+        for (side, ring) in [(side_a[i], &mut ring_a), (side_b[i], &mut ring_b)] {
+            let made = side.map(|s| {
+                let t = (dist / p(v).distance(p(s)).max(1e-9)).min(0.9);
+                let m = b.add(p(v).lerp(p(s), t), v);
+                mids.insert(key(v, s), m);
+                m
+            });
+            ring.push(made);
+        }
+    }
+    if ring_a.iter().chain(ring_b.iter()).filter(|m| m.is_none()).count() > if other.is_none() { n } else { 0 } {
+        return Err("the loop leaves its quads partway; edge inset needs a clean edge loop".into());
+    }
+    let mut faces = split_by_mids(&quads, &mids)?;
+    let segments = if closed { n } else { n - 1 };
+    if crease {
+        for i in 0..segments {
+            let j = (i + 1) % n;
+            for ring in [&ring_a, &ring_b] {
+                if let (Some(x), Some(y)) = (ring[i], ring[j]) {
+                    b.crease(x, y);
+                }
+            }
+        }
+    }
+    if !keep_centre {
+        if other.is_none() {
+            return Err("border only needs faces on both sides of the loop; this edge is on an open border".into());
+        }
+        // Each loop edge now has one thin quad on each side; the two become one quad between the side loops.
+        let loop_edges: HashSet<(u32, u32)> = (0..segments).map(|i| key(order[i], order[(i + 1) % n])).collect();
+        let mut merged: Vec<[u32; 4]> = Vec::new();
+        for i in 0..segments {
+            let j = (i + 1) % n;
+            let (Some(a0), Some(a1), Some(b0), Some(b1)) = (ring_a[i], ring_a[j], ring_b[i], ring_b[j]) else { continue };
+            // Keep the winding of the side-A thin quad, which runs v_i, v_j, a1, a0 or the reverse.
+            let thin = faces.iter().find(|f| f.contains(&order[i]) && f.contains(&order[j]) && f.contains(&a0)).ok_or("the inset strip was not found")?;
+            let forward = (0..4).any(|k| thin[k] == order[i] && thin[(k + 1) % 4] == order[j]);
+            merged.push(if forward { [b0, b1, a1, a0] } else { [a0, a1, b1, b0] });
+        }
+        faces.retain(|f| !(0..4).any(|k| loop_edges.contains(&key(f[k], f[(k + 1) % 4]))));
+        faces.extend(merged);
+    }
+    Ok((b.mesh(&faces), n))
+}
+
+/// Point split: a circular inset round the picked corner. Each quad meeting the corner becomes three, through a new
+/// point on each of its edges at the corner and one inside it, all `amount` of the shortest edge from the corner (with
+/// `equalize` on a circle; otherwise the inner points sit that share of the way to the opposite corner), so the corner
+/// keeps its quads in the middle (ZModeler's keep-quad centre). With `crease` the new ring is creased. Returns the mesh
+/// and how many quads met the corner.
+pub fn split_point(mesh: &Mesh, hit: &PolyHit, amount: f32, equalize: bool, crease: bool) -> Result<(Mesh, usize), String> {
+    let quads = quads_of(mesh)?;
+    let v = hit.vertex;
+    let around: Vec<usize> = (0..quads.len()).filter(|&q| quads[q].contains(&v)).collect();
+    if around.is_empty() {
+        return Err("the corner belongs to no face".into());
+    }
+    let pv = mesh.position(v);
+    let shortest = around
+        .iter()
+        .flat_map(|&q| {
+            let f = quads[q];
+            let i = f.iter().position(|&x| x == v).expect("contains");
+            [f[(i + 1) % 4], f[(i + 3) % 4]]
+        })
+        .map(|w| pv.distance(mesh.position(w)))
+        .fold(f32::INFINITY, f32::min);
+    if shortest <= 1e-9 {
+        return Err("the corner has a zero-length edge".into());
+    }
+    let r = shortest * amount.clamp(0.05, 0.9);
+    let mut b = Builder::new(mesh);
+    let mut on_edge: HashMap<u32, u32> = HashMap::new();
+    let mut edge_point = |b: &mut Builder, w: u32| -> u32 {
+        *on_edge.entry(w).or_insert_with(|| {
+            let d = (mesh.position(w) - pv).normalize_or_zero();
+            b.add(pv + d * r, v)
+        })
+    };
+    let mut faces: Vec<[u32; 4]> = Vec::with_capacity(quads.len() + 2 * around.len());
+    for (q, f) in quads.iter().enumerate() {
+        let Some(i) = f.iter().position(|&x| x == v) else {
+            faces.push(*f);
+            continue;
+        };
+        let (n1, d, n2) = (f[(i + 1) % 4], f[(i + 2) % 4], f[(i + 3) % 4]);
+        let p1 = edge_point(&mut b, n1);
+        let p2 = edge_point(&mut b, n2);
+        let pd = mesh.position(d);
+        let c_pos = if equalize { pv + (pd - pv).normalize_or_zero() * r } else { pv.lerp(pd, (r / shortest).min(0.9)) };
+        let c = b.add(c_pos, v);
+        let _ = q;
+        faces.push([v, p1, c, p2]);
+        faces.push([p1, n1, d, c]);
+        faces.push([c, d, n2, p2]);
+        if crease {
+            b.crease(p1, c);
+            b.crease(c, p2);
+        }
+    }
+    Ok((b.mesh(&faces), around.len()))
+}
+
+/// Where a stitch puts the welded point.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StitchAlign {
+    /// At the second point (the first moves to it).
+    End,
+    Mid,
+    /// At the first point.
+    Start,
+}
+
+/// Point stitch: welds corner `a` to corner `b`. A quad with both as opposite corners collapses and disappears (its
+/// two pairs of sides become two edges); a weld across one edge is refused, since it would leave triangles; a weld of
+/// far-apart corners (two border points, say) joins the mesh there. Refused when an edge would end up with more than
+/// two faces. Returns the mesh and the quads removed.
+pub fn stitch_points(mesh: &Mesh, a: u32, b: u32, align: StitchAlign) -> Result<(Mesh, usize), String> {
+    let quads = quads_of(mesh)?;
+    if a == b {
+        return Err("pick two different points".into());
+    }
+    if quads.iter().any(|f| (0..4).any(|k| key(f[k], f[(k + 1) % 4]) == key(a, b))) {
+        return Err("the two points share an edge; welding them would leave triangles (stitch points across a face or across a gap)".into());
+    }
+    let mut out: Vec<[u32; 4]> = Vec::with_capacity(quads.len());
+    let mut removed = 0;
+    for f in &quads {
+        let g = f.map(|x| if x == a { b } else { x });
+        let mut u = g.to_vec();
+        u.sort_unstable();
+        u.dedup();
+        if u.len() < 4 {
+            removed += 1;
+            continue;
+        }
+        out.push(g);
+    }
+    if out.is_empty() {
+        return Err("the weld would remove every face".into());
+    }
+    if edge_counts(&out).values().any(|&c| c > 2) {
+        return Err("the weld would put more than two faces on one edge".into());
+    }
+    let mut bld = Builder::new(mesh);
+    let (pa, pb) = (mesh.position(a), mesh.position(b));
+    let at = match align {
+        StitchAlign::End => pb,
+        StitchAlign::Mid => (pa + pb) * 0.5,
+        StitchAlign::Start => pa,
+    };
+    bld.positions[b as usize] = at.to_array();
+    for c in bld.creases.iter_mut() {
+        if c.0 == a {
+            c.0 = b;
+        }
+        if c.1 == a {
+            c.1 = b;
+        }
+        *c = key(c.0, c.1);
+    }
+    Ok((bld.mesh(&out), removed))
+}
