@@ -40,7 +40,10 @@ def mesh(object_id: int, smooth: int = Query(0, ge=0, le=3)) -> Response:
     try:
         payload = engine.mesh_payload(object_id, smooth)
     except KeyError:
-        raise HTTPException(status_code=404, detail=f"no object {object_id}")
+        # The object went between the window listing the scene and asking for its mesh (an agent cleared or
+        # replaced the scene, a step was undone): an ordinary race, not a failed request, so the browser logs no
+        # error. The window draws nothing for it and the next listing settles the scene.
+        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculptor-Missing": str(object_id)})
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
 
 
@@ -196,13 +199,14 @@ async def animation(keys: str = Query(..., max_length=20000), fps: int = Query(2
 
 
 @router.get("/history_movie")
-async def history_movie(fps: int = Query(4, ge=1, le=30), size: int = Query(384, ge=64, le=1024), turn: float = Query(0, ge=-720, le=720), shading: str = "clay", background: str = "dark") -> Response:
-    """A looping animated PNG of the model at every undo step from the start (record_history)."""
+async def history_movie(fps: int = Query(4, ge=1, le=30), size: int = Query(384, ge=64, le=1024), turn: float = Query(0, ge=-720, le=720), shading: str = "clay", background: str = "dark", camera: str = Query("fixed", pattern="^(fixed|steps)$")) -> Response:
+    """A looping animated PNG of the model at every undo step from the start (record_history); camera=steps looks at
+    each step from the direction it was made from."""
     _guard()
     fd, path = tempfile.mkstemp(suffix=".png")
     os.close(fd)
     try:
-        reply = await run_in_threadpool(engine.dispatch, "record_history", {"path": path, "fps": fps, "size": size, "turn": turn, "shading": shading, "background": background})
+        reply = await run_in_threadpool(engine.dispatch, "record_history", {"path": path, "fps": fps, "size": size, "turn": turn, "shading": shading, "background": background, "camera": camera})
         if not reply.get("ok"):
             raise HTTPException(status_code=400, detail=(reply.get("error") or {}).get("message", "render failed"))
         with open(path, "rb") as f:

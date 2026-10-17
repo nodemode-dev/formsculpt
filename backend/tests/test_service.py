@@ -36,7 +36,9 @@ def test_mesh_buffers_match_the_summary(client):
     r = client.get(f"/api/engine/mesh/{o['id']}")
     assert r.status_code == 200
     assert len(r.content) > o["vertices"] * 24
-    assert client.get("/api/engine/mesh/9999").status_code == 404
+    # A gone object is an empty answer, not an error (the window races deletions).
+    gone = client.get("/api/engine/mesh/9999")
+    assert gone.status_code == 204 and gone.content == b""
 
 
 def test_smooth_preview_subdivides_for_display_only(client):
@@ -51,7 +53,7 @@ def test_smooth_preview_subdivides_for_display_only(client):
     # The sculpted mesh is unchanged, and the level is bounded.
     assert client.get(f"/api/engine/mesh/{o['id']}").content == plain
     assert client.get(f"/api/engine/mesh/{o['id']}", params={"smooth": 4}).status_code == 422
-    assert client.get("/api/engine/mesh/9999", params={"smooth": 1}).status_code == 404
+    assert client.get("/api/engine/mesh/9999", params={"smooth": 1}).status_code == 204
 
 
 def test_view_png(client):
