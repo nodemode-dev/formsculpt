@@ -2,6 +2,15 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.69.0 · 2026-10-17
+
+### Added
+
+- Floating toolbars (Window > New Toolbar): named strips of command buttons over the viewport. Add a button from any panel button's right-click menu (Add to Toolbar) or by name from the toolbar's grip menu (Add Command); move a toolbar by its grip, turn it to run down instead of across, rename or delete it. Buttons run their command and show its pressed and disabled state.
+- Layout files (Window > Export Layout, Import Layout): the panel's folds, side, size and rail, the tablet layout switch, the floating toolbars, shortcut overrides and the second-press setting in one JSON file; an import applies at once and a damaged file changes nothing.
+- Second Press Swaps Tool (Window menu, and in View): choosing the tool already in hand returns to the one before it. Off by default.
+- 1074 interface strings in every language.
+
 ## 0.68.0 · 2026-10-17
 
 ### Added
