@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.68.0 · 2026-10-17
+
+### Added
+
+- `transform_object` takes `pivot`: turn and scale about that point instead of the bounds centre.
+- `remesh_voxel` takes `thicken` (0 to 100): thin sheets and strands survive the remesh as closed parts, the rest of the surface moving out by at most half a voxel.
+- Window: the transform gizmo turns and scales about the bounds centre, the world origin or a point picked on the surface (Pick pivot), and snaps turns (5, 15, 45 or 90 degrees) and moves (0.01 to 1); these four sit in Object and in the tablet layout's Transform strip.
+- Window: each row of the scene list has a visibility eye and a lock (a locked object takes no strokes or tool clicks in this window).
+- Window: Thicken thin parts % beside Voxel resolution.
+- 1051 interface strings in every language.
+
 ## 0.67.0 · 2026-10-17
 
 ### Added
