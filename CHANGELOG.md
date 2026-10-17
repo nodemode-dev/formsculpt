@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.81.0 · 2026-10-17
+
+### Added
+
+- Screen-space reflections: Light > Reflections. In lit shading, surfaces mirror what the viewport shows, each by how reflective it is. Smooth metal reflects strongly, polished plastic mostly at grazing angles, and rough or matcap surfaces not at all. Reflections of things outside the view, or hidden behind other things, fade out, as with any screen-space technique.
+- 1220 interface strings in every language.
+
 ## 0.80.0 · 2026-10-17
 
 ### Added
