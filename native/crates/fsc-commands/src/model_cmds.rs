@@ -66,6 +66,48 @@ pub(crate) fn quad_remesh(s: &mut Session, args: &Value) -> Result<Value, Comman
     Ok(reply)
 }
 
+pub(crate) fn field_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "faces": {"type": "integer", "minimum": 100, "maximum": 200000, "default": 2000, "description": "Target number of quads (the result lands near it, more where the form is busy)."},
+            "hard_angle": {"type": "number", "minimum": 1, "maximum": 180, "default": 40, "description": "Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off."},
+            "density_from_paint": {"type": "boolean", "default": false, "description": "Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even."},
+            "iterations": {"type": "integer", "minimum": 4, "maximum": 200, "default": 40, "description": "Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn field_remesh(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    guard(s, id, "Field remesh")?;
+    let opts = fsc_topo::FieldOptions {
+        target_faces: number(args, "faces", 2000.0, 100.0, 200000.0)? as usize,
+        hard_angle: number(args, "hard_angle", 40.0, 1.0, 180.0)? as f32,
+        density_from_paint: match args.get("density_from_paint") {
+            None => false,
+            Some(v) => v.as_bool().ok_or_else(|| bad("density_from_paint must be true or false"))?,
+        },
+        iterations: number(args, "iterations", 40.0, 4.0, 200.0)? as u32,
+    };
+    let started = Instant::now();
+    let object = s.scene.get(id).expect("checked");
+    let out = fsc_topo::field_remesh(&object.mesh, &object.bvh, opts).map_err(|e| CommandError::new("remesh_failed", e))?;
+    let quads = out.mesh.triangle_count() / 2;
+    let open = fsc_topo::boundary_edges(&out.mesh).len();
+    let mask = vec![0.0; out.mesh.vertex_count()];
+    let mut reply = apply(s, id, "Field Remesh", out.mesh, mask)?;
+    reply["quads"] = json!(quads);
+    reply["hard_edges"] = json!(out.hard_edges);
+    reply["holes_filled"] = json!(out.holes_filled);
+    reply["open_edges"] = json!(open);
+    reply["ms"] = json!(started.elapsed().as_millis());
+    Ok(reply)
+}
+
 pub(crate) fn project_schema() -> Value {
     json!({
         "type": "object",

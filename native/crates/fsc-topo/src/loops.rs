@@ -101,7 +101,10 @@ pub fn border_loops(mesh: &Mesh) -> Vec<Vec<u32>> {
         }
     }
     let mut next: HashMap<u32, u32> = HashMap::new();
-    for &(a, b) in directed.keys() {
+    // Sorted, so a vertex with two border edges leaving it (a pinched border) keeps the same one every run.
+    let mut keys: Vec<(u32, u32)> = directed.keys().copied().collect();
+    keys.sort_unstable();
+    for &(a, b) in &keys {
         if !directed.contains_key(&(b, a)) {
             next.insert(a, b);
         }
