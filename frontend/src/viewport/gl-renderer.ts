@@ -92,6 +92,8 @@ uniform float uPaintMrOn;
 uniform float uLit;
 // 1 normally; below 1 for X-ray, which draws every object see-through.
 uniform float uAlpha;
+// 1 normally; below 1 darkens an object that is not the active one (the Darken others overlay).
+uniform float uDim;
 uniform vec4 uCap;
 uniform vec3 uTint;
 uniform float uEnvOn;
@@ -240,7 +242,7 @@ void main() {
   // Emissive paint glows in its own colour whatever the light or matcap.
   if (uPainted > 0.5 && vFx.y > 0.0) col = mix(col, pow(albedo, vec3(1.0 / 2.2)) * 1.15, clamp(vFx.y, 0.0, 1.0));
   col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
-  outColor = vec4(col, uAlpha);
+  outColor = vec4(col * uDim, uAlpha);
 }`;
 
 export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, number, number]; tint: [number, number, number] }> = {
@@ -862,6 +864,7 @@ export class GlRenderer {
     const ior = gl.getUniformLocation(this.meshProgram, 'uIor');
     // X-ray: every object drawn see-through without writing depth, so what is behind and inside shows.
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uAlpha'), this.xray ? 0.42 : 1);
+    const dim = gl.getUniformLocation(this.meshProgram, 'uDim');
     if (this.xray) {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -885,6 +888,8 @@ export class GlRenderer {
       gl.bindTexture(gl.TEXTURE_2D, tex ?? this.blank);
       if (id === this.active || this.oneClay) gl.uniform3f(base, 0.86, 0.74, 0.66);
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
+      // Darken others: only with an active object to stand out, and never the Live boolean's result (id 0).
+      gl.uniform1f(dim, this.active !== null && id !== this.active && id !== 0 ? 1 - this.dimOthers : 1);
       if (m.checker) {
         gl.uniform1f(painted, 1);
         // 2 samples the painted texture on unit 3 at the corner UVs; 1 draws the checker.
@@ -941,12 +946,24 @@ export class GlRenderer {
   }
 
   private wireframe = false;
+  private wireActiveOnly = false;
+  private dimOthers = 0;
   private xray = false;
   private lineProgram: WebGLProgram | null = null;
 
   /** Draws every object's edges over it (a quad mesh's quad edges, else its triangle edges). */
   setWireframe(on: boolean): void {
     this.wireframe = on;
+  }
+
+  /** Limits the wireframe to the active object (the target being worked on) instead of every object. */
+  setWireActiveOnly(on: boolean): void {
+    this.wireActiveOnly = on;
+  }
+
+  /** Darkens the objects that are not active by this share (0 to 0.9), so the active one stands out. */
+  setDimOthers(share: number): void {
+    this.dimOthers = Math.max(0, Math.min(0.9, share));
   }
 
   /** Draws every object see-through. */
@@ -1010,6 +1027,7 @@ export class GlRenderer {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     for (const [id, m] of this.meshes) {
+      if (this.wireActiveOnly && id !== this.active) continue;
       const lines = this.ensureLines(m);
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
       gl.uniform4f(color, 0.08, 0.09, 0.11, id === this.active ? 0.55 : 0.35);

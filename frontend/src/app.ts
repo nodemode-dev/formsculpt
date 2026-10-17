@@ -16,6 +16,7 @@ interface PrintReport {
 import { Viewport, type Ray } from './viewport/viewport';
 import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { CameraPose, ViewName } from './viewport/camera';
+import { DIM_ON, loadOverlays, parseOverlays, saveOverlays, StatsOverlay } from './ui/overlays';
 import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, saveHistoryPrefs, type HistoryPrefs } from './ui/history-replay';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
@@ -131,6 +132,10 @@ interface Shell {
   remeshGuide: HTMLInputElement;
   wireframe: HTMLInputElement;
   xray: HTMLInputElement;
+  wireScope: HTMLSelectElement;
+  dimOthers: HTMLInputElement;
+  statsOverlay: HTMLInputElement;
+  statsReadout: StatsOverlay;
   tablet: TabletLayout;
   thicken: HTMLInputElement;
   toolSwap: HTMLInputElement;
@@ -1302,7 +1307,14 @@ function buildShell(root: HTMLElement): Shell {
   // Wireframe draws every object's edges over it; X-ray draws every object see-through.
   const wireframe = input('checkbox', { 'aria-label': 'Wireframe' });
   const xray = input('checkbox', { 'aria-label': 'X-ray' });
-  viewFields.append(field('Wireframe', wireframe), field('X-ray', xray));
+  // Display overlays (ui/overlays.ts): the wire on every object or the active one, the others darkened, and the
+  // statistics readout over the viewport.
+  const wireScope = choices('Wire on', [['all', 'All objects'], ['active', 'Active object']]);
+  const dimOthers = input('range', { min: '0', max: '90', step: '5', value: '0', 'aria-label': 'Darken others' });
+  const statsOverlay = input('checkbox', { 'aria-label': 'Statistics overlay' });
+  const statsReadout = new StatsOverlay();
+  stage.append(statsReadout.element);
+  viewFields.append(field('Wireframe', wireframe), field('Wire on', wireScope), field('X-ray', xray), field('Darken others', dimOthers), field('Statistics overlay', statsOverlay));
   // Choosing the tool already in hand goes back to the one before it (kept in this browser).
   const toolSwap = input('checkbox', { 'aria-label': 'Second press swaps' });
   try {
@@ -1535,7 +1547,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1708,6 +1720,7 @@ class SceneView {
       this.viewport.renderer.setXray(shell.xray.checked);
       this.viewport.invalidate();
     });
+    this.wireOverlays();
     shell.pickPivot.addEventListener('click', () => {
       this.pivotPicking = true;
       this.note(t('Click on the object to set the pivot'));
@@ -3994,6 +4007,25 @@ class SceneView {
       { id: 'view.floor_grid', label: 'Floor Grid', keys: ['Shift+P'], run: () => toggle(s.floorGrid), checked: () => s.floorGrid.checked },
       { id: 'view.wireframe', label: 'Wireframe', keys: ['Shift+W'], run: () => toggle(s.wireframe), checked: () => s.wireframe.checked },
       { id: 'view.xray', label: 'X-ray', keys: ['Alt+X'], run: () => toggle(s.xray), checked: () => s.xray.checked },
+      {
+        id: 'view.wire_active',
+        label: 'Wire on Active Object Only',
+        run: () => {
+          s.wireScope.value = s.wireScope.value === 'active' ? 'all' : 'active';
+          s.wireScope.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        checked: () => s.wireScope.value === 'active',
+      },
+      {
+        id: 'view.dim_others',
+        label: 'Darken Others',
+        run: () => {
+          s.dimOthers.value = Number(s.dimOthers.value) > 0 ? '0' : String(DIM_ON);
+          s.dimOthers.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        checked: () => Number(s.dimOthers.value) > 0,
+      },
+      { id: 'view.stats', label: 'Statistics Overlay', run: () => toggle(s.statsOverlay), checked: () => s.statsOverlay.checked },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
@@ -4283,6 +4315,7 @@ class SceneView {
     s.themePick.value = theme.theme;
     s.translucent.checked = theme.translucent;
     applyTheme(theme);
+    this.loadOverlayControls();
     try {
       s.tablet.set(localStorage.getItem('formsculptor.tablet') === 'on', false);
       s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
@@ -4915,6 +4948,39 @@ class SceneView {
     });
   }
 
+  /** The display overlays' controls: set from what this browser kept, saved and given to the renderer on a change. */
+  private wireOverlays(): void {
+    const s = this.shell;
+    const change = (): void => {
+      const p = parseOverlays({ dimOthers: Number(s.dimOthers.value), wireScope: s.wireScope.value, stats: s.statsOverlay.checked });
+      saveOverlays(p);
+      this.applyOverlays();
+    };
+    for (const control of [s.dimOthers, s.wireScope, s.statsOverlay]) control.addEventListener('change', change);
+    s.dimOthers.addEventListener('input', () => this.applyOverlays());
+    this.loadOverlayControls();
+  }
+
+  /** Reads the kept overlays into the controls and applies them (at start and after a layout file is imported). */
+  private loadOverlayControls(): void {
+    const s = this.shell;
+    const p = loadOverlays();
+    s.dimOthers.value = String(p.dimOthers);
+    s.wireScope.value = p.wireScope;
+    s.statsOverlay.checked = p.stats;
+    this.applyOverlays();
+  }
+
+  private applyOverlays(): void {
+    const s = this.shell;
+    this.viewport.renderer.setDimOthers(Number(s.dimOthers.value) / 100);
+    this.viewport.renderer.setWireActiveOnly(s.wireScope.value === 'active');
+    s.statsReadout.show(s.statsOverlay.checked);
+    s.statsReadout.update(this.scene);
+    this.viewport.invalidate();
+    scheduleChrome();
+  }
+
   private sendPose(now: boolean): void {
     if (!this.historyPrefs.cameraPerStep || this.replay.playing) return;
     const pose = this.viewport.camera.pose();
@@ -4968,6 +5034,7 @@ class SceneView {
     for (const id of this.viewport.renderer.ids()) if (!keep.has(id)) this.viewport.removeMesh(id);
     this.viewport.setActive(next.active);
     this.patchList(next);
+    this.shell.statsReadout.update(next);
     const active = next.objects.find((o) => o.id === next.active);
     setText(this.shell.statVerts, active ? active.vertices.toLocaleString('en-US') : '0');
     setText(this.shell.statTris, active ? active.triangles.toLocaleString('en-US') : '0');
@@ -6091,6 +6158,7 @@ async function boot(shell: Shell): Promise<void> {
     }
     viewport.onFrame = (s) => {
       setText(shell.statFrame, `${s.frameMs.toFixed(1)} ms`);
+      shell.statsReadout.frameTime(s.frameMs);
       view.drawCurve();
       view.drawTools();
       view.drawZmodel();

@@ -84,7 +84,7 @@ const PAINT: MenuItem[] = [
 
 const VIEW: MenuItem[] = [
   'view.front', 'view.back', 'view.right', 'view.left', 'view.top', 'view.bottom', 'view.ortho', 'view.frame', 'view.set_pivot', '-',
-  'view.groups', 'view.uv_checker', 'view.trackball', 'view.floor_grid', 'view.wireframe', 'view.xray', 'view.backdrop_gradient', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
+  'view.groups', 'view.uv_checker', 'view.trackball', 'view.floor_grid', 'view.wireframe', 'view.wire_active', 'view.xray', 'view.dim_others', 'view.stats', 'view.backdrop_gradient', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
   'view.reference', 'view.clear_reference', 'view.matcap', 'light.load_hdri', 'light.add', 'light.remove', '-',
   'view.turntable', 'view.history_movie', 'view.path_render', 'view.anim_key', 'view.anim_record', 'view.anim_clear', 'view.spacemouse',
 ];

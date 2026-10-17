@@ -10,7 +10,7 @@ const FORMAT = 'formsculptor-layout';
 export const TOOL_SWAP_STORE = 'formsculptor.toolswap';
 
 /** The browser storage keys a layout file carries. */
-export const LAYOUT_KEYS = ['formsculptor.layout', 'formsculptor.tablet', TOOLBARS_STORE, 'formsculptor.prefs', TOOL_SWAP_STORE, 'formsculptor.bindings', 'formsculptor.theme'] as const;
+export const LAYOUT_KEYS = ['formsculptor.layout', 'formsculptor.tablet', TOOLBARS_STORE, 'formsculptor.prefs', TOOL_SWAP_STORE, 'formsculptor.bindings', 'formsculptor.theme', 'formsculptor.overlays'] as const;
 
 /** The layout as kept in this browser, as the text of a layout file. */
 export function exportLayout(version: string): string {
