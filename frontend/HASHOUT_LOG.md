@@ -699,3 +699,30 @@ The owner asked for the interface to be clearer and easier, with an active objec
 - kind: rationale
 - logged: v0.77.0 · 2026-10-17
 DEV_PLAN 11.8's last box, its last part. The dock gains a Views tab: the scene's saved views by name, a row easing the view there (the same easing history steps use) and marking it, a cross deleting it, and Save view asking a name (View 1, View 2 and on by default; a name in use is replaced). The panel layout has Save view, Previous view, Next view and Fly buttons in its View section, and the View menu a Saved Views submenu and Fly Navigation. Next and Previous step through the views in order from the one last gone to, wrapping round. Fly navigation (Shift+F) is first person: W A S D or the arrows walk along the view and across it, Q and E go down and up the world's vertical, Shift is three times faster and Alt a quarter, at a speed tied to the view's distance so it suits any scene's scale; a drag looks round from the eye (the target swings round it) and never sculpts; Escape or the command leaves. The walking keys are taken in the capture phase, before any shortcut sees them, and are left alone while a field has focus. A badge at the top of the viewport says it is on and how to leave, and the brush ring is hidden. Checked under 4x CPU throttling with a cone and a cube (the views had to differ: a lone cube looks alike from the front and the top, so the first comparison measured nothing): views saved from the front and the right were stored at yaw 0 and 90; from the top view, the Front row brought the view back to within 0.94 percent of the image taken when it was saved (20.3 percent away before), marked the row and showed a note; Next went to the right side within 0.41 percent; Shift+F showed the badge; holding W for 0.7 s changed 16.6 percent of the view and a drag 48 percent, with the tool unchanged and no history step; Escape hid the badge; a row's cross deleted its view; the panel layout's four buttons were there; layout shift 0, no console errors. Every earlier window check and the smoke test passed again.
+
+### AgX and Neutral tone maps and a colour grade in lit shading
+- refers-to: viewport/gl-renderer.ts :: TONE_GLSL (new: uTone, uContrast, uSaturation, uTemperature, gradeLight, agxCurve, neutralCurve, tonemap), MESH_FS and BG_FS (both now include TONE_GLSL), GlRenderer.toneUniforms (new), Lighting (contrast, saturation, temperature), GlRenderer.lighting (default contrast 1, saturation 1, temperature 0), TONES; app.ts :: Shell (toneContrast, toneSaturation, toneTemperature), buildShell (the Tone mapping choices, three ranges after Tone mapping in the Lighting fields, the return list), the lighting input listeners, applyLighting
+- kind: rationale
+- logged: v0.78.0 · 2026-10-17
+DEV_PLAN 11.9's first box. Lit (PBR) shading's Tone mapping gains AgX and Neutral beside Reinhard, ACES filmic and None, and Contrast, Saturation and White balance sliders follow it (25 to 250 %, 0 to 200 %, -100 to 100; the defaults change nothing). One GLSL block, TONE_GLSL, carries the grade and all five curves, and both the mesh and the environment background programs include it, so the backdrop and the model are always graded alike; it mirrors the engine's fsc-paint tone.rs line for line, so the path render (get_view tone, contrast, saturation, temperature) matches the viewport. Uniforms are set in one place, toneUniforms, which replaced the two separate uTone setters. The window has no path render control of its own; agents reach it through get_view.
+Removed from MESH_FS: `uniform float uTone;` and
+```glsl
+vec3 tonemap(vec3 c) {
+  if (uTone > 1.5) return pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
+  if (uTone > 0.5) {
+    // ACES filmic (Narkowicz's fit).
+    c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
+    return pow(c, vec3(1.0 / 2.2));
+  }
+  return pow(c / (c + vec3(1.0)), vec3(1.0 / 2.2));
+}
+```
+Removed from BG_FS: `uniform float uTone;` and
+```glsl
+  if (uTone > 1.5) c = clamp(c, 0.0, 1.0);
+  else if (uTone > 0.5) c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
+  else c = c / (c + vec3(1.0));
+  outColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
+```
+Removed setters: `gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uTone'), TONES.indexOf(this.lighting.tone));` and `gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uTone'), TONES.indexOf(this.lighting.tone));`. Removed: `export const TONES = ['reinhard', 'aces', 'none'];` (now five, in TONE_GLSL's index order), `lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', blur: 0.35, keyAzimuth: -36.9, keyElevation: 40.9, keyIntensity: 1, keyColor: [1, 0.94, 0.87], keyFollowsView: true, shadows: false, ground: false, extra: [] };`, `const tone = choices('Tone mapping', [['reinhard', 'Reinhard'], ['aces', 'ACES filmic'], ['none', 'None']]);` and `for (const c of [shell.envRotate, shell.exposure, shell.fixedLights, shell.envBlur]) c.addEventListener('input', () => this.applyLighting());`. The Lighting fields and the shell's return list only gained entries.
+Checked in a fresh profile under 4x CPU throttling (cone and cube, lit, Sunset environment): the menu lists all five; each curve gave an image distinct from Reinhard's (mean colour ACES 198/178/179, AgX 168/152/153, Neutral 170/142/143, None 177/152/152); under AgX contrast 200 brightened to 204/177/178, saturation 0 gave grey 156/156/156, white balance -100 gave 159/151/162 and +100 176/153/142, and returning every slider matched the first frame exactly; layout shift 0, no console errors. Every earlier window check and the smoke test passed again.

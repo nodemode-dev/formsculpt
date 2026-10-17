@@ -34,6 +34,58 @@ void main() {
   gl_Position = uViewProj * world;
 }`;
 
+/** Colour grading and tone mapping, shared by the lit mesh shader and the environment background, and the same curves
+ * the engine's path render uses (native fsc-paint tone.rs), so the viewport and a render agree. uTone indexes TONES;
+ * the grade (white balance, saturation, contrast about mid grey) works on linear light before the curve. */
+const TONE_GLSL = `
+uniform float uTone;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uTemperature;
+vec3 gradeLight(vec3 c) {
+  float t = clamp(uTemperature, -1.0, 1.0);
+  c *= vec3(1.0 + 0.18 * t, 1.0 + 0.02 * t, 1.0 - 0.22 * t);
+  float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  c = max(mix(vec3(luma), c, max(uSaturation, 0.0)), vec3(0.0));
+  if (abs(uContrast - 1.0) > 1e-4) c = 0.18 * pow(max(c, vec3(1e-6)) / 0.18, vec3(max(uContrast, 0.0)));
+  return c;
+}
+vec3 agxCurve(vec3 c) {
+  const mat3 inset = mat3(0.842479062, 0.042328242, 0.042375655, 0.0784336, 0.878468636, 0.0784336, 0.079223745, 0.079166127, 0.879142974);
+  const mat3 outset = mat3(1.196879005, -0.052896852, -0.052971636, -0.098020881, 1.15190313, -0.09804345, -0.099029744, -0.098961177, 1.151073673);
+  const float lo = -12.47393;
+  const float hi = 4.026069;
+  vec3 v = inset * c;
+  v = (clamp(log2(max(v, vec3(1e-10))), lo, hi) - lo) / (hi - lo);
+  vec3 v2 = v * v;
+  vec3 v4 = v2 * v2;
+  v = 15.5 * v4 * v2 - 40.14 * v4 * v + 31.96 * v4 - 6.868 * v2 * v + 0.4298 * v2 + 0.1191 * v - 0.00232;
+  return clamp(outset * v, 0.0, 1.0);
+}
+vec3 neutralCurve(vec3 c) {
+  const float start = 0.76;
+  float x = min(c.r, min(c.g, c.b));
+  c -= x < 0.08 ? x - 6.25 * x * x : 0.04;
+  float peak = max(c.r, max(c.g, c.b));
+  if (peak < start) return c;
+  float d = 1.0 - start;
+  float newPeak = 1.0 - d * d / (peak + d - start);
+  c *= newPeak / peak;
+  float g = 1.0 - 1.0 / (0.15 * (peak - newPeak) + 1.0);
+  return mix(c, vec3(newPeak), g);
+}
+vec3 tonemap(vec3 c) {
+  c = gradeLight(c);
+  vec3 e = vec3(1.0 / 2.2);
+  if (uTone > 3.5) return pow(clamp(neutralCurve(c), 0.0, 1.0), e);
+  if (uTone > 2.5) return agxCurve(c);
+  if (uTone > 1.5) return pow(clamp(c, 0.0, 1.0), e);
+  // ACES filmic (Narkowicz's fit).
+  if (uTone > 0.5) return pow(clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0), e);
+  return pow(c / (c + vec3(1.0)), e);
+}
+`;
+
 const MESH_FS = `#version 300 es
 precision highp float;
 in vec3 vNrm;
@@ -102,7 +154,6 @@ uniform float uEnvRot;
 uniform float uEnvMaxLod;
 uniform float uExposure;
 uniform float uLightScale;
-uniform float uTone;
 uniform mat4 uView;
 const float PI_ = 3.14159265;
 vec3 envAt(vec3 d, float lod) {
@@ -112,15 +163,7 @@ vec3 envAt(vec3 d, float lod) {
   float w = acos(clamp(d.y, -1.0, 1.0)) / PI_;
   return textureLod(uEnv, vec2(u, w), max(lod, 0.0)).rgb;
 }
-vec3 tonemap(vec3 c) {
-  if (uTone > 1.5) return pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
-  if (uTone > 0.5) {
-    // ACES filmic (Narkowicz's fit).
-    c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
-    return pow(c, vec3(1.0 / 2.2));
-  }
-  return pow(c / (c + vec3(1.0)), vec3(1.0 / 2.2));
-}
+${TONE_GLSL}
 uniform float uImage;
 uniform sampler2D uMatcap;
 out vec4 outColor;
@@ -793,7 +836,7 @@ export class GlRenderer {
         gl.uniformMatrix4fv(gl.getUniformLocation(this.bgProgram, 'uInvViewProj'), false, inv);
         gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uEnvRot'), this.lighting.rotation);
         gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uExposure'), this.lighting.exposure);
-        gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uTone'), TONES.indexOf(this.lighting.tone));
+        this.toneUniforms(this.bgProgram);
         gl.uniform1f(gl.getUniformLocation(this.bgProgram, 'uBlur'), this.lighting.blur * (env.levels - 1));
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, env.tex);
@@ -826,7 +869,7 @@ export class GlRenderer {
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uEnvMaxLod'), env ? env.levels - 1 : 0);
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uExposure'), this.lighting.exposure);
     gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uLightScale'), env ? this.lighting.lights : 1);
-    gl.uniform1f(gl.getUniformLocation(this.meshProgram, 'uTone'), TONES.indexOf(this.lighting.tone));
+    this.toneUniforms(this.meshProgram);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, env ? env.tex : this.blankEnv);
     gl.uniform1i(gl.getUniformLocation(this.meshProgram, 'uEnv'), 1);
@@ -943,6 +986,17 @@ export class GlRenderer {
       const inv = invert(proj);
       if (inv) post.finish(p, proj, inv, camera.distance * 0.1, camera.distance);
     }
+  }
+
+  /** The tone map and grade's uniforms (TONE_GLSL) on a program in use. */
+  private toneUniforms(p: WebGLProgram | null): void {
+    if (!p) return;
+    const gl = this.gl;
+    const L = this.lighting;
+    gl.uniform1f(gl.getUniformLocation(p, 'uTone'), Math.max(0, TONES.indexOf(L.tone)));
+    gl.uniform1f(gl.getUniformLocation(p, 'uContrast'), L.contrast);
+    gl.uniform1f(gl.getUniformLocation(p, 'uSaturation'), L.saturation);
+    gl.uniform1f(gl.getUniformLocation(p, 'uTemperature'), L.temperature);
   }
 
   private wireframe = false;
@@ -1207,7 +1261,7 @@ export class GlRenderer {
   }
 
   private env: { tex: WebGLTexture; levels: number } | null = null;
-  lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', blur: 0.35, keyAzimuth: -36.9, keyElevation: 40.9, keyIntensity: 1, keyColor: [1, 0.94, 0.87], keyFollowsView: true, shadows: false, ground: false, extra: [] };
+  lighting: Lighting = { environment: false, background: false, rotation: 0, exposure: 1, lights: 0.35, tone: 'reinhard', contrast: 1, saturation: 1, temperature: 0, blur: 0.35, keyAzimuth: -36.9, keyElevation: 40.9, keyIntensity: 1, keyColor: [1, 0.94, 0.87], keyFollowsView: true, shadows: false, ground: false, extra: [] };
 
   /** Uploads an environment as a float texture with its own mip chain (null removes it). */
   setEnvironment(img: EnvImage | null): void {
@@ -1229,7 +1283,8 @@ export class GlRenderer {
   }
 }
 
-export const TONES = ['reinhard', 'aces', 'none'];
+/** Tone maps by their index in TONE_GLSL (and their names in the engine's get_view tone). */
+export const TONES = ['reinhard', 'aces', 'none', 'agx', 'neutral'];
 
 const IDENTITY = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
@@ -1325,6 +1380,11 @@ export interface Lighting {
   /** The three fixed lights' share when an environment lights the scene. */
   lights: number;
   tone: string;
+  /** Colour grading before the tone map: contrast about mid grey (1 as is), saturation (1 as is), white balance
+   * (negative cooler, positive warmer). */
+  contrast: number;
+  saturation: number;
+  temperature: number;
   /** How blurred the background is, 0 sharp to 1 fully blurred. */
   blur: number;
   /** The key light, in degrees: azimuth from straight ahead (or world +z), elevation above the horizon. */
@@ -1375,20 +1435,17 @@ uniform mat4 uInvViewProj;
 uniform sampler2D uEnv;
 uniform float uEnvRot;
 uniform float uExposure;
-uniform float uTone;
 uniform float uBlur;
 out vec4 outColor;
 const float PI_ = 3.14159265;
+${TONE_GLSL}
 void main() {
   vec4 a = uInvViewProj * vec4(vNdc, -1.0, 1.0);
   vec4 b = uInvViewProj * vec4(vNdc, 1.0, 1.0);
   vec3 d = normalize(b.xyz / b.w - a.xyz / a.w);
   float az = atan(d.x, d.z) + uEnvRot;
   vec3 c = textureLod(uEnv, vec2(fract((az + PI_) / (2.0 * PI_)), acos(clamp(d.y, -1.0, 1.0)) / PI_), uBlur).rgb * uExposure;
-  if (uTone > 1.5) c = clamp(c, 0.0, 1.0);
-  else if (uTone > 0.5) c = clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
-  else c = c / (c + vec3(1.0));
-  outColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0);
+  outColor = vec4(tonemap(c), 1.0);
 }`;
 
 const GRADIENT_FS = `#version 300 es
