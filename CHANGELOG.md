@@ -2,6 +2,27 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.80.0 · 2026-10-17
+
+### Added
+
+- Material types. Paint > Material type sets how the active object covers what is behind it, saved with the object:
+  - Opaque: as before.
+  - Dithered: see-through by a fine pattern at Material opacity. It needs no sorting, keeps depth and casts a lighter shadow.
+  - Additive: adds its light over what is behind it at Material opacity and hides nothing, for glows, holograms and light beams. It casts no shadow.
+  - Refraction: glass and water, as Transmission (it turns on lit shading).
+- Dithered and Additive work in every shading.
+- The path render now refracts transmissive objects (Fresnel reflection, total internal reflection, a tint by colour). It also follows dithered and additive materials. Shadows pass through dithered, additive and glass surfaces as a lighter shadow.
+- For agents: `set_material` takes `blend` (opaque, dithered, additive) and `opacity`, and `get_scene` reports them.
+
+### Fixed
+
+- Path render: looking through see-through paint now shows the backdrop behind it, not the sky's bounce light.
+
+### Notes
+
+- 1219 interface strings in every language.
+
 ## 0.79.0 · 2026-10-17
 
 ### Added
