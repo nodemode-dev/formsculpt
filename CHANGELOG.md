@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.62.0 · 2026-10-17
+
+### Added
+
+- `field_remesh`: an all-quad remesh whose edge loops follow the form, after Instant Meshes. A smoothed four-way direction field runs along the curvature and along hard edges (`hard_angle`, 40 degrees by default), a position field lays a lattice on it, and the lattice is read off as quads near a target count (`faces`); `density_from_paint` makes red areas finer and blue coarser. Gaps near the field's singular points are closed on watertight objects; the reply counts any left (`open_edges`). One undo step; paint is carried over.
+- Window: Field remesh in Topology, with Hard angle and Density from paint (it shares Target quads with Quad remesh).
+- 167 engine commands; 1017 interface strings in every language.
+
+### Changed
+
+- `border_loops` walks a pinched border the same way every run.
+
 ## 0.61.0 · 2026-10-17
 
 ### Added
