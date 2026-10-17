@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.76.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.77.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -27,7 +27,7 @@ Note: read-only.
 
 ## get_scene
 
-Every object in the scene with its id, name, visibility, vertex and triangle counts and bounds, and which object is active. Call it first to learn object ids.
+Every object in the scene with its id, name, visibility, vertex and triangle counts and bounds, which object is active, and the names of the saved camera views. Call it first to learn object ids.
 
 - no parameters
 
