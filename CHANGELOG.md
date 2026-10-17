@@ -2,6 +2,25 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.70.0 · 2026-10-17
+
+### Changed
+
+- The tablet layout (Window > Tablet Layout) is rebuilt to the arrangement of the owner's recording:
+  - The viewport fills the window on black, with no menu bar or status bar.
+  - Top left: a floating bar opens the scene menus (File, Scene, Topology, Paint and material, Lighting, View, History, More), with the scene's counts and the active object under it.
+  - Top right: a bar with tool settings, Mirror X, dynamic topology, invert, the command palette, the way back to the panel layout and the tool grid toggle. Under it sit Orthographic, Full screen, Grid and Frame, and a view cube that turns with the camera and snaps to a face.
+  - Right edge: the tool palette, every tool as a coloured disc by family over its name, in a 4-column grid or the usual tools in one column.
+  - Left edge: a strip with Sym, quick Smooth, Mask and Transform swaps, and tall Radius and Intensity bars.
+  - Bottom: the tool's pill and an options card (icon-over-label toggles, choices showing their value, values as filled bars), and a quick bar with Undo and Redo and their step counts, Solo, X-ray, Voxel, Grid, Wireframe, Inspector and History.
+  - Menus and the Voxel panel (Resolution, Thicken thin parts, Remesh) open as floating panels with a title bar.
+- While the tablet layout is on, objects are drawn in the new Orange clay shading on black, every part in the same clay, with the floor grid off. Leaving the layout gives the previous look back.
+
+### Added
+
+- Orange clay in View > Shading.
+- 1087 interface strings in every language.
+
 ## 0.69.1 · 2026-10-17
 
 Fixes found while Claude Code drove the window over MCP to rebuild the snake head from the owner's Nomad Sculpt recording.
