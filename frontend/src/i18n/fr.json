@@ -1015,5 +1015,7 @@
  "Density from paint": "Densité selon la peinture",
  "Field Remesh": "Remaillage par champ",
  "Field remesh": "Remaillage par champ",
- "Hard angle": "Angle d’arête vive"
+ "Hard angle": "Angle d’arête vive",
+ "Curve as guide": "Courbe comme guide",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Courbe comme guide nécessite une courbe : dessinez-en d’abord une avec l’outil Courbe"
 }

@@ -1015,5 +1015,7 @@
  "Density from paint": "Dichte aus Bemalung",
  "Field Remesh": "Feld-Remesh",
  "Field remesh": "Feld-Remesh",
- "Hard angle": "Kantenwinkel"
+ "Hard angle": "Kantenwinkel",
+ "Curve as guide": "Kurve als Führung",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve als Führung braucht eine Kurve: zeichnen Sie zuerst eine mit dem Kurvenwerkzeug"
 }

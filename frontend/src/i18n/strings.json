@@ -218,6 +218,8 @@
  "Create Texture",
  "Ctrl-click two or more points of one island in the UV view first",
  "Cube",
+ "Curve as guide",
+ "Curve as guide needs a curve: draw one with the Curve tool first",
  "Curve Bridge",
  "Curve Bridge Between Two Groups",
  "Curve From Border",

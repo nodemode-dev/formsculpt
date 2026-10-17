@@ -1015,5 +1015,7 @@
  "Density from paint": "Dichtheid uit verf",
  "Field Remesh": "Field remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Hoek scherpe rand"
+ "Hard angle": "Hoek scherpe rand",
+ "Curve as guide": "Curve als gids",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curve als gids heeft een curve nodig: teken er eerst een met het Curve-gereedschap"
 }

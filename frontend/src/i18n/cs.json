@@ -1015,5 +1015,7 @@
  "Density from paint": "Hustota podle barvy",
  "Field Remesh": "Field remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Úhel ostré hrany"
+ "Hard angle": "Úhel ostré hrany",
+ "Curve as guide": "Křivka jako vodítko",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Křivka jako vodítko potřebuje křivku: nejprve ji nakreslete nástrojem Křivka"
 }

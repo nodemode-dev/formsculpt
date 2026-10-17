@@ -1015,5 +1015,7 @@
  "Density from paint": "按绘制决定密度",
  "Field Remesh": "场向重构网格",
  "Field remesh": "场向重构网格",
- "Hard angle": "硬边角度"
+ "Hard angle": "硬边角度",
+ "Curve as guide": "曲线作为引导",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "曲线作为引导需要一条曲线：请先用曲线工具绘制"
 }

@@ -1015,5 +1015,7 @@
  "Density from paint": "Gęstość z malowania",
  "Field Remesh": "Remesh polowy",
  "Field remesh": "Remesh polowy",
- "Hard angle": "Kąt ostrej krawędzi"
+ "Hard angle": "Kąt ostrej krawędzi",
+ "Curve as guide": "Krzywa jako prowadnica",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Krzywa jako prowadnica wymaga krzywej: najpierw narysuj ją narzędziem Krzywa"
 }

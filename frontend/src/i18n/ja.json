@@ -1015,5 +1015,7 @@
  "Density from paint": "ペイントから密度",
  "Field Remesh": "フィールドリメッシュ",
  "Field remesh": "フィールドリメッシュ",
- "Hard angle": "ハードエッジ角度"
+ "Hard angle": "ハードエッジ角度",
+ "Curve as guide": "カーブをガイドに",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "カーブをガイドにするにはカーブが必要です。先にカーブツールで描いてください"
 }

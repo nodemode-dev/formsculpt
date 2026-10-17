@@ -1015,5 +1015,7 @@
  "Density from paint": "Densità dalla pittura",
  "Field Remesh": "Field remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Angolo spigolo vivo"
+ "Hard angle": "Angolo spigolo vivo",
+ "Curve as guide": "Curva come guida",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curva come guida richiede una curva: disegnane prima una con lo strumento Curva"
 }

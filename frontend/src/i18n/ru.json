@@ -1015,5 +1015,7 @@
  "Density from paint": "Плотность по раскраске",
  "Field Remesh": "Ремеш по полю",
  "Field remesh": "Ремеш по полю",
- "Hard angle": "Угол жёсткого ребра"
+ "Hard angle": "Угол жёсткого ребра",
+ "Curve as guide": "Кривая как направляющая",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Для «Кривая как направляющая» нужна кривая: сначала нарисуйте её инструментом «Кривая»"
 }

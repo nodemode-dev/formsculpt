@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.61.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.62.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -1257,10 +1257,11 @@ Rebuild an object as an even, quad-dominant mesh near a target face count: quads
 
 ## field_remesh
 
-Rebuild an object as all quads whose edge loops follow its form: a smoothed direction field (four-way, like Instant Meshes) runs along the curvature and the hard edges, a position field lays a lattice on it, and the lattice is read off as polygons split into quads. Hard edges above hard_angle keep their loops; density_from_paint reads red as finer and blue as coarser. Small gaps near the field's singular points are closed on watertight objects; open_edges in the reply counts any left. Slower than quad_remesh. One undo step; the mask is cleared, paint is carried over.
+Rebuild an object as all quads whose edge loops follow its form: a smoothed direction field (four-way, like Instant Meshes) runs along the curvature and the hard edges, a position field lays a lattice on it, and the lattice is read off as polygons split into quads. Hard edges above hard_angle keep their loops; guides (curves on the surface) make loops run along them; density_from_paint reads red as finer and blue as coarser. Small gaps near the field's singular points are closed on watertight objects (pinched ones too); open_edges in the reply counts any left. Slower than quad_remesh. One undo step; the mask is cleared, paint is carried over.
 
 - `density_from_paint`: boolean; default false; Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even.
 - `faces`: integer; default 2000; range 100 to 200000; Target number of quads (the result lands near it, more where the form is busy).
+- `guides`: array of array; Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as ZRemesher's curves steer it.
 - `hard_angle`: number; default 40; range 1 to 180; Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `iterations`: integer; default 40; range 4 to 200; Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer.

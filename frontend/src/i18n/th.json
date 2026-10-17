@@ -1015,5 +1015,7 @@
  "Density from paint": "ความหนาแน่นจากสีที่ระบาย",
  "Field Remesh": "รีเมชตามฟิลด์",
  "Field remesh": "รีเมชตามฟิลด์",
- "Hard angle": "มุมขอบแข็ง"
+ "Hard angle": "มุมขอบแข็ง",
+ "Curve as guide": "ใช้เส้นโค้งเป็นไกด์",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "ใช้เส้นโค้งเป็นไกด์ต้องมีเส้นโค้ง: วาดด้วยเครื่องมือเส้นโค้งก่อน"
 }

@@ -1015,5 +1015,7 @@
  "Density from paint": "Tetthet fra maling",
  "Field Remesh": "Felt-remesh",
  "Field remesh": "Felt-remesh",
- "Hard angle": "Skarp vinkel"
+ "Hard angle": "Skarp vinkel",
+ "Curve as guide": "Kurve som guide",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurve som guide trenger en kurve: tegn en med Kurve-verktøyet først"
 }

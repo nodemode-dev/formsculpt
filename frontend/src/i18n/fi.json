@@ -1015,5 +1015,7 @@
  "Density from paint": "Tiheys maalista",
  "Field Remesh": "Field remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Terävä kulma"
+ "Hard angle": "Terävä kulma",
+ "Curve as guide": "Käyrä ohjaimena",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Käyrä ohjaimena tarvitsee käyrän: piirrä ensin sellainen Käyrä-työkalulla"
 }

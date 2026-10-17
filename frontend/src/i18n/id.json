@@ -1015,5 +1015,7 @@
  "Density from paint": "Kepadatan dari cat",
  "Field Remesh": "Field Remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Sudut tepi tajam"
+ "Hard angle": "Sudut tepi tajam",
+ "Curve as guide": "Kurva sebagai panduan",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Kurva sebagai panduan memerlukan kurva: gambar dulu dengan alat Kurva"
 }

@@ -1015,5 +1015,7 @@
  "Density from paint": "Sűrűség a festésből",
  "Field Remesh": "Field remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Éles él szöge"
+ "Hard angle": "Éles él szöge",
+ "Curve as guide": "Görbe vezetőként",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "A Görbe vezetőként egy görbét igényel: előbb rajzoljon egyet a Görbe eszközzel"
 }

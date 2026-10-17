@@ -1015,5 +1015,7 @@
  "Density from paint": "Щільність за розфарбуванням",
  "Field Remesh": "Ремеш за полем",
  "Field remesh": "Ремеш за полем",
- "Hard angle": "Кут жорсткого ребра"
+ "Hard angle": "Кут жорсткого ребра",
+ "Curve as guide": "Крива як напрямна",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Для «Крива як напрямна» потрібна крива: спершу намалюйте її інструментом «Крива»"
 }

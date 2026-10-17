@@ -1015,5 +1015,7 @@
  "Density from paint": "Densidade pela pintura",
  "Field Remesh": "Remesh por campo",
  "Field remesh": "Remesh por campo",
- "Hard angle": "Ângulo de aresta dura"
+ "Hard angle": "Ângulo de aresta dura",
+ "Curve as guide": "Curva como guia",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Curva como guia precisa de uma curva: desenhe uma antes com a ferramenta Curva"
 }

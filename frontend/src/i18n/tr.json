@@ -1015,5 +1015,7 @@
  "Density from paint": "Boyadan yoğunluk",
  "Field Remesh": "Field Remesh",
  "Field remesh": "Field remesh",
- "Hard angle": "Sert kenar açısı"
+ "Hard angle": "Sert kenar açısı",
+ "Curve as guide": "Eğri kılavuz olarak",
+ "Curve as guide needs a curve: draw one with the Curve tool first": "Eğri kılavuz olarak bir eğri gerektirir: önce Eğri aracıyla bir tane çizin"
 }
