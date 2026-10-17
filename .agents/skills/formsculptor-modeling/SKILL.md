@@ -21,6 +21,10 @@ The full tool reference, generated from the engine's command registry, is `refer
 
 A point on a sphere of radius r centred at the origin at height y and angle t is `[sqrt(r*r - y*y) * cos(t), y, sqrt(r*r - y*y) * sin(t)]`. Points slightly off the surface still work: the brush acts on the vertices within the radius.
 
+Once the form is no longer a primitive (after merges, remeshes and strokes), do not guess where its surface is: `pick` casts a ray (`origin` outside the object, `direction` toward it) and returns the hit `point` and its `normal`. Pick a row of rays along the line you want (a mouth line along the side, a ridge over an eye, the seam where two parts meet) and use the hit points as the stroke's `points`; the same points and normals place `insert_mesh`, `vdm_stamp` and the ends of a `curve_tube` exactly on the surface.
+
+`sculpt_stroke` places dabs by distance travelled since the last dab (`radius * spacing`), as a brush does under the pen: points that stay within that distance of each other (the same point repeated, a small jiggle) give a single dab. To work one spot harder, raise `strength`, repeat the stroke, or draw a short path across it with a smaller `spacing`.
+
 ## Workflow 1: block out a form
 
 1. `add_primitive` sphere, detail 6.
