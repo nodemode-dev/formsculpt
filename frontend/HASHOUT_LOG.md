@@ -591,3 +591,9 @@ Retopo patch is a click tool beside Retopo quad and shares its object (retopoInt
 - kind: rationale
 - logged: v0.60.0 · 2026-10-17
 The engine's decimate options default off so agents' existing calls behave as before; the window turns all three on by default, since a person pressing Decimate 50% expects the paint, groups and texture they made to still be there. Unchecking Keep UVs is the way to reach the exact target when seams would hold too many vertices.
+
+### Dyntopo mode, method and Protect masked
+- refers-to: app.ts :: the Dyntopo mode, Dyntopo method and Protect masked fields (dyntopoMode, dyntopoMethod, dyntopoProtect), strokeOptions
+- kind: rationale
+- logged: v0.61.0 · 2026-10-17
+The three ride in strokeOptions, the bag every live stroke and replayed stroke already carries, and only while Dyntopo is on and only when they differ from the engine's defaults (balanced, both, off), so a stroke made with the defaults sends exactly what it sent before.
