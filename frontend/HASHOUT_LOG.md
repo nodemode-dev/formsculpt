@@ -609,3 +609,9 @@ Field remesh shares Target quads with Quad remesh rather than adding a second co
 - kind: rationale
 - logged: v0.63.0 · 2026-10-17
 The guide is the curve already waiting on the surface from the Curve stroke tool, sent as its handles (with corners and rounds) so the engine smooths it the same way a stroke along it would; no second curve editor was added. It steers both Quad remesh and Field remesh, which until now had a guides argument no window control could reach. With the box on and no curve, the button notes what is missing and runs nothing, rather than quietly remeshing unguided.
+
+### ZModeler inset, split and stitch
+- refers-to: app.ts :: zmodelAction options (edge.inset, edge.inset_border, point.split, point.stitch), zmodel (amount per action, the stitch's two clicks), zstitch, zmodelAmount (now Amount %)
+- kind: rationale
+- logged: v0.64.0 · 2026-10-17
+Border only is its own action (edge.inset_border) mapped to inset with keep border_only, so it needs no extra control. The one slider that was Slide amount % now sets the slide's distance, the inset's spacing (capped at 45) and the split's radius, so it is renamed Amount % (the old string is replaced in every table, not left behind). Stitch takes two clicks on the same object: the first is kept with a note, the second runs the weld; changing the action forgets a pending first click. The weld uses the engine's default alignment (at the second point).

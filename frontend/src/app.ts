@@ -1098,11 +1098,12 @@ function buildShell(root: HTMLElement): Shell {
   const remeshGuide = input('checkbox', { 'aria-label': 'Curve as guide' });
   topoFields.append(field('Hard angle', fieldHardAngle), field('Density from paint', fieldDensity), field('Curve as guide', remeshGuide));
   // Values are target.action, in the characters the string extractor reads as option values, so the labels translate.
-  const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point'], ['edge.align', 'Align edge loop'], ['edge.slide', 'Slide edge loop'], ['point.slide', 'Slide point']]);
+  const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point'], ['edge.align', 'Align edge loop'], ['edge.slide', 'Slide edge loop'], ['point.slide', 'Slide point'], ['edge.inset', 'Inset edge loop'], ['edge.inset_border', 'Inset edge loop, border only'], ['point.split', 'Split point'], ['point.stitch', 'Stitch points']]);
   const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
   const zmodelCrease = input('checkbox', { 'aria-label': 'Auto-crease' });
-  const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'Slide amount' });
-  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Slide amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
+  // Slide's distance, the inset's spacing and the split's radius, each as a share of the edges around the target.
+  const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'ZModeler amount' });
+  topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
   const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc']]);
   const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
@@ -1890,7 +1891,10 @@ class SceneView {
     shell.canvas.addEventListener('pointerleave', () => ring(null));
     shell.canvas.addEventListener('pointermove', (e) => this.zmodelHoverAt(e.clientX, e.clientY));
     shell.canvas.addEventListener('pointerleave', () => this.zmodelHoverAt(null, null));
-    shell.zmodelAction.addEventListener('change', () => this.drawZmodelHover());
+    shell.zmodelAction.addEventListener('change', () => {
+      this.zstitch = null;
+      this.drawZmodelHover();
+    });
     this.strokes.warm();
     viewport.strokes = {
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null),
@@ -2511,16 +2515,37 @@ class SceneView {
   /** ZModeler: the action chosen in the panel, applied at the clicked point (edge actions to its nearest edge, face
    * actions to the face under it). */
   private async zmodel(id: number, point: Vec3): Promise<void> {
-    const [target, action] = this.shell.zmodelAction.value.split('.');
+    const [target, picked] = this.shell.zmodelAction.value.split('.');
+    // Border only is an inset that drops the loop between its new side loops.
+    const action = picked === 'inset_border' ? 'inset' : picked;
     const args: Record<string, unknown> = { id, point, action };
+    if (picked === 'inset_border') args.keep = 'border_only';
+    const amount = (Number(this.shell.zmodelAmount.value) || 25) / 100;
     if (action === 'insert') args.at = Math.max(5, Math.min(95, Number(this.shell.zmodelAt.value) || 50)) / 100;
-    if (action === 'slide') args.amount = Math.max(5, Math.min(95, Number(this.shell.zmodelAmount.value) || 25)) / 100;
-    // Auto-crease applies where the engine takes it: a new edge loop, and a face inset or extrude.
-    if (this.shell.zmodelCrease.checked && (action === 'insert' || (target === 'face' && action !== 'delete'))) args.crease = true;
+    if (action === 'slide') args.amount = Math.max(0.05, Math.min(0.95, amount));
+    if (action === 'inset') args.amount = Math.max(0.05, Math.min(0.45, amount));
+    if (action === 'split') args.amount = Math.max(0.05, Math.min(0.9, amount));
+    if (action === 'stitch') {
+      // Two clicks: the first corner is kept, the second is where it is welded.
+      const first = this.zstitch;
+      if (!first || first.id !== id) {
+        this.zstitch = { id, point };
+        this.note(t('First point kept; click the point to weld it to'));
+        return;
+      }
+      this.zstitch = null;
+      args.point = first.point;
+      args.to = point;
+    }
+    // Auto-crease applies where the engine takes it: new edge loops, a split ring, and a face inset or extrude.
+    if (this.shell.zmodelCrease.checked && (action === 'insert' || action === 'inset' || action === 'split' || (target === 'face' && action !== 'delete'))) args.crease = true;
     await this.run(target === 'face' ? 'zmodel_face' : target === 'point' ? 'zmodel_point' : 'zmodel_edge', args);
     this.zmodelHit = null;
     this.drawZmodelHover();
   }
+
+  /** Stitch points: the first corner's click, waiting for the second. */
+  private zstitch: { id: number; point: Vec3 } | null = null;
 
   /** A Slide point drag in progress: the press's pick (which fills zslidePoint) and the pointer's latest ray. */
   private zslide: { picked: Promise<void>; ray: Ray } | null = null;
