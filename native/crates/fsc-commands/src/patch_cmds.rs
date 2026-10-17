@@ -77,16 +77,17 @@ pub(crate) fn patch_schema() -> Value {
         "properties": {
             "target": {"type": "integer", "minimum": 1, "description": "The sculpt to retopologize; the patch is laid onto its surface."},
             "into": {"type": "integer", "minimum": 1, "description": "The retopology object to add to (from retopo_face or an earlier patch); a new one when omitted."},
-            "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS, "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole)."},
-            "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near the target's surface where the patch's middle goes."},
+            "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS.iter().chain(fsc_topo::WRAP_KINDS).collect::<Vec<_>>(), "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole). Whole-object templates, which wrap the entire target instead of a patch of it (no center or size): sphere: a closed quad sphere (a cube's faces split columns by columns, eight three-edge poles); head: that sphere with two eye loops and a mouth loop of rows rings each on the side facing front. The template is scaled to the target's extent along up and front, put on its outermost surface by rays from its middle (so it suits heads, blobs and other shapes seen whole from their middle) and relaxed along the surface; folded in the reply counts quads that came out facing in."},
+            "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near the target's surface where the patch's middle goes. Not used by head and sphere."},
+            "front": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "head and sphere: the direction the template's front faces (toward the viewer; the window sends the direction to the camera); +z when omitted."},
             "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "Half the patch's width in world units; 6 percent of the target's size (its bounding diagonal) when omitted."},
             "up": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Which way the patch's top points, flattened onto the surface (the window sends the screen's up); world up when omitted."},
             "angle": {"type": "number", "minimum": -360, "maximum": 360, "default": 0, "description": "A further turn about the surface normal, in degrees."},
-            "columns": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid and strip: quads across (default 4). Loops and disc: points around (even, default 12)."},
-            "rows": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid: quads up (default 4). Loops and disc: rings (default 3)."},
+            "columns": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid and strip: quads across (default 4). Loops and disc: points around (even, default 12). head and sphere: quads along each cube edge (2 to 32, default 8; head default 10, rounded to twice an odd number from 6, so the mouth sits on the middle column)."},
+            "rows": {"type": "integer", "minimum": 1, "maximum": 64, "description": "grid: quads up (default 4). Loops and disc: rings (default 3). head: rings around each eye and the mouth (1 to 6, default 2)."},
             "weld": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "Patch points within this distance of an existing retopology vertex reuse it, so patches join; when omitted, 1.5 percent of the target's size or a quarter of the patch's shortest edge, whichever is smaller."}
         },
-        "required": ["target", "patch", "center"],
+        "required": ["target", "patch"],
         "additionalProperties": false
     })
 }
@@ -98,6 +99,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
     let target_id = args.get("target").and_then(Value::as_u64).ok_or_else(|| bad("target is required"))? as ObjectId;
     let target = s.scene.get(target_id).ok_or_else(|| CommandError::new("not_found", format!("no object {target_id}")))?;
     let kind = args.get("patch").and_then(Value::as_str).ok_or_else(|| bad("patch is required"))?;
+    let wrap = fsc_topo::WRAP_KINDS.contains(&kind);
     let loops = kind != "grid" && kind != "strip";
     let count = |k: &str, d: u64| -> Result<usize, CommandError> {
         match args.get(k) {
@@ -105,7 +107,6 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
             Some(v) => v.as_u64().filter(|n| (1..=64).contains(n)).map(|n| n as usize).ok_or_else(|| bad(format!("{k} is an integer from 1 to 64"))),
         }
     };
-    let flat = fsc_topo::patch(kind, count("columns", if loops { 12 } else { 4 })?, count("rows", if loops { 3 } else { 4 })?).map_err(bad)?;
     let m = &target.mesh;
     let bsize = m.bounds().extent().length().max(1e-4);
     let num = |k: &str, d: f32, lo: f32, hi: f32| -> Result<f32, CommandError> {
@@ -114,6 +115,27 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
             Some(v) => v.as_f64().map(|x| x as f32).filter(|x| x.is_finite() && *x >= lo && *x <= hi).ok_or_else(|| bad(format!("{k} must be a number from {lo} to {hi}"))),
         }
     };
+    let up_arg = match args.get("up").filter(|v| !v.is_null()) {
+        Some(v) => vec3_of(v, "up")?,
+        None => Vec3::Y,
+    };
+    if wrap {
+        // A whole-object template: no centre or size, it wraps the target as seen from front.
+        let res = count("columns", if kind == "head" { 10 } else { 8 })?;
+        let rings = count("rows", 2)?;
+        let front = match args.get("front").filter(|v| !v.is_null()) {
+            Some(v) => vec3_of(v, "front")?,
+            None => Vec3::Z,
+        };
+        let w = fsc_topo::wrap_template(kind, res, rings, m, &target.bvh, up_arg, front, 8).map_err(bad)?;
+        let shortest = w.quads.iter().flat_map(|q| (0..4).map(move |k| (q[k], q[(k + 1) % 4]))).map(|(a, b)| w.points[a as usize].distance(w.points[b as usize])).fold(f32::MAX, f32::min);
+        // Welding joins a template to a retopology object it is added into; in a new object its own points must stay
+        // apart even where the surface squeezes two of them together.
+        let default_weld = if args.get("into").is_some_and(|v| !v.is_null()) { (bsize * 0.015).min(shortest * 0.25) } else { 1e-6 };
+        let weld = num("weld", default_weld, 1e-6, 100.0)?;
+        return lay(s, args, target_id, kind, &w.points, &w.quads, None, weld, Some(w.folded));
+    }
+    let flat = fsc_topo::patch(kind, count("columns", if loops { 12 } else { 4 })?, count("rows", if loops { 3 } else { 4 })?).map_err(bad)?;
     let size = num("size", bsize * 0.06, 1e-6, 1000.0)?;
     // By default a quarter of the patch's shortest edge at most, so a fine patch never welds onto itself.
     let shortest = flat.quads.iter().flat_map(|q| (0..4).map(move |k| (q[k], q[(k + 1) % 4]))).map(|(a, b)| {
@@ -125,10 +147,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
     let center = vec3_of(args.get("center").ok_or_else(|| bad("center is required"))?, "center")?;
     let (c, n, _) = fsc_topo::nearest_point(&target.bvh, m, center, bsize).ok_or_else(|| bad("center is too far from the target's surface"))?;
     let n = n.try_normalize().ok_or_else(|| bad("the surface has no normal there"))?;
-    let up = match args.get("up").filter(|v| !v.is_null()) {
-        Some(v) => vec3_of(v, "up")?,
-        None => Vec3::Y,
-    };
+    let up = up_arg;
     // The patch's y axis: up flattened onto the tangent plane (world x when up runs along the normal), then turned.
     let mut y = (up - n * up.dot(n)).try_normalize().unwrap_or_else(|| (Vec3::X - n * n.x).normalize_or_zero());
     let x0 = y.cross(n);
@@ -154,6 +173,15 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
         dropped.push(q);
         normals.push(qn);
     }
+    lay(s, args, target_id, kind, &dropped, &flat.quads, Some(&normals), weld, None)
+}
+
+/// Adds laid quads (points on the target, quads over them) to the retopology object `into` or a new one, welding
+/// points onto existing vertices within `weld`. With `normals` each quad is turned to face like the surface under it
+/// (a flat patch); without, the quads keep their winding (a whole template, already wound outward). One undo step.
+#[allow(clippy::too_many_arguments)]
+fn lay(s: &mut Session, args: &Value, target_id: ObjectId, kind: &str, dropped: &[Vec3], patch_quads: &[[u32; 4]], normals: Option<&[Vec3]>, weld: f32, folded: Option<usize>) -> Result<Value, CommandError> {
+    let target_name = s.scene.get(target_id).expect("checked").name.clone();
     let into = args.get("into").and_then(Value::as_u64).map(|v| v as ObjectId);
     let mut mesh = match into {
         Some(id) => s.scene.get(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?.mesh.clone(),
@@ -162,7 +190,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
     let was_quads = mesh.quads || mesh.indices.is_empty();
     let before = mesh.vertex_count();
     let mut index = Vec::with_capacity(dropped.len());
-    for q in &dropped {
+    for q in dropped {
         let found = mesh.positions.iter().position(|&p| Vec3::from(p).distance(*q) <= weld);
         index.push(match found {
             Some(v) => v as u32,
@@ -174,7 +202,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
     }
     let welded = dropped.len() - (mesh.vertex_count() - before);
     let mut faces = 0;
-    for quad in &flat.quads {
+    for quad in patch_quads {
         let mut f = quad.map(|k| index[k as usize]);
         let mut u = f.to_vec();
         u.sort_unstable();
@@ -182,10 +210,12 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
         if u.len() < 4 {
             return Err(bad("two patch points welded onto one vertex; make the patch larger or lower weld"));
         }
-        let p = quad.map(|k| dropped[k as usize]);
-        let surface: Vec3 = quad.iter().map(|&k| normals[k as usize]).sum();
-        if (p[2] - p[0]).cross(p[3] - p[1]).dot(surface) < 0.0 {
-            f.reverse();
+        if let Some(normals) = normals {
+            let p = quad.map(|k| dropped[k as usize]);
+            let surface: Vec3 = quad.iter().map(|&k| normals[k as usize]).sum();
+            if (p[2] - p[0]).cross(p[3] - p[1]).dot(surface) < 0.0 {
+                f.reverse();
+            }
         }
         mesh.indices.extend_from_slice(&[f[0], f[1], f[2], f[0], f[2], f[3]]);
         faces += 1;
@@ -204,7 +234,7 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
             id
         }
         None => {
-            let name = s.scene.unique_name(&format!("{} retopo", target.name));
+            let name = s.scene.unique_name(&format!("{target_name} retopo"));
             let id = s.scene.add(name, rebuilt);
             let index = s.scene.index_of(id).expect("just added");
             s.history.push(Edit::Add { id, index, parked: None });
@@ -214,5 +244,9 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
     // The sculpt stays active so the next clicks land on it.
     s.scene.active = Some(target_id);
     let object = s.scene.get(id).expect("exists");
-    Ok(json!({"object": summary(object), "id": id, "patch": kind, "faces_added": faces, "faces": total, "points_welded": welded, "quads": object.mesh.quads}))
+    let mut reply = json!({"object": summary(object), "id": id, "patch": kind, "faces_added": faces, "faces": total, "points_welded": welded, "quads": object.mesh.quads});
+    if let Some(n) = folded {
+        reply["folded"] = json!(n);
+    }
+    Ok(reply)
 }
