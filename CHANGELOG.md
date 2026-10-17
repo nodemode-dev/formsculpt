@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.66.0 · 2026-10-17
+
+### Added
+
+- `retopo_patch` template `skeleton`: for an object made by `skeleton_mesh` (a figure, animal or hand), all quads over the whole object with edge loops ringing each limb and running along it, from a field remesh held along every bone away from the joints; `faces` sets the count. `field_remesh_steered` in the engine takes the bones.
+- Window: Skeleton (whole object) in the Retopo patch list, sized by Target quads.
+- 1028 interface strings in every language.
+
+### Changed
+
+- `retopo_patch` finds weld partners through a spatial grid, so large templates lay in linear time.
+
 ## 0.65.0 · 2026-10-17
 
 ### Added
