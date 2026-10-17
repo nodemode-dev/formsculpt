@@ -1115,5 +1115,11 @@
  "Stronger Brush": "แปรงแรงขึ้น",
  "Tap": "แตะ",
  "Tool": "เครื่องมือ",
- "Weaker Brush": "แปรงเบาลง"
+ "Weaker Brush": "แปรงเบาลง",
+ "Theme": "ธีม",
+ "Follow NodeMode": "ตาม NodeMode",
+ "Dark theme": "ธีมมืด",
+ "Light theme": "ธีมสว่าง",
+ "High contrast": "คอนทราสต์สูง",
+ "Translucent panels": "แผงโปร่งแสง"
 }

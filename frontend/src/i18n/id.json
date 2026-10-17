@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Kuas lebih kuat",
  "Tap": "Ketuk",
  "Tool": "Alat",
- "Weaker Brush": "Kuas lebih lemah"
+ "Weaker Brush": "Kuas lebih lemah",
+ "Theme": "Tema",
+ "Follow NodeMode": "Ikuti NodeMode",
+ "Dark theme": "Tema gelap",
+ "Light theme": "Tema terang",
+ "High contrast": "Kontras tinggi",
+ "Translucent panels": "Panel tembus pandang"
 }

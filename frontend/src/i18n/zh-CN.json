@@ -1115,5 +1115,11 @@
  "Stronger Brush": "增强笔刷",
  "Tap": "轻按",
  "Tool": "工具",
- "Weaker Brush": "减弱笔刷"
+ "Weaker Brush": "减弱笔刷",
+ "Theme": "主题",
+ "Follow NodeMode": "跟随 NodeMode",
+ "Dark theme": "深色主题",
+ "Light theme": "浅色主题",
+ "High contrast": "高对比度",
+ "Translucent panels": "半透明面板"
 }

@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Сильніший пензель",
  "Tap": "Натискання",
  "Tool": "Інструмент",
- "Weaker Brush": "Слабший пензель"
+ "Weaker Brush": "Слабший пензель",
+ "Theme": "Тема",
+ "Follow NodeMode": "Як у NodeMode",
+ "Dark theme": "Темна тема",
+ "Light theme": "Світла тема",
+ "High contrast": "Висока контрастність",
+ "Translucent panels": "Напівпрозорі панелі"
 }

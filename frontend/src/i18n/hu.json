@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Erősebb ecset",
  "Tap": "Koppintás",
  "Tool": "Eszköz",
- "Weaker Brush": "Gyengébb ecset"
+ "Weaker Brush": "Gyengébb ecset",
+ "Theme": "Téma",
+ "Follow NodeMode": "NodeMode szerint",
+ "Dark theme": "Sötét téma",
+ "Light theme": "Világos téma",
+ "High contrast": "Nagy kontraszt",
+ "Translucent panels": "Áttetsző panelek"
 }

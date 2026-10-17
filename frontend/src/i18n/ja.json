@@ -1115,5 +1115,11 @@
  "Stronger Brush": "ブラシを強く",
  "Tap": "タップ",
  "Tool": "ツール",
- "Weaker Brush": "ブラシを弱く"
+ "Weaker Brush": "ブラシを弱く",
+ "Theme": "テーマ",
+ "Follow NodeMode": "NodeMode に合わせる",
+ "Dark theme": "ダークテーマ",
+ "Light theme": "ライトテーマ",
+ "High contrast": "ハイコントラスト",
+ "Translucent panels": "半透明パネル"
 }

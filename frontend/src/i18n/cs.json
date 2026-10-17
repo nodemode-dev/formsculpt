@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Silnější štětec",
  "Tap": "Klepnutí",
  "Tool": "Nástroj",
- "Weaker Brush": "Slabší štětec"
+ "Weaker Brush": "Slabší štětec",
+ "Theme": "Motiv",
+ "Follow NodeMode": "Podle NodeMode",
+ "Dark theme": "Tmavý motiv",
+ "Light theme": "Světlý motiv",
+ "High contrast": "Vysoký kontrast",
+ "Translucent panels": "Průsvitné panely"
 }

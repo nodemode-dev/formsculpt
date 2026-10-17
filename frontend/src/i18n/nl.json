@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Sterkere kwast",
  "Tap": "Tik",
  "Tool": "Gereedschap",
- "Weaker Brush": "Zwakkere kwast"
+ "Weaker Brush": "Zwakkere kwast",
+ "Theme": "Thema",
+ "Follow NodeMode": "NodeMode volgen",
+ "Dark theme": "Donker thema",
+ "Light theme": "Licht thema",
+ "High contrast": "Hoog contrast",
+ "Translucent panels": "Doorschijnende panelen"
 }

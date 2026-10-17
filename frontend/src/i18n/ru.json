@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Кисть сильнее",
  "Tap": "Нажатие",
  "Tool": "Инструмент",
- "Weaker Brush": "Кисть слабее"
+ "Weaker Brush": "Кисть слабее",
+ "Theme": "Тема",
+ "Follow NodeMode": "Как в NodeMode",
+ "Dark theme": "Тёмная тема",
+ "Light theme": "Светлая тема",
+ "High contrast": "Высокая контрастность",
+ "Translucent panels": "Полупрозрачные панели"
 }

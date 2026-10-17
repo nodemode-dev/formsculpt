@@ -1115,5 +1115,11 @@
  "Stronger Brush": "브러시 강하게",
  "Tap": "탭",
  "Tool": "도구",
- "Weaker Brush": "브러시 약하게"
+ "Weaker Brush": "브러시 약하게",
+ "Theme": "테마",
+ "Follow NodeMode": "NodeMode 따르기",
+ "Dark theme": "어두운 테마",
+ "Light theme": "밝은 테마",
+ "High contrast": "고대비",
+ "Translucent panels": "반투명 패널"
 }

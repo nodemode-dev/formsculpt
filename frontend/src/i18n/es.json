@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Pincel más fuerte",
  "Tap": "Toque",
  "Tool": "Herramienta",
- "Weaker Brush": "Pincel más débil"
+ "Weaker Brush": "Pincel más débil",
+ "Theme": "Tema",
+ "Follow NodeMode": "Seguir NodeMode",
+ "Dark theme": "Tema oscuro",
+ "Light theme": "Tema claro",
+ "High contrast": "Alto contraste",
+ "Translucent panels": "Paneles translúcidos"
 }

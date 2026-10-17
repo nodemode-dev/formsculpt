@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Daha güçlü fırça",
  "Tap": "Dokunma",
  "Tool": "Araç",
- "Weaker Brush": "Daha zayıf fırça"
+ "Weaker Brush": "Daha zayıf fırça",
+ "Theme": "Tema",
+ "Follow NodeMode": "NodeMode'u izle",
+ "Dark theme": "Koyu tema",
+ "Light theme": "Açık tema",
+ "High contrast": "Yüksek karşıtlık",
+ "Translucent panels": "Yarı saydam paneller"
 }

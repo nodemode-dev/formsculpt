@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Mocniejszy pędzel",
  "Tap": "Stuknięcie",
  "Tool": "Narzędzie",
- "Weaker Brush": "Słabszy pędzel"
+ "Weaker Brush": "Słabszy pędzel",
+ "Theme": "Motyw",
+ "Follow NodeMode": "Jak w NodeMode",
+ "Dark theme": "Ciemny motyw",
+ "Light theme": "Jasny motyw",
+ "High contrast": "Wysoki kontrast",
+ "Translucent panels": "Półprzezroczyste panele"
 }

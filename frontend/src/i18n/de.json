@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Stärkerer Pinsel",
  "Tap": "Tippen",
  "Tool": "Werkzeug",
- "Weaker Brush": "Schwächerer Pinsel"
+ "Weaker Brush": "Schwächerer Pinsel",
+ "Theme": "Design",
+ "Follow NodeMode": "Wie NodeMode",
+ "Dark theme": "Dunkles Design",
+ "Light theme": "Helles Design",
+ "High contrast": "Hoher Kontrast",
+ "Translucent panels": "Durchscheinende Bereiche"
 }

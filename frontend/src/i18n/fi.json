@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Voimakkaampi sivellin",
  "Tap": "Napautus",
  "Tool": "Työkalu",
- "Weaker Brush": "Heikompi sivellin"
+ "Weaker Brush": "Heikompi sivellin",
+ "Theme": "Teema",
+ "Follow NodeMode": "Seuraa NodeModea",
+ "Dark theme": "Tumma teema",
+ "Light theme": "Vaalea teema",
+ "High contrast": "Suuri kontrasti",
+ "Translucent panels": "Läpikuultavat paneelit"
 }

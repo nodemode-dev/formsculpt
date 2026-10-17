@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Stærkere pensel",
  "Tap": "Tryk",
  "Tool": "Værktøj",
- "Weaker Brush": "Svagere pensel"
+ "Weaker Brush": "Svagere pensel",
+ "Theme": "Tema",
+ "Follow NodeMode": "Følg NodeMode",
+ "Dark theme": "Mørkt tema",
+ "Light theme": "Lyst tema",
+ "High contrast": "Høj kontrast",
+ "Translucent panels": "Gennemsigtige paneler"
 }

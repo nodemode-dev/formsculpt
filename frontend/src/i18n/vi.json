@@ -1115,5 +1115,11 @@
  "Stronger Brush": "Cọ mạnh hơn",
  "Tap": "Chạm",
  "Tool": "Công cụ",
- "Weaker Brush": "Cọ yếu hơn"
+ "Weaker Brush": "Cọ yếu hơn",
+ "Theme": "Chủ đề",
+ "Follow NodeMode": "Theo NodeMode",
+ "Dark theme": "Chủ đề tối",
+ "Light theme": "Chủ đề sáng",
+ "High contrast": "Độ tương phản cao",
+ "Translucent panels": "Bảng mờ trong suốt"
 }
