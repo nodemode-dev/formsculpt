@@ -185,7 +185,9 @@ export class Viewport {
         held = this.penHold?.(which, true) ?? false;
       }
     }
-    const sculpt = (e.button === 0 || held) && !e.altKey && !e.shiftKey && this.strokes?.enabled();
+    // Alt and Shift turn and pan the view, except on a tool handle that takes them as modifiers (the gizmo's).
+    const modified = e.altKey || e.shiftKey;
+    const sculpt = (e.button === 0 || held) && (!modified || (this.grabsModified?.(e.offsetX, e.offsetY) ?? false)) && this.strokes?.enabled();
     // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
     const pending = sculpt && e.pointerType === 'touch';
     this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera' };
@@ -282,6 +284,9 @@ export class Viewport {
   penHold: ((which: 'barrel' | 'eraser', down: boolean) => boolean) | null = null;
   /** Set by the app: the barrel button pressed (true) or let go (false) while the pen hovers. */
   penHover: ((down: boolean) => void) | null = null;
+  /** Set by the app: whether a press with Alt or Shift at this canvas point lands on a tool handle that takes the
+   * modifier itself (the gizmo's), rather than turning or panning the view. */
+  grabsModified: ((x: number, y: number) => boolean) | null = null;
   /** When a pen button last changed, so a context menu it raises can be ignored. */
   penButtonAt = -1e9;
   private penHeld: 'barrel' | 'eraser' | null = null;

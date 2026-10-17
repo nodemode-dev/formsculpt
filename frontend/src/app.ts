@@ -41,7 +41,7 @@ import { scheduleChrome } from './ui/chrome';
 import { language, languages, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
 import { registerTerminal } from './ui/terminal';
-import { Gizmo, type GizmoDrag } from './ui/gizmo';
+import { Gizmo, shows as gizmoShows, type GizmoDrag, type GizmoMode } from './ui/gizmo';
 import { SpotlightDial, type SpotlightMode } from './ui/spotlight';
 import { PanelLayout } from './ui/layout';
 import { SpaceMouse } from './ui/spacemouse';
@@ -141,6 +141,14 @@ interface Shell {
   toolSwap: HTMLInputElement;
   toolbars: Toolbars;
   gizmoPivot: HTMLSelectElement;
+  gizmoMode: HTMLSelectElement;
+  gizmoPin: HTMLInputElement;
+  pivotView: HTMLButtonElement;
+  moveFields: HTMLInputElement[];
+  turnFields: HTMLInputElement[];
+  scaleFields: HTMLInputElement[];
+  applyTransform: HTMLButtonElement;
+  resetTransform: HTMLButtonElement;
   pickPivot: HTMLButtonElement;
   angleSnap: HTMLSelectElement;
   moveSnap: HTMLSelectElement;
@@ -1198,7 +1206,31 @@ function buildShell(root: HTMLElement): Shell {
   pickPivot.type = 'button';
   const angleSnap = choices('Angle snap (degrees)', [['0', 'Off'], ['5', '5'], ['15', '15'], ['45', '45'], ['90', '90']]);
   const moveSnap = choices('Move snap', [['0', 'Off'], ['0.01', '0.01'], ['0.05', '0.05'], ['0.1', '0.1'], ['0.25', '0.25'], ['0.5', '0.5'], ['1', '1']]);
+  // Gizmo modes, pin and exact values: which handles show, the gizmo held where it is put (its pivot fixed in the
+  // world), and a move, turn and scale typed in and applied about the gizmo's pivot.
+  const gizmoMode = choices('Gizmo mode', [['all', 'All handles'], ['move', 'Move'], ['rotate', 'Turn'], ['scale', 'Scale']]);
+  const gizmoPin = input('checkbox', { 'aria-label': 'Pin gizmo' });
+  const pivotView = el('button', 'btn', 'Pivot to view');
+  pivotView.type = 'button';
+  pivotView.dataset.cmd = 'gizmo.pivot_view';
+  const triple = (label: string, value: string, step: string, names: string[]): [HTMLLabelElement, HTMLInputElement[]] => {
+    const row = el('label', 'field');
+    const box = el('span', 'triple');
+    const inputs = names.map((n) => input('number', { step, value, 'aria-label': `${label} ${n}` }));
+    box.append(...inputs);
+    row.append(el('span', '', label), box);
+    return [row, inputs];
+  };
+  const [moveRow, moveFields] = triple('Move by', '0', '0.01', ['X', 'Y', 'Z']);
+  const [turnRow, turnFields] = triple('Turn by (degrees)', '0', '1', ['X', 'Y', 'Z']);
+  const [scaleRow, scaleFields] = triple('Scale by', '1', '0.01', ['X', 'Y', 'Z']);
+  const applyTransform = el('button', 'btn', 'Apply transform');
+  applyTransform.type = 'button';
+  applyTransform.dataset.cmd = 'gizmo.apply';
+  const resetTransform = el('button', 'btn', 'Reset values');
+  resetTransform.type = 'button';
   objectFields.append(field('Gizmo pivot', gizmoPivot), pickPivot, field('Angle snap (degrees)', angleSnap), field('Move snap', moveSnap));
+  objectFields.append(field('Gizmo mode', gizmoMode), field('Pin gizmo', gizmoPin), pivotView, moveRow, turnRow, scaleRow, applyTransform, resetTransform);
   objectFields.append(field('Deform axis', deformAxis), field('Angle or taper %', deformAngle), field('Folder name', folderName), field('Boolean blend', fuseBlend), field('Live boolean', liveBoolean));
   panel.append(objectFields);
 
@@ -1512,7 +1544,7 @@ function buildShell(root: HTMLElement): Shell {
       if (tool === 'mask') return list([['Invert', invert], ['Mirror X', symX], ...maskActions.map((b): [string, TabletControl] => [b.textContent ?? '', b])]);
       if (tool === 'paint' || tool === 'smudge') return list([['Colour', paintColor], ['Roughness', paintRough], ['Metalness', paintMetal], ['Material preset', materialPreset], ['Paint into texture', paintTexture], ['Mirror X', symX]]);
       if (tool === 'zmodeler') return list([['ZModeler action', zmodelAction], ['Amount %', zmodelAmount], ['Loop position %', zmodelAt], ['Auto-crease', zmodelCrease]]);
-      if (tool === 'gizmo') return list([['Gizmo pivot', gizmoPivot], ['Pick pivot', pickPivot], ['Angle snap (degrees)', angleSnap], ['Move snap', moveSnap]]);
+      if (tool === 'gizmo') return list([['Gizmo mode', gizmoMode], ['Pin gizmo', gizmoPin], ['Gizmo pivot', gizmoPivot], ['Pick pivot', pickPivot], ['Pivot to view', pivotView], ['Angle snap (degrees)', angleSnap], ['Move snap', moveSnap]]);
       if (tool === 'lattice' || tool === 'orbit') return [];
       return list(sculptOptions);
     },
@@ -1547,7 +1579,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, tablet, thicken, toolSwap, toolbars, gizmoPivot, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1725,7 +1757,35 @@ class SceneView {
       this.pivotPicking = true;
       this.note(t('Click on the object to set the pivot'));
     });
-    shell.gizmoPivot.addEventListener('change', () => this.drawTools());
+    shell.gizmoPivot.addEventListener('change', () => {
+      // Choosing a pivot puts the gizmo there, so a pin gives way.
+      if (this.gizmoPinned) this.pinGizmo(null);
+      this.drawTools();
+    });
+    this.viewport.grabsModified = (x, y) => {
+      const o = this.activeObject();
+      if (this.brush !== 'gizmo' || !o) return false;
+      const { center, len } = this.gizmoFrame(o);
+      return Gizmo.hit([x, y], center, len, this.projector(), this.shell.gizmoMode.value as GizmoMode) !== null;
+    };
+    shell.gizmoMode.addEventListener('change', () => {
+      this.drawTools();
+      scheduleChrome();
+    });
+    shell.gizmoPin.addEventListener('change', () => {
+      const o = this.activeObject();
+      this.pinGizmo(shell.gizmoPin.checked && o ? this.gizmoFrame(o).center : null);
+    });
+    shell.resetTransform.addEventListener('click', () => {
+      for (const f of [...shell.moveFields, ...shell.turnFields]) f.value = '0';
+      for (const f of shell.scaleFields) f.value = '1';
+    });
+    // Enter in a value field applies, as the button does.
+    for (const f of [...shell.moveFields, ...shell.turnFields, ...shell.scaleFields]) {
+      f.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') void this.applyTypedTransform();
+      });
+    }
     shell.uvChecker.addEventListener('change', () => void this.syncChecker());
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     this.wireBackdrop();
@@ -2006,7 +2066,7 @@ class SceneView {
       if (this.shape) {
         const p: [number, number] = [e.offsetX, e.offsetY];
         if (this.shape.kind === 'gizmo' || this.shape.kind === 'lattice') {
-          this.handleTool(this.shape, p);
+          this.handleTool(this.shape, p, e);
           return;
         }
         if (this.shape.kind === 'curve' && this.shape.pts.length === 0 && this.curve) {
@@ -3030,8 +3090,55 @@ class SceneView {
     const { min, max } = o.bounds;
     const mode = this.shell.gizmoPivot.value;
     const bounds: Vec3 = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
-    const center: Vec3 = mode === 'origin' ? [0, 0, 0] : mode === 'picked' && this.gizmoPivotPoint ? this.gizmoPivotPoint : bounds;
+    // A pinned gizmo stays at its world point whatever the object does, and turns and scales about it.
+    const center: Vec3 = this.gizmoPinned ?? (mode === 'origin' ? [0, 0, 0] : mode === 'picked' && this.gizmoPivotPoint ? this.gizmoPivotPoint : bounds);
     return { center, len: this.viewport.camera.worldPerPixel(this.shell.canvas.clientHeight) * 90, pivot: center !== bounds };
+  }
+
+  /** Where a pinned gizmo is held (Pin gizmo, Pivot to view, or an Alt-drag of the gizmo itself); null when not pinned. */
+  private gizmoPinned: Vec3 | null = null;
+
+  /** Pins the gizmo at a point (null unpins), keeping the Pin gizmo box in step. */
+  private pinGizmo(at: Vec3 | null): void {
+    this.gizmoPinned = at;
+    if (this.shell.gizmoPin.checked !== (at !== null)) this.shell.gizmoPin.checked = at !== null;
+    this.drawTools();
+    scheduleChrome();
+  }
+
+  /** Pivot to view: pins the gizmo at the surface point in the middle of the view (or at the view's orbit target
+   * when nothing is there), so turns and scales go about what is being looked at. */
+  private async pivotToView(): Promise<void> {
+    const rect = this.shell.canvas.getBoundingClientRect();
+    const ray = this.viewport.rayAtClient(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const hit = ray ? await dispatch<{ hit: boolean; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir }) : null;
+    const point = hit?.ok && hit.result.hit && hit.result.point ? hit.result.point : ([...this.viewport.camera.target] as Vec3);
+    this.pinGizmo(point);
+    this.note(t('Gizmo pinned at the middle of the view'));
+  }
+
+  /** Applies the typed move, turn and scale to the active object about the gizmo's pivot, as one step. */
+  private async applyTypedTransform(): Promise<void> {
+    const o = this.activeObject();
+    if (!o) {
+      this.note(t('Choose an object first'));
+      return;
+    }
+    const read = (fields: HTMLInputElement[], fallback: number): Vec3 | null => {
+      const v = fields.map((f) => (f.value.trim() === '' ? fallback : Number(f.value)));
+      return v.every(Number.isFinite) ? (v as Vec3) : null;
+    };
+    const translate = read(this.shell.moveFields, 0);
+    const rotate = read(this.shell.turnFields, 0);
+    const scaleBy = read(this.shell.scaleFields, 1);
+    if (!translate || !rotate || !scaleBy || scaleBy.some((v) => Math.abs(v) < 1e-6)) {
+      this.note(t('Enter numbers; a scale cannot be 0'));
+      return;
+    }
+    const frame = this.gizmoFrame(o);
+    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate, rotate, scale: scaleBy, ...(frame.pivot ? { pivot: frame.center } : {}) });
+    this.note(reply.ok ? '' : reply.error.message);
+    await this.refresh();
   }
 
   /** Objects locked in the scene list (this window only): strokes and tool clicks leave them alone. */
@@ -3076,7 +3183,7 @@ class SceneView {
   }
 
   /** Presses and drags with the Transform and Lattice tools. */
-  private handleTool(shape: NonNullable<SceneView['shape']>, p: [number, number]): void {
+  private handleTool(shape: NonNullable<SceneView['shape']>, p: [number, number], mods: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): void {
     const o = this.activeObject();
     if (!o) {
       shape.miss = true;
@@ -3094,24 +3201,43 @@ class SceneView {
           void this.pickGizmoPivot(p);
           return;
         }
-        const handle = Gizmo.hit(p, center, len, project);
-        if (!handle) {
+        const mode = this.shell.gizmoMode.value as GizmoMode;
+        const handle = Gizmo.hit(p, center, len, project, mode);
+        // Alt on an arrow or the centre grabs the gizmo itself; a plain press on the centre only scales where the
+        // mode shows scaling, and is otherwise a miss that turns the view.
+        const pivotOnly = mods.altKey && (handle?.kind === 'move' || handle?.kind === 'uniform');
+        if (!handle || (handle.kind === 'uniform' && !pivotOnly && !gizmoShows(mode, 'uniform'))) {
           shape.miss = true;
           return;
         }
-        this.gizmoDrag = { handle, start: p, translate: [0, 0, 0], degrees: 0, scale: [1, 1, 1] };
+        this.gizmoDrag = { handle, start: p, translate: [0, 0, 0], degrees: 0, scale: [1, 1, 1], pivotOnly };
         return;
       }
       const drag = this.gizmoDrag;
       if (!drag) return;
       const eye = this.viewport.camera.eye();
-      Gizmo.update(drag, p, center, len, project, normalize(sub(eye, center)));
-      // Snapping: turns to whole steps of Angle snap, moves to whole steps of Move snap on each axis.
-      const angleStep = Number(this.shell.angleSnap.value) || 0;
-      const moveStep = Number(this.shell.moveSnap.value) || 0;
+      // Ctrl (Cmd on a Mac) held: fine control, a tenth of the pointer's travel.
+      const fine = mods.ctrlKey || mods.metaKey;
+      const q: [number, number] = fine ? [drag.start[0] + (p[0] - drag.start[0]) * 0.1, drag.start[1] + (p[1] - drag.start[1]) * 0.1] : p;
+      if (drag.pivotOnly && drag.handle.kind === 'uniform') {
+        // The centre moves the pivot in the plane facing the camera.
+        const cam = this.viewport.camera;
+        const up = cam.screenUp();
+        const right = normalize(cross(normalize(sub(cam.target, cam.eye())), up));
+        const wpp = cam.worldPerPixel(this.shell.canvas.clientHeight);
+        drag.translate = add(scale(right, (q[0] - drag.start[0]) * wpp), scale(up, -(q[1] - drag.start[1]) * wpp));
+      } else {
+        Gizmo.update(drag, q, center, len, project, normalize(sub(eye, center)));
+      }
+      // Snapping: turns to whole steps of Angle snap, moves to whole steps of Move snap on each axis; Shift held snaps
+      // to 15 degrees and 0.1 when those are off.
+      const angleStep = Number(this.shell.angleSnap.value) || (mods.shiftKey ? 15 : 0);
+      const moveStep = Number(this.shell.moveSnap.value) || (mods.shiftKey ? 0.1 : 0);
       if (angleStep > 0) drag.degrees = Math.round(drag.degrees / angleStep) * angleStep;
       if (moveStep > 0) drag.translate = drag.translate.map((v) => Math.round(v / moveStep) * moveStep) as Vec3;
-      this.viewport.renderer.setPreview(o.id, Gizmo.matrix(drag, center));
+      if (!drag.pivotOnly) this.viewport.renderer.setPreview(o.id, Gizmo.matrix(drag, center));
+      this.note(this.dragReadout(drag));
+      this.drawTools();
       this.viewport.invalidate();
       return;
     }
@@ -3147,6 +3273,12 @@ class SceneView {
     this.gizmoDrag = null;
     const o = this.activeObject();
     if (!drag || !o) return;
+    if (drag.pivotOnly) {
+      // The gizmo was moved, not the object: it stays pinned where it was let go.
+      this.pinGizmo(add(this.gizmoFrame(o).center, drag.translate));
+      this.note(t('Gizmo pinned; it turns and scales about this point'));
+      return;
+    }
     const moved = Math.hypot(...drag.translate) > 1e-7 || Math.abs(drag.degrees) > 1e-4 || drag.scale.some((s) => Math.abs(s - 1) > 1e-5);
     if (!moved) {
       this.viewport.renderer.setPreview(o.id, null);
@@ -3165,6 +3297,15 @@ class SceneView {
     }
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
+  }
+
+  /** What a gizmo drag amounts to, as numbers, for the note line while dragging. */
+  private dragReadout(drag: GizmoDrag): string {
+    const f = (v: number): string => (Math.abs(v) < 5e-5 ? '0' : v.toFixed(3).replace(/\.?0+$/, ''));
+    if (drag.pivotOnly) return `${t('Pivot')} ${drag.translate.map(f).join(', ')}`;
+    if (drag.handle.kind === 'move') return `${t('Move by')} ${drag.translate.map(f).join(', ')}`;
+    if (drag.handle.kind === 'rotate') return `${t('Turn by (degrees)')} ${f(drag.degrees)}`;
+    return `${t('Scale by')} ${drag.scale.map(f).join(', ')}`;
   }
 
   private async latticeEnd(): Promise<void> {
@@ -3186,7 +3327,7 @@ class SceneView {
     if (this.brush === 'gizmo' && o) {
       const { center, len } = this.gizmoFrame(o);
       const t = this.gizmoDrag?.translate ?? [0, 0, 0];
-      const { axes, uniform } = Gizmo.paths(add(center, t), len, project);
+      const { axes, uniform } = Gizmo.paths(add(center, t), len, project, s.gizmoMode.value as GizmoMode);
       s.gizmoAxes.forEach((p, i) => p.setAttribute('d', axes[i]));
       s.gizmoUniform.setAttribute('d', uniform);
     } else {
@@ -4026,6 +4167,25 @@ class SceneView {
         checked: () => Number(s.dimOthers.value) > 0,
       },
       { id: 'view.stats', label: 'Statistics Overlay', run: () => toggle(s.statsOverlay), checked: () => s.statsOverlay.checked },
+      ...(
+        [
+          ['all', 'Gizmo: All Handles'],
+          ['move', 'Gizmo: Move Only'],
+          ['rotate', 'Gizmo: Turn Only'],
+          ['scale', 'Gizmo: Scale Only'],
+        ] as const
+      ).map(([mode, label]) => ({
+        id: `gizmo.mode_${mode}`,
+        label,
+        run: () => {
+          s.gizmoMode.value = mode;
+          s.gizmoMode.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        checked: () => s.gizmoMode.value === mode,
+      })),
+      { id: 'gizmo.pin', label: 'Pin Gizmo', run: () => toggle(s.gizmoPin), checked: () => s.gizmoPin.checked, enabled: () => this.scene.active !== null },
+      { id: 'gizmo.pivot_view', label: 'Pivot to View', run: () => void this.pivotToView(), enabled: () => this.scene.active !== null },
+      { id: 'gizmo.apply', label: 'Apply Typed Transform', run: () => void this.applyTypedTransform(), enabled: () => this.scene.active !== null },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },

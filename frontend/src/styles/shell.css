@@ -125,6 +125,10 @@ button { font: inherit; color: inherit; }
 .field input[type="number"] { width: 64px; justify-self: end; height: 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 var(--space-1); font: 12px var(--font-mono); }
 .field input[type="color"] { justify-self: end; width: 48px; height: 24px; padding: 0 2px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
 .field[hidden] { display: none; }
+/* Three values on one row (x, y, z) under their label, each a third of the panel's width. */
+.field:has(> .triple) { grid-template-columns: 1fr; gap: var(--space-1); }
+.field .triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-1); }
+.field .triple input[type="number"] { width: 100%; min-width: 0; justify-self: stretch; }
 .field input[type="url"], .field input[type="text"] { width: 120px; min-width: 0; justify-self: end; height: 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 var(--space-1); font: 11px var(--font-mono); }
 .field select { width: 120px; justify-self: end; height: 24px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 var(--space-1); font: 12px var(--font-sans); }
 .objects { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-height: 28px; }
