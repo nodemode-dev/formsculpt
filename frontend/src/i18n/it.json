@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Contrasto",
  "Neutral": "Neutro",
- "White balance": "Bilanciamento del bianco"
+ "White balance": "Bilanciamento del bianco",
+ "Colour temperature (K)": "Temperatura colore (K)",
+ "Cone angle": "Angolo del cono",
+ "Cone softness": "Morbidezza del cono",
+ "Directional": "Direzionale",
+ "Light type": "Tipo di luce",
+ "Spot": "Faretto",
+ "Spot distance": "Distanza del faretto"
 }

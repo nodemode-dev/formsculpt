@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontras",
  "Neutral": "Netral",
- "White balance": "Keseimbangan putih"
+ "White balance": "Keseimbangan putih",
+ "Colour temperature (K)": "Suhu warna (K)",
+ "Cone angle": "Sudut kerucut",
+ "Cone softness": "Kelembutan kerucut",
+ "Directional": "Terarah",
+ "Light type": "Jenis cahaya",
+ "Spot": "Sorot",
+ "Spot distance": "Jarak lampu sorot"
 }

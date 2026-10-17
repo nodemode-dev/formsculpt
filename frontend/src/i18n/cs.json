@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontrast",
  "Neutral": "Neutrální",
- "White balance": "Vyvážení bílé"
+ "White balance": "Vyvážení bílé",
+ "Colour temperature (K)": "Teplota barvy (K)",
+ "Cone angle": "Úhel kužele",
+ "Cone softness": "Měkkost kužele",
+ "Directional": "Směrové",
+ "Light type": "Typ světla",
+ "Spot": "Bodové",
+ "Spot distance": "Vzdálenost bodového světla"
 }

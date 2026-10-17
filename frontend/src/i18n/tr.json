@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontrast",
  "Neutral": "Nötr",
- "White balance": "Beyaz dengesi"
+ "White balance": "Beyaz dengesi",
+ "Colour temperature (K)": "Renk sıcaklığı (K)",
+ "Cone angle": "Koni açısı",
+ "Cone softness": "Koni yumuşaklığı",
+ "Directional": "Yönlü",
+ "Light type": "Işık türü",
+ "Spot": "Spot",
+ "Spot distance": "Spot uzaklığı"
 }

@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "대비",
  "Neutral": "중립",
- "White balance": "화이트 밸런스"
+ "White balance": "화이트 밸런스",
+ "Colour temperature (K)": "색온도 (K)",
+ "Cone angle": "원뿔 각도",
+ "Cone softness": "원뿔 부드러움",
+ "Directional": "방향광",
+ "Light type": "조명 종류",
+ "Spot": "스포트",
+ "Spot distance": "스포트 거리"
 }

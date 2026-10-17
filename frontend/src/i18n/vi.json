@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Độ tương phản",
  "Neutral": "Trung tính",
- "White balance": "Cân bằng trắng"
+ "White balance": "Cân bằng trắng",
+ "Colour temperature (K)": "Nhiệt độ màu (K)",
+ "Cone angle": "Góc nón",
+ "Cone softness": "Độ mềm của nón",
+ "Directional": "Định hướng",
+ "Light type": "Loại đèn",
+ "Spot": "Đèn rọi",
+ "Spot distance": "Khoảng cách đèn rọi"
 }

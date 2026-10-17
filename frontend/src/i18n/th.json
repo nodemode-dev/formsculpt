@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "คอนทราสต์",
  "Neutral": "เป็นกลาง",
- "White balance": "สมดุลแสงขาว"
+ "White balance": "สมดุลแสงขาว",
+ "Colour temperature (K)": "อุณหภูมิสี (K)",
+ "Cone angle": "มุมกรวย",
+ "Cone softness": "ความนุ่มของกรวย",
+ "Directional": "แบบทิศทาง",
+ "Light type": "ชนิดแสง",
+ "Spot": "สปอต",
+ "Spot distance": "ระยะสปอต"
 }

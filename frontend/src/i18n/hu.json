@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontraszt",
  "Neutral": "Semleges",
- "White balance": "Fehéregyensúly"
+ "White balance": "Fehéregyensúly",
+ "Colour temperature (K)": "Színhőmérséklet (K)",
+ "Cone angle": "Kúpszög",
+ "Cone softness": "Kúp lágysága",
+ "Directional": "Irányított",
+ "Light type": "Fény típusa",
+ "Spot": "Spotlámpa",
+ "Spot distance": "Spotlámpa távolsága"
 }

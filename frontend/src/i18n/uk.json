@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Контраст",
  "Neutral": "Нейтральний",
- "White balance": "Баланс білого"
+ "White balance": "Баланс білого",
+ "Colour temperature (K)": "Колірна температура (K)",
+ "Cone angle": "Кут конуса",
+ "Cone softness": "М'якість конуса",
+ "Directional": "Спрямоване",
+ "Light type": "Тип світла",
+ "Spot": "Прожектор",
+ "Spot distance": "Відстань прожектора"
 }

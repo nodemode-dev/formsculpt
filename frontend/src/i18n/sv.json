@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontrast",
  "Neutral": "Neutral",
- "White balance": "Vitbalans"
+ "White balance": "Vitbalans",
+ "Colour temperature (K)": "Färgtemperatur (K)",
+ "Cone angle": "Konvinkel",
+ "Cone softness": "Konens mjukhet",
+ "Directional": "Riktat",
+ "Light type": "Ljustyp",
+ "Spot": "Spot",
+ "Spot distance": "Spotavstånd"
 }

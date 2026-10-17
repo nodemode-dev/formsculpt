@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Contraste",
  "Neutral": "Neutro",
- "White balance": "Balance de blancos"
+ "White balance": "Balance de blancos",
+ "Colour temperature (K)": "Temperatura de color (K)",
+ "Cone angle": "Ángulo del cono",
+ "Cone softness": "Suavidad del cono",
+ "Directional": "Direccional",
+ "Light type": "Tipo de luz",
+ "Spot": "Foco",
+ "Spot distance": "Distancia del foco"
 }

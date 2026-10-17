@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "对比度",
  "Neutral": "中性",
- "White balance": "白平衡"
+ "White balance": "白平衡",
+ "Colour temperature (K)": "色温 (K)",
+ "Cone angle": "锥角",
+ "Cone softness": "锥体柔和度",
+ "Directional": "平行光",
+ "Light type": "灯光类型",
+ "Spot": "聚光灯",
+ "Spot distance": "聚光灯距离"
 }

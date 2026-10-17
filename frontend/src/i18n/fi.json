@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Kontrasti",
  "Neutral": "Neutraali",
- "White balance": "Valkotasapaino"
+ "White balance": "Valkotasapaino",
+ "Colour temperature (K)": "Värilämpötila (K)",
+ "Cone angle": "Kartion kulma",
+ "Cone softness": "Kartion pehmeys",
+ "Directional": "Suunnattu",
+ "Light type": "Valon tyyppi",
+ "Spot": "Kohdevalo",
+ "Spot distance": "Kohdevalon etäisyys"
 }

@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "コントラスト",
  "Neutral": "ニュートラル",
- "White balance": "ホワイトバランス"
+ "White balance": "ホワイトバランス",
+ "Colour temperature (K)": "色温度 (K)",
+ "Cone angle": "コーン角度",
+ "Cone softness": "コーンの柔らかさ",
+ "Directional": "平行光源",
+ "Light type": "ライトの種類",
+ "Spot": "スポット",
+ "Spot distance": "スポットの距離"
 }

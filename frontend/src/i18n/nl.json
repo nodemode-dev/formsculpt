@@ -1204,5 +1204,12 @@
  "AgX": "AgX",
  "Contrast": "Contrast",
  "Neutral": "Neutraal",
- "White balance": "Witbalans"
+ "White balance": "Witbalans",
+ "Colour temperature (K)": "Kleurtemperatuur (K)",
+ "Cone angle": "Kegelhoek",
+ "Cone softness": "Zachtheid van de kegel",
+ "Directional": "Gericht",
+ "Light type": "Lichttype",
+ "Spot": "Spot",
+ "Spot distance": "Spotafstand"
 }
