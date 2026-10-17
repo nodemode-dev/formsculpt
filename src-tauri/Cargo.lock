@@ -917,7 +917,7 @@ dependencies = [
 
 [[package]]
 name = "formsculptor"
-version = "0.75.1"
+version = "0.76.0"
 dependencies = [
  "regex",
  "serde",
