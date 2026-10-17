@@ -999,5 +999,8 @@
  "Patch size %": "Patch-Größe %",
  "Retopo patch": "Retopo-Patch",
  "Retopology Patch": "Retopologie-Patch",
- "Strip": "Streifen"
+ "Strip": "Streifen",
+ "Keep groups": "Gruppen behalten",
+ "Keep paint": "Farbe behalten",
+ "Keep UVs": "UVs behalten"
 }

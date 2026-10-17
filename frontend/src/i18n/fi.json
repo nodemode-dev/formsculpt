@@ -999,5 +999,8 @@
  "Patch size %": "Paikan koko %",
  "Retopo patch": "Retopo-paikka",
  "Retopology Patch": "Retopologiapaikka",
- "Strip": "Kaista"
+ "Strip": "Kaista",
+ "Keep groups": "Säilytä ryhmät",
+ "Keep paint": "Säilytä maali",
+ "Keep UVs": "Säilytä UV:t"
 }

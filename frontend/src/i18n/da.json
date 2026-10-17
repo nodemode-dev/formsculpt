@@ -999,5 +999,8 @@
  "Patch size %": "Lapstørrelse %",
  "Retopo patch": "Retopo-lap",
  "Retopology Patch": "Retopologi-lap",
- "Strip": "Strimmel"
+ "Strip": "Strimmel",
+ "Keep groups": "Bevar grupper",
+ "Keep paint": "Bevar maling",
+ "Keep UVs": "Bevar UV'er"
 }

@@ -999,5 +999,8 @@
  "Patch size %": "Patchgrootte %",
  "Retopo patch": "Retopo-patch",
  "Retopology Patch": "Retopologiepatch",
- "Strip": "Strook"
+ "Strip": "Strook",
+ "Keep groups": "Groepen behouden",
+ "Keep paint": "Verf behouden",
+ "Keep UVs": "UV's behouden"
 }

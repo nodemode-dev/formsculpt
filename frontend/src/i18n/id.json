@@ -999,5 +999,8 @@
  "Patch size %": "Ukuran patch %",
  "Retopo patch": "Patch retopo",
  "Retopology Patch": "Patch retopologi",
- "Strip": "Strip"
+ "Strip": "Strip",
+ "Keep groups": "Pertahankan grup",
+ "Keep paint": "Pertahankan cat",
+ "Keep UVs": "Pertahankan UV"
 }

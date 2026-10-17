@@ -999,5 +999,8 @@
  "Patch size %": "Velikost záplaty %",
  "Retopo patch": "Retopo záplata",
  "Retopology Patch": "Retopologická záplata",
- "Strip": "Pás"
+ "Strip": "Pás",
+ "Keep groups": "Zachovat skupiny",
+ "Keep paint": "Zachovat malbu",
+ "Keep UVs": "Zachovat UV"
 }

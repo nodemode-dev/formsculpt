@@ -999,5 +999,8 @@
  "Patch size %": "Folt mérete %",
  "Retopo patch": "Retopo-folt",
  "Retopology Patch": "Retopológiai folt",
- "Strip": "Sáv"
+ "Strip": "Sáv",
+ "Keep groups": "Csoportok megtartása",
+ "Keep paint": "Festés megtartása",
+ "Keep UVs": "UV-k megtartása"
 }

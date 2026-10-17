@@ -999,5 +999,8 @@
  "Patch size %": "Yama boyutu %",
  "Retopo patch": "Retopo yaması",
  "Retopology Patch": "Retopoloji yaması",
- "Strip": "Şerit"
+ "Strip": "Şerit",
+ "Keep groups": "Grupları koru",
+ "Keep paint": "Boyayı koru",
+ "Keep UVs": "UV'leri koru"
 }

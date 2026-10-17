@@ -999,5 +999,8 @@
  "Patch size %": "パッチサイズ %",
  "Retopo patch": "リトポパッチ",
  "Retopology Patch": "リトポロジーパッチ",
- "Strip": "ストリップ"
+ "Strip": "ストリップ",
+ "Keep groups": "グループを保持",
+ "Keep paint": "ペイントを保持",
+ "Keep UVs": "UVを保持"
 }

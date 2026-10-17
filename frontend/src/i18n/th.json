@@ -999,5 +999,8 @@
  "Patch size %": "ขนาดแพตช์ %",
  "Retopo patch": "แพตช์รีโทโป",
  "Retopology Patch": "แพตช์รีโทโพโลยี",
- "Strip": "แถบ"
+ "Strip": "แถบ",
+ "Keep groups": "คงกลุ่มไว้",
+ "Keep paint": "คงสีที่ระบายไว้",
+ "Keep UVs": "คง UV ไว้"
 }

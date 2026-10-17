@@ -999,5 +999,8 @@
  "Patch size %": "Rozmiar łaty %",
  "Retopo patch": "Łata retopo",
  "Retopology Patch": "Łata retopologii",
- "Strip": "Pasek"
+ "Strip": "Pasek",
+ "Keep groups": "Zachowaj grupy",
+ "Keep paint": "Zachowaj malowanie",
+ "Keep UVs": "Zachowaj UV"
 }

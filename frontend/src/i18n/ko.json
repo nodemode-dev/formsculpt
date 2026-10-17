@@ -999,5 +999,8 @@
  "Patch size %": "패치 크기 %",
  "Retopo patch": "리토폴로지 패치",
  "Retopology Patch": "리토폴로지 패치 추가",
- "Strip": "띠"
+ "Strip": "띠",
+ "Keep groups": "그룹 유지",
+ "Keep paint": "페인트 유지",
+ "Keep UVs": "UV 유지"
 }

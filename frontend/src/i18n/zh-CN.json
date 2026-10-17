@@ -999,5 +999,8 @@
  "Patch size %": "面片大小 %",
  "Retopo patch": "重拓扑面片",
  "Retopology Patch": "添加重拓扑面片",
- "Strip": "条带"
+ "Strip": "条带",
+ "Keep groups": "保留分组",
+ "Keep paint": "保留绘制",
+ "Keep UVs": "保留 UV"
 }

@@ -999,5 +999,8 @@
  "Patch size %": "Розмір латки %",
  "Retopo patch": "Латка ретопо",
  "Retopology Patch": "Латка ретопології",
- "Strip": "Смуга"
+ "Strip": "Смуга",
+ "Keep groups": "Зберігати групи",
+ "Keep paint": "Зберігати розпис",
+ "Keep UVs": "Зберігати UV"
 }

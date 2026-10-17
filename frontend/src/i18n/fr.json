@@ -999,5 +999,8 @@
  "Patch size %": "Taille du patch %",
  "Retopo patch": "Patch de retopo",
  "Retopology Patch": "Patch de retopologie",
- "Strip": "Bande"
+ "Strip": "Bande",
+ "Keep groups": "Garder les groupes",
+ "Keep paint": "Garder la peinture",
+ "Keep UVs": "Garder les UV"
 }

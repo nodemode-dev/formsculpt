@@ -999,5 +999,8 @@
  "Patch size %": "Kích thước mảnh %",
  "Retopo patch": "Mảnh retopo",
  "Retopology Patch": "Mảnh retopology",
- "Strip": "Dải"
+ "Strip": "Dải",
+ "Keep groups": "Giữ nhóm",
+ "Keep paint": "Giữ màu sơn",
+ "Keep UVs": "Giữ UV"
 }
