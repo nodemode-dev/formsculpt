@@ -621,3 +621,9 @@ Border only is its own action (edge.inset_border) mapped to inset with keep bord
 - kind: rationale
 - logged: v0.65.0 · 2026-10-17
 The whole-object templates sit in the same Retopo patch list and tool, since a click is still how they are placed; for them the click sends front as the direction from the sculpt's middle to the camera and up as the screen's up, so the face goes where the person is looking, and they start a new retopology object that later patches join. Choosing a kind now sets its own counts (head 10 and 2, sphere 8 and 2). The retopology wire and the crease path were drawn only on rendered frames, and their edges are fetched 150 ms after a change; when the viewport had gone idle before they arrived (a large template), nothing drew them until the camera moved. Both fetches now draw on arrival.
+
+### Skeleton template in Retopo patch
+- refers-to: app.ts :: patchKind (skeleton), the retopo_patch click (faces from Target quads)
+- kind: rationale
+- logged: v0.66.0 · 2026-10-17
+The skeleton template is a field remesh underneath, so its count is the remesh's Target quads rather than the patch columns; like the other whole-object kinds it starts a new retopology object.

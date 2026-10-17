@@ -1105,7 +1105,7 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'ZModeler amount' });
   topoFields.append(field('Voxel resolution', resolution), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
-  const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc'], ['head', 'Head (whole object)'], ['sphere', 'Sphere (whole object)']]);
+  const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc'], ['head', 'Head (whole object)'], ['sphere', 'Sphere (whole object)'], ['skeleton', 'Skeleton (whole object)']]);
   const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
   const patchColumns = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch columns' });
   const patchRows = input('number', { min: '1', max: '64', value: '4', 'aria-label': 'Patch rows' });
@@ -3914,7 +3914,7 @@ class SceneView {
       const diag = o ? Math.hypot(...o.bounds.max.map((v, i) => v - o.bounds.min[i])) : 1;
       // A whole-object template wraps the sculpt with its front toward the camera and starts a new retopology object
       // (later patches then join it); a patch joins the current one.
-      const whole = s.patchKind.value === 'head' || s.patchKind.value === 'sphere';
+      const whole = s.patchKind.value === 'head' || s.patchKind.value === 'sphere' || s.patchKind.value === 'skeleton';
       const into = !whole && this.retopoInto !== null && this.scene.objects.some((x) => x.id === this.retopoInto) ? this.retopoInto : undefined;
       const count = (c: HTMLInputElement, d: number): number => Math.max(1, Math.min(64, Math.round(Number(c.value) || d)));
       const mid: Vec3 = o ? [0, 1, 2].map((i) => (o.bounds.min[i] + o.bounds.max[i]) / 2) as Vec3 : point;
@@ -3925,6 +3925,8 @@ class SceneView {
         up: this.viewport.camera.screenUp(),
         columns: count(s.patchColumns, 4),
         rows: count(s.patchRows, 4),
+        // The skeleton template's count is the remesh's Target quads.
+        ...(s.patchKind.value === 'skeleton' ? { faces: Math.max(100, Math.min(100000, Number(s.quadTarget.value) || 2000)) } : {}),
         ...(into ? { into } : {}),
       });
       if (!reply.ok) this.note(reply.error.message);
