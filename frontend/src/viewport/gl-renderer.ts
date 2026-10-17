@@ -136,6 +136,9 @@ uniform vec3 uSssColor;
 uniform float uSssRadius;
 uniform float uTrans;
 uniform float uIor;
+// The material's blend (0 opaque, 1 dithered, 2 additive) and its opacity.
+uniform float uBlend;
+uniform float uOpacity;
 // How much material lies between this point and the key light, in world units, from the light's depth map; -1 when
 // there is no map.
 float thickness() {
@@ -204,8 +207,10 @@ void main() {
   // Painted opacity draws as a screen-door: a fixed noise per pixel decides which fragments stay, so see-through
   // parts need no sorting and keep writing depth where they are drawn.
   // A painted texture keeps opacity in its alpha.
-  float opacity = uChecker > 1.5 ? texture(uPaintTex, vCol.xy).a : vFx.x;
-  if (uPainted > 0.5 && opacity < 0.999) {
+  float opacity = uPainted > 0.5 ? (uChecker > 1.5 ? texture(uPaintTex, vCol.xy).a : vFx.x) : 1.0;
+  // A dithered material leaves out the same pattern by its own opacity, on top of painted opacity.
+  if (uBlend > 0.5 && uBlend < 1.5) opacity *= uOpacity;
+  if (opacity < 0.999) {
     float gate = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
     if (opacity <= gate) discard;
   }
@@ -309,7 +314,8 @@ void main() {
   // Emissive paint glows in its own colour whatever the light or matcap.
   if (uPainted > 0.5 && vFx.y > 0.0) col = mix(col, pow(albedo, vec3(1.0 / 2.2)) * 1.15, clamp(vFx.y, 0.0, 1.0));
   col = mix(col, col * vec3(0.32, 0.34, 0.4), clamp(vMask, 0.0, 1.0) * 0.85);
-  outColor = vec4(col * uDim, uAlpha);
+  // An additive material is drawn with additive blending after everything else, scaled by its opacity.
+  outColor = vec4(col * uDim * (uBlend > 1.5 ? uOpacity : 1.0), uAlpha);
 }`;
 
 export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, number, number]; tint: [number, number, number] }> = {
@@ -726,11 +732,11 @@ export class GlRenderer {
 
   private materials = new Map<number, ObjectMaterial>();
 
-  /** An object's subsurface and transmission, as the engine stores them (null clears it to opaque). Returns whether
-   * the drawing changes, so the caller redraws only then. */
+  /** An object's subsurface, transmission and blend, as the engine stores them (null clears it to opaque). Returns
+   * whether the drawing changes, so the caller redraws only then. */
   setMaterial(id: number, m: ObjectMaterial | null): boolean {
     const was = this.materials.get(id);
-    if (m && (m.subsurface > 0 || m.transmission > 0)) {
+    if (m && (m.subsurface > 0 || m.transmission > 0 || m.blend !== 'opaque')) {
       if (was && JSON.stringify(was) === JSON.stringify(m)) return false;
       this.materials.set(id, m);
       return true;
@@ -954,9 +960,24 @@ export class GlRenderer {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.depthMask(false);
     }
-    for (const [id, m] of this.meshes) {
+    // Additive objects are drawn last, adding their light over what is already drawn without writing depth (in X-ray
+    // everything already blends, and they blend as the rest do).
+    const additive = (id: number): boolean => this.materials.get(id)?.blend === 'additive';
+    const order = [...this.meshes].sort(([a], [b]) => Number(additive(a)) - Number(additive(b)));
+    const blendAt = gl.getUniformLocation(this.meshProgram, 'uBlend');
+    const opacityAt = gl.getUniformLocation(this.meshProgram, 'uOpacity');
+    let adding = false;
+    for (const [id, m] of order) {
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
       const mat = this.materials.get(id);
+      if (!adding && !this.xray && mat?.blend === 'additive') {
+        adding = true;
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        gl.depthMask(false);
+      }
+      gl.uniform1f(blendAt, mat?.blend === 'dithered' ? 1 : mat?.blend === 'additive' ? 2 : 0);
+      gl.uniform1f(opacityAt, mat?.opacity ?? 1);
       gl.uniform1f(sss, mat?.subsurface ?? 0);
       gl.uniform3f(sssColor, ...(mat?.subsurfaceColor ?? [1, 0.35, 0.25]));
       gl.uniform1f(sssRadius, mat?.subsurfaceRadius ?? 0.2);
@@ -1014,7 +1035,7 @@ export class GlRenderer {
       }
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
     }
-    if (this.xray) {
+    if (this.xray || adding) {
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
@@ -1298,7 +1319,12 @@ export class GlRenderer {
     gl.useProgram(prog);
     gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uLightVP'), false, vp);
     const model = gl.getUniformLocation(prog, 'uModel');
+    const opacity = gl.getUniformLocation(prog, 'uOpacity');
     for (const [id, m] of this.meshes) {
+      // Additive objects hide nothing, so they cast no shadow; dithered ones cast a share of one.
+      const mat = this.materials.get(id);
+      if (mat?.blend === 'additive') continue;
+      gl.uniform1f(opacity, mat?.blend === 'dithered' ? mat.opacity : 1);
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
       gl.bindVertexArray(m.vao);
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
@@ -1417,10 +1443,19 @@ uniform vec4 uColor;
 out vec4 outColor;
 void main() { outColor = uColor; }`;
 
+// A dithered material (uOpacity below 1) leaves the mesh shader's pattern out of the shadow map too, which the
+// shadow's filter softens into a lighter shadow.
 const SHADOW_FS = `#version 300 es
 precision mediump float;
+uniform float uOpacity;
 out vec4 outColor;
-void main() { outColor = vec4(1.0); }`;
+void main() {
+  if (uOpacity < 0.999) {
+    float gate = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    if (uOpacity <= gate) discard;
+  }
+  outColor = vec4(1.0);
+}`;
 
 export interface Lighting {
   /** Light lit (PBR) shading with the environment image. */
@@ -1463,6 +1498,9 @@ export interface ObjectMaterial {
   subsurfaceRadius: number;
   transmission: number;
   ior: number;
+  /** How the surface covers what is behind it (the engine's set_material blend), and its opacity. */
+  blend: 'opaque' | 'dithered' | 'additive';
+  opacity: number;
 }
 
 export interface LightSpec {

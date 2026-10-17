@@ -44,7 +44,8 @@ export interface ObjectSummary {
   /** Whether the object has UVs (uv_unwrap; topology changes clear them). */
   uvs?: boolean;
   texture_size?: number | null;
-  material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number };
+  /** blend and opacity come from engines 0.80.0 and later (absent from older ones: opaque). */
+  material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number; blend?: 'opaque' | 'dithered' | 'additive'; opacity?: number };
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

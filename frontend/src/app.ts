@@ -324,6 +324,8 @@ interface Shell {
   liveBoolean: HTMLSelectElement;
   pluginPick: HTMLSelectElement;
   pluginParams: HTMLElement;
+  materialType: HTMLSelectElement;
+  materialOpacity: HTMLInputElement;
   subsurface: HTMLInputElement;
   transmission: HTMLInputElement;
   pluginButtons: HTMLButtonElement[];
@@ -992,9 +994,14 @@ function buildShell(root: HTMLElement): Shell {
   const spotlightInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a Spotlight image' });
   spotlightInput.hidden = true;
   panel.append(spotlightInput);
+  // The material type: how the object covers what is behind it. Refraction is transmission (glass, water); the
+  // others are the engine's blend, with Material opacity for Dithered and Additive.
+  const materialType = choices('Material type', [['opaque', 'Opaque'], ['dithered', 'Dithered'], ['additive', 'Additive'], ['refraction', 'Refraction']]);
+  const materialOpacity = input('range', { min: '0', max: '100', value: '100', 'aria-label': 'Material opacity' });
+  materialOpacity.disabled = true;
   const subsurface = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Subsurface' });
   const transmission = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Transmission' });
-  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Paint into texture', paintTexture), field('Material preset', materialPreset), field('Shading', shading), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity), field('Spotlight', spotlightMode), field('Spotlight brush', spotlightApply), field('Spotlight depth %', spotlightDepth), field('Spotlight opacity', spotlightOpacity), field('Flip Spotlight', spotlightFlip));
+  paintFields.append(field('Colour', paintColor), field('Roughness', paintRough), field('Metalness', paintMetal), field('Opacity', paintOpacityCh), field('Emissive', paintEmissive), field('Paint material too', paintMaterial), field('Paint into texture', paintTexture), field('Material preset', materialPreset), field('Shading', shading), field('Material type', materialType), field('Material opacity', materialOpacity), field('Subsurface', subsurface), field('Transmission', transmission), field('Bake size', bakeSize), field('Image opacity', projectOpacity), field('Spotlight', spotlightMode), field('Spotlight brush', spotlightApply), field('Spotlight depth %', spotlightDepth), field('Spotlight opacity', spotlightOpacity), field('Flip Spotlight', spotlightFlip));
   panel.append(paintFields);
   const paintGrid = el('div', 'add-grid two');
   const paintButtons = (
@@ -1616,7 +1623,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity };
 }
 
 class SceneView {
@@ -1987,6 +1994,25 @@ class SceneView {
         void this.run('set_material', { id, [key]: Number(control.value) / 100 });
       });
     }
+    // The material type is one choice over the engine's blend and transmission: choosing one clears the others, and
+    // Refraction keeps a transmission already set (or makes it 1) and needs lit shading to show.
+    shell.materialType.addEventListener('change', () => {
+      const id = this.scene.active;
+      if (id === null) return;
+      const kind = shell.materialType.value;
+      const o = this.scene.objects.find((x) => x.id === id);
+      const t = o?.material?.transmission ?? 0;
+      if (kind === 'refraction' && shell.shading.value !== 'pbr') {
+        shell.shading.value = 'pbr';
+        shell.shading.dispatchEvent(new Event('change'));
+      }
+      shell.materialOpacity.disabled = kind !== 'dithered' && kind !== 'additive';
+      void this.run('set_material', kind === 'refraction' ? { id, blend: 'opaque', transmission: t > 0 ? t : 1 } : { id, blend: kind, transmission: 0 });
+    });
+    shell.materialOpacity.addEventListener('change', () => {
+      const id = this.scene.active;
+      if (id !== null) void this.run('set_material', { id, opacity: Number(shell.materialOpacity.value) / 100 });
+    });
     // A tube or lathe that has not been changed since it was made follows these fields.
     const editable = (kind: string): number | null => {
       const o = this.scene.objects.find((x) => x.id === this.scene.active);
@@ -5368,9 +5394,14 @@ class SceneView {
     let restyled = false;
     for (const o of next.objects) {
       const m = o.material;
-      restyled = this.viewport.renderer.setMaterial(o.id, m ? { subsurface: m.subsurface, subsurfaceColor: m.subsurface_color, subsurfaceRadius: m.subsurface_radius, transmission: m.transmission, ior: m.ior } : null) || restyled;
+      restyled = this.viewport.renderer.setMaterial(o.id, m ? { subsurface: m.subsurface, subsurfaceColor: m.subsurface_color, subsurfaceRadius: m.subsurface_radius, transmission: m.transmission, ior: m.ior, blend: m.blend ?? 'opaque', opacity: m.opacity ?? 1 } : null) || restyled;
     }
     if (active?.material) {
+      const m = active.material;
+      const kind = m.blend && m.blend !== 'opaque' ? m.blend : m.transmission > 0 ? 'refraction' : 'opaque';
+      if (document.activeElement !== this.shell.materialType) this.shell.materialType.value = kind;
+      if (document.activeElement !== this.shell.materialOpacity) this.shell.materialOpacity.value = String(Math.round((m.opacity ?? 1) * 100));
+      this.shell.materialOpacity.disabled = kind !== 'dithered' && kind !== 'additive';
       if (document.activeElement !== this.shell.subsurface) this.shell.subsurface.value = String(Math.round(active.material.subsurface * 100));
       if (document.activeElement !== this.shell.transmission) this.shell.transmission.value = String(Math.round(active.material.transmission * 100));
     }
