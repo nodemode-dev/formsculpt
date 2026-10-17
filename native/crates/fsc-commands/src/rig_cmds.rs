@@ -46,7 +46,7 @@ pub(crate) fn fingerprint(mesh: &Mesh) -> String {
 
 /// What an object was built from (skeleton_mesh or grow_fibers), as of its current mesh: the latest record, or an
 /// earlier one when undo brought back the mesh it belongs to. Returns the record and the record list it came from.
-fn made(s: &Session, id: u32, kind: &str) -> Result<(Value, Vec<Value>), CommandError> {
+pub(crate) fn made(s: &Session, id: u32, kind: &str) -> Result<(Value, Vec<Value>), CommandError> {
     let object = s.scene.get(id).expect("checked");
     let top: Value = object.primitive.as_ref().and_then(|(a, _)| serde_json::from_str(a).ok()).unwrap_or(Value::Null);
     if top.get("build").and_then(Value::as_str) != Some(kind) {

@@ -77,7 +77,8 @@ pub(crate) fn patch_schema() -> Value {
         "properties": {
             "target": {"type": "integer", "minimum": 1, "description": "The sculpt to retopologize; the patch is laid onto its surface."},
             "into": {"type": "integer", "minimum": 1, "description": "The retopology object to add to (from retopo_face or an earlier patch); a new one when omitted."},
-            "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS.iter().chain(fsc_topo::WRAP_KINDS).collect::<Vec<_>>(), "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole). Whole-object templates, which wrap the entire target instead of a patch of it (no center or size): sphere: a closed quad sphere (a cube's faces split columns by columns, eight three-edge poles); head: that sphere with two eye loops and a mouth loop of rows rings each on the side facing front. The template is scaled to the target's extent along up and front, put on its outermost surface by rays from its middle (so it suits heads, blobs and other shapes seen whole from their middle) and relaxed along the surface; folded in the reply counts quads that came out facing in."},
+            "patch": {"type": "string", "enum": fsc_topo::PATCH_KINDS.iter().chain(fsc_topo::WRAP_KINDS).chain(&["skeleton"]).collect::<Vec<_>>(), "description": "grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole). Whole-object templates, which wrap the entire target instead of a patch of it (no center or size): sphere: a closed quad sphere (a cube's faces split columns by columns, eight three-edge poles); head: that sphere with two eye loops and a mouth loop of rows rings each on the side facing front. The template is scaled to the target's extent along up and front, put on its outermost surface by rays from its middle (so it suits heads, blobs and other shapes seen whole from their middle) and relaxed along the surface; folded in the reply counts quads that came out facing in. skeleton: for an object made by skeleton_mesh (a figure, an animal, a hand), all quads over the whole object with edge loops ringing each limb and running along it, from a field remesh held along every bone away from the joints (faces sets the count)."},
+            "faces": {"type": "integer", "minimum": 100, "maximum": 100000, "default": 2000, "description": "skeleton: about how many quads."},
             "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near the target's surface where the patch's middle goes. Not used by head and sphere."},
             "front": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "head and sphere: the direction the template's front faces (toward the viewer; the window sends the direction to the camera); +z when omitted."},
             "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "description": "Half the patch's width in world units; 6 percent of the target's size (its bounding diagonal) when omitted."},
@@ -119,6 +120,32 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
         Some(v) => vec3_of(v, "up")?,
         None => Vec3::Y,
     };
+    if kind == "skeleton" {
+        // Quads following the target's own skeleton: a field remesh held along each bone, so loops ring every limb.
+        let (record, _) = crate::rig_cmds::made(s, target_id, "skeleton").map_err(|_| CommandError::new("no_skeleton", "the skeleton template needs an object made by skeleton_mesh in this session (Build > Skeleton); use head or sphere for other sculpts"))?;
+        let point = |v: &Value| -> Option<Vec3> { Some(Vec3::new(v.get(0)?.as_f64()? as f32, v.get(1)?.as_f64()? as f32, v.get(2)?.as_f64()? as f32)) };
+        let spheres: Vec<Vec3> = record["spheres"].as_array().map(|a| a.iter().filter_map(point).collect()).unwrap_or_default();
+        let bones: Vec<(Vec3, Vec3)> = record["links"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|l| Some((*spheres.get(l.get(0)?.as_u64()? as usize)?, *spheres.get(l.get(1)?.as_u64()? as usize)?))).collect())
+            .unwrap_or_default();
+        if bones.is_empty() {
+            return Err(CommandError::new("no_skeleton", "the skeleton has no bones (links) to follow"));
+        }
+        let faces = match args.get("faces") {
+            None | Some(Value::Null) => 2000,
+            Some(v) => v.as_u64().filter(|n| (100..=100_000).contains(n)).ok_or_else(|| bad("faces is an integer from 100 to 100000"))? as usize,
+        };
+        let opts = fsc_topo::FieldOptions { target_faces: faces, hard_angle: 60.0, ..Default::default() };
+        let out = fsc_topo::field_remesh_steered(m, &target.bvh, opts, &[], &bones).map_err(|e| CommandError::new("remesh_failed", e))?;
+        let quads = out.mesh.quad_faces().ok_or_else(|| CommandError::new("remesh_failed", "the remesh did not come out as quads"))?;
+        let points: Vec<Vec3> = out.mesh.positions.iter().map(|&p| Vec3::from(p)).collect();
+        let weld = num("weld", if args.get("into").is_some_and(|v| !v.is_null()) { bsize * 0.005 } else { 1e-6 }, 1e-6, 100.0)?;
+        let mut reply = lay(s, args, target_id, kind, &points, &quads, None, weld, None)?;
+        reply["bone_vertices"] = json!(out.bone_vertices);
+        reply["bones"] = json!(bones.len());
+        return Ok(reply);
+    }
     if wrap {
         // A whole-object template: no centre or size, it wraps the target as seen from front.
         let res = count("columns", if kind == "head" { 10 } else { 8 })?;
@@ -190,13 +217,38 @@ fn lay(s: &mut Session, args: &Value, target_id: ObjectId, kind: &str, dropped: 
     let was_quads = mesh.quads || mesh.indices.is_empty();
     let before = mesh.vertex_count();
     let mut index = Vec::with_capacity(dropped.len());
+    // Weld partners come from a grid of weld-sized cells (the neighbouring cells hold every point in reach), so a
+    // template of many thousand points costs no more per point than a small patch.
+    let cell = weld.max(1e-5);
+    let key = |p: Vec3| ((p.x / cell).floor() as i64, (p.y / cell).floor() as i64, (p.z / cell).floor() as i64);
+    let mut grid: std::collections::HashMap<(i64, i64, i64), Vec<u32>> = std::collections::HashMap::new();
+    for (i, &p) in mesh.positions.iter().enumerate() {
+        grid.entry(key(Vec3::from(p))).or_default().push(i as u32);
+    }
     for q in dropped {
-        let found = mesh.positions.iter().position(|&p| Vec3::from(p).distance(*q) <= weld);
+        let (cx, cy, cz) = key(*q);
+        let mut found: Option<u32> = None;
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                for dz in -1..=1 {
+                    if let Some(list) = grid.get(&(cx + dx, cy + dy, cz + dz)) {
+                        // The lowest index in reach, as the linear search before it chose.
+                        for &v in list {
+                            if Vec3::from(mesh.positions[v as usize]).distance(*q) <= weld && found.is_none_or(|f| v < f) {
+                                found = Some(v);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         index.push(match found {
-            Some(v) => v as u32,
+            Some(v) => v,
             None => {
                 mesh.positions.push(q.to_array());
-                mesh.positions.len() as u32 - 1
+                let v = mesh.positions.len() as u32 - 1;
+                grid.entry((cx, cy, cz)).or_default().push(v);
+                v
             }
         });
     }

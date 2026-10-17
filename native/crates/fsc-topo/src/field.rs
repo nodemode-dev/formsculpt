@@ -41,6 +41,8 @@ pub struct FieldRemesh {
     pub holes_filled: usize,
     /// Vertices of the working mesh whose direction a guide curve set.
     pub guided_vertices: usize,
+    /// Vertices of the working mesh whose direction a bone set.
+    pub bone_vertices: usize,
 }
 
 /// The direction in `n`'s plane among the four rotations of `o` that is closest to `to`.
@@ -151,6 +153,13 @@ pub fn field_remesh(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions) -> Result<FieldR
 /// curve's direction, so edge loops run along it, as ZRemesher's curves steer it; elsewhere the field blends between
 /// the guides and the hard edges.
 pub fn field_remesh_guided(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions, guides: &[Vec<Vec3>]) -> Result<FieldRemesh, String> {
+    field_remesh_steered(mesh, bvh, opts, guides, &[])
+}
+
+/// field_remesh steered by guide curves and by bones (segments inside the shape, as a skeleton's links): every
+/// surface point clearly owned by one bone and away from its ends (where limbs meet) takes that bone's direction, so
+/// edge loops ring each limb and run along it; around the joints the field blends freely.
+pub fn field_remesh_steered(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions, guides: &[Vec<Vec3>], bones: &[(Vec3, Vec3)]) -> Result<FieldRemesh, String> {
     let area: f32 = mesh.face_normals().iter().map(|n| n.length() * 0.5).sum();
     if area <= 0.0 || mesh.triangle_count() == 0 {
         return Err("the mesh has no area".into());
@@ -288,6 +297,41 @@ pub fn field_remesh_guided(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions, guides: &
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Bones: a point takes its nearest bone's direction when that bone is clearly nearest (the next is at least half
+    // as far again) and the closest place on it is in its middle 70 percent; hard edges and guides win.
+    let mut bone_vertices = 0;
+    let usable: Vec<(Vec3, Vec3)> = bones.iter().copied().filter(|(a, b)| a.distance(*b) > 1e-6).collect();
+    if !usable.is_empty() {
+        for v in 0..nv {
+            if fixed[v] {
+                continue;
+            }
+            let mut best = (f32::INFINITY, 0usize, 0.0f32);
+            let mut second = f32::INFINITY;
+            for (i, &(a, b)) in usable.iter().enumerate() {
+                let ab = b - a;
+                let t = ((p[v] - a).dot(ab) / ab.length_squared()).clamp(0.0, 1.0);
+                let d = p[v].distance(a + ab * t);
+                if d < best.0 {
+                    second = best.0;
+                    best = (d, i, t);
+                } else if d < second {
+                    second = d;
+                }
+            }
+            let (d, i, t) = best;
+            if !(0.15..=0.85).contains(&t) || second < d * 1.5 {
+                continue;
+            }
+            let (a, b) = usable[i];
+            if let Some(dir) = tangent(b - a, n[v]) {
+                o[v] = dir;
+                fixed[v] = true;
+                bone_vertices += 1;
             }
         }
     }
@@ -696,5 +740,5 @@ pub fn field_remesh_guided(mesh: &Mesh, bvh: &Bvh, opts: FieldOptions, guides: &
         out.recompute_normals();
     }
     out.quads = true;
-    Ok(FieldRemesh { mesh: out, polygons: faces.len(), quad_polygons, hard_edges, holes_filled, guided_vertices })
+    Ok(FieldRemesh { mesh: out, polygons: faces.len(), quad_polygons, hard_edges, holes_filled, guided_vertices, bone_vertices })
 }
