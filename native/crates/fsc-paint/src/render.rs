@@ -409,11 +409,40 @@ pub enum Pass {
     Occlusion,
 }
 
-/// A directional light added to the sun: the direction it shines from (world space) and its colour times intensity.
+/// A light added to the sun: its colour times intensity, and either the direction it shines from (world space; a
+/// directional light) or, with `spot`, a spot light, for which `from` is unused.
 #[derive(Clone, Copy, Debug)]
 pub struct Light {
     pub from: Vec3,
     pub color: Vec3,
+    pub spot: Option<Spot>,
+}
+
+/// A spot light: a point that shines in a cone. Its light falls off with the square of distance, scaled so that at
+/// the point it aims at the strength is the light's intensity (so intensity means the same as for a directional
+/// light where it matters).
+#[derive(Clone, Copy, Debug)]
+pub struct Spot {
+    /// Where the light is, in world space.
+    pub at: Vec3,
+    /// What it aims at; the framed centre when None.
+    pub to: Option<Vec3>,
+    /// The cone's full angle, in degrees (1 to 179).
+    pub cone: f32,
+    /// The share of the cone's edge that fades (0 a hard edge, 1 fading from the axis).
+    pub softness: f32,
+}
+
+/// How much of a spot light reaches a point `d` away along `l` (unit, from the point toward the light): the cone's
+/// fade times the falloff, 1 on the axis at the reference distance. The window's lit shading runs the same sum.
+pub fn spot_reach(l: Vec3, d: f32, axis: Vec3, cone: f32, softness: f32, reference: f32) -> f32 {
+    let half = (cone.clamp(1.0, 179.0) * 0.5).to_radians();
+    let outer = half.cos();
+    let inner = (half * (1.0 - softness.clamp(0.0, 1.0))).cos().max(outer + 1e-4);
+    let c = (-l).dot(axis);
+    let t = ((c - outer) / (inner - outer)).clamp(0.0, 1.0);
+    let fade = t * t * (3.0 - 2.0 * t);
+    fade * (reference * reference / (d * d).max(1e-8)).min(16.0)
 }
 
 #[derive(Clone, Debug)]
@@ -484,10 +513,23 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
     let size = bounds.extent().length().max(1e-3);
     let lens = options.aperture.clamp(0.0, 1.0) * size * 0.5;
     let focus = options.focus.unwrap_or_else(|| (bounds.center() - cam.eye).dot(cam.fwd)).max(1e-4);
-    let mut lights: Vec<(Vec3, Vec3)> = options.lights.iter().filter_map(|l| Some((l.from.try_normalize()?, l.color.max(Vec3::ZERO)))).collect();
+    // Directional lights as (from, colour); spots as (position, colour, axis, cone, softness, reference distance).
+    let mut lights: Vec<(Vec3, Vec3)> = options.lights.iter().filter(|l| l.spot.is_none()).filter_map(|l| Some((l.from.try_normalize()?, l.color.max(Vec3::ZERO)))).collect();
     if options.sun {
         lights.push((sun_dir, sun));
     }
+    let spots: Vec<(Vec3, Vec3, Vec3, f32, f32, f32)> = options
+        .lights
+        .iter()
+        .filter_map(|l| {
+            let s = l.spot?;
+            let to = s.to.unwrap_or_else(|| bounds.center());
+            let axis = (to - s.at).try_normalize()?;
+            Some((s.at, l.color.max(Vec3::ZERO), axis, s.cone, s.softness, (to - s.at).length()))
+        })
+        .collect();
+    // A spot is a small sphere (a hundredth of the framed size), which softens its shadows a little.
+    let bulb = size * 0.01;
     let near = (bounds.center() - cam.eye).length() - size * 0.5;
     let reach = size * 0.2;
     let trace = |i: usize| -> [u8; 4] {
@@ -573,6 +615,28 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                         let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
                         let f0 = Vec3::splat(0.04).lerp(albedo, metal);
                         light += through * color * ndl * (diffuse + f0 * spec);
+                    }
+                }
+                // Spot lights: a shadow ray that only counts what lies between the point and the light.
+                for &(at, color, axis, cone, softness, reference) in &spots {
+                    let bulb_at = at + Vec3::new(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5) * bulb;
+                    let to = bulb_at - origin;
+                    let dist = to.length();
+                    if dist < 1e-6 {
+                        continue;
+                    }
+                    let s = to / dist;
+                    let ndl = n.dot(s);
+                    if ndl <= 0.0 {
+                        continue;
+                    }
+                    let reach = spot_reach(s, dist, axis, cone, softness, reference);
+                    if reach > 0.0 && hit(origin, s).is_none_or(|(_, h)| h.t >= dist) {
+                        let half = (s - d).normalize();
+                        let spec = n.dot(half).max(0.0).powf(2.0 / (rough * rough * rough * rough).max(1e-4)) * (1.0 - rough) * 0.5;
+                        let diffuse = albedo * (1.0 - metal) / std::f32::consts::PI;
+                        let f0 = Vec3::splat(0.04).lerp(albedo, metal);
+                        light += through * color * reach * ndl * (diffuse + f0 * spec);
                     }
                 }
                 // Next bounce: glossy reflection by metalness (and smoothness), otherwise diffuse.

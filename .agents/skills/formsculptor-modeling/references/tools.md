@@ -46,7 +46,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
 - `height`: integer; default 640; range 64 to 2048
 - `ids`: array of integer; Only these objects; every visible object when omitted.
-- `lights`: array of object; Path render: directional lights added to the key light (a rim or fill).
+- `lights`: array of object; Path render: directional and spot lights added to the key light (a rim, fill or a pool of light).
 - `pass`: string (beauty | depth | normal | ao); default "beauty"; Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion).
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
 - `render`: string (preview | path); default "preview"; preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise).

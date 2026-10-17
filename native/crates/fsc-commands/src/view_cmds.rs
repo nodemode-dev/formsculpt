@@ -12,6 +12,22 @@ fn bad(msg: impl Into<String>) -> CommandError {
 
 const VIEWS: [(&str, f32, f32); 7] = [("three_quarter", 30.0, 20.0), ("front", 0.0, 0.0), ("back", 180.0, 0.0), ("right", 90.0, 0.0), ("left", -90.0, 0.0), ("top", 0.0, 89.9), ("bottom", 0.0, -89.9)];
 
+/// One of get_view's added path render lights (kept apart from view_schema, whose json! would otherwise nest too deep).
+fn light_schema() -> Value {
+    let three = |text: &str| json!({"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": text});
+    json!({"type": "object", "properties": {
+        "kind": {"type": "string", "enum": ["directional", "spot"], "default": "directional", "description": "directional shines from a direction everywhere alike; spot shines from a point in a cone and falls off with distance."},
+        "from": three("Directional: the world direction the light shines from (required for directional)."),
+        "at": three("Spot: where the light is, in world space (required for spot)."),
+        "to": three("Spot: the point it aims at (default the framed centre). At that distance its strength is intensity."),
+        "cone": {"type": "number", "minimum": 1, "maximum": 179, "default": 45, "description": "Spot: the cone's full angle in degrees."},
+        "softness": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.25, "description": "Spot: how much of the cone's edge fades (0 hard, 1 from the axis out)."},
+        "color": {"type": "array", "items": {"type": "number", "minimum": 0}, "minItems": 3, "maxItems": 3, "default": [1, 1, 1], "description": "Linear colour; multiplied by kelvin's colour when both are given (a gel)."},
+        "kelvin": {"type": "number", "minimum": 1667, "maximum": 25000, "description": "Colour temperature: 1900 candle, 2700 to 3200 tungsten, 5500 daylight, 6500 white, 7000 and up cool sky."},
+        "intensity": {"type": "number", "minimum": 0, "maximum": 100, "default": 2.5}
+    }, "additionalProperties": false})
+}
+
 pub(crate) fn view_schema() -> Value {
     json!({
         "type": "object",
@@ -35,7 +51,7 @@ pub(crate) fn view_schema() -> Value {
             "saturation": {"type": "number", "minimum": 0, "maximum": 2, "default": 1, "description": "Path render grade: 0 grey, 1 as rendered, 2 doubled."},
             "temperature": {"type": "number", "minimum": -1, "maximum": 1, "default": 0, "description": "Path render grade: white balance, negative cooler, positive warmer."},
             "pass": {"type": "string", "enum": ["beauty", "depth", "normal", "ao"], "default": "beauty", "description": "Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion)."},
-            "lights": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {"from": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "World direction the light shines from."}, "color": {"type": "array", "items": {"type": "number", "minimum": 0}, "minItems": 3, "maxItems": 3, "default": [1, 1, 1]}, "intensity": {"type": "number", "minimum": 0, "maximum": 100, "default": 2.5}}, "required": ["from"], "additionalProperties": false}, "description": "Path render: directional lights added to the key light (a rim or fill)."},
+            "lights": {"type": "array", "maxItems": 8, "items": light_schema(), "description": "Path render: directional and spot lights added to the key light (a rim, fill or a pool of light)."},
             "sun": {"type": "boolean", "default": true, "description": "Path render: keep the window's key light."},
             "aperture": {"type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Path render: depth of field lens size as a fraction of the framed size; 0 keeps everything sharp, 0.05 is a gentle blur."},
             "focus": {"type": "number", "exclusiveMinimum": 0, "description": "Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted."},
@@ -504,10 +520,33 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
                     _ => d,
                 }
             };
-            for l in args.get("lights").and_then(Value::as_array).into_iter().flatten().take(8) {
+            for (i, l) in args.get("lights").and_then(Value::as_array).into_iter().flatten().take(8).enumerate() {
                 let intensity = l.get("intensity").and_then(Value::as_f64).unwrap_or(2.5).clamp(0.0, 100.0) as f32;
+                let mut color = glam::Vec3::from(three(l.get("color"), [1.0; 3])) * intensity;
+                if let Some(k) = l.get("kelvin").and_then(Value::as_f64) {
+                    color *= fsc_paint::kelvin(k as f32);
+                }
+                let kind = l.get("kind").and_then(Value::as_str).unwrap_or("directional");
+                let spot = match kind {
+                    "directional" => None,
+                    "spot" => {
+                        let at = l.get("at").filter(|v| v.as_array().is_some_and(|a| a.len() == 3)).ok_or_else(|| bad(format!("lights[{i}]: a spot light needs at, where it is")))?;
+                        let at = glam::Vec3::from(three(Some(at), [0.0; 3]));
+                        let to = l.get("to").map(|v| glam::Vec3::from(three(Some(v), [0.0; 3])));
+                        if to.is_some_and(|t| t.distance(at) < 1e-6) {
+                            return Err(bad(format!("lights[{i}]: to must differ from at")));
+                        }
+                        let cone = l.get("cone").and_then(Value::as_f64).unwrap_or(45.0).clamp(1.0, 179.0) as f32;
+                        let softness = l.get("softness").and_then(Value::as_f64).unwrap_or(0.25).clamp(0.0, 1.0) as f32;
+                        Some(fsc_paint::Spot { at, to, cone, softness })
+                    }
+                    other => return Err(bad(format!("lights[{i}]: kind must be directional or spot, not {other}"))),
+                };
+                if spot.is_none() && l.get("from").is_none() {
+                    return Err(bad(format!("lights[{i}]: a directional light needs from, the direction it shines from")));
+                }
                 let from = glam::Vec3::from(three(l.get("from"), [0.0, 1.0, 0.0]));
-                options.lights.push(fsc_paint::Light { from, color: glam::Vec3::from(three(l.get("color"), [1.0; 3])) * intensity });
+                options.lights.push(fsc_paint::Light { from, color, spot });
             }
             fsc_paint::path_trace_with(&objects, &view, &options)
         }
