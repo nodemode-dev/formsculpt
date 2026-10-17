@@ -493,7 +493,9 @@ pub(crate) fn boolean(s: &mut Session, args: &Value) -> Result<Value, CommandErr
         BooleanOp::Difference => "Difference",
         BooleanOp::Intersection => "Intersection",
     };
-    let name = s.scene.unique_name(&format!("{} {}", oa.name, label.to_lowercase()));
+    // Replacing the inputs, the result is a cut or joined: it keeps a's name as it keeps a's place in the list (a
+    // head with nostrils cut is still the head). Kept inputs sit beside it, so the result takes a name of its own.
+    let name = if keep { s.scene.unique_name(&format!("{} {}", oa.name, label.to_lowercase())) } else { oa.name.clone() };
     snapshot(s, label);
     let at = s.scene.index_of(a).expect("checked");
     if !keep {
