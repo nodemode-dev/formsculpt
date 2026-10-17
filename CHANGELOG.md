@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.60.0 · 2026-10-17
+
+### Added
+
+- `decimate` takes `preserve_paint` (paint carried exactly, colour boundaries collapse last), `preserve_groups` (face groups and their borders kept) and `preserve_uvs` (UVs and a painted texture kept, seam vertices held) and reports the triangles reached; hidden faces now come through decimation.
+- Window: Keep paint, Keep groups and Keep UVs for Decimate, on by default.
+- 1004 interface strings in every language.
+
 ## 0.59.0 · 2026-10-16
 
 ### Added
