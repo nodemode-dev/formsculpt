@@ -2,6 +2,25 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.69.1 · 2026-10-17
+
+Fixes found while Claude Code drove the window over MCP to rebuild the snake head from the owner's Nomad Sculpt recording.
+
+### Fixed
+
+- Voxel remesh unions parts that overlap inside one object (primitives merged before a remesh), as DynaMesh and Nomad do: three overlapping primitives came out with 3200 open edges, 979 non-manifold edges and 4 loose pieces, and now come out as one watertight piece.
+- Thicken thin parts no longer leaves rings on curved surfaces (a sphere's surface strayed 70 times more at 50 percent); thin parts still survive. Remeshed vertices now sit on the surface.
+- Smooth works on dense meshes: one stroke on a 381k-vertex block rounds an edge 11 times as far as before, in 0.14 s.
+- Crease and pinch pull across the stroke and in proportion to spacing: strong, finely spaced strokes along a curve left a torn, hatched groove and now leave one clean fold.
+- boolean keeps the name of the object it replaces (cutting nostrils into "Viper head" left it named "Viper head difference").
+- Commands accept numbers and true or false sent as text where the argument is a number or a switch ("strength": "1.0" was refused).
+- A stroke that changes nothing says which object it went to and that its points missed the surface; edit_build with nothing to change refuses instead of reporting success.
+- The modeling skill tells agents to take stroke points from pick on a sculpted surface, and why repeated points give one dab.
+
+### Known
+
+- bevel_edges with concave or both leaves radial streaks in the fillet where a round part meets a flat face.
+
 ## 0.69.0 · 2026-10-17
 
 ### Added
