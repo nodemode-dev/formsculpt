@@ -758,6 +758,18 @@ impl Stroke {
         // copy), or with roll along the stroke's direction since the previous dab, then turns by `alpha_angle`.
         let signed = s.alpha_mid > 0.0 && matches!(s.kind, BrushKind::Draw | BrushKind::Stamp | BrushKind::Inflate | BrushKind::Noise);
         let prev = self.prev_dab[copy].replace(center);
+        // The stroke's direction in the surface since the previous dab. Crease and pinch pull only across it, toward
+        // the line: pulling toward each dab's centre also bunched vertices along the line from dab to dab, and a
+        // stroke came out as a row of pinches (a hatched groove) instead of one clean fold.
+        let along = prev.and_then(|p| {
+            let d = center - p;
+            (d - area_n * d.dot(area_n)).try_normalize()
+        });
+        // Their pull toward the line also adds up over every dab that passes a point, so dense spacing collapsed the
+        // vertices onto the line and folded their triangles into striations. Below the default spacing each dab pulls
+        // in proportion, so a stroke pinches the same however finely it is sampled (spacing compensation, when on,
+        // already scales the whole dab).
+        let pull = if s.spacing_compensation { 1.0 } else { (s.spacing / 0.15).clamp(0.05, 1.0) };
         if let Some(alpha) = &self.alpha {
             let m = self.transforms[copy];
             let up_ref = match (s.roll, prev) {
@@ -826,28 +838,48 @@ impl Stroke {
             // Relax keeps only the part of the move that lies in the surface, so it evens the triangles without
             // shrinking the form; smooth also moves along the normal and wears the form down.
             let relax = s.kind == BrushKind::Relax;
-            let targets: Vec<Vec3> = found
-                .iter()
-                .map(|&v| {
-                    let nb = object.topology.neighbors_of(v);
+            // One averaging pass spreads about one edge length, so on a dense mesh a single pass per dab cannot reach
+            // the size of the brush and smoothing all but stops working. Smooth runs as many passes as spread a tenth
+            // of the radius (spread grows with the square root of the passes), capped at 24; a coarse mesh keeps one.
+            let passes = if relax {
+                1
+            } else {
+                let mut sum = 0.0;
+                let mut count = 0usize;
+                for &v in found.iter().take(256) {
                     let p = object.mesh.position(v);
-                    if nb.is_empty() {
-                        return p;
+                    for &w in object.topology.neighbors_of(v) {
+                        sum += (object.mesh.position(w) - p).length();
+                        count += 1;
                     }
-                    let avg = nb.iter().map(|&w| object.mesh.position(w)).sum::<Vec3>() / nb.len() as f32;
-                    if relax {
-                        let n = Vec3::from_array(object.mesh.normals[v as usize]);
-                        let d = avg - p;
-                        p + (d - n * d.dot(n))
-                    } else {
-                        avg
-                    }
-                })
-                .collect();
-            for (k, &v) in found.iter().enumerate() {
-                let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
-                let p = object.mesh.position(v);
-                object.mesh.positions[v as usize] = p.lerp(targets[k], w * 0.6).to_array();
+                }
+                let edge = if count > 0 { sum / count as f32 } else { 0.0 };
+                if edge > 0.0 { ((r * 0.1 / edge).powi(2).round() as usize).clamp(1, 24) } else { 1 }
+            };
+            for _ in 0..passes {
+                let targets: Vec<Vec3> = found
+                    .iter()
+                    .map(|&v| {
+                        let nb = object.topology.neighbors_of(v);
+                        let p = object.mesh.position(v);
+                        if nb.is_empty() {
+                            return p;
+                        }
+                        let avg = nb.iter().map(|&w| object.mesh.position(w)).sum::<Vec3>() / nb.len() as f32;
+                        if relax {
+                            let n = Vec3::from_array(object.mesh.normals[v as usize]);
+                            let d = avg - p;
+                            p + (d - n * d.dot(n))
+                        } else {
+                            avg
+                        }
+                    })
+                    .collect();
+                for (k, &v) in found.iter().enumerate() {
+                    let w = (weights[k] * amount).min(1.0) * free(object, v, hid);
+                    let p = object.mesh.position(v);
+                    object.mesh.positions[v as usize] = p.lerp(targets[k], w * 0.6).to_array();
+                }
             }
         } else if s.kind == BrushKind::LayerReset {
             // The layer's delta only changes when the stroke ends, so each vertex keeps its contribution from first
@@ -933,13 +965,19 @@ impl Stroke {
                     BrushKind::Flatten => p - area_n * ((p - area_c).dot(area_n) * (w * 0.5).min(1.0)),
                     BrushKind::Pinch => {
                         let to = center - p;
-                        let tangent = to - area_n * to.dot(area_n);
-                        p + tangent * (w * 0.15 * sign).clamp(-1.0, 1.0)
+                        let mut tangent = to - area_n * to.dot(area_n);
+                        if let Some(a) = along {
+                            tangent -= a * tangent.dot(a);
+                        }
+                        p + tangent * (w * 0.15 * pull * sign).clamp(-1.0, 1.0)
                     }
                     BrushKind::Crease => {
                         let to = center - p;
-                        let tangent = to - area_n * to.dot(area_n);
-                        p - area_n * (w * r * 0.04 * sign) + tangent * (w * 0.2).min(1.0)
+                        let mut tangent = to - area_n * to.dot(area_n);
+                        if let Some(a) = along {
+                            tangent -= a * tangent.dot(a);
+                        }
+                        p - area_n * (w * r * 0.04 * sign) + tangent * (w * 0.2 * pull).min(1.0)
                     }
                     BrushKind::Planar => p - plane_n * ((p - plane_c).dot(plane_n) * (w * 0.5).min(1.0)),
                     BrushKind::Trim => {
