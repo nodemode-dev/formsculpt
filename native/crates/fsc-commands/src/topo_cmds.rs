@@ -98,7 +98,10 @@ pub(crate) fn decimate_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1, "default": 0.5, "description": "Fraction of triangles to keep."},
             "triangles": {"type": "integer", "minimum": 4, "description": "Target triangle count; overrides ratio."},
-            "preserve_borders": {"type": "boolean", "default": true}
+            "preserve_borders": {"type": "boolean", "default": true},
+            "preserve_paint": {"type": "boolean", "default": false, "description": "Carry each kept vertex's paint exactly and collapse edges across a colour change last, so painted boundaries stay crisp (without it the paint is transferred from the old surface afterwards)."},
+            "preserve_groups": {"type": "boolean", "default": false, "description": "Keep face groups on the faces that remain and hold the borders between groups in place, as open borders are held."},
+            "preserve_uvs": {"type": "boolean", "default": false, "description": "Keep UVs (and so a painted texture): vertices on a UV seam do not move, the rest carry their UV to where they collapse. Without it UVs and textures are dropped."}
         },
         "required": [],
         "additionalProperties": false
@@ -123,10 +126,20 @@ pub(crate) fn decimate(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     if target_tris < 4 {
         return Err(bad("the target must be at least 4 triangles"));
     }
-    let preserve = args.get("preserve_borders").and_then(Value::as_bool).unwrap_or(true);
-    let mesh = fsc_topo::decimate(&object.mesh, target_tris, preserve);
+    let flag = |k: &str, d: bool| args.get(k).and_then(Value::as_bool).unwrap_or(d);
+    let opts = fsc_topo::DecimateOptions {
+        preserve_borders: flag("preserve_borders", true),
+        preserve_paint: flag("preserve_paint", false),
+        preserve_groups: flag("preserve_groups", false),
+        preserve_uvs: flag("preserve_uvs", false),
+    };
+    let mesh = fsc_topo::decimate_with(&object.mesh, target_tris, opts);
     let mask = vec![0.0; mesh.vertex_count()];
-    apply(s, id, "Decimate", mesh, mask)
+    let reached = mesh.triangle_count();
+    let mut out = apply(s, id, "Decimate", mesh, mask)?;
+    out["triangles"] = json!(reached);
+    out["target"] = json!(target_tris);
+    Ok(out)
 }
 
 pub(crate) fn fill_holes(s: &mut Session, args: &Value) -> Result<Value, CommandError> {

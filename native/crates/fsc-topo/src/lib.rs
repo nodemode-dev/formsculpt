@@ -20,7 +20,7 @@ mod voxel;
 mod zmodel;
 
 pub use build::{lathe, silhouette_mesh, skeleton_mesh, tube, Ball};
-pub use decimate::decimate;
+pub use decimate::{decimate, decimate_with, DecimateOptions};
 pub use deform::{deform, lattice_box, lattice_deform, merge, split_parts, Deformer};
 pub use dyntopo::{collapse_sphere, compact, refine_sphere};
 pub use edges::{boundary_edges, edge_faces, Edge};

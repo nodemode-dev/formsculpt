@@ -1362,7 +1362,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "decimate",
         group: Group::Topo,
         label: "Decimate",
-        description: "Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. The mask is cleared.",
+        description: "Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. preserve_paint carries paint exactly and keeps colour boundaries crisp; preserve_groups keeps face groups and their borders; preserve_uvs keeps UVs and a painted texture (seam vertices stay). Hidden faces stay hidden. With groups or seams kept the target may not be reached (triangles gives the count reached). The mask is cleared.",
         keys: &[],
         hints: WRITE,
         schema: topo_cmds::decimate_schema,
