@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Andet tryk skifter værktøj",
  "Toolbar": "Værktøjslinje",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Værktøjslinje oprettet: højreklik på en panelknap, og vælg Føj til værktøjslinje",
- "Turn Toolbar": "Drej værktøjslinje"
+ "Turn Toolbar": "Drej værktøjslinje",
+ "All tools": "Alle værktøjer",
+ "Fold the options": "Fold indstillingerne sammen",
+ "Full screen": "Fuld skærm",
+ "Inspector": "Inspektør",
+ "Intensity": "Intensitet",
+ "No object selected": "Intet objekt valgt",
+ "Orange clay": "Orange ler",
+ "Panel layout": "Panellayout",
+ "Remesh": "Remesh",
+ "Resolution": "Opløsning",
+ "Sym": "Sym",
+ "Thicken thin parts": "Fortyk tynde dele",
+ "Voxel": "Voxel"
 }

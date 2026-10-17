@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Повторное нажатие переключает инструмент",
  "Toolbar": "Панель инструментов",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Панель создана: щёлкните правой кнопкой по кнопке панели и выберите Добавить на панель инструментов",
- "Turn Toolbar": "Повернуть панель инструментов"
+ "Turn Toolbar": "Повернуть панель инструментов",
+ "All tools": "Все инструменты",
+ "Fold the options": "Свернуть параметры",
+ "Full screen": "Во весь экран",
+ "Inspector": "Инспектор",
+ "Intensity": "Интенсивность",
+ "No object selected": "Объект не выбран",
+ "Orange clay": "Оранжевая глина",
+ "Panel layout": "Раскладка с панелью",
+ "Remesh": "Перестроить сетку",
+ "Resolution": "Разрешение",
+ "Sym": "Сим",
+ "Thicken thin parts": "Утолщить тонкие части",
+ "Voxel": "Воксели"
 }

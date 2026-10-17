@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "2回目の押下でツールを切り替え",
  "Toolbar": "ツールバー",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "ツールバーを作成しました: パネルのボタンを右クリックして「ツールバーに追加」を選びます",
- "Turn Toolbar": "ツールバーの向きを変更"
+ "Turn Toolbar": "ツールバーの向きを変更",
+ "All tools": "すべてのツール",
+ "Fold the options": "オプションを折りたたむ",
+ "Full screen": "全画面",
+ "Inspector": "インスペクター",
+ "Intensity": "強さ",
+ "No object selected": "オブジェクトが選択されていません",
+ "Orange clay": "オレンジの粘土",
+ "Panel layout": "パネルレイアウト",
+ "Remesh": "リメッシュ",
+ "Resolution": "解像度",
+ "Sym": "対称",
+ "Thicken thin parts": "薄い部分を厚くする",
+ "Voxel": "ボクセル"
 }

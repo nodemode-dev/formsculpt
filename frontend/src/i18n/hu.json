@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Második nyomás eszközt vált",
  "Toolbar": "Eszköztár",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Eszköztár létrehozva: kattintson jobb gombbal egy panelgombra, és válassza a Hozzáadás az eszköztárhoz lehetőséget",
- "Turn Toolbar": "Eszköztár elforgatása"
+ "Turn Toolbar": "Eszköztár elforgatása",
+ "All tools": "Minden eszköz",
+ "Fold the options": "Beállítások összecsukása",
+ "Full screen": "Teljes képernyő",
+ "Inspector": "Vizsgáló",
+ "Intensity": "Intenzitás",
+ "No object selected": "Nincs kijelölt objektum",
+ "Orange clay": "Narancs agyag",
+ "Panel layout": "Paneles elrendezés",
+ "Remesh": "Újrahálózás",
+ "Resolution": "Felbontás",
+ "Sym": "Szim",
+ "Thicken thin parts": "Vékony részek vastagítása",
+ "Voxel": "Voxel"
 }

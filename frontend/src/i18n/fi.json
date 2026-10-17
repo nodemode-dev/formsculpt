@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Toinen painallus vaihtaa työkalun",
  "Toolbar": "Työkalurivi",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Työkalurivi luotu: napsauta paneelin painiketta hiiren oikealla ja valitse Lisää työkaluriviin",
- "Turn Toolbar": "Käännä työkalurivi"
+ "Turn Toolbar": "Käännä työkalurivi",
+ "All tools": "Kaikki työkalut",
+ "Fold the options": "Taita asetukset",
+ "Full screen": "Koko näyttö",
+ "Inspector": "Tarkastin",
+ "Intensity": "Voimakkuus",
+ "No object selected": "Ei valittua kohdetta",
+ "Orange clay": "Oranssi savi",
+ "Panel layout": "Paneeliasettelu",
+ "Remesh": "Uudelleenverkota",
+ "Resolution": "Resoluutio",
+ "Sym": "Sym",
+ "Thicken thin parts": "Paksunna ohuet osat",
+ "Voxel": "Voxel"
 }

@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Drugie naciśnięcie przełącza narzędzie",
  "Toolbar": "Pasek narzędzi",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Utworzono pasek narzędzi: kliknij prawym przyciskiem przycisk panelu i wybierz Dodaj do paska narzędzi",
- "Turn Toolbar": "Obróć pasek narzędzi"
+ "Turn Toolbar": "Obróć pasek narzędzi",
+ "All tools": "Wszystkie narzędzia",
+ "Fold the options": "Zwiń opcje",
+ "Full screen": "Pełny ekran",
+ "Inspector": "Inspektor",
+ "Intensity": "Intensywność",
+ "No object selected": "Nie wybrano obiektu",
+ "Orange clay": "Pomarańczowa glina",
+ "Panel layout": "Układ z panelem",
+ "Remesh": "Przesiatkuj",
+ "Resolution": "Rozdzielczość",
+ "Sym": "Sym",
+ "Thicken thin parts": "Pogrub cienkie części",
+ "Voxel": "Voxel"
 }

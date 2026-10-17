@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "İkinci basış aracı değiştirir",
  "Toolbar": "Araç çubuğu",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Araç çubuğu oluşturuldu: bir panel düğmesine sağ tıklayıp Araç çubuğuna ekle seçeneğini seçin",
- "Turn Toolbar": "Araç çubuğunu döndür"
+ "Turn Toolbar": "Araç çubuğunu döndür",
+ "All tools": "Tüm araçlar",
+ "Fold the options": "Seçenekleri daralt",
+ "Full screen": "Tam ekran",
+ "Inspector": "Denetçi",
+ "Intensity": "Yoğunluk",
+ "No object selected": "Seçili nesne yok",
+ "Orange clay": "Turuncu kil",
+ "Panel layout": "Panelli düzen",
+ "Remesh": "Yeniden örgüle",
+ "Resolution": "Çözünürlük",
+ "Sym": "Sim",
+ "Thicken thin parts": "İnce kısımları kalınlaştır",
+ "Voxel": "Voxel"
 }

@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Nhấn lần hai để đổi công cụ",
  "Toolbar": "Thanh công cụ",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Đã tạo thanh công cụ: nhấp chuột phải vào một nút trên bảng và chọn Thêm vào thanh công cụ",
- "Turn Toolbar": "Xoay thanh công cụ"
+ "Turn Toolbar": "Xoay thanh công cụ",
+ "All tools": "Tất cả công cụ",
+ "Fold the options": "Thu gọn tùy chọn",
+ "Full screen": "Toàn màn hình",
+ "Inspector": "Trình kiểm tra",
+ "Intensity": "Cường độ",
+ "No object selected": "Chưa chọn đối tượng",
+ "Orange clay": "Đất sét cam",
+ "Panel layout": "Bố cục bảng",
+ "Remesh": "Tạo lưới lại",
+ "Resolution": "Độ phân giải",
+ "Sym": "Đối xứng",
+ "Thicken thin parts": "Làm dày phần mỏng",
+ "Voxel": "Voxel"
 }

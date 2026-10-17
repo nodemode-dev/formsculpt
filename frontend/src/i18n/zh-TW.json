@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "再按一次切換工具",
  "Toolbar": "工具列",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "工具列已建立：在面板按鈕上按右鍵並選擇「加入工具列」",
- "Turn Toolbar": "旋轉工具列"
+ "Turn Toolbar": "旋轉工具列",
+ "All tools": "所有工具",
+ "Fold the options": "摺疊選項",
+ "Full screen": "全螢幕",
+ "Inspector": "檢查器",
+ "Intensity": "強度",
+ "No object selected": "未選取物件",
+ "Orange clay": "橘色黏土",
+ "Panel layout": "面板版面配置",
+ "Remesh": "重建網格",
+ "Resolution": "解析度",
+ "Sym": "對稱",
+ "Thicken thin parts": "加厚細薄部分",
+ "Voxel": "體素"
 }

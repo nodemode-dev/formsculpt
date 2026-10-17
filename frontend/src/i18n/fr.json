@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Second appui pour alterner l’outil",
  "Toolbar": "Barre d’outils",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Barre d’outils créée : faites un clic droit sur un bouton du panneau et choisissez Ajouter à la barre d’outils",
- "Turn Toolbar": "Pivoter la barre d’outils"
+ "Turn Toolbar": "Pivoter la barre d’outils",
+ "All tools": "Tous les outils",
+ "Fold the options": "Replier les options",
+ "Full screen": "Plein écran",
+ "Inspector": "Inspecteur",
+ "Intensity": "Intensité",
+ "No object selected": "Aucun objet sélectionné",
+ "Orange clay": "Argile orange",
+ "Panel layout": "Disposition avec panneau",
+ "Remesh": "Remailler",
+ "Resolution": "Résolution",
+ "Sym": "Sym",
+ "Thicken thin parts": "Épaissir les parties fines",
+ "Voxel": "Voxel"
 }

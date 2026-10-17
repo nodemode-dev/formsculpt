@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Zweiter Druck wechselt das Werkzeug",
  "Toolbar": "Werkzeugleiste",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Werkzeugleiste erstellt: Rechtsklick auf eine Schaltfläche im Bedienfeld und Zur Werkzeugleiste hinzufügen wählen",
- "Turn Toolbar": "Werkzeugleiste drehen"
+ "Turn Toolbar": "Werkzeugleiste drehen",
+ "All tools": "Alle Werkzeuge",
+ "Fold the options": "Optionen einklappen",
+ "Full screen": "Vollbild",
+ "Inspector": "Inspektor",
+ "Intensity": "Intensität",
+ "No object selected": "Kein Objekt gewählt",
+ "Orange clay": "Oranger Ton",
+ "Panel layout": "Panel-Layout",
+ "Remesh": "Neu vernetzen",
+ "Resolution": "Auflösung",
+ "Sym": "Sym",
+ "Thicken thin parts": "Dünne Teile verdicken",
+ "Voxel": "Voxel"
 }

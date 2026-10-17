@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Andra trycket växlar verktyg",
  "Toolbar": "Verktygsfält",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Verktygsfält skapat: högerklicka på en panelknapp och välj Lägg till i verktygsfält",
- "Turn Toolbar": "Vrid verktygsfält"
+ "Turn Toolbar": "Vrid verktygsfält",
+ "All tools": "Alla verktyg",
+ "Fold the options": "Fäll ihop alternativen",
+ "Full screen": "Helskärm",
+ "Inspector": "Inspektör",
+ "Intensity": "Intensitet",
+ "No object selected": "Inget objekt valt",
+ "Orange clay": "Orange lera",
+ "Panel layout": "Panellayout",
+ "Remesh": "Remesha",
+ "Resolution": "Upplösning",
+ "Sym": "Sym",
+ "Thicken thin parts": "Förtjocka tunna delar",
+ "Voxel": "Voxel"
 }

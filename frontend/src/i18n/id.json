@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Tekan kedua menukar alat",
  "Toolbar": "Bilah alat",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Bilah alat dibuat: klik kanan tombol panel lalu pilih Tambahkan ke bilah alat",
- "Turn Toolbar": "Putar bilah alat"
+ "Turn Toolbar": "Putar bilah alat",
+ "All tools": "Semua alat",
+ "Fold the options": "Lipat opsi",
+ "Full screen": "Layar penuh",
+ "Inspector": "Inspektor",
+ "Intensity": "Intensitas",
+ "No object selected": "Tidak ada objek dipilih",
+ "Orange clay": "Tanah liat oranye",
+ "Panel layout": "Tata letak panel",
+ "Remesh": "Remesh",
+ "Resolution": "Resolusi",
+ "Sym": "Sim",
+ "Thicken thin parts": "Pertebal bagian tipis",
+ "Voxel": "Voxel"
 }

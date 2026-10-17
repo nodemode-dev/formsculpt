@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "두 번째 누르면 도구 전환",
  "Toolbar": "도구 모음",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "도구 모음을 만들었습니다: 패널 버튼을 마우스 오른쪽으로 클릭하고 도구 모음에 추가를 선택하세요",
- "Turn Toolbar": "도구 모음 방향 전환"
+ "Turn Toolbar": "도구 모음 방향 전환",
+ "All tools": "모든 도구",
+ "Fold the options": "옵션 접기",
+ "Full screen": "전체 화면",
+ "Inspector": "인스펙터",
+ "Intensity": "강도",
+ "No object selected": "선택된 오브젝트 없음",
+ "Orange clay": "주황색 점토",
+ "Panel layout": "패널 레이아웃",
+ "Remesh": "리메시",
+ "Resolution": "해상도",
+ "Sym": "대칭",
+ "Thicken thin parts": "얇은 부분 두껍게",
+ "Voxel": "복셀"
 }

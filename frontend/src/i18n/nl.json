@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Tweede druk wisselt gereedschap",
  "Toolbar": "Werkbalk",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Werkbalk gemaakt: klik met rechts op een paneelknop en kies Aan werkbalk toevoegen",
- "Turn Toolbar": "Werkbalk draaien"
+ "Turn Toolbar": "Werkbalk draaien",
+ "All tools": "Alle gereedschappen",
+ "Fold the options": "Opties inklappen",
+ "Full screen": "Volledig scherm",
+ "Inspector": "Inspector",
+ "Intensity": "Intensiteit",
+ "No object selected": "Geen object geselecteerd",
+ "Orange clay": "Oranje klei",
+ "Panel layout": "Paneelindeling",
+ "Remesh": "Remesh",
+ "Resolution": "Resolutie",
+ "Sym": "Sym",
+ "Thicken thin parts": "Dunne delen verdikken",
+ "Voxel": "Voxel"
 }

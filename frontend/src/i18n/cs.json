@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Druhé stisknutí přepne nástroj",
  "Toolbar": "Panel nástrojů",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Panel nástrojů vytvořen: klikněte pravým tlačítkem na tlačítko panelu a zvolte Přidat na panel nástrojů",
- "Turn Toolbar": "Otočit panel nástrojů"
+ "Turn Toolbar": "Otočit panel nástrojů",
+ "All tools": "Všechny nástroje",
+ "Fold the options": "Sbalit volby",
+ "Full screen": "Celá obrazovka",
+ "Inspector": "Inspektor",
+ "Intensity": "Intenzita",
+ "No object selected": "Žádný vybraný objekt",
+ "Orange clay": "Oranžová hlína",
+ "Panel layout": "Rozvržení s panelem",
+ "Remesh": "Přesíťovat",
+ "Resolution": "Rozlišení",
+ "Sym": "Sym",
+ "Thicken thin parts": "Zesílit tenké části",
+ "Voxel": "Voxel"
 }

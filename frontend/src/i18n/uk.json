@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "Повторне натискання перемикає інструмент",
  "Toolbar": "Панель інструментів",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Панель створено: клацніть правою кнопкою на кнопці панелі й виберіть Додати на панель інструментів",
- "Turn Toolbar": "Повернути панель інструментів"
+ "Turn Toolbar": "Повернути панель інструментів",
+ "All tools": "Усі інструменти",
+ "Fold the options": "Згорнути параметри",
+ "Full screen": "На весь екран",
+ "Inspector": "Інспектор",
+ "Intensity": "Інтенсивність",
+ "No object selected": "Об’єкт не вибрано",
+ "Orange clay": "Помаранчева глина",
+ "Panel layout": "Розкладка з панеллю",
+ "Remesh": "Перебудувати сітку",
+ "Resolution": "Роздільність",
+ "Sym": "Сим",
+ "Thicken thin parts": "Потовщити тонкі частини",
+ "Voxel": "Воксели"
 }

@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "La segunda pulsación alterna la herramienta",
  "Toolbar": "Barra de herramientas",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "Barra creada: haz clic derecho en un botón del panel y elige Añadir a la barra",
- "Turn Toolbar": "Girar barra"
+ "Turn Toolbar": "Girar barra",
+ "All tools": "Todas las herramientas",
+ "Fold the options": "Plegar las opciones",
+ "Full screen": "Pantalla completa",
+ "Inspector": "Inspector",
+ "Intensity": "Intensidad",
+ "No object selected": "Ningún objeto seleccionado",
+ "Orange clay": "Arcilla naranja",
+ "Panel layout": "Diseño con panel",
+ "Remesh": "Remallar",
+ "Resolution": "Resolución",
+ "Sym": "Sim",
+ "Thicken thin parts": "Engrosar partes finas",
+ "Voxel": "Vóxel"
 }

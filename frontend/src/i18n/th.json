@@ -1072,5 +1072,18 @@
  "Second Press Swaps Tool": "กดครั้งที่สองเพื่อสลับเครื่องมือ",
  "Toolbar": "แถบเครื่องมือ",
  "Toolbar made: right-click a panel button and choose Add to Toolbar": "สร้างแถบเครื่องมือแล้ว: คลิกขวาที่ปุ่มในแผง แล้วเลือก เพิ่มลงแถบเครื่องมือ",
- "Turn Toolbar": "หมุนแถบเครื่องมือ"
+ "Turn Toolbar": "หมุนแถบเครื่องมือ",
+ "All tools": "เครื่องมือทั้งหมด",
+ "Fold the options": "พับตัวเลือก",
+ "Full screen": "เต็มจอ",
+ "Inspector": "ตัวตรวจสอบ",
+ "Intensity": "ความแรง",
+ "No object selected": "ไม่ได้เลือกวัตถุ",
+ "Orange clay": "ดินเหนียวสีส้ม",
+ "Panel layout": "เลย์เอาต์แบบแผง",
+ "Remesh": "สร้างเมชใหม่",
+ "Resolution": "ความละเอียด",
+ "Sym": "สมมาตร",
+ "Thicken thin parts": "เพิ่มความหนาส่วนที่บาง",
+ "Voxel": "วอกเซล"
 }
