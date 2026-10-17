@@ -1011,5 +1011,9 @@
  "Quality": "Качество",
  "Speed": "Скорость",
  "Subdivide and collapse": "Деление и слияние",
- "Subdivide only": "Только деление"
+ "Subdivide only": "Только деление",
+ "Density from paint": "Плотность по раскраске",
+ "Field Remesh": "Ремеш по полю",
+ "Field remesh": "Ремеш по полю",
+ "Hard angle": "Угол жёсткого ребра"
 }

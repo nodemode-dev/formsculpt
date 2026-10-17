@@ -1011,5 +1011,9 @@
  "Quality": "质量",
  "Speed": "速度",
  "Subdivide and collapse": "细分并合并",
- "Subdivide only": "仅细分"
+ "Subdivide only": "仅细分",
+ "Density from paint": "按绘制决定密度",
+ "Field Remesh": "场向重构网格",
+ "Field remesh": "场向重构网格",
+ "Hard angle": "硬边角度"
 }

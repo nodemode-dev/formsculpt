@@ -1011,5 +1011,9 @@
  "Quality": "Laatu",
  "Speed": "Nopeus",
  "Subdivide and collapse": "Jaa ja yhdistä",
- "Subdivide only": "Vain jaa"
+ "Subdivide only": "Vain jaa",
+ "Density from paint": "Tiheys maalista",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Terävä kulma"
 }

@@ -1011,5 +1011,9 @@
  "Quality": "Chất lượng",
  "Speed": "Tốc độ",
  "Subdivide and collapse": "Chia nhỏ và gộp",
- "Subdivide only": "Chỉ chia nhỏ"
+ "Subdivide only": "Chỉ chia nhỏ",
+ "Density from paint": "Mật độ theo màu vẽ",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Góc cạnh cứng"
 }

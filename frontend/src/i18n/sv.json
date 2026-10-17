@@ -1011,5 +1011,9 @@
  "Quality": "Kvalitet",
  "Speed": "Hastighet",
  "Subdivide and collapse": "Dela upp och slå ihop",
- "Subdivide only": "Bara dela upp"
+ "Subdivide only": "Bara dela upp",
+ "Density from paint": "Täthet från målning",
+ "Field Remesh": "Fält-remesh",
+ "Field remesh": "Fält-remesh",
+ "Hard angle": "Skarp vinkel"
 }

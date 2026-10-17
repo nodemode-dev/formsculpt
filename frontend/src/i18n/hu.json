@@ -1011,5 +1011,9 @@
  "Quality": "Minőség",
  "Speed": "Sebesség",
  "Subdivide and collapse": "Felosztás és összevonás",
- "Subdivide only": "Csak felosztás"
+ "Subdivide only": "Csak felosztás",
+ "Density from paint": "Sűrűség a festésből",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Éles él szöge"
 }

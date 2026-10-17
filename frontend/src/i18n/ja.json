@@ -1011,5 +1011,9 @@
  "Quality": "品質",
  "Speed": "速度",
  "Subdivide and collapse": "分割と結合",
- "Subdivide only": "分割のみ"
+ "Subdivide only": "分割のみ",
+ "Density from paint": "ペイントから密度",
+ "Field Remesh": "フィールドリメッシュ",
+ "Field remesh": "フィールドリメッシュ",
+ "Hard angle": "ハードエッジ角度"
 }

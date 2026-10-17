@@ -1011,5 +1011,9 @@
  "Quality": "품질",
  "Speed": "속도",
  "Subdivide and collapse": "분할 및 병합",
- "Subdivide only": "분할만"
+ "Subdivide only": "분할만",
+ "Density from paint": "페인트로 밀도 지정",
+ "Field Remesh": "필드 리메시",
+ "Field remesh": "필드 리메시",
+ "Hard angle": "하드 엣지 각도"
 }

@@ -1011,5 +1011,9 @@
  "Quality": "Qualità",
  "Speed": "Velocità",
  "Subdivide and collapse": "Suddividi e collassa",
- "Subdivide only": "Solo suddividi"
+ "Subdivide only": "Solo suddividi",
+ "Density from paint": "Densità dalla pittura",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Angolo spigolo vivo"
 }

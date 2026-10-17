@@ -1011,5 +1011,9 @@
  "Quality": "Jakość",
  "Speed": "Szybkość",
  "Subdivide and collapse": "Podział i scalanie",
- "Subdivide only": "Tylko podział"
+ "Subdivide only": "Tylko podział",
+ "Density from paint": "Gęstość z malowania",
+ "Field Remesh": "Remesh polowy",
+ "Field remesh": "Remesh polowy",
+ "Hard angle": "Kąt ostrej krawędzi"
 }

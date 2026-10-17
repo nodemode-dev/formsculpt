@@ -1011,5 +1011,9 @@
  "Quality": "Kwaliteit",
  "Speed": "Snelheid",
  "Subdivide and collapse": "Onderverdelen en samenvoegen",
- "Subdivide only": "Alleen onderverdelen"
+ "Subdivide only": "Alleen onderverdelen",
+ "Density from paint": "Dichtheid uit verf",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Hoek scherpe rand"
 }

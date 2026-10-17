@@ -1011,5 +1011,9 @@
  "Quality": "Kalite",
  "Speed": "Hız",
  "Subdivide and collapse": "Böl ve birleştir",
- "Subdivide only": "Yalnızca böl"
+ "Subdivide only": "Yalnızca böl",
+ "Density from paint": "Boyadan yoğunluk",
+ "Field Remesh": "Field Remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Sert kenar açısı"
 }

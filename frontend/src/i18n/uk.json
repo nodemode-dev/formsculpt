@@ -1011,5 +1011,9 @@
  "Quality": "Якість",
  "Speed": "Швидкість",
  "Subdivide and collapse": "Поділ і злиття",
- "Subdivide only": "Лише поділ"
+ "Subdivide only": "Лише поділ",
+ "Density from paint": "Щільність за розфарбуванням",
+ "Field Remesh": "Ремеш за полем",
+ "Field remesh": "Ремеш за полем",
+ "Hard angle": "Кут жорсткого ребра"
 }

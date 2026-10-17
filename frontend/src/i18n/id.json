@@ -1011,5 +1011,9 @@
  "Quality": "Kualitas",
  "Speed": "Kecepatan",
  "Subdivide and collapse": "Bagi dan gabungkan",
- "Subdivide only": "Hanya bagi"
+ "Subdivide only": "Hanya bagi",
+ "Density from paint": "Kepadatan dari cat",
+ "Field Remesh": "Field Remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Sudut tepi tajam"
 }

@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.53.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.61.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -10,7 +10,7 @@ Generated from the engine's command registry (formsculptor 0.53.0) by `./formscu
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
-- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `insert_edge_loop`, `delete_faces`, `bridge`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
@@ -396,6 +396,9 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `connected_only`: boolean; default false; Only vertices joined by mesh edges to the vertex nearest the dab centre, without leaving the brush sphere, are affected, so a brush on one finger does not touch the next.
 - `depth`: number; default 0; range 0 to 10000; World units; 0 is off. Vertices more than this far below the dab's area plane (along minus the area normal) are untouched, easing over the last 20%, so a brush does not reach through a thin part. The plane is taken from the vertices under the dab whose normals agree with the nearest one's (so the far side of a thin part does not tilt it).
 - `dyntopo`: ['number', 'boolean']; Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels.
+- `dyntopo_method`: string (subdivide | collapse | both); default "both"; With dyntopo: subdivide only splits long edges (detail is only ever added), collapse only merges short ones (the brush thins out over-dense areas), both does each.
+- `dyntopo_mode`: string (speed | balanced | quality); default "balanced"; With dyntopo: speed refines once per dab and does not even out the new triangles (fastest, rougher); balanced refines twice and evens twice; quality four times each (smoothest, slowest).
+- `dyntopo_protect_mask`: boolean; default false; With dyntopo: never split an edge with a masked end, so masked areas keep their triangles as well as their shape.
 - `dyntopo_size`: number; range -inf to 10000; Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction.
 - `emissive`: number; range 0 to 1; Paint brush: paint this glow in the paint colour.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
@@ -698,6 +701,31 @@ Manual retopology: add one quad (four corners) or triangle (three) to a retopolo
 - `target`: integer; required; range 1 to inf; The sculpt to retopologize; the points snap onto its surface.
 - `weld`: number; range -inf to 100; Corners within this distance of an existing vertex reuse it, so faces join; 1.5 percent of the target's size when omitted.
 
+## retopo_patch
+
+Retopology patch library: lay a ready-made quad patch onto the sculpt in one step instead of face by face. grid (columns by rows), strip (one row), eye_loop (rings of quads around an almond opening), mouth_loop (rings around a wider, flatter opening) and disc (rings closed by a fan of quads; 10 points around make a five-edge pole). The patch is centred at center, half as wide as size (6 percent of the target's bounding diagonal by default), its top toward up (world up by default; the window sends the screen's up) and turned by angle; each point drops onto the surface along the normal and welds to retopology vertices already within weld, so patches and retopo_face quads join into one object, and every quad faces out. The first call makes the object; pass its id as into after that. One undo step.
+
+- `angle`: number; default 0; range -360 to 360; A further turn about the surface normal, in degrees.
+- `center`: array of number; required; A point on or near the target's surface where the patch's middle goes.
+- `columns`: integer; range 1 to 64; grid and strip: quads across (default 4). Loops and disc: points around (even, default 12).
+- `into`: integer; range 1 to inf; The retopology object to add to (from retopo_face or an earlier patch); a new one when omitted.
+- `patch`: string (grid | strip | eye_loop | mouth_loop | disc); required; grid: columns by rows of quads; strip: a single row; eye_loop: rings of quads around an almond opening (an eye socket); mouth_loop: rings around a wider, flatter opening; disc: rings closed in the middle by a fan of quads (the centre is a pole of points / 2 edges, so 10 points make a five-edge pole).
+- `rows`: integer; range 1 to 64; grid: quads up (default 4). Loops and disc: rings (default 3).
+- `size`: number; range -inf to 1000; Half the patch's width in world units; 6 percent of the target's size (its bounding diagonal) when omitted.
+- `target`: integer; required; range 1 to inf; The sculpt to retopologize; the patch is laid onto its surface.
+- `up`: array of number; Which way the patch's top points, flattened onto the surface (the window sends the screen's up); world up when omitted.
+- `weld`: number; range -inf to 100; Patch points within this distance of an existing retopology vertex reuse it, so patches join; when omitted, 1.5 percent of the target's size or a quarter of the patch's shortest edge, whichever is smaller.
+
+## get_wire
+
+An object's edges as segments (end points a and b) for drawing a wireframe: a quad mesh's quad edges without diagonals, else its triangle edges, at most 20000 (total gives the full count). Given eye (a camera position) each says whether occluder (the sculpt under a retopology object; the object itself by default) hides it from there. The window draws the retopology object's wire with it while a Retopo tool is on. Read-only.
+
+- `eye`: array of number; A camera position; each edge then says whether it is in view from there.
+- `id`: integer; range 1 to inf; The object whose edges to list (a retopology object); the active object when omitted.
+- `occluder`: integer; range 1 to inf; The object that can hide the edges (the sculpt under a retopology object); the object itself when omitted.
+
+Note: read-only.
+
 ## insert_edge_loop
 
 Insert an edge loop into a quad mesh: the ring of quads crossing the edge nearest point is split down the middle all the way around (or to an open border), for more detail where a joint bends or a crease runs. Needs quads (quad_remesh or retopo_face first). One undo step.
@@ -720,6 +748,60 @@ Bridge two open borders with a band of quads (segments rows), joining them into 
 - `near_a`: array of number; A point near the first border, when the object has more than two.
 - `near_b`: array of number; A point near the second border.
 - `segments`: integer; default 4; range 1 to 64; Rows of quads along the bridge.
+
+## poly_pick
+
+ZModeler aiming on a quad mesh: the face under a point or ray, its edge nearest the point and its nearest corner, with their positions and whether the edge is an open border (hit false when a ray misses). The window draws its hover highlight from it. Read-only.
+
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
+- `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
+
+Note: read-only.
+
+## get_creases
+
+The object's creased edges as segments (end points a and b) with the object's revision; given eye (a camera position) each says whether it is in view from there. The window draws them while the ZModeler tool is on. Read-only.
+
+- `eye`: array of number; A camera position; each crease then says whether the object hides its middle from there.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+
+Note: read-only.
+
+## zmodel_edge
+
+ZModeler edge actions on a quad mesh, aimed by point or ray at the edge nearest it: insert puts an edge loop across the ring of quads through that edge at fraction at (0.5 is the middle; measured from the same side all round); extrude pulls an open-border edge out in its face's plane as a new quad (distance, default the edge's length); close fills the hole that border edge belongs to with quads (one quad for four sides, a fan around a centre for more; an even number of sides); crease and uncrease mark the edge to stay sharp under subdivision (multires_divide, subdivide, the smooth preview) or clear it, keeping UVs; align straightens the edge loop through the edge (an open loop onto the line between its ends, a closed loop onto its best-fit plane) and slide moves that loop toward the aimed face's side by amount (both keep UVs and record into an active sculpt layer; the loop runs through four-edge corners and stops at poles and borders). insert with crease true creases the new loop (auto-crease), and a creased edge the loop splits stays creased. Creases are saved in projects. The mesh stays all quads; UVs and textures are dropped as for any topology change. One undo step.
+
+- `action`: string (insert | extrude | close | crease | uncrease | align | slide); required; insert: an edge loop across the ring of quads through the edge, at fraction at; extrude: an open-border edge pulled out in its face's plane by distance as a new quad; close: the hole the border edge belongs to filled with quads (an even number of sides); crease and uncrease: mark the edge to stay sharp under subdivision, or clear it; align: the edge loop through the edge straightened (open loop, onto the line between its ends) or flattened (closed loop, onto its best-fit plane); slide: that edge loop moved toward the side of the aimed face by amount.
+- `amount`: number; default 0.25; range 0 to 0.95; slide: how far each loop vertex moves toward its neighbour on the aimed face's side, as a share of that edge.
+- `at`: number; default 0.5; range 0.02 to 0.98; insert: where the loop crosses each quad, from one side of the ring to the other.
+- `crease`: boolean; default false; insert: crease the new loop's edges (auto-crease).
+- `distance`: number; range -1000 to 1000; extrude: how far, in world units; the edge's own length when omitted.
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
+- `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
+
+## zmodel_face
+
+ZModeler face actions on a quad mesh, aimed by point or ray at the face under it: inset (a smaller face inside with a ring of quads; inset 0.25 by default), extrude (the face lifted along its normal with four walls; height defaults to the face's side length, negative pushes in; inset and height can be combined) or delete (opens the mesh there). crease true on inset or extrude creases the inner face's edges and the original outline (auto-crease). One undo step.
+
+- `action`: string (inset | extrude | delete); required; inset: a smaller face inside the face with a ring of quads around it; extrude: the face lifted along its normal with walls; delete: the face removed, opening the mesh.
+- `crease`: boolean; default false; inset and extrude: crease the inner face's edges and the original outline (auto-crease).
+- `height`: number; range -1000 to 1000; How far the inner face moves along the face normal in world units (0 for inset; the face's mean side length for extrude when omitted); negative pushes in.
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `inset`: number; range 0 to 0.95; How far the inner face shrinks toward the centre (0.25 for inset, 0 for extrude when omitted).
+- `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
+- `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
+
+## zmodel_point
+
+ZModeler point actions on a quad mesh, aimed by point or ray at the nearest corner of the face under it: slide moves that corner toward `to`, kept in its tangent plane so the surface does not lift (recorded into the active sculpt layer when there is one); crease and uncrease mark every quad edge meeting that corner to stay sharp under subdivision, or clear them. One undo step.
+
+- `action`: string (slide | crease | uncrease); required; slide: the nearest corner moved toward `to`, kept in the plane of its normal so the surface around it does not lift; crease and uncrease: every quad edge meeting the corner kept sharp under subdivision, or cleared.
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `point`: array of number; A point on or near the surface, in object space (from pick); the face under it, its nearest edge and nearest corner are the targets.
+- `ray`: object; A ray in object space instead of point; the first face it hits.; fields dir, origin
+- `to`: array of number; slide: where the corner goes, in object space (projected onto its tangent plane).
 
 ## send_to_substance
 
@@ -1140,10 +1222,13 @@ Note: in the window: Mod+R.
 
 ## decimate
 
-Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. The mask is cleared.
+Reduce an object's triangle count while keeping its shape (quadric error edge collapse), by ratio or to a target count; borders are kept by default. preserve_paint carries paint exactly and keeps colour boundaries crisp; preserve_groups keeps face groups and their borders; preserve_uvs keeps UVs and a painted texture (seam vertices stay). Hidden faces stay hidden. With groups or seams kept the target may not be reached (triangles gives the count reached). The mask is cleared.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `preserve_borders`: boolean; default true
+- `preserve_groups`: boolean; default false; Keep face groups on the faces that remain and hold the borders between groups in place, as open borders are held.
+- `preserve_paint`: boolean; default false; Carry each kept vertex's paint exactly and collapse edges across a colour change last, so painted boundaries stay crisp (without it the paint is transferred from the old surface afterwards).
+- `preserve_uvs`: boolean; default false; Keep UVs (and so a painted texture): vertices on a UV seam do not move, the rest carry their UV to where they collapse. Without it UVs and textures are dropped.
 - `ratio`: number; default 0.5; range -inf to 1; Fraction of triangles to keep.
 - `triangles`: integer; range 4 to inf; Target triangle count; overrides ratio.
 
@@ -1169,6 +1254,16 @@ Rebuild an object as an even, quad-dominant mesh near a target face count: quads
 - `guides`: array of array; Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `relax`: integer; default 6; range 0 to 30; Smoothing passes that even out the quads while staying on the original surface.
+
+## field_remesh
+
+Rebuild an object as all quads whose edge loops follow its form: a smoothed direction field (four-way, like Instant Meshes) runs along the curvature and the hard edges, a position field lays a lattice on it, and the lattice is read off as polygons split into quads. Hard edges above hard_angle keep their loops; density_from_paint reads red as finer and blue as coarser. Small gaps near the field's singular points are closed on watertight objects; open_edges in the reply counts any left. Slower than quad_remesh. One undo step; the mask is cleared, paint is carried over.
+
+- `density_from_paint`: boolean; default false; Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even.
+- `faces`: integer; default 2000; range 100 to 200000; Target number of quads (the result lands near it, more where the form is busy).
+- `hard_angle`: number; default 40; range 1 to 180; Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `iterations`: integer; default 40; range 4 to 200; Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer.
 
 ## project_detail
 

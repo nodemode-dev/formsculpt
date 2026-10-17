@@ -1011,5 +1011,9 @@
  "Quality": "Kvalita",
  "Speed": "Rychlost",
  "Subdivide and collapse": "Dělit i slučovat",
- "Subdivide only": "Jen dělit"
+ "Subdivide only": "Jen dělit",
+ "Density from paint": "Hustota podle barvy",
+ "Field Remesh": "Field remesh",
+ "Field remesh": "Field remesh",
+ "Hard angle": "Úhel ostré hrany"
 }
