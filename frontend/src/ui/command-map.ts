@@ -130,6 +130,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     'Decimate 50%': n('topo.decimate', 'Decimate 50%'),
     'Fill holes': n('topo.fill_holes', 'Fill Holes'),
     'Quad remesh': n('topo.quad_remesh', 'Quad Remesh'),
+    'Field remesh': n('topo.field_remesh', 'Field Remesh'),
     'Delete masked faces': n('topo.delete_faces', 'Delete Masked Faces'),
     'Bridge borders': n('topo.bridge', 'Bridge Borders'),
     Divide: n('multires.divide', 'Multires Divide', { keys: ['Mod+D'] }),

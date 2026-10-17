@@ -61,7 +61,7 @@ const MASK: MenuItem[] = [
 ];
 
 const TOPOLOGY: MenuItem[] = [
-  'topo.subdivide', 'topo.remesh_voxel', 'topo.decimate', 'topo.fill_holes', 'topo.quad_remesh', 'topo.delete_faces', 'topo.bridge', 'topo.bevel', 'topo.project', 'topo.check', '-',
+  'topo.subdivide', 'topo.remesh_voxel', 'topo.decimate', 'topo.fill_holes', 'topo.quad_remesh', 'topo.field_remesh', 'topo.delete_faces', 'topo.bridge', 'topo.bevel', 'topo.project', 'topo.check', '-',
   ...tool('retopo', 'edge_loop', 'bevel_edge', 'clip', 'cut', 'trim_shape', 'trim_curve', 'zsphere'), '-',
   { label: 'Multires', items: ['multires.divide', 'multires.higher', 'multires.lower', 'multires.delete_lower', 'multires.delete_higher', 'multires.reconstruct'] },
 ];

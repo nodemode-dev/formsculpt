@@ -597,3 +597,9 @@ The engine's decimate options default off so agents' existing calls behave as be
 - kind: rationale
 - logged: v0.61.0 · 2026-10-17
 The three ride in strokeOptions, the bag every live stroke and replayed stroke already carries, and only while Dyntopo is on and only when they differ from the engine's defaults (balanced, both, off), so a stroke made with the defaults sends exactly what it sent before.
+
+### Field remesh in the Topology section
+- refers-to: app.ts :: TOPOLOGY (field_remesh), fieldHardAngle, fieldDensity, the topoButtons handler; ui/command-map.ts; ui/menus.ts
+- kind: rationale
+- logged: v0.62.0 · 2026-10-17
+Field remesh shares Target quads with Quad remesh rather than adding a second count, clamped to the field's own range (100 to 200000, against 400000 for the voxel one, since the field works on an upsampled copy). Its two own fields sit with the other topology options: Hard angle (40 like the engine) and Density from paint (off). The registry entry reaches the Topology menu and the palette through the command map like every other button.

@@ -107,6 +107,8 @@ interface Shell {
   decimatePaint: HTMLInputElement;
   decimateGroups: HTMLInputElement;
   decimateUvs: HTMLInputElement;
+  fieldHardAngle: HTMLInputElement;
+  fieldDensity: HTMLInputElement;
   zmodelAt: HTMLInputElement;
   zmodelCrease: HTMLInputElement;
   zmodelAmount: HTMLInputElement;
@@ -408,6 +410,7 @@ const TOPOLOGY: [string, string, Record<string, unknown>][] = [
   ['decimate', 'Decimate 50%', { ratio: 0.5 }],
   ['fill_holes', 'Fill holes', {}],
   ['quad_remesh', 'Quad remesh', {}],
+  ['field_remesh', 'Field remesh', {}],
   ['delete_faces', 'Delete masked faces', { which: 'masked' }],
   ['bridge', 'Bridge borders', { segments: 4 }],
 ];
@@ -1087,6 +1090,10 @@ function buildShell(root: HTMLElement): Shell {
   const decimateUvs = input('checkbox', { 'aria-label': 'Decimate keeps UVs' });
   for (const c of [decimatePaint, decimateGroups, decimateUvs]) c.checked = true;
   topoFields.append(field('Keep paint', decimatePaint), field('Keep groups', decimateGroups), field('Keep UVs', decimateUvs));
+  // Field remesh: the angle above which an edge is hard (its loops follow it), and paint read as density.
+  const fieldHardAngle = input('number', { min: '1', max: '180', value: '40', 'aria-label': 'Hard angle' });
+  const fieldDensity = input('checkbox', { 'aria-label': 'Density from paint' });
+  topoFields.append(field('Hard angle', fieldHardAngle), field('Density from paint', fieldDensity));
   // Values are target.action, in the characters the string extractor reads as option values, so the labels translate.
   const zmodelAction = choices('ZModeler action', [['edge.insert', 'Insert edge loop'], ['edge.extrude', 'Extrude edge'], ['edge.close', 'Close hole'], ['face.inset', 'Inset face'], ['face.extrude', 'Extrude face'], ['face.delete', 'Delete face'], ['edge.crease', 'Crease edge'], ['edge.uncrease', 'Uncrease edge'], ['point.crease', 'Crease point'], ['point.uncrease', 'Uncrease point'], ['edge.align', 'Align edge loop'], ['edge.slide', 'Slide edge loop'], ['point.slide', 'Slide point']]);
   const zmodelAt = input('range', { min: '5', max: '95', value: '50', 'aria-label': 'Loop position' });
@@ -1404,7 +1411,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, envBackground, envBlur, envInput, envLoad, postSsao, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean };
 }
 
 class SceneView {
@@ -1583,6 +1590,13 @@ class SceneView {
         const args = JSON.parse(b.dataset.args ?? '{}') as Record<string, unknown>;
         if (b.dataset.action === 'remesh_voxel') args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
         if (b.dataset.action === 'quad_remesh') args.faces = Math.max(100, Math.min(400000, Number(shell.quadTarget.value) || 4000));
+        if (b.dataset.action === 'field_remesh') {
+          Object.assign(args, {
+            faces: Math.max(100, Math.min(200000, Number(shell.quadTarget.value) || 2000)),
+            hard_angle: Math.max(1, Math.min(180, Number(shell.fieldHardAngle.value) || 40)),
+            density_from_paint: shell.fieldDensity.checked,
+          });
+        }
         if (b.dataset.action === 'decimate') Object.assign(args, { preserve_paint: shell.decimatePaint.checked, preserve_groups: shell.decimateGroups.checked, preserve_uvs: shell.decimateUvs.checked });
         void this.run(b.dataset.action ?? 'mesh_check', args);
       }),
