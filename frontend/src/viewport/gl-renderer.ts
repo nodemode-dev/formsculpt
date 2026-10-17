@@ -245,6 +245,7 @@ void main() {
 
 export const SHADINGS: Record<string, { lit: boolean; cap: [number, number, number, number]; tint: [number, number, number] }> = {
   clay: { lit: false, cap: [0.75, 0.45, 6, 0.35], tint: [1, 1, 1] },
+  terracotta: { lit: false, cap: [0.95, 0.4, 7, 0.3], tint: [1.08, 0.74, 0.46] },
   wax: { lit: false, cap: [0.85, 0.7, 10, 0.2], tint: [1.0, 0.55, 0.5] },
   pearl: { lit: false, cap: [0.6, 0.6, 4, 0.7], tint: [1.0, 0.97, 0.95] },
   bronze: { lit: false, cap: [0.45, 0.9, 14, 0.25], tint: [0.85, 0.6, 0.38] },
@@ -639,6 +640,9 @@ export class GlRenderer {
   /** Image matcaps by name (`img:<file>`), sampled with the view-space normal. */
   private matcaps = new Map<string, WebGLTexture>();
 
+  /** Draws every object in the active object's clay instead of the others in a neutral grey (the tablet layout). */
+  oneClay = false;
+
   /** Shades the whole view (clearing per-object choices), or only the object `id` when given. */
   setShading(name: string, id?: number): void {
     if (id === undefined) {
@@ -879,7 +883,7 @@ export class GlRenderer {
       gl.uniform3f(tint, ...s.tint);
       gl.uniform1f(image, tex ? 1 : 0);
       gl.bindTexture(gl.TEXTURE_2D, tex ?? this.blank);
-      if (id === this.active) gl.uniform3f(base, 0.86, 0.74, 0.66);
+      if (id === this.active || this.oneClay) gl.uniform3f(base, 0.86, 0.74, 0.66);
       else gl.uniform3f(base, 0.72, 0.7, 0.68);
       if (m.checker) {
         gl.uniform1f(painted, 1);

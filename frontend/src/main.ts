@@ -1,6 +1,7 @@
 import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/shell.css';
+import './styles/tablet.css';
 import './styles/menu.css';
 import { start } from './app';
 import { startLanguage, startPageTranslator } from './ui/i18n';

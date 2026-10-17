@@ -18,7 +18,7 @@ import { hexColor, type LightSpec } from './viewport/gl-renderer';
 import type { ViewName } from './viewport/camera';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
-import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet';
+import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
@@ -916,7 +916,7 @@ function buildShell(root: HTMLElement): Shell {
   const paintEmissive = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Paint emissive' });
   const shading = el('select');
   shading.setAttribute('aria-label', 'Shading');
-  for (const [value, label] of [['clay', 'Clay matcap'], ['wax', 'Red wax'], ['pearl', 'Pearl'], ['bronze', 'Bronze'], ['gray', 'Gray'], ['pbr', 'Lit (PBR)']]) {
+  for (const [value, label] of [['clay', 'Clay matcap'], ['terracotta', 'Orange clay'], ['wax', 'Red wax'], ['pearl', 'Pearl'], ['bronze', 'Bronze'], ['gray', 'Gray'], ['pbr', 'Lit (PBR)']]) {
     const option = el('option', '', label);
     option.value = value;
     shading.append(option);
@@ -1439,6 +1439,9 @@ function buildShell(root: HTMLElement): Shell {
     brushButtons,
     radius,
     strength,
+    voxelResolution: resolution,
+    voxelThicken: thicken,
+    history: historyList,
     options: (tool) => {
       const list = (pairs: [string, TabletControl][]): TabletOption[] => pairs.map(([label, control]) => ({ label, control }));
       if (tool === 'tube' || tool === 'curve') return list([['Closed path', curveClosed], ['Mirror X', symX], ['Path shape', curveInterp], ['Corner round', curveRound], ['Tube radius', tubeRadius], ['Tube ends', tubeCap], ['Pipe wall', tubeHole], ['Tube profile', tubeProfile], ['Apply curve', curveButtons[1]], ['Clear curve', curveButtons[2]]]);
@@ -1659,6 +1662,7 @@ class SceneView {
     shell.uvChecker.addEventListener('change', () => void this.syncChecker());
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     this.wireBackdrop();
+    this.wireTablet();
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
     shell.historyList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
@@ -2069,6 +2073,55 @@ class SceneView {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
   }
 
+  /** Re-applies the backdrop from its controls (and the tablet layout's black when it is on); set by wireBackdrop. */
+  private applyBackdrop: () => void = () => undefined;
+  /** The floor grid's state before the tablet layout turned it off, to give back when it is left. */
+  private gridBeforeTablet: boolean | null = null;
+
+  /**
+   * The tablet layout's look and readouts: the viewport on black and the orange clay shading while it is on (both given
+   * back when it is left, the floor grid too), the scene's counts under its top left bar and the camera for its cube.
+   */
+  private wireTablet(): void {
+    const s = this.shell;
+    const tablet = s.tablet;
+    tablet.statsOf = () => {
+      const objects = this.scene.objects.filter((o) => o.visible);
+      const active = this.scene.objects.find((o) => o.id === this.scene.active) ?? null;
+      return {
+        vertices: objects.reduce((n, o) => n + o.vertices, 0),
+        triangles: objects.reduce((n, o) => n + o.triangles, 0),
+        active: active ? { name: active.name, vertices: active.vertices } : null,
+      };
+    };
+    tablet.camera = () => ({ yaw: this.viewport.camera.yaw, pitch: this.viewport.camera.pitch });
+    const shade = (value: string): void => {
+      s.shading.value = value;
+      s.shading.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const grid = (on: boolean): void => {
+      if (s.floorGrid.checked === on) return;
+      s.floorGrid.checked = on;
+      s.floorGrid.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    tablet.onToggle = (on) => {
+      if (on) {
+        if (s.shading.value === 'clay') shade('terracotta');
+        if (this.gridBeforeTablet === null) this.gridBeforeTablet = s.floorGrid.checked;
+        grid(false);
+      } else {
+        if (s.shading.value === 'terracotta') shade('clay');
+        if (this.gridBeforeTablet !== null) grid(this.gridBeforeTablet);
+        this.gridBeforeTablet = null;
+      }
+      // At start-up this runs before the shading select's listener is attached, so the shading is applied here too.
+      this.viewport.renderer.oneClay = on;
+      this.applyShading();
+      this.applyBackdrop();
+    };
+    if (tablet.enabled) tablet.onToggle(true);
+  }
+
   /** The backdrop controls: the theme's gradient until the person changes it, then their choice, kept in this browser. */
   private wireBackdrop(): void {
     const s = this.shell;
@@ -2094,6 +2147,14 @@ class SceneView {
       b.vignette = Number(s.backdropVignette.value) / 100;
       b.grid = s.floorGrid.checked;
       this.viewport.renderer.setClearColor(s.backdropBottom.value);
+      // The tablet layout draws the viewport on black, whatever the backdrop controls say (they are kept for later).
+      if (s.tablet.enabled) {
+        b.mode = 'color';
+        b.top = [0, 0, 0];
+        b.bottom = [0, 0, 0];
+        b.vignette = 0;
+        this.viewport.renderer.setClearColor('#000000');
+      }
       this.viewport.invalidate();
       scheduleChrome();
       if (!persist) return;
@@ -2105,6 +2166,7 @@ class SceneView {
     };
     for (const c of [s.backdropTop, s.backdropBottom, s.backdropMid, s.backdropVignette]) c.addEventListener('input', () => apply(true));
     for (const c of [s.backdropMode, s.floorGrid]) c.addEventListener('change', () => apply(true));
+    this.applyBackdrop = () => apply(false);
     apply(false);
   }
 
