@@ -6,7 +6,7 @@ Generated from the engine's command registry (formsculptor 0.76.0) by `./formscu
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
-- Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
+- Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `save_view`, `list_views`, `delete_view`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
@@ -49,6 +49,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `pitch`: number; range -90 to 90; Degrees above the horizon; overrides view.
 - `render`: string (preview | path); default "preview"; preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise).
 - `samples`: integer; default 32; range 1 to 1024; Path render: paths per pixel; 32 is a quick look, 256 a clean final image.
+- `saved`: string; Look from a saved view's direction (save_view, list_views); overrides view.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
 - `sun`: boolean; default true; Path render: keep the window's key light.
@@ -96,6 +97,33 @@ Undo history movie: render the model at every step of the undo history from the 
 - `size`: integer; default 384; range 64 to 1024
 - `turn`: number; default 0; range -720 to 720; Degrees the camera turns over the whole movie, so the build is seen from around it.
 - `view`: string (front | back | left | right | top | bottom | three_quarter); default "three_quarter"
+
+## save_view
+
+Keep a camera view by name with the scene (orbit target, distance, yaw and pitch in degrees, orthographic): saved in projects, listed by list_views, looked through with get_view's saved argument, and recalled in the window. Saving under a name already used replaces that view. Not an undo step.
+
+- `distance`: number; required; range 0 to inf; The eye's distance from the target.
+- `name`: string; required; The view's name; saving under a name already used replaces that view.
+- `ortho`: boolean; default false
+- `pitch`: number; required; range -90 to 90; Degrees above the horizon.
+- `target`: array of number; required; The orbit target in world space.
+- `yaw`: number; required; Degrees around the vertical axis from the front.
+
+## list_views
+
+The scene's saved camera views, in the order they were saved, each with its name, target, distance, yaw, pitch and orthographic.
+
+- no parameters
+
+Note: read-only.
+
+## delete_view
+
+Remove a saved camera view by name. Not an undo step.
+
+- `name`: string; required; The saved view to delete.
+
+Note: removes or replaces (undoable).
 
 ## pick
 

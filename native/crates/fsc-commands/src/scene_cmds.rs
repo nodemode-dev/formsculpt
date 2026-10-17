@@ -94,6 +94,8 @@ pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandErro
     Ok(json!({
         "objects": s.scene.objects.iter().map(summary).collect::<Vec<_>>(),
         "active": s.scene.active,
+        // The saved views' names, in order (list_views has the cameras).
+        "views": s.scene.views.iter().map(|v| v.name.clone()).collect::<Vec<_>>(),
     }))
 }
 

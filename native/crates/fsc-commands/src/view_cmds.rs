@@ -17,6 +17,7 @@ pub(crate) fn view_schema() -> Value {
         "type": "object",
         "properties": {
             "view": {"type": "string", "enum": VIEWS.iter().map(|v| v.0).collect::<Vec<_>>(), "default": "three_quarter", "description": "Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z."},
+            "saved": {"type": "string", "minLength": 1, "description": "Look from a saved view's direction (save_view, list_views); overrides view."},
             "yaw": {"type": "number", "minimum": -360, "maximum": 360, "description": "Degrees around the vertical axis from the front; overrides view."},
             "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees above the horizon; overrides view."},
             "width": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 640},
@@ -316,9 +317,91 @@ pub(crate) fn get_view(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     Ok(facts)
 }
 
+pub(crate) fn save_view_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 60, "description": "The view's name; saving under a name already used replaces that view."},
+            "target": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The orbit target in world space."},
+            "distance": {"type": "number", "exclusiveMinimum": 0, "description": "The eye's distance from the target."},
+            "yaw": {"type": "number", "description": "Degrees around the vertical axis from the front."},
+            "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees above the horizon."},
+            "ortho": {"type": "boolean", "default": false}
+        },
+        "required": ["name", "target", "distance", "yaw", "pitch"],
+        "additionalProperties": false
+    })
+}
+
+/// The views as get_scene-style JSON, in order.
+fn views_json(s: &Session) -> Value {
+    json!(s.scene.views.iter().map(|v| json!({"name": v.name, "target": v.target, "distance": v.distance, "yaw": v.yaw, "pitch": v.pitch, "ortho": v.ortho})).collect::<Vec<_>>())
+}
+
+pub(crate) fn save_view(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let name = args.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty() && n.chars().count() <= 60).ok_or_else(|| bad("name must be 1 to 60 characters"))?.to_string();
+    let num = |k: &str| args.get(k).and_then(Value::as_f64).filter(|v| v.is_finite()).map(|v| v as f32).ok_or_else(|| bad(format!("{k} is required")));
+    let t = args.get("target").and_then(Value::as_array).filter(|a| a.len() == 3).ok_or_else(|| bad("target must be [x, y, z]"))?;
+    let mut target = [0f32; 3];
+    for (slot, v) in target.iter_mut().zip(t) {
+        *slot = v.as_f64().filter(|v| v.is_finite()).ok_or_else(|| bad("target must be three numbers"))? as f32;
+    }
+    let distance = num("distance")?;
+    if distance <= 0.0 {
+        return Err(bad("distance must be above 0"));
+    }
+    let view = fsc_core::SavedView { name: name.clone(), target, distance, yaw: num("yaw")?, pitch: num("pitch")?.clamp(-90.0, 90.0), ortho: args.get("ortho").and_then(Value::as_bool).unwrap_or(false) };
+    let replaced = match s.scene.views.iter_mut().find(|v| v.name == name) {
+        Some(v) => {
+            *v = view;
+            true
+        }
+        None => {
+            if s.scene.views.len() >= 64 {
+                return Err(bad("a scene keeps at most 64 saved views; delete one first"));
+            }
+            s.scene.views.push(view);
+            false
+        }
+    };
+    Ok(json!({"name": name, "replaced": replaced, "views": views_json(s)}))
+}
+
+pub(crate) fn list_views(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
+    Ok(json!({"views": views_json(s)}))
+}
+
+pub(crate) fn delete_view_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {"name": {"type": "string", "minLength": 1, "description": "The saved view to delete."}},
+        "required": ["name"],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn delete_view(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let name = args.get("name").and_then(Value::as_str).ok_or_else(|| bad("name is required"))?;
+    let before = s.scene.views.len();
+    s.scene.views.retain(|v| v.name != name);
+    if s.scene.views.len() == before {
+        return Err(bad(format!("there is no saved view named {name}")));
+    }
+    Ok(json!({"deleted": name, "views": views_json(s)}))
+}
+
 fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value), CommandError> {
     let name = args.get("view").and_then(Value::as_str).unwrap_or("three_quarter");
     let &(_, yaw, pitch) = VIEWS.iter().find(|v| v.0 == name).ok_or_else(|| bad(format!("unknown view {name}")))?;
+    // A saved view by name gives the direction (the framing still fits the drawn objects); yaw and pitch still override.
+    let (yaw, pitch) = match args.get("saved").and_then(Value::as_str) {
+        Some(saved) => {
+            let v = s.scene.views.iter().find(|v| v.name == saved).ok_or_else(|| bad(format!("there is no saved view named {saved}; list_views lists them")))?;
+            let yaw = v.yaw.rem_euclid(360.0);
+            (if yaw > 180.0 { yaw - 360.0 } else { yaw }, v.pitch)
+        }
+        None => (yaw, pitch),
+    };
     let yaw = args.get("yaw").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(yaw);
     let pitch = args.get("pitch").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(pitch).clamp(-89.9, 89.9);
     let width = int(args, "width", 640, 64, 2048)?;

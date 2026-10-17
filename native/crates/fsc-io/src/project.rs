@@ -179,7 +179,15 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
         }
         objects.push(entry);
     }
-    let manifest = json!({"format": FORMAT, "version": 1, "engine": fsc_core::engine_version(), "active": scene.active, "objects": objects});
+    let mut manifest = json!({"format": FORMAT, "version": 1, "engine": fsc_core::engine_version(), "active": scene.active, "objects": objects});
+    // Saved camera views ride in the manifest as an optional key, so projects without them (and older readers) are unchanged.
+    if !scene.views.is_empty() {
+        manifest["views"] = json!(scene
+            .views
+            .iter()
+            .map(|v| json!({"name": v.name, "target": v.target, "distance": v.distance, "yaw": v.yaw, "pitch": v.pitch, "ortho": v.ortho}))
+            .collect::<Vec<_>>());
+    }
     w.put("manifest.json", &serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?)?;
     Ok(w.zip.finish().map_err(|e| e.to_string())?.into_inner())
 }
@@ -448,5 +456,18 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         scene.insert(at, o);
     }
     scene.active = manifest["active"].as_u64().map(|a| a as u32).filter(|a| scene.get(*a).is_some());
+    // Saved views: each one read whole or skipped, so a damaged entry never stops the project opening.
+    for v in manifest["views"].as_array().cloned().unwrap_or_default() {
+        let num = |k: &str| v[k].as_f64().filter(|x| x.is_finite()).map(|x| x as f32);
+        let target = v["target"].as_array().filter(|a| a.len() == 3).and_then(|a| {
+            let t: Vec<f32> = a.iter().filter_map(|x| x.as_f64().map(|x| x as f32)).collect();
+            (t.len() == 3).then(|| [t[0], t[1], t[2]])
+        });
+        if let (Some(name), Some(target), Some(distance), Some(yaw), Some(pitch)) = (v["name"].as_str(), target, num("distance"), num("yaw"), num("pitch")) {
+            if distance > 0.0 && !name.is_empty() {
+                scene.views.push(fsc_core::SavedView { name: name.to_string(), target, distance, yaw, pitch, ortho: v["ortho"].as_bool().unwrap_or(false) });
+            }
+        }
+    }
     Ok(scene)
 }

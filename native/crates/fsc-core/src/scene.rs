@@ -152,11 +152,25 @@ impl Object {
     }
 }
 
+/// A camera view kept by name with the scene and saved in projects: the orbit target, the eye's distance from it, its
+/// direction as yaw and pitch in degrees (get_view's convention) and whether the view is orthographic.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SavedView {
+    pub name: String,
+    pub target: [f32; 3],
+    pub distance: f32,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub ortho: bool,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Scene {
     pub objects: Vec<Object>,
     pub active: Option<ObjectId>,
     next_id: ObjectId,
+    /// Named camera views, in the order they were saved (saved in projects, not in the undo history).
+    pub views: Vec<SavedView>,
 }
 
 impl Scene {
