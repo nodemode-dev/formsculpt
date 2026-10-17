@@ -585,3 +585,9 @@ While ZModeler is the tool, creases are one dashed SVG path reprojected every fr
 - kind: rationale
 - logged: v0.59.0 · 2026-10-16
 Retopo patch is a click tool beside Retopo quad and shares its object (retopoInto), so patches and hand-placed quads join into one retopology object; each click sends the clicked point, the screen's up (the patch stands upright on screen), Patch size % of the sculpt's bounding diagonal and the two counts, which switch to 12 around by 3 rings for loops and the disc and 4 by 4 for grids and strips when the kind changes. The retopology object lies on the sculpt and could not be seen, for either tool; while either is on, its wire is drawn over the sculpt as one path from get_wire, hidden edges left out, refetched 150 ms after either object or the camera settles and reprojected every frame, as the crease path is.
+
+### Decimate keeps paint, groups and UVs
+- refers-to: app.ts :: the Keep paint, Keep groups and Keep UVs fields (decimatePaint, decimateGroups, decimateUvs), the topology button handler (decimate)
+- kind: rationale
+- logged: v0.60.0 · 2026-10-17
+The engine's decimate options default off so agents' existing calls behave as before; the window turns all three on by default, since a person pressing Decimate 50% expects the paint, groups and texture they made to still be there. Unchecking Keep UVs is the way to reach the exact target when seams would hold too many vertices.
