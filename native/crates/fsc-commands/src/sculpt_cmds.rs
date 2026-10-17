@@ -666,6 +666,7 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
     let after = summary(object);
     let label = format!("{} Stroke", capital(BrushKind::NAMES[settings.kind as usize]));
     let moved = push_stroke(s, id, label, result);
+    let unchanged = moved.as_u64() == Some(0);
     let mut reply = json!({"object": after, "dabs": dabs, "vertices_changed": moved});
     if settings.texture {
         reply["vertices_changed"] = json!(0);
@@ -673,6 +674,14 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
     }
     if no_layer {
         reply["no_active_layer"] = json!(true);
+    }
+    // A stroke that changes nothing is almost always aimed wrong (points off the surface, or another object than
+    // meant when id is omitted); it is not an error, but the reply says so, so an agent does not take it as done.
+    if !settings.texture && !no_layer && unchanged {
+        let name = after.get("name").and_then(Value::as_str).unwrap_or("the object").to_string();
+        reply["note"] = json!(format!(
+            "the stroke changed nothing on {name} (id {id}): no vertex lies within the radius of its points, or every one there is masked or hidden. Check the id (the active object is used when it is omitted) and take the points from pick on its surface."
+        ));
     }
     Ok(reply)
 }

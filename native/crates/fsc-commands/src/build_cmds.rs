@@ -409,6 +409,10 @@ pub(crate) fn edit_build(s: &mut Session, args: &Value) -> Result<Value, Command
     if object.primitive.as_ref().map(|(_, r)| *r) != Some(object.revision) || object.multires.is_some() || !object.layers.list.is_empty() {
         return Err(CommandError::new("not_editable", format!("the {kind} has been changed since it was made, so its shape is fixed")));
     }
+    // With nothing but the id the build would be remade unchanged and reported as done; say what can be changed.
+    if args.as_object().is_some_and(|m| m.keys().all(|k| k == "id")) {
+        return Err(bad("nothing to change: give new points, move or set_points, or a setting such as radius, radius_end, profile, cap, twist or segments (skeletons: add, drag, spheres or links)"));
+    }
     let mut merged = made.clone();
     for key in ["points", "radius", "segments", "smooth", "closed", "profile", "spheres", "links", "blend", "resolution", "interp", "radius_mode", "radius_end", "sides", "twist", "spiral", "spiral_offset", "cap", "hole"] {
         if let Some(v) = args.get(key) {
