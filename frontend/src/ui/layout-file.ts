@@ -1,6 +1,6 @@
 /**
  * The interface layout as a file: the panel's folds, side, size and pinned rail, the tablet layout switch, the floating
- * toolbars, the shortcut overrides and the second-press setting, so a person can move their arrangement to another
+ * toolbars, the shortcut overrides, the second-press setting and the pen and gamepad bindings, so a person can move their arrangement to another
  * browser or share it. Only these keys are read or written; nothing about the scene is in it.
  */
 
@@ -10,7 +10,7 @@ const FORMAT = 'formsculptor-layout';
 export const TOOL_SWAP_STORE = 'formsculptor.toolswap';
 
 /** The browser storage keys a layout file carries. */
-export const LAYOUT_KEYS = ['formsculptor.layout', 'formsculptor.tablet', TOOLBARS_STORE, 'formsculptor.prefs', TOOL_SWAP_STORE] as const;
+export const LAYOUT_KEYS = ['formsculptor.layout', 'formsculptor.tablet', TOOLBARS_STORE, 'formsculptor.prefs', TOOL_SWAP_STORE, 'formsculptor.bindings'] as const;
 
 /** The layout as kept in this browser, as the text of a layout file. */
 export function exportLayout(version: string): string {

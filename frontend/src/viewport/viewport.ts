@@ -168,9 +168,24 @@ export class Viewport {
       }
       if (this.touches.size > 2) return;
     }
-    this.canvas.setPointerCapture(e.pointerId);
+    try {
+      this.canvas.setPointerCapture(e.pointerId);
+    } catch {
+      // the pointer is already gone (or was never live, as with a synthesised event); the press still counts
+    }
     this.canvas.focus({ preventScroll: true });
-    const sculpt = e.button === 0 && !e.altKey && !e.shiftKey && this.strokes?.enabled();
+    // A pen touching down with its barrel button held, or with its eraser end, draws with the tool bound to that
+    // button's hold (a temporary tool) instead of moving the camera as a right button would.
+    let held = false;
+    if (e.pointerType === 'pen') {
+      const which = e.button === 5 || (e.buttons & 32) !== 0 ? 'eraser' : e.button === 2 || (e.buttons & 2) !== 0 ? 'barrel' : null;
+      if (which) {
+        this.penHeld = which;
+        this.penButtonAt = performance.now();
+        held = this.penHold?.(which, true) ?? false;
+      }
+    }
+    const sculpt = (e.button === 0 || held) && !e.altKey && !e.shiftKey && this.strokes?.enabled();
     // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
     const pending = sculpt && e.pointerType === 'touch';
     this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera' };
@@ -185,6 +200,15 @@ export class Viewport {
   }
 
   private move(e: PointerEvent): void {
+    // The barrel button pressed and let go while the pen hovers (no contact) is reported as a press and a release.
+    if (e.pointerType === 'pen' && !this.drag) {
+      const barrel = (e.buttons & 2) !== 0;
+      if (barrel !== this.hoverBarrel) {
+        this.hoverBarrel = barrel;
+        this.penButtonAt = performance.now();
+        this.penHover?.(barrel);
+      }
+    }
     if (e.pointerType === 'touch' && this.touches.has(e.pointerId)) {
       this.touches.set(e.pointerId, [e.clientX, e.clientY]);
       if (this.gesture && this.touches.size === 2) {
@@ -244,7 +268,24 @@ export class Viewport {
     } else if (this.drag?.mode === 'stroke') this.strokes?.end();
     this.pendingStart = null;
     this.drag = null;
+    if (this.penHeld) {
+      const which = this.penHeld;
+      this.penHeld = null;
+      this.hoverBarrel = false;
+      this.penButtonAt = performance.now();
+      this.penHold?.(which, false);
+    }
   }
+
+  /** Set by the app: the pen's barrel button or eraser end touched down (true) or lifted (false); returns whether a
+   * temporary tool is in use, so the touch sculpts. */
+  penHold: ((which: 'barrel' | 'eraser', down: boolean) => boolean) | null = null;
+  /** Set by the app: the barrel button pressed (true) or let go (false) while the pen hovers. */
+  penHover: ((down: boolean) => void) | null = null;
+  /** When a pen button last changed, so a context menu it raises can be ignored. */
+  penButtonAt = -1e9;
+  private penHeld: 'barrel' | 'eraser' | null = null;
+  private hoverBarrel = false;
 
   private wheel(e: WheelEvent): void {
     e.preventDefault();

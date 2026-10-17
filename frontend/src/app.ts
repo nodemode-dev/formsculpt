@@ -21,6 +21,7 @@ import { LATHES, SKELETONS } from './ui/presets';
 import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
+import { BindingsDialog, InputBindings } from './ui/bindings';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
@@ -1663,6 +1664,7 @@ class SceneView {
     shell.trackball.addEventListener('change', () => this.viewport.camera.setTrackball(shell.trackball.checked));
     this.wireBackdrop();
     this.wireTablet();
+    this.wireInputs();
     shell.canvas.addEventListener('dblclick', (e) => void this.pivot(e));
     shell.historyList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
@@ -2071,6 +2073,50 @@ class SceneView {
 
   stroking(): boolean {
     return this.strokes.active() || this.tube !== null || this.shape !== null;
+  }
+
+  /** Pen buttons and gamepads, with tap against hold (ui/bindings.ts). */
+  private inputs!: InputBindings;
+  private bindingsDialog!: BindingsDialog;
+
+  private wireInputs(): void {
+    this.inputs = new InputBindings({
+      run: (id) => commands.run(id),
+      tool: () => this.brush,
+      orbit: (dx, dy) => {
+        this.viewport.camera.orbit(dx, dy);
+        this.viewport.invalidate();
+      },
+      pan: (dx, dy) => {
+        this.viewport.camera.pan(dx, dy, this.shell.canvas.clientHeight);
+        this.viewport.invalidate();
+      },
+      zoom: (f) => {
+        this.viewport.camera.zoom(f);
+        this.viewport.invalidate();
+      },
+      note: (text) => this.note(text),
+    });
+    this.viewport.penHold = (which, down) => {
+      if (down) return this.inputs.press(`pen.${which}`, true);
+      this.inputs.release(`pen.${which}`);
+      return false;
+    };
+    this.viewport.penHover = (down) => {
+      if (down) this.inputs.press('pen.barrel');
+      else this.inputs.release('pen.barrel');
+    };
+    // What a binding can run: every tool, then the actions worth a button, as far as the registry has them.
+    const ACTIONS = ['history.undo', 'history.redo', 'brush.radius_up', 'brush.radius_down', 'brush.strength_up', 'brush.strength_down', 'sculpt.invert', 'sculpt.mirror_x', 'sculpt.dyntopo', 'mask.invert', 'mask.clear', 'mask.blur', 'view.frame', 'view.ortho', 'view.front', 'view.back', 'view.left', 'view.right', 'view.top', 'view.bottom', 'view.wireframe', 'view.xray', 'view.floor_grid', 'object.isolate', 'topo.remesh_voxel', 'view.tablet_layout', 'app.palette', 'view.tool_swap'];
+    this.bindingsDialog = new BindingsDialog(this.inputs, () => {
+      const out: [string, string][] = [];
+      for (const [kind, label] of BRUSHES) if (commands.get(`tool.brush.${kind}`)) out.push([`tool.brush.${kind}`, `${t('Tool')}: ${t(label)}`]);
+      for (const id of ACTIONS) {
+        const c = commands.get(id);
+        if (c) out.push([id, t(commands.label(c))]);
+      }
+      return out;
+    });
   }
 
   /** Re-applies the backdrop from its controls (and the tablet layout's black when it is on); set by wireBackdrop. */
@@ -3826,6 +3872,18 @@ class SceneView {
       box.checked = !box.checked;
       box.dispatchEvent(new Event('change', { bubbles: true }));
     };
+    // Brush size and strength in steps (keys, gamepad bumpers and D-pad): size by a factor, strength by an amount.
+    const step = (range: HTMLInputElement, factor: number, by = 0): void => {
+      const lo = Number(range.min);
+      const hi = Number(range.max);
+      const now = Number(range.value);
+      const next = Math.round(Math.max(lo, Math.min(hi, factor ? now * factor : now + by)));
+      if (next === now) return;
+      range.value = String(next);
+      range.dispatchEvent(new Event('input', { bubbles: true }));
+      range.dispatchEvent(new Event('change', { bubbles: true }));
+      this.note(`${t(range === s.radius ? 'Radius' : 'Strength')}: ${next}`);
+    };
     const layers = (): boolean => (this.activeObject()?.paint_layers?.length ?? 0) > 0;
     const special: Record<string, () => boolean> = {
       'paint.layer_delete': layers,
@@ -3858,6 +3916,11 @@ class SceneView {
       { id: 'view.xray', label: 'X-ray', keys: ['Alt+X'], run: () => toggle(s.xray), checked: () => s.xray.checked },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
+      { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
+      { id: 'brush.radius_up', label: 'Larger Brush', keys: [']'], run: () => step(s.radius, 1.15) },
+      { id: 'brush.radius_down', label: 'Smaller Brush', keys: ['['], run: () => step(s.radius, 1 / 1.15) },
+      { id: 'brush.strength_up', label: 'Stronger Brush', run: () => step(s.strength, 0, 5) },
+      { id: 'brush.strength_down', label: 'Weaker Brush', run: () => step(s.strength, 0, -5) },
       { id: 'view.toolbar_new', label: 'New Toolbar…', run: () => void this.newToolbar() },
       { id: 'view.layout_export', label: 'Export Layout…', run: () => this.exportLayoutFile() },
       { id: 'view.layout_import', label: 'Import Layout…', run: () => this.importLayoutFile() },
@@ -4002,6 +4065,11 @@ class SceneView {
     let down = { x: 0, y: 0 };
     s.canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
     s.canvas.addEventListener('contextmenu', (e) => {
+      // A pen's barrel button can raise a context menu; it is a binding, not a menu.
+      if (performance.now() - this.viewport.penButtonAt < 700) {
+        e.preventDefault();
+        return;
+      }
       if (this.stroking() || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return;
       this.contextEvent = e;
       stage.setItems(tidy(VIEWPORT_MENU));
@@ -4119,6 +4187,7 @@ class SceneView {
     const s = this.shell;
     s.layout.reload();
     s.toolbars.load();
+    this.inputs.load();
     try {
       s.tablet.set(localStorage.getItem('formsculptor.tablet') === 'on', false);
       s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
