@@ -157,6 +157,15 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial },
         dyntopo: dyntopo.or(size.map(|_| 0.25)),
         dyntopo_size: size,
+        dyntopo_mode: match args.get("dyntopo_mode").and_then(Value::as_str) {
+            None => fsc_sculpt::DyntopoMode::Balanced,
+            Some(m) => fsc_sculpt::DyntopoMode::parse(m).ok_or_else(|| bad(format!("dyntopo_mode is one of {}", fsc_sculpt::DyntopoMode::NAMES.join(", "))))?,
+        },
+        dyntopo_method: match args.get("dyntopo_method").and_then(Value::as_str) {
+            None => fsc_sculpt::DyntopoMethod::Both,
+            Some(m) => fsc_sculpt::DyntopoMethod::parse(m).ok_or_else(|| bad(format!("dyntopo_method is one of {}", fsc_sculpt::DyntopoMethod::NAMES.join(", "))))?,
+        },
+        dyntopo_protect_mask: flag_arg("dyntopo_protect_mask", false)?,
         paint,
         paint_channels,
         noise_scale: f(args, "noise_scale", 0.0, 0.0, 1e4)?,
@@ -587,7 +596,10 @@ pub(crate) fn brush_props() -> Value {
         "lazy": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0, "description": "Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length."},
         "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},
         "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels."},
-        "dyntopo_size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction."}
+        "dyntopo_size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction."},
+        "dyntopo_mode": {"type": "string", "enum": fsc_sculpt::DyntopoMode::NAMES, "default": "balanced", "description": "With dyntopo: speed refines once per dab and does not even out the new triangles (fastest, rougher); balanced refines twice and evens twice; quality four times each (smoothest, slowest)."},
+        "dyntopo_method": {"type": "string", "enum": fsc_sculpt::DyntopoMethod::NAMES, "default": "both", "description": "With dyntopo: subdivide only splits long edges (detail is only ever added), collapse only merges short ones (the brush thins out over-dense areas), both does each."},
+        "dyntopo_protect_mask": {"type": "boolean", "default": false, "description": "With dyntopo: never split an edge with a masked end, so masked areas keep their triangles as well as their shape."}
     });
     let out = all.as_object_mut().expect("object");
     for part in [filters, rest] {

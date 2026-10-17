@@ -6,7 +6,7 @@ mod symmetry;
 mod vdm;
 
 pub use alpha::{turn, Alpha};
-pub use brush::{BrushKind, BrushSettings, Falloff, GroupList};
+pub use brush::{BrushKind, BrushSettings, DyntopoMethod, DyntopoMode, Falloff, GroupList};
 pub use noise::{noise_at, NoisePattern, NoiseSettings};
 pub use stroke::{fbm, value_noise, Stroke, StrokeEdit, VertexEdit};
 pub use symmetry::Symmetry;

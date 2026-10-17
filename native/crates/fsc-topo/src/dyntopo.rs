@@ -161,6 +161,12 @@ pub fn compact(mesh: &mut Mesh, mask: &mut Vec<f32>) -> usize {
 }
 
 pub fn refine_sphere(mesh: &mut Mesh, mask: &mut Vec<f32>, center: Vec3, radius: f32, max_edge: f32, passes: u32) -> usize {
+    refine_sphere_protected(mesh, mask, center, radius, max_edge, passes, false)
+}
+
+/// refine_sphere; with `protect_mask` an edge with a masked end (mask above 0.5) is never split, so masked areas keep
+/// their topology as they keep their shape.
+pub fn refine_sphere_protected(mesh: &mut Mesh, mask: &mut Vec<f32>, center: Vec3, radius: f32, max_edge: f32, passes: u32, protect_mask: bool) -> usize {
     let max2 = max_edge * max_edge;
     let reach = radius + max_edge;
     let mut total = 0;
@@ -175,6 +181,9 @@ pub fn refine_sphere(mesh: &mut Mesh, mask: &mut Vec<f32>, center: Vec3, radius:
             for (a, b) in [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])] {
                 let (pa, pb) = (mesh.position(a), mesh.position(b));
                 let l2 = pa.distance_squared(pb);
+                if protect_mask && (mask[a as usize] > 0.5 || mask[b as usize] > 0.5) {
+                    continue;
+                }
                 if l2 > max2 && ((pa + pb) * 0.5).distance(center) <= radius {
                     wanted.insert(key(a, b), l2);
                 }

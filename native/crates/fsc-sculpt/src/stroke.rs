@@ -438,10 +438,17 @@ impl Stroke {
         let reach = self.settings.radius + first.distance(last) * 0.5;
         let max_edge = self.settings.dyntopo_size.unwrap_or(self.settings.radius * frac.clamp(0.05, 1.0)).max(1e-5);
         let mut splits = 0;
+        let (passes, relaxes) = self.settings.dyntopo_mode.passes();
+        let method = self.settings.dyntopo_method;
+        let protect = self.settings.dyntopo_protect_mask;
         for k in 0..self.transforms.len() {
             let m = self.transforms[k];
-            splits += fsc_topo::refine_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge, 2);
-            splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge * 0.4);
+            if method != crate::brush::DyntopoMethod::Collapse {
+                splits += fsc_topo::refine_sphere_protected(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge, passes, protect);
+            }
+            if method != crate::brush::DyntopoMethod::Subdivide {
+                splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge * 0.4);
+            }
         }
         if splits > 0 {
             object.mesh.uvs.clear();
@@ -457,7 +464,7 @@ impl Stroke {
             }
             region.sort_unstable();
             region.dedup();
-            for _ in 0..2 {
+            for _ in 0..relaxes {
                 relax_tangential(object, &region, 0.5);
             }
             let mut ring = Vec::new();

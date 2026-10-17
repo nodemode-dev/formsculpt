@@ -134,6 +134,60 @@ impl Falloff {
     }
 }
 
+/// How much work dynamic topology does per dab: speed refines once and skips the relax, balanced (the default) is the
+/// original two passes and two relaxes, quality refines and relaxes four times.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DyntopoMode {
+    Speed,
+    #[default]
+    Balanced,
+    Quality,
+}
+
+impl DyntopoMode {
+    pub const NAMES: &'static [&'static str] = &["speed", "balanced", "quality"];
+
+    pub fn parse(s: &str) -> Option<DyntopoMode> {
+        match s {
+            "speed" => Some(DyntopoMode::Speed),
+            "balanced" => Some(DyntopoMode::Balanced),
+            "quality" => Some(DyntopoMode::Quality),
+            _ => None,
+        }
+    }
+
+    /// Refine passes and relax iterations per dab.
+    pub fn passes(self) -> (u32, u32) {
+        match self {
+            DyntopoMode::Speed => (1, 0),
+            DyntopoMode::Balanced => (2, 2),
+            DyntopoMode::Quality => (4, 4),
+        }
+    }
+}
+
+/// What dynamic topology does to edges: split long ones, collapse short ones, or both (the default).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DyntopoMethod {
+    Subdivide,
+    Collapse,
+    #[default]
+    Both,
+}
+
+impl DyntopoMethod {
+    pub const NAMES: &'static [&'static str] = &["subdivide", "collapse", "both"];
+
+    pub fn parse(s: &str) -> Option<DyntopoMethod> {
+        match s {
+            "subdivide" => Some(DyntopoMethod::Subdivide),
+            "collapse" => Some(DyntopoMethod::Collapse),
+            "both" => Some(DyntopoMethod::Both),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BrushSettings {
     pub kind: BrushKind,
@@ -146,6 +200,10 @@ pub struct BrushSettings {
     pub symmetry: Symmetry,
     pub dyntopo: Option<f32>,
     pub dyntopo_size: Option<f32>,
+    pub dyntopo_mode: DyntopoMode,
+    pub dyntopo_method: DyntopoMethod,
+    /// Dynamic topology never splits an edge with a masked end (collapse already leaves masked vertices alone).
+    pub dyntopo_protect_mask: bool,
     pub paint: fsc_core::Paint,
     /// Which channels the paint brush paints: colour, roughness, metalness, opacity, emissive.
     pub paint_channels: [bool; fsc_core::PAINT_CHANNELS],
@@ -237,6 +295,9 @@ impl Default for BrushSettings {
             symmetry: Symmetry::default(),
             dyntopo: None,
             dyntopo_size: None,
+            dyntopo_mode: DyntopoMode::Balanced,
+            dyntopo_method: DyntopoMethod::Both,
+            dyntopo_protect_mask: false,
             paint: [0.8, 0.2, 0.2, 0.5, 0.0, 1.0, 0.0],
             paint_channels: [true, false, false, false, false],
             noise_scale: 0.0,
