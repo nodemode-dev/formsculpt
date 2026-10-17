@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.73.0 · 2026-10-17
+
+### Added
+
+- History replay (Edit > Replay History, or Replay in the History section): plays the undo history from the start to the current step at a chosen speed, then leaves it where it was. Stop, Escape or a press in the viewport ends it early, back at the current step, without sculpting.
+- Camera per step: each undo step keeps the view it was made from. Choosing a step in the history moves the view there, replays follow it, and the History movie shows each step from where it was made.
+- Each step in the history shows the memory it keeps, with the total under the History settings.
+- Max steps (1 to 10000, 200 by default) and Memory limit (MB): the oldest steps are dropped beyond either; the newest step is always kept. Kept in this browser.
+- For agents: `set_history_limits`, `set_history_camera`; `get_history` reports each step's memory and camera; `history_go_to` returns the step's camera; `record_history` takes `camera: "steps"`.
+- 1139 interface strings in every language.
+
+### Fixed
+
+- No console error when the window asks for an object that was removed a moment earlier (the service now answers 204 rather than 404).
+
 ## 0.72.0 · 2026-10-17
 
 ### Added
