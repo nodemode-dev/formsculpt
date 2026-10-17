@@ -1217,5 +1217,6 @@
  "Material opacity": "Krycie materiału",
  "Material type": "Rodzaj materiału",
  "Opaque": "Nieprzezroczysty",
- "Refraction": "Załamanie"
+ "Refraction": "Załamanie",
+ "Reflections": "Odbicia"
 }

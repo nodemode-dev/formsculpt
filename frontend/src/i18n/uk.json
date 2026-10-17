@@ -1217,5 +1217,6 @@
  "Material opacity": "Непрозорість матеріалу",
  "Material type": "Тип матеріалу",
  "Opaque": "Непрозорий",
- "Refraction": "Заломлення"
+ "Refraction": "Заломлення",
+ "Reflections": "Відбиття"
 }

@@ -1217,5 +1217,6 @@
  "Material opacity": "Krytí materiálu",
  "Material type": "Typ materiálu",
  "Opaque": "Neprůhledný",
- "Refraction": "Lom"
+ "Refraction": "Lom",
+ "Reflections": "Odrazy"
 }

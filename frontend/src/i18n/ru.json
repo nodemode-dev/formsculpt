@@ -1217,5 +1217,6 @@
  "Material opacity": "Непрозрачность материала",
  "Material type": "Тип материала",
  "Opaque": "Непрозрачный",
- "Refraction": "Преломление"
+ "Refraction": "Преломление",
+ "Reflections": "Отражения"
 }

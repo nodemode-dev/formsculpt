@@ -1217,5 +1217,6 @@
  "Material opacity": "Dekking van het materiaal",
  "Material type": "Materiaaltype",
  "Opaque": "Ondoorzichtig",
- "Refraction": "Breking"
+ "Refraction": "Breking",
+ "Reflections": "Weerspiegelingen"
 }

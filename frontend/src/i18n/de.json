@@ -1217,5 +1217,6 @@
  "Material opacity": "Materialdeckkraft",
  "Material type": "Materialart",
  "Opaque": "Deckend",
- "Refraction": "Brechung"
+ "Refraction": "Brechung",
+ "Reflections": "Spiegelungen"
 }

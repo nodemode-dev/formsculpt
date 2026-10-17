@@ -1217,5 +1217,6 @@
  "Material opacity": "Materiaalin peittävyys",
  "Material type": "Materiaalin tyyppi",
  "Opaque": "Läpinäkymätön",
- "Refraction": "Taittuminen"
+ "Refraction": "Taittuminen",
+ "Reflections": "Heijastukset"
 }

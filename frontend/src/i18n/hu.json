@@ -1217,5 +1217,6 @@
  "Material opacity": "Anyag átlátszatlansága",
  "Material type": "Anyag típusa",
  "Opaque": "Átlátszatlan",
- "Refraction": "Fénytörés"
+ "Refraction": "Fénytörés",
+ "Reflections": "Tükröződések"
 }

@@ -1217,5 +1217,6 @@
  "Material opacity": "マテリアルの不透明度",
  "Material type": "マテリアルの種類",
  "Opaque": "不透明",
- "Refraction": "屈折"
+ "Refraction": "屈折",
+ "Reflections": "反射"
 }

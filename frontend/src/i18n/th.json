@@ -1217,5 +1217,6 @@
  "Material opacity": "ความทึบของวัสดุ",
  "Material type": "ชนิดวัสดุ",
  "Opaque": "ทึบ",
- "Refraction": "การหักเห"
+ "Refraction": "การหักเห",
+ "Reflections": "การสะท้อน"
 }

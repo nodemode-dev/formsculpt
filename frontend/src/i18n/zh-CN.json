@@ -1217,5 +1217,6 @@
  "Material opacity": "材质不透明度",
  "Material type": "材质类型",
  "Opaque": "不透明",
- "Refraction": "折射"
+ "Refraction": "折射",
+ "Reflections": "反射"
 }

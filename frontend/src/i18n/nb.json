@@ -1217,5 +1217,6 @@
  "Material opacity": "Materialets dekkevne",
  "Material type": "Materialtype",
  "Opaque": "Ugjennomsiktig",
- "Refraction": "Lysbrytning"
+ "Refraction": "Lysbrytning",
+ "Reflections": "Speilinger"
 }

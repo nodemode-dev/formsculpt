@@ -1217,5 +1217,6 @@
  "Material opacity": "재질 불투명도",
  "Material type": "재질 종류",
  "Opaque": "불투명",
- "Refraction": "굴절"
+ "Refraction": "굴절",
+ "Reflections": "반사"
 }
