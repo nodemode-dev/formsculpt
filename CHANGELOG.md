@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.63.0 · 2026-10-17
+
+### Added
+
+- `field_remesh` takes `guides` (curves on the surface, as for `quad_remesh`): edge loops run along each one, and the field blends between the guides and the hard edges elsewhere. The reply counts `guided_vertices`.
+- Window: Curve as guide, which sends the curve waiting from the Curve stroke tool to Quad remesh and Field remesh.
+- 1019 interface strings in every language.
+
+### Fixed
+
+- `field_remesh` no longer leaves open edges at sharp rims (cylinders, cones): faces wound against their neighbours are made consistent or dropped and their holes closed, and pinched gaps are filled. A guide with fewer than two points is refused.
+
 ## 0.62.0 · 2026-10-17
 
 ### Added
