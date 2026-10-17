@@ -226,6 +226,7 @@ pub(crate) fn history_movie_schema() -> Value {
             "size": {"type": "integer", "minimum": 64, "maximum": 1024, "default": 384},
             "view": {"type": "string", "enum": ["front", "back", "left", "right", "top", "bottom", "three_quarter"], "default": "three_quarter"},
             "turn": {"type": "number", "minimum": -720, "maximum": 720, "default": 0, "description": "Degrees the camera turns over the whole movie, so the build is seen from around it."},
+            "camera": {"type": "string", "enum": ["fixed", "steps"], "default": "fixed", "description": "fixed uses view and turn; steps looks at each step from the direction it was made from (recorded by set_history_camera), falling back to view and turn where a step has none."},
             "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay"},
             "background": {"type": "string", "enum": ["dark", "light", "transparent"], "default": "dark"}
         },
@@ -253,6 +254,12 @@ pub(crate) fn record_history(s: &mut Session, args: &Value) -> Result<Value, Com
     if done > 600 {
         return Err(bad("the history has more than 600 steps; that is too long for one movie"));
     }
+    let per_step = match args.get("camera").and_then(Value::as_str).unwrap_or("fixed") {
+        "fixed" => false,
+        "steps" => true,
+        other => return Err(bad(format!("unknown camera {other}"))),
+    };
+    let cameras = s.history.cameras();
     let started = fsc_core::time::Instant::now();
     let mut shots = Vec::with_capacity(done + 1);
     let mut failure = None;
@@ -264,7 +271,11 @@ pub(crate) fn record_history(s: &mut Session, args: &Value) -> Result<Value, Com
         if s.scene.objects.iter().all(|o| !o.visible) {
             continue;
         }
-        let mut frame_args = json!({"width": size, "height": size, "frame": "all", "yaw": yaw0 + turn * k as f32 / done as f32, "pitch": pitch});
+        // The state after k steps is seen from where step k was made (the first step's camera for the start).
+        let step_camera = if per_step { cameras.get(k.max(1) - 1).copied().flatten() } else { None };
+        let (yaw, pitch) = step_camera.map_or((yaw0 + turn * k as f32 / done as f32, pitch), |c| (c.yaw.rem_euclid(360.0), c.pitch.clamp(-89.9, 89.9)));
+        let yaw = if yaw > 180.0 { yaw - 360.0 } else { yaw };
+        let mut frame_args = json!({"width": size, "height": size, "frame": "all", "yaw": yaw, "pitch": pitch});
         for key in ["shading", "background"] {
             if let Some(v) = args.get(key) {
                 frame_args[key] = v.clone();

@@ -34,9 +34,10 @@ mod uv_straighten_cmds;
 mod udim_cmds;
 mod vdm_cmds;
 mod view_cmds;
+mod weigh;
 mod zmodel_cmds;
 
-pub use history::{Edit, History};
+pub use history::{Edit, History, StepCamera};
 pub use file_cmds::{export_data, import_data, open_data, save_data};
 pub use sculpt_cmds::{parse_brush, push_stroke, stroke_alpha};
 
@@ -240,7 +241,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "get_history",
         group: Group::History,
         label: "History",
-        description: "Every undo step, oldest first, by name, and how many of them are done; the rest are undone and can be redone.",
+        description: "Every undo step, oldest first, by name, and how many of them are done; the rest are undone and can be redone. Also the memory each step keeps (bytes) and their total, the camera each step was made from (null where none was recorded) and the limits set with set_history_limits.",
         keys: &[],
         hints: READ,
         schema: arrange_cmds::history_schema,
@@ -251,11 +252,33 @@ pub static COMMANDS: &[Command] = &[
         mcp: "history_go_to",
         group: Group::History,
         label: "Go to Step",
-        description: "Undo or redo until exactly `done` steps of get_history's list are done: jump back to any earlier state, or forward again.",
+        description: "Undo or redo until exactly `done` steps of get_history's list are done: jump back to any earlier state, or forward again. Returns the camera of the step reached (the last done step, or the first step at 0) when one was recorded, so a viewer can show it from where it was made.",
         keys: &[],
         hints: WRITE,
         schema: arrange_cmds::goto_schema,
         run: arrange_cmds::history_go_to,
+    },
+    Command {
+        id: "history.limits",
+        mcp: "set_history_limits",
+        group: Group::History,
+        label: "History Limits",
+        description: "How many undo steps the history keeps (1 to 10000, 200 by default) and how much memory they may keep together (max_memory_mb, 0 for no limit). Over either limit the oldest steps are dropped, now and as new steps come; the newest step is always kept. Not saved in projects.",
+        keys: &[],
+        hints: WRITE,
+        schema: arrange_cmds::limits_schema,
+        run: arrange_cmds::set_history_limits,
+    },
+    Command {
+        id: "history.camera",
+        mcp: "set_history_camera",
+        group: Group::History,
+        label: "History Camera",
+        description: "The camera the next undo steps record: orbit target, distance, yaw and pitch in degrees (get_view's convention) and orthographic. The window sends its view as it settles, so going to a step or replaying the history shows each step from where it was made; clear stops recording. Changes no model state.",
+        keys: &[],
+        hints: READ,
+        schema: arrange_cmds::camera_schema,
+        run: arrange_cmds::set_history_camera,
     },
     Command {
         id: "scene.new",

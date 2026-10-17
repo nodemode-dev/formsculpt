@@ -8,7 +8,7 @@ Generated from the engine's command registry (formsculptor 0.72.0) by `./formscu
 - Scene: `get_scene`, `new_scene`, `edit_primitive`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
-- History: `get_history`, `history_go_to`, `undo`, `redo`
+- History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
@@ -89,6 +89,7 @@ Timeline: render keyframed camera moves (yaw, pitch, zoom) and sculpt layer stre
 Undo history movie: render the model at every step of the undo history from the start to now, one frame per step, to a looping animated PNG (optionally turning the camera across it), then leave the scene and history where they were. Shows how a sculpt was built up.
 
 - `background`: string (dark | light | transparent); default "dark"
+- `camera`: string (fixed | steps); default "fixed"; fixed uses view and turn; steps looks at each step from the direction it was made from (recorded by set_history_camera), falling back to view and turn where a step has none.
 - `fps`: integer; default 4; range 1 to 30; Undo steps shown per second.
 - `path`: string; required; Where to write the movie, ending in .png (an animated PNG).
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"
@@ -130,7 +131,7 @@ Line objects up on an axis by their bounds' min, centre or max (at the first obj
 
 ## get_history
 
-Every undo step, oldest first, by name, and how many of them are done; the rest are undone and can be redone.
+Every undo step, oldest first, by name, and how many of them are done; the rest are undone and can be redone. Also the memory each step keeps (bytes) and their total, the camera each step was made from (null where none was recorded) and the limits set with set_history_limits.
 
 - no parameters
 
@@ -138,9 +139,29 @@ Note: read-only.
 
 ## history_go_to
 
-Undo or redo until exactly `done` steps of get_history's list are done: jump back to any earlier state, or forward again.
+Undo or redo until exactly `done` steps of get_history's list are done: jump back to any earlier state, or forward again. Returns the camera of the step reached (the last done step, or the first step at 0) when one was recorded, so a viewer can show it from where it was made.
 
 - `done`: integer; required; range 0 to inf; How many steps of get_history's list should be done; earlier numbers undo, later ones redo.
+
+## set_history_limits
+
+How many undo steps the history keeps (1 to 10000, 200 by default) and how much memory they may keep together (max_memory_mb, 0 for no limit). Over either limit the oldest steps are dropped, now and as new steps come; the newest step is always kept. Not saved in projects.
+
+- `max_memory_mb`: integer; range 0 to 65536; Memory the steps may keep together, in MB; 0 is no limit; the current limit when omitted.
+- `max_steps`: integer; range 1 to 10000; Undo steps kept; the current limit when omitted.
+
+## set_history_camera
+
+The camera the next undo steps record: orbit target, distance, yaw and pitch in degrees (get_view's convention) and orthographic. The window sends its view as it settles, so going to a step or replaying the history shows each step from where it was made; clear stops recording. Changes no model state.
+
+- `clear`: boolean; default false; Stop recording a camera with the next steps.
+- `distance`: number; range 0 to inf; The eye's distance from the target.
+- `ortho`: boolean; default false
+- `pitch`: number; range -90 to 90; Degrees above the horizon.
+- `target`: array of number; The orbit target in world space.
+- `yaw`: number; Degrees around the vertical axis from the front.
+
+Note: read-only.
 
 ## new_scene
 

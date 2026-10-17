@@ -258,9 +258,93 @@ pub(crate) fn history_schema() -> Value {
     json!({"type": "object", "properties": {}, "required": [], "additionalProperties": false})
 }
 
+fn camera_json(c: &Option<crate::StepCamera>) -> Value {
+    match c {
+        Some(c) => json!({"target": c.target, "distance": c.distance, "yaw": c.yaw, "pitch": c.pitch, "ortho": c.ortho}),
+        None => Value::Null,
+    }
+}
+
+const MB: usize = 1 << 20;
+
 pub(crate) fn get_history(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
     let (steps, done) = s.history.steps();
-    Ok(json!({"steps": steps, "done": done}))
+    let bytes = s.history.sizes();
+    let cameras: Vec<Value> = s.history.cameras().iter().map(camera_json).collect();
+    let (max_steps, max_bytes) = s.history.limits();
+    Ok(json!({
+        "steps": steps,
+        "done": done,
+        "bytes": bytes,
+        "total_bytes": bytes.iter().sum::<usize>(),
+        "cameras": cameras,
+        "max_steps": max_steps,
+        "max_memory_mb": max_bytes / MB,
+        "recording_camera": s.history.camera.is_some(),
+    }))
+}
+
+pub(crate) fn limits_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "max_steps": {"type": "integer", "minimum": 1, "maximum": crate::history::MAX_STEPS, "description": "Undo steps kept; the current limit when omitted."},
+            "max_memory_mb": {"type": "integer", "minimum": 0, "maximum": 65536, "description": "Memory the steps may keep together, in MB; 0 is no limit; the current limit when omitted."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn set_history_limits(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let (steps0, bytes0) = s.history.limits();
+    let steps = match args.get("max_steps") {
+        Some(v) => v.as_u64().filter(|n| (1..=crate::history::MAX_STEPS as u64).contains(n)).ok_or_else(|| bad("max_steps must be 1 to 10000"))? as usize,
+        None => steps0,
+    };
+    let bytes = match args.get("max_memory_mb") {
+        Some(v) => v.as_u64().filter(|n| *n <= 65536).ok_or_else(|| bad("max_memory_mb must be 0 to 65536"))? as usize * MB,
+        None => bytes0,
+    };
+    let dropped = s.history.set_limits(steps, bytes);
+    let sizes = s.history.sizes();
+    Ok(json!({"max_steps": steps, "max_memory_mb": bytes / MB, "dropped": dropped, "steps": sizes.len(), "total_bytes": sizes.iter().sum::<usize>()}))
+}
+
+pub(crate) fn camera_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "target": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The orbit target in world space."},
+            "distance": {"type": "number", "exclusiveMinimum": 0, "description": "The eye's distance from the target."},
+            "yaw": {"type": "number", "description": "Degrees around the vertical axis from the front."},
+            "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees above the horizon."},
+            "ortho": {"type": "boolean", "default": false},
+            "clear": {"type": "boolean", "default": false, "description": "Stop recording a camera with the next steps."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn set_history_camera(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    if args.get("clear").and_then(Value::as_bool).unwrap_or(false) {
+        s.history.camera = None;
+        return Ok(json!({"recording": false}));
+    }
+    let num = |k: &str| args.get(k).and_then(Value::as_f64).filter(|v| v.is_finite()).map(|v| v as f32).ok_or_else(|| bad(format!("{k} is required (or clear)")));
+    let target = args.get("target").and_then(Value::as_array).filter(|a| a.len() == 3).ok_or_else(|| bad("target must be [x, y, z]"))?;
+    let mut t = [0f32; 3];
+    for (slot, v) in t.iter_mut().zip(target) {
+        *slot = v.as_f64().filter(|v| v.is_finite()).ok_or_else(|| bad("target must be three numbers"))? as f32;
+    }
+    let distance = num("distance")?;
+    if distance <= 0.0 {
+        return Err(bad("distance must be above 0"));
+    }
+    let camera = crate::StepCamera { target: t, distance, yaw: num("yaw")?, pitch: num("pitch")?.clamp(-90.0, 90.0), ortho: args.get("ortho").and_then(Value::as_bool).unwrap_or(false) };
+    s.history.camera = Some(camera);
+    Ok(json!({"recording": true}))
 }
 
 pub(crate) fn goto_schema() -> Value {
@@ -276,5 +360,6 @@ pub(crate) fn history_go_to(s: &mut Session, args: &Value) -> Result<Value, Comm
     let done = args.get("done").and_then(Value::as_u64).ok_or_else(|| bad("done is required"))? as usize;
     let moved = s.history.go_to(&mut s.scene, done).map_err(|e| CommandError::new("history", e))?;
     let (steps, done) = s.history.steps();
-    Ok(json!({"moved": moved, "done": done, "steps": steps.len()}))
+    let camera = s.history.cameras().get(done.max(1) - 1).copied().flatten();
+    Ok(json!({"moved": moved, "done": done, "steps": steps.len(), "camera": camera_json(&camera)}))
 }

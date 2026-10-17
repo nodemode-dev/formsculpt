@@ -1,7 +1,27 @@
 use fsc_core::{Layers, Mesh, Multires, Object, ObjectId, Paint, PaintLayers, Scene, Stencil};
 use fsc_sculpt::VertexEdit;
 
-const LIMIT: usize = 200;
+/// Steps kept until the person sets another limit.
+pub const DEFAULT_STEPS: usize = 200;
+/// The most steps a limit may keep.
+pub const MAX_STEPS: usize = 10_000;
+
+/// Where the view was when a step was made, as the window sent it: the orbit target, the eye's distance, its
+/// direction as yaw and pitch in degrees (get_view's convention) and whether the view was orthographic.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StepCamera {
+    pub target: [f32; 3],
+    pub distance: f32,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub ortho: bool,
+}
+
+#[derive(Debug)]
+struct Step {
+    edit: Edit,
+    camera: Option<StepCamera>,
+}
 
 #[derive(Debug)]
 pub enum Edit {
@@ -49,6 +69,30 @@ impl Edit {
             Edit::Add { .. } => "Add Object".into(),
             Edit::Delete { .. } => "Delete Object".into(),
             Edit::Clear { .. } => "New Scene".into(),
+        }
+    }
+
+    /// The memory this step keeps (its arrays, see weigh.rs). Undo and redo swap what a step holds, so the figure is
+    /// taken when asked rather than stored.
+    pub fn bytes(&self) -> usize {
+        use crate::weigh;
+        match self {
+            Edit::Vertices { edit, .. } | Edit::LayerStroke { edit, .. } => weigh::vertex_edit(edit),
+            Edit::Topology { mesh, mask, .. } => weigh::mesh(mesh) + std::mem::size_of_val(mask.as_slice()),
+            Edit::Add { parked, .. } | Edit::Delete { parked, .. } => parked.as_ref().map_or(0, weigh::object),
+            Edit::Clear { parked, .. } | Edit::Scene { objects: parked, .. } => parked.iter().map(weigh::object).sum(),
+            Edit::Divide { parked, .. } => parked.iter().map(|(m, s)| weigh::mesh(m) + weigh::stencil(s)).sum(),
+            Edit::Level { .. } => 0,
+            Edit::Levels { multires, .. } => weigh::multires(multires),
+            Edit::Rename { name, .. } => name.len(),
+            Edit::LayerState { layers, positions, paint, mask, .. } => {
+                weigh::layers(layers) + std::mem::size_of_val(positions.as_slice()) + std::mem::size_of_val(paint.as_slice()) + std::mem::size_of_val(mask.as_slice())
+            }
+            Edit::PaintLayers { layers, paint, .. } => weigh::paint_layers(layers) + std::mem::size_of_val(paint.as_slice()),
+            Edit::Texels { edit, .. } => weigh::texture_edit(edit),
+            Edit::TextureState { texture, .. } => weigh::texture(texture),
+            Edit::Material { .. } => std::mem::size_of::<fsc_core::Material>(),
+            Edit::Channels { state, .. } => weigh::channels(state),
         }
     }
 
@@ -180,34 +224,77 @@ impl Edit {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct History {
-    undo: Vec<Edit>,
-    redo: Vec<Edit>,
+    undo: Vec<Step>,
+    redo: Vec<Step>,
+    /// The camera the next steps record, as the window last sent it (set_history_camera); None records none.
+    pub camera: Option<StepCamera>,
+    max_steps: usize,
+    /// Memory the steps may keep together, in bytes; 0 is no limit.
+    max_bytes: usize,
+}
+
+impl Default for History {
+    fn default() -> Self {
+        Self { undo: Vec::new(), redo: Vec::new(), camera: None, max_steps: DEFAULT_STEPS, max_bytes: 0 }
+    }
 }
 
 impl History {
     pub fn push(&mut self, edit: Edit) {
         self.redo.clear();
-        self.undo.push(edit);
-        if self.undo.len() > LIMIT {
-            self.undo.remove(0);
+        self.undo.push(Step { edit, camera: self.camera });
+        self.trim();
+    }
+
+    /// Forgets every step (a project opened) but keeps the limits and the camera being recorded.
+    pub fn clear(&mut self) {
+        self.undo.clear();
+        self.redo.clear();
+    }
+
+    /// Drops the oldest done steps until the count and the memory are within the limits, always keeping the newest
+    /// done step (one step larger than the memory limit is still undoable). Returns how many were dropped.
+    fn trim(&mut self) -> usize {
+        let mut drop = self.undo.len().saturating_sub(self.max_steps);
+        if self.max_bytes > 0 {
+            let mut total: usize = self.undo.iter().chain(&self.redo).map(|s| s.edit.bytes()).sum::<usize>()
+                - self.undo[..drop].iter().map(|s| s.edit.bytes()).sum::<usize>();
+            while total > self.max_bytes && drop + 1 < self.undo.len() {
+                total -= self.undo[drop].edit.bytes();
+                drop += 1;
+            }
         }
+        self.undo.drain(..drop);
+        drop
+    }
+
+    /// Sets how many steps and how much memory (bytes, 0 for no limit) the history keeps, dropping the oldest steps
+    /// at once if it is over. Returns how many were dropped.
+    pub fn set_limits(&mut self, max_steps: usize, max_bytes: usize) -> usize {
+        self.max_steps = max_steps.clamp(1, MAX_STEPS);
+        self.max_bytes = max_bytes;
+        self.trim()
+    }
+
+    pub fn limits(&self) -> (usize, usize) {
+        (self.max_steps, self.max_bytes)
     }
 
     pub fn undo(&mut self, scene: &mut Scene) -> Result<Option<String>, String> {
-        let Some(mut edit) = self.undo.pop() else { return Ok(None) };
-        let label = edit.label();
-        edit.apply(scene, false)?;
-        self.redo.push(edit);
+        let Some(mut step) = self.undo.pop() else { return Ok(None) };
+        let label = step.edit.label();
+        step.edit.apply(scene, false)?;
+        self.redo.push(step);
         Ok(Some(label))
     }
 
     pub fn redo(&mut self, scene: &mut Scene) -> Result<Option<String>, String> {
-        let Some(mut edit) = self.redo.pop() else { return Ok(None) };
-        let label = edit.label();
-        edit.apply(scene, true)?;
-        self.undo.push(edit);
+        let Some(mut step) = self.redo.pop() else { return Ok(None) };
+        let label = step.edit.label();
+        step.edit.apply(scene, true)?;
+        self.undo.push(step);
         Ok(Some(label))
     }
 
@@ -215,11 +302,23 @@ impl History {
         (self.undo.len(), self.redo.len())
     }
 
+    fn ordered(&self) -> impl Iterator<Item = &Step> {
+        self.undo.iter().chain(self.redo.iter().rev())
+    }
+
     /// Every step oldest first, and how many of them are done (the rest can be redone).
     pub fn steps(&self) -> (Vec<String>, usize) {
-        let mut out: Vec<String> = self.undo.iter().map(Edit::label).collect();
-        out.extend(self.redo.iter().rev().map(Edit::label));
-        (out, self.undo.len())
+        (self.ordered().map(|s| s.edit.label()).collect(), self.undo.len())
+    }
+
+    /// The memory each step keeps, oldest first, in bytes.
+    pub fn sizes(&self) -> Vec<usize> {
+        self.ordered().map(|s| s.edit.bytes()).collect()
+    }
+
+    /// The camera each step was made from, oldest first (None where none was recorded).
+    pub fn cameras(&self) -> Vec<Option<StepCamera>> {
+        self.ordered().map(|s| s.camera).collect()
     }
 
     /// Undoes or redoes until exactly `done` steps are done.

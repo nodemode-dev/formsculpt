@@ -5,7 +5,7 @@ use fsc_io::{Format, GltfObject, Target};
 use glam::Vec3;
 use serde_json::{json, Value};
 
-use crate::history::{Edit, History};
+use crate::history::Edit;
 use crate::multires_cmds::guard;
 use crate::scene_cmds::summary;
 use crate::sculpt_cmds::target;
@@ -36,7 +36,7 @@ pub fn open_data(s: &mut Session, bytes: Vec<u8>) -> Result<Value, CommandError>
     scene.reserve(s.scene.high_water());
     s.stroke = None;
     s.scene = scene;
-    s.history = History::default();
+    s.history.clear();
     Ok(json!({"objects": s.scene.objects.iter().map(summary).collect::<Vec<_>>(), "active": s.scene.active}))
 }
 
