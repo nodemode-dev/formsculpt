@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.76.0 · 2026-10-17
+
+### Added
+
+- An Objects and Layers panel beside the left strip, with two tabs.
+  - Objects: every object in the scene with its vertex count and the active one marked. Click a row to make it active; its eye shows or hides it, its lock keeps strokes off it. Add Sphere, Duplicate, Rename and Delete below.
+  - Layers: the active object's base mesh and sculpt layers. Click a row to choose where strokes go; a layer's eye hides it and shows it again at the strength it had; drag its bar to set its strength (0 to 200 percent). Add layer, Apply and Delete below.
+- Every button in the two top bars has a word under its icon (File, Scene, Topology, Paint, Light, View, History, More; Tool, Mirror, Dyntopo, Invert, Search, Layout, All tools).
+- The window's notes (what a click did, or why it did nothing) show over the viewport for a few seconds instead of in the hidden side panel.
+- 1182 interface strings in every language.
+
+### Fixed
+
+- The terminal is no longer filled with a line for every request the window makes. Failed requests and errors still print; FSC_ACCESS_LOG=1 prints everything again.
+
 ## 0.75.1 · 2026-10-17
 
 ### Fixed
