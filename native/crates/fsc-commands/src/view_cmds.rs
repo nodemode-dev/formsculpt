@@ -45,6 +45,7 @@ pub(crate) fn view_schema() -> Value {
             "render": {"type": "string", "enum": ["preview", "path"], "default": "preview", "description": "preview draws as the window does (fast); path is a path-traced production render: sky and sun light with soft shadows, light bouncing between surfaces, glossy metal and smooth paint, glowing and see-through paint (seconds to minutes; samples and bounces trade time for noise)."},
             "samples": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 32, "description": "Path render: paths per pixel; 32 is a quick look, 256 a clean final image."},
             "bounces": {"type": "integer", "minimum": 1, "maximum": 8, "default": 4, "description": "Path render: how many times light may bounce."},
+            "denoise": {"type": "boolean", "default": false, "description": "Path render: smooth the noise with an edge-aware filter guided by the surfaces' normals, depth and colour, keeping edges and painted detail sharp; away from edges 32 samples denoised are about as clean as 128 without it. The beauty pass only."},
             "tone": {"type": "string", "enum": fsc_paint::Tone::NAMES, "default": "reinhard", "description": "Path render: how light is brought to the screen. reinhard is soft; aces filmic and contrasty; agx keeps hot colours from skewing, fading them toward white as film does; neutral keeps base colours almost exact and only compresses highlights; none clips."},
             "exposure": {"type": "number", "minimum": 0, "maximum": 16, "default": 1, "description": "Path render grade: a multiplier on the light (2 is a stop brighter)."},
             "contrast": {"type": "number", "minimum": 0.25, "maximum": 2.5, "default": 1, "description": "Path render grade: contrast about mid grey (1 as rendered)."},
@@ -508,6 +509,7 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
                 other => return Err(bad(format!("pass must be beauty, depth, normal or ao, not {other}"))),
             };
             options.sun = args.get("sun").and_then(Value::as_bool).unwrap_or(true);
+            options.denoise = args.get("denoise").and_then(Value::as_bool).unwrap_or(false);
             let tone = args.get("tone").and_then(Value::as_str).unwrap_or("reinhard");
             options.tone = fsc_paint::Tone::parse(tone).ok_or_else(|| bad(format!("tone must be one of {}, not {tone}", fsc_paint::Tone::NAMES.join(", "))))?;
             let num = |k: &str, d: f64, lo: f64, hi: f64| args.get(k).and_then(Value::as_f64).unwrap_or(d).clamp(lo, hi) as f32;

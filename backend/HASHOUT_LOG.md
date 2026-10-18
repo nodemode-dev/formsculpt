@@ -248,3 +248,9 @@ The window lists the scene and then fetches each new mesh; when an agent clears 
 - kind: fix
 - logged: v0.76.0 · 2026-10-17
 The owner's terminal filled with access lines: the window asks for agent news about once a second (/api/mcp/window), for the version every few seconds, and for the scene after each change, and uvicorn printed one line per request. A filter on the uvicorn.access logger now drops records whose status is under 400, so failed requests, errors and startup lines still print. It is installed in the app's lifespan rather than at import, because uvicorn sets up its loggers after importing the app and a filter added earlier could be replaced; living in the app, it covers the dev server (backend/boot_backend), ./formsculptor serve and the frozen desktop engine alike. FSC_ACCESS_LOG=1 prints every request again. The polling itself is unchanged: it is how the window learns of an agent's changes and of the consent prompt. Checked against a booted service with the window loaded: no access lines for the polls, scene requests and dispatches; a request to a missing route still printed its 404.
+
+### routers/engine.py · denoise on the view route
+- refers-to: app/routers/engine.py :: view_image (denoise)
+- kind: rationale
+- logged: v0.84.0 · 2026-10-18
+The path render's new denoise argument is passed through /api/engine/view as a boolean query parameter (false by default) for render=path only, so the window's Path Render can ask for it. Removed: `args.update({"pass": pass_, "aperture": aperture})` (now with denoise).

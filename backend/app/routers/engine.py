@@ -93,13 +93,14 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|
 
 
 @router.get("/view")
-async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048), shading: str = "clay", background: str = "dark", render: str = Query("preview", pattern="^(preview|path)$"), samples: int = Query(32, ge=1, le=1024), bounces: int = Query(4, ge=1, le=8), pass_: str = Query("beauty", alias="pass", pattern="^(beauty|depth|normal|ao)$"), aperture: float = Query(0.0, ge=0.0, le=1.0)) -> Response:
+async def view_image(view: str = "three_quarter", width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048), shading: str = "clay", background: str = "dark", render: str = Query("preview", pattern="^(preview|path)$"), samples: int = Query(32, ge=1, le=1024), bounces: int = Query(4, ge=1, le=8), pass_: str = Query("beauty", alias="pass", pattern="^(beauty|depth|normal|ao)$"), aperture: float = Query(0.0, ge=0.0, le=1.0), denoise: bool = False) -> Response:
     """The scene rendered headless (the get_view command) as a PNG, for previews and for anything that wants a picture;
-    render=path is the path-traced production render, with pass (depth, normal, ao) and aperture (depth of field)."""
+    render=path is the path-traced production render, with pass (depth, normal, ao), aperture (depth of field) and
+    denoise (the edge-aware filter over the beauty pass)."""
     _guard()
     args = {"view": view, "width": width, "height": height, "shading": shading, "background": background, "render": render, "samples": samples, "bounces": bounces}
     if render == "path":
-        args.update({"pass": pass_, "aperture": aperture})
+        args.update({"pass": pass_, "aperture": aperture, "denoise": denoise})
     try:
         data, _ = await run_in_threadpool(engine.view_png, args)
     except ValueError as exc:

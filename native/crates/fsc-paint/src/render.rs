@@ -411,6 +411,17 @@ pub enum Pass {
     Occlusion,
 }
 
+/// One traced pixel before display: its linear light and coverage, and what the denoiser is guided by.
+struct Traced {
+    color: Vec3,
+    alpha: f32,
+    albedo: Vec3,
+    normal: Vec3,
+    depth: f32,
+    variance: f32,
+    hit: bool,
+}
+
 /// A light added to the sun: its colour times intensity, and either the direction it shines from (world space; a
 /// directional light) or, with `spot`, a spot light, for which `from` is unused.
 #[derive(Clone, Copy, Debug)]
@@ -462,11 +473,13 @@ pub struct PathOptions {
     /// How the beauty pass's light is brought to the display, and the grade before it (passes are left linear).
     pub tone: crate::Tone,
     pub grade: crate::Grade,
+    /// Run the edge-aware denoiser over the beauty pass (see `denoise.rs`), so fewer samples give a clean image.
+    pub denoise: bool,
 }
 
 impl PathOptions {
     pub fn new(samples: u32, bounces: u32) -> Self {
-        PathOptions { samples, bounces, lights: Vec::new(), sun: true, aperture: 0.0, focus: None, pass: Pass::Beauty, tone: crate::Tone::Reinhard, grade: crate::Grade::default() }
+        PathOptions { samples, bounces, lights: Vec::new(), sun: true, aperture: 0.0, focus: None, pass: Pass::Beauty, tone: crate::Tone::Reinhard, grade: crate::Grade::default(), denoise: false }
     }
 }
 
@@ -559,11 +572,14 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
     let bulb = size * 0.01;
     let near = (bounds.center() - cam.eye).length() - size * 0.5;
     let reach = size * 0.2;
-    let trace = |i: usize| -> [u8; 4] {
+    let trace = |i: usize| -> Traced {
         let (x, y) = (i % view.width, i / view.width);
         let mut rng = Rng((i as u32).wrapping_mul(2_654_435_761) ^ 0x9e37_79b9 | 1);
         let mut total = Vec3::ZERO;
         let mut alpha = 0.0f32;
+        // The denoiser's guides: the first surface each sample meets, and the moments of the samples' brightness.
+        let (mut g_albedo, mut g_normal, mut g_depth, mut g_hits) = (Vec3::ZERO, Vec3::ZERO, 0.0f32, 0u32);
+        let (mut m1, mut m2) = (0.0f32, 0.0f32);
         for _ in 0..samples {
             let sx = ((x as f32 + rng.next()) / view.width as f32) * 2.0 - 1.0;
             let sy = 1.0 - ((y as f32 + rng.next()) / view.height as f32) * 2.0;
@@ -601,6 +617,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
             let mut through = Vec3::ONE;
             let mut light = Vec3::ZERO;
             let mut first = true;
+            let mut guide = options.denoise;
             // Until the path scatters off a surface it still looks at the backdrop: passing through see-through, dithered
             // and additive surfaces or refracting through glass does not turn the background into the sky's bounce light.
             let mut straight = true;
@@ -627,6 +644,13 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                     n = -n;
                 }
                 let albedo = Vec3::new(paint[0], paint[1], paint[2]).clamp(Vec3::ZERO, Vec3::ONE);
+                if guide {
+                    guide = false;
+                    g_albedo += albedo;
+                    g_normal += n;
+                    g_depth += (q - cam.eye).length();
+                    g_hits += 1;
+                }
                 let (rough, metal, opacity, glow) = (paint[3].clamp(0.05, 1.0), paint[4].clamp(0.0, 1.0), paint[5].clamp(0.0, 1.0), paint[6].clamp(0.0, 1.0));
                 let material = &objects[oi].material;
                 if glow > 0.0 {
@@ -721,17 +745,43 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                 }
             }
             total += light;
+            let l = light.dot(Vec3::new(0.2126, 0.7152, 0.0722));
+            m1 += l;
+            m2 += l * l;
         }
-        let c = total / samples as f32;
-        let c = if options.pass == Pass::Beauty { crate::tone::display(c, options.tone, &options.grade) } else { c };
-        let a = if view.background.is_some() { 1.0 } else { alpha / samples as f32 };
-        let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
-        [q(c.x), q(c.y), q(c.z), q(a)]
+        let k = samples as f32;
+        let a = if view.background.is_some() { 1.0 } else { alpha / k };
+        // A pixel is guided only when every sample met a surface: edges against the backdrop mix in its colour, so they
+        // stay as traced and are not borrowed from.
+        let hit = g_hits == samples;
+        let h = g_hits.max(1) as f32;
+        let (mean, square) = (m1 / k, m2 / k);
+        Traced { color: total / k, alpha: a, albedo: g_albedo / h, normal: g_normal.normalize_or_zero(), depth: g_depth / h, variance: (square - mean * mean).max(0.0) / k, hit }
     };
     #[cfg(feature = "parallel")]
-    let pixels: Vec<[u8; 4]> = (0..view.width * view.height).into_par_iter().map(trace).collect();
+    let mut traced: Vec<Traced> = (0..view.width * view.height).into_par_iter().map(trace).collect();
     #[cfg(not(feature = "parallel"))]
-    let pixels: Vec<[u8; 4]> = (0..view.width * view.height).map(trace).collect();
+    let mut traced: Vec<Traced> = (0..view.width * view.height).map(trace).collect();
+    if options.denoise && options.pass == Pass::Beauty {
+        let mut color: Vec<Vec3> = traced.iter().map(|t| t.color).collect();
+        let albedo: Vec<Vec3> = traced.iter().map(|t| t.albedo).collect();
+        let normal: Vec<Vec3> = traced.iter().map(|t| t.normal).collect();
+        let depth: Vec<f32> = traced.iter().map(|t| t.depth).collect();
+        let variance: Vec<f32> = traced.iter().map(|t| t.variance).collect();
+        let hit: Vec<bool> = traced.iter().map(|t| t.hit).collect();
+        crate::denoise::denoise(&mut color, &crate::denoise::Guides { width: view.width, height: view.height, albedo: &albedo, normal: &normal, depth: &depth, variance: &variance, hit: &hit });
+        for (t, c) in traced.iter_mut().zip(color) {
+            t.color = c;
+        }
+    }
+    let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+    let pixels: Vec<[u8; 4]> = traced
+        .iter()
+        .map(|t| {
+            let c = if options.pass == Pass::Beauty { crate::tone::display(t.color, options.tone, &options.grade) } else { t.color };
+            [q(c.x), q(c.y), q(c.z), q(t.alpha)]
+        })
+        .collect();
     let covered = pixels.iter().filter(|p| p[3] > 0).count() as f32 / pixels.len() as f32;
     let triangles = objects.iter().map(|o| o.mesh.triangle_count()).sum();
     Ok(Rendered { width: view.width, height: view.height, pixels, triangles, covered, ms: started.elapsed().as_millis() })

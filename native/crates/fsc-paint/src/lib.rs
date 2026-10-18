@@ -1,5 +1,6 @@
 mod bake;
 mod charts;
+mod denoise;
 mod encode;
 mod kelvin;
 mod render;
