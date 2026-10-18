@@ -165,7 +165,8 @@ export class ZBrushLayout {
       return g;
     };
     const modes = group();
-    for (const [key, word, title, icon] of [['draw', 'Draw', 'Draw (Q)', 'draw'], ['move', 'Move', 'Move (W)', 'grab'], ['scale', 'Scale', 'Scale (E)', 'size'], ['rotate', 'Rotate', 'Rotate (R)', 'angle']] as const) {
+    // Words wrapped in t() here so the string extractor sees them (the helper's own t() then leaves them as they are).
+    for (const [key, word, title, icon] of [['draw', t('Draw'), t('Draw (Q)'), 'draw'], ['move', t('Move'), t('Move (W)'), 'grab'], ['scale', t('Scale'), t('Scale (E)'), 'size'], ['rotate', t('Rotate'), t('Rotate (R)'), 'angle']] as const) {
       const b = shelfButton(word, title, 'zb-big', icon);
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => this.mode(key));
@@ -173,7 +174,7 @@ export class ZBrushLayout {
       modes.append(b);
     }
     const paint = group();
-    for (const [key, word, title] of [['mrgb', 'Mrgb', 'Paint colour and material'], ['rgb', 'Rgb', 'Paint colour']] as const) {
+    for (const [key, word, title] of [['mrgb', t('Mrgb'), t('Paint colour and material')], ['rgb', t('Rgb'), t('Paint colour')]] as const) {
       const b = shelfButton(word, title, 'zb-small');
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => this.paintMode(key === 'mrgb'));
@@ -181,7 +182,7 @@ export class ZBrushLayout {
       paint.append(b);
     }
     const z = group();
-    for (const [key, word, title] of [['zadd', 'Zadd', 'Add to the surface'], ['zsub', 'Zsub', 'Carve into the surface']] as const) {
+    for (const [key, word, title] of [['zadd', t('Zadd'), t('Add to the surface')], ['zsub', t('Zsub'), t('Carve into the surface')]] as const) {
       const b = shelfButton(word, title, 'zb-small');
       b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => {
@@ -224,9 +225,9 @@ export class ZBrushLayout {
       wrap.append(el('span', 'zb-word', t(label)), shown, s);
       this.left.append(wrap);
     };
-    choice(parts.stroke, 'Stroke');
-    choice(parts.alpha, 'Alpha');
-    choice(parts.shading, 'Material');
+    choice(parts.stroke, t('Stroke'));
+    choice(parts.alpha, t('Alpha'));
+    choice(parts.shading, t('Material'));
     const colour = el('label', 'zb-swatch zb-colour');
     const picker = el('input');
     picker.type = 'color';
@@ -236,6 +237,8 @@ export class ZBrushLayout {
       if (document.activeElement !== picker && picker.value !== parts.paintColor.value) picker.value = parts.paintColor.value;
     });
     colour.append(picker, el('span', 'zb-word', t('Colour')));
+    // The palette names, through t() literally so the extractor finds them (the menu bar reads them by name).
+    this.paletteWords = { Brush: t('Brush'), Edit: t('Edit'), File: t('File'), Layer: t('Layer'), Light: t('Light'), Material: t('Material'), Preferences: t('Preferences'), Texture: t('Texture'), Tool: t('Tool'), Transform: t('Transform'), Zplugin: t('Zplugin') };
     this.left.append(colour);
 
     // The right shelf: view toggles, symmetry, Frame, the drag buttons, display toggles.
@@ -245,16 +248,16 @@ export class ZBrushLayout {
       this.right.append(b);
       return b;
     };
-    const persp = shelfButton('Persp', 'Perspective (P)', 'zb-side', 'ortho');
+    const persp = shelfButton(t('Persp'), t('Perspective (P)'), 'zb-side', 'ortho');
     persp.setAttribute('aria-pressed', 'true');
     persp.addEventListener('click', () => parts.run('view.ortho'));
     this.right.append(persp);
     this.modes.set('persp', persp);
-    rcmd('Floor', 'Floor grid (Shift+P)', 'view.floor_grid', 'grid');
-    rcmd('Sym', 'Symmetry X (X)', 'sculpt.mirror_x', 'symmetry');
+    rcmd(t('Floor'), t('Floor grid (Shift+P)'), 'view.floor_grid', 'grid');
+    rcmd(t('Sym'), t('Symmetry X (X)'), 'sculpt.mirror_x', 'symmetry');
     this.right.append(el('span', 'zb-gap'));
-    rcmd('Frame', 'Frame (F)', 'view.frame', 'home');
-    for (const [kind, word, title, icon] of [['move', 'Move', 'Drag to move the view', 'grab'], ['zoom', 'Zoom3D', 'Drag to zoom the view', 'search'], ['rotate', 'Rotate', 'Drag to rotate the view', 'orbit']] as const) {
+    rcmd(t('Frame'), t('Frame (F)'), 'view.frame', 'home');
+    for (const [kind, word, title, icon] of [['move', t('Move'), t('Drag to move the view'), 'grab'], ['zoom', t('Zoom3D'), t('Drag to zoom the view'), 'search'], ['rotate', t('Rotate'), t('Drag to rotate the view'), 'orbit']] as const) {
       const b = shelfButton(word, title, 'zb-side zb-drag', icon);
       b.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
@@ -277,9 +280,9 @@ export class ZBrushLayout {
       this.right.append(b);
     }
     this.right.append(el('span', 'zb-gap'));
-    rcmd('PolyF', 'PolyFrame (Shift+F)', 'view.wireframe', 'wireframe');
-    rcmd('Transp', 'Transparency', 'view.xray', 'xray');
-    rcmd('Solo', 'Solo', 'object.isolate', 'solo');
+    rcmd(t('PolyF'), t('PolyFrame (Shift+F)'), 'view.wireframe', 'wireframe');
+    rcmd(t('Transp'), t('Transparency'), 'view.xray', 'xray');
+    rcmd(t('Solo'), t('Solo'), 'object.isolate', 'solo');
 
     // The tray's divider (opens and closes it) and its head.
     this.divider.type = 'button';
@@ -328,6 +331,8 @@ export class ZBrushLayout {
   private readonly syncs: (() => void)[] = [];
   /** Where the SubTool list lives outside this layout (over the viewport). */
   private dockHome: HTMLElement | null = null;
+  /** The palettes' names in the window's language, by their English name. */
+  private paletteWords: Record<string, string> = {};
 
   get enabled(): boolean {
     return this.on;
@@ -385,7 +390,7 @@ export class ZBrushLayout {
     this.palette = palette[0];
     const wanted = new Set(palette[1]);
     for (const [n, section] of this.sectionOf) n.classList.toggle('zb-off', !wanted.has(section));
-    setText(this.trayTitle, t(this.palette));
+    setText(this.trayTitle, this.paletteWords[this.palette] ?? t(this.palette));
     for (const b of Array.from(this.menu.querySelectorAll<HTMLButtonElement>('[data-palette]'))) setAttr(b, 'aria-pressed', b.dataset.palette === this.palette ? 'true' : 'false');
     const sub = this.subtools;
     if (sub) {

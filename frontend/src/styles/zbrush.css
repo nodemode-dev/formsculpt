@@ -28,7 +28,7 @@
   --tb-radius: 4px;
   --tb-under: 0px;
   grid-template-rows: 26px 28px 64px minmax(0, 1fr) var(--dock-h, 0px) 0;
-  grid-template-columns: 78px minmax(0, 1fr) 62px 12px var(--zb-tray-w);
+  grid-template-columns: 78px minmax(0, 1fr) 70px 12px var(--zb-tray-w);
   grid-template-areas:
     "zbtitle zbtitle zbtitle zbtitle zbtitle"
     "zbmenu zbmenu zbmenu zbmenu zbmenu"
@@ -72,14 +72,14 @@
 :is(.zb-big, .zb-small, .zb-side):hover { background: var(--zb-hover); }
 :is(.zb-big, .zb-small, .zb-side)[aria-pressed="true"] { background: var(--zb-on); color: var(--zb-on-ink); }
 :is(.zb-big, .zb-small, .zb-side):disabled { opacity: 0.4; cursor: default; }
-.zb-big { width: 52px; height: 50px; }
+.zb-big { width: 66px; height: 50px; padding: 0 2px; }
 .zb-big svg { width: 22px; height: 22px; }
 .zb-small { width: 46px; height: 24px; }
 .zb-side { width: 100%; height: 44px; flex: none; }
 .zb-side svg { width: 18px; height: 18px; }
 .zb-drag { cursor: grab; touch-action: none; }
 .zb-drag:active { cursor: grabbing; }
-.zb-word { font: 500 10px/1.1 var(--font-sans); text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+.zb-word { font: 500 10px/1.1 var(--font-sans); text-align: center; overflow-wrap: break-word; hyphens: auto; }
 svg + .zb-word { margin-top: 1px; }
 .zb-field { min-width: 0; height: 22px; border-radius: 3px; }
 .zb-field .tb-fill { background: rgb(249 115 22 / 0.35); }
