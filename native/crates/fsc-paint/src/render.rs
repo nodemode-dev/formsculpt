@@ -490,8 +490,8 @@ pub fn path_trace(objects: &[RenderObject], view: &View, samples: u32, bounces: 
 pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOptions) -> Result<Rendered, String> {
     let (samples, bounces) = (options.samples, options.bounces);
     let started = Instant::now();
-    if view.width == 0 || view.height == 0 || view.width > 2048 || view.height > 2048 {
-        return Err("width and height must be 1 to 2048".into());
+    if view.width == 0 || view.height == 0 || view.width > 4096 || view.height > 4096 {
+        return Err("width and height must be 1 to 4096".into());
     }
     let mut bounds = Aabb::EMPTY;
     if let Some(f) = view.frame {

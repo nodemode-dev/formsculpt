@@ -112,6 +112,7 @@ pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandErro
             v
         }).collect::<Vec<_>>(),
         "groups": crate::hierarchy_cmds::groups_report(s),
+        "mm_per_unit": s.scene.mm_per_unit,
         "active": s.scene.active,
         // The saved views' names, in order (list_views has the cameras).
         "views": s.scene.views.iter().map(|v| v.name.clone()).collect::<Vec<_>>(),

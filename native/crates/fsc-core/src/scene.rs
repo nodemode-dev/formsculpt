@@ -231,6 +231,9 @@ pub struct Scene {
     pub views: Vec<SavedView>,
     /// Empty hierarchy nodes, in the order they were made.
     pub groups: Vec<Group>,
+    /// Real-world scale: millimetres in one scene unit, once set (set_real_size). Print check measures by it and STL
+    /// and 3MF exports are written in millimetres by it; unset, they read as before.
+    pub mm_per_unit: Option<f32>,
 }
 
 impl Scene {

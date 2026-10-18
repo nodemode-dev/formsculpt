@@ -1954,6 +1954,17 @@ pub static COMMANDS: &[Command] = &[
         run: file_cmds::print_check,
     },
     Command {
+        id: "file.real_size",
+        mcp: "set_real_size",
+        group: Group::File,
+        label: "Set Real Size",
+        description: "Set the scene's real-world scale for printing: say how big one object really is (size_mm along its longest side, or x, y or z), or give mm_per_unit directly (null clears it). Nothing moves; from then on print_check measures in that scale and STL and 3MF exports are written in millimetres at that size (3MF's unit is millimetre; STL has no unit, so slicers read the numbers as given). Saved in projects. Reports every object's size in millimetres.",
+        keys: &[],
+        hints: WRITE,
+        schema: file_cmds::real_size_schema,
+        run: file_cmds::set_real_size,
+    },
+    Command {
         id: "file.repair",
         mcp: "repair_mesh",
         group: Group::Topo,

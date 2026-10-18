@@ -192,6 +192,9 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             .map(|v| json!({"name": v.name, "target": v.target, "distance": v.distance, "yaw": v.yaw, "pitch": v.pitch, "ortho": v.ortho}))
             .collect::<Vec<_>>());
     }
+    if let Some(mm) = scene.mm_per_unit {
+        manifest["mm_per_unit"] = json!(mm);
+    }
     if !scene.groups.is_empty() {
         manifest["groups"] = json!(scene.groups.iter().map(|g| json!({"id": g.id, "name": g.name, "parent": g.parent})).collect::<Vec<_>>());
     }
@@ -467,6 +470,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         scene.insert(at, o);
     }
     scene.active = manifest["active"].as_u64().map(|a| a as u32).filter(|a| scene.get(*a).is_some());
+    scene.mm_per_unit = manifest["mm_per_unit"].as_f64().filter(|m| m.is_finite() && *m > 0.0).map(|m| m as f32);
     // Groups: each read whole or skipped. An id already used by an object is skipped, so ids stay unique.
     for g in manifest["groups"].as_array().cloned().unwrap_or_default() {
         if let Some(id) = g["id"].as_u64().map(|i| i as u32).filter(|i| *i > 0 && !scene.exists(*i)) {

@@ -36,8 +36,8 @@ pub(crate) fn view_schema() -> Value {
             "saved": {"type": "string", "minLength": 1, "description": "Look from a saved view's direction (save_view, list_views); overrides view."},
             "yaw": {"type": "number", "minimum": -360, "maximum": 360, "description": "Degrees around the vertical axis from the front; overrides view."},
             "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees above the horizon; overrides view."},
-            "width": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 640},
-            "height": {"type": "integer", "minimum": 64, "maximum": 2048, "default": 640},
+            "width": {"type": "integer", "minimum": 64, "maximum": 4096, "default": 640, "description": "Up to 4096, so 4K (3840 by 2160) renders; a path render that large takes minutes."},
+            "height": {"type": "integer", "minimum": 64, "maximum": 4096, "default": 640},
             "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay", "description": "The window's matcaps, or pbr for painted roughness and metalness under three lights."},
             "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Only these objects; every visible object when omitted."},
             "frame": {"type": "string", "enum": ["all", "active"], "default": "all", "description": "Fit the camera to all drawn objects or to the active one (others still drawn)."},
@@ -426,8 +426,8 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
     };
     let yaw = args.get("yaw").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(yaw);
     let pitch = args.get("pitch").and_then(Value::as_f64).map(|v| v as f32).unwrap_or(pitch).clamp(-89.9, 89.9);
-    let width = int(args, "width", 640, 64, 2048)?;
-    let height = int(args, "height", 640, 64, 2048)?;
+    let width = int(args, "width", 640, 64, 4096)?;
+    let height = int(args, "height", 640, 64, 4096)?;
     let shading_name = args.get("shading").and_then(Value::as_str).unwrap_or("clay");
     let shading = Shading::named(shading_name).ok_or_else(|| bad(format!("shading must be one of {}", Shading::NAMES.join(", "))))?;
     let background = match args.get("background").and_then(Value::as_str).unwrap_or("dark") {

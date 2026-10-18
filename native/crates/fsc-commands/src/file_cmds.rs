@@ -92,7 +92,70 @@ pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec
             GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
         })
         .collect();
+    // With a real-world scale, the print formats are written in millimetres: 3MF declares millimetre as its unit and
+    // STL carries no unit at all, so scaling here is what makes the file print at the size set.
+    if let (Some(mm), Format::Stl | Format::ThreeMf) = (s.scene.mm_per_unit, format) {
+        let scaled: Vec<fsc_core::Mesh> = objects
+            .iter()
+            .map(|o| {
+                let mut m = o.mesh.clone();
+                for p in &mut m.positions {
+                    *p = [p[0] * mm, p[1] * mm, p[2] * mm];
+                }
+                m
+            })
+            .collect();
+        let objects: Vec<GltfObject> = objects.iter().zip(&scaled).map(|(o, m)| GltfObject { name: o.name, mesh: m, targets: Vec::new(), maps: None, tiles: None }).collect();
+        return fsc_io::export(format, &objects).map_err(io);
+    }
     fsc_io::export(format, &objects).map_err(io)
+}
+
+pub(crate) fn real_size_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "The object to measure by; the active object when omitted."},
+            "size_mm": {"type": "number", "exclusiveMinimum": 0, "maximum": 100000, "description": "How big that object is in the real world along axis, in millimetres; sets the scene's scale from it."},
+            "axis": {"type": "string", "enum": ["longest", "x", "y", "z"], "default": "longest", "description": "Which of the object's sides size_mm measures."},
+            "mm_per_unit": {"type": ["number", "null"], "exclusiveMinimum": 0, "description": "Or set the scale directly: millimetres in one scene unit; null clears it."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Sets the scene's real-world scale, from an object's size in millimetres or directly. Nothing moves: the scale only
+/// says how big a scene unit is, for print check and the print formats. Reports every object's size in millimetres.
+pub(crate) fn set_real_size(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    match (args.get("size_mm"), args.get("mm_per_unit")) {
+        (Some(_), Some(_)) => return Err(bad("give size_mm or mm_per_unit, not both")),
+        (Some(v), None) => {
+            let mm = v.as_f64().filter(|x| *x > 0.0).ok_or_else(|| bad("size_mm must be a positive number"))? as f32;
+            let id = target(s, args)?;
+            let e = s.scene.get(id).expect("checked").mesh.bounds().extent();
+            let side = match args.get("axis").and_then(Value::as_str).unwrap_or("longest") {
+                "x" => e.x,
+                "y" => e.y,
+                "z" => e.z,
+                "longest" => e.max_element(),
+                other => return Err(bad(format!("axis must be longest, x, y or z, not {other}"))),
+            };
+            if side <= 1e-9 {
+                return Err(bad("the object has no size along that axis"));
+            }
+            s.scene.mm_per_unit = Some(mm / side);
+        }
+        (None, Some(Value::Null)) => s.scene.mm_per_unit = None,
+        (None, Some(v)) => s.scene.mm_per_unit = Some(v.as_f64().filter(|x| *x > 0.0).ok_or_else(|| bad("mm_per_unit must be a positive number or null"))? as f32),
+        (None, None) => return Err(bad("give size_mm (with id and axis) or mm_per_unit")),
+    }
+    let mm = s.scene.mm_per_unit;
+    let sizes: Vec<Value> = s.scene.objects.iter().map(|o| {
+        let e = o.mesh.bounds().extent();
+        json!({"id": o.id, "name": o.name, "size_mm": mm.map(|m| [e.x * m, e.y * m, e.z * m])})
+    }).collect();
+    Ok(json!({"mm_per_unit": mm, "objects": sizes}))
 }
 
 pub(crate) fn path_schema(extra: Value) -> Value {
@@ -257,7 +320,7 @@ pub(crate) fn print_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "units_per_mm": {"type": "number", "exclusiveMinimum": 0, "default": 0.1, "description": "Scene units in one millimetre (0.1 means the default 2-unit sphere prints 20 mm across)."},
+            "units_per_mm": {"type": "number", "exclusiveMinimum": 0, "description": "Scene units in one millimetre; the scene's real-world scale (set_real_size) when set, else 0.1 (the default 2-unit sphere prints 20 mm across)."},
             "min_wall_mm": {"type": "number", "exclusiveMinimum": 0, "default": 1.0, "description": "Thinnest wall the printer can make."}
         },
         "required": [],
@@ -267,7 +330,7 @@ pub(crate) fn print_schema() -> Value {
 
 pub(crate) fn print_check(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
-    let per_mm = args.get("units_per_mm").and_then(Value::as_f64).unwrap_or(0.1) as f32;
+    let per_mm = args.get("units_per_mm").and_then(Value::as_f64).map(|v| v as f32).or(s.scene.mm_per_unit.map(|m| 1.0 / m)).unwrap_or(0.1);
     let min_wall = args.get("min_wall_mm").and_then(Value::as_f64).unwrap_or(1.0) as f32;
     if per_mm <= 0.0 || min_wall <= 0.0 {
         return Err(bad("units_per_mm and min_wall_mm must be positive"));

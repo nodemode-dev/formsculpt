@@ -254,3 +254,9 @@ The owner's terminal filled with access lines: the window asks for agent news ab
 - kind: rationale
 - logged: v0.84.0 · 2026-10-18
 The path render's new denoise argument is passed through /api/engine/view as a boolean query parameter (false by default) for render=path only, so the window's Path Render can ask for it. Removed: `args.update({"pass": pass_, "aperture": aperture})` (now with denoise).
+
+### routers/engine.py · 4K on the view route
+- refers-to: app/routers/engine.py :: view_image (width, height)
+- kind: rationale
+- logged: v0.90.0 · 2026-10-18
+The engine renders up to 4096 by 4096 now (native side log, 0.90.0), so the view route's width and height go to le=4096 for the window's 4K Render size. Removed: `width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048)`.
