@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.90.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.91.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -12,7 +12,7 @@ Generated from the engine's command registry (formsculptor 0.90.0) by `./formscu
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
-- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`, `set_real_size`
+- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `link_pull`, `link_push`, `print_check`, `set_real_size`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`, `hide_shape`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`, `layer_set`, `layer_offset`, `layer_bake`, `layer_extract`
@@ -1729,6 +1729,24 @@ Note: removes or replaces (undoable).
 Bring back every bridged file another app has saved since it was sent or last synced, replacing its object's mesh (same object and name, one undo step each). The window syncs on its own every few seconds while bridges are open; agents call this after the other app saves. Lists the open bridges.
 
 - no parameters
+
+## link_pull
+
+The live link's read side: an object's mesh as raw arrays for another app (the Blender add-on in integrations/blender polls it). Returns id, name, revision, vertices, triangles and changed, plus positions (base64 little-endian f32 x, y, z per vertex, y up) and indices (base64 little-endian u32, three per triangle). Give since (the revision already held) and an unchanged object replies changed false with no arrays, so polling is cheap. Read-only.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `since`: integer; range 0 to inf; The revision the caller already holds; when the object is still at it the reply carries no arrays and changed is false.
+
+Note: read-only.
+
+## link_push
+
+The live link's write side: another app sends a mesh as base64 arrays (the same layout link_pull gives). With id and the same triangles (indices left out, or equal) only the positions move as one undo step, so the object's paint, mask, face groups and UVs stay; with new triangles the mesh is replaced as one undo step (refused with has_levels or a layer error as other topology changes are); without id it becomes a new object. Returns the object, its new revision, created and topology.
+
+- `id`: integer; range 1 to inf; The object to update; a new object is made when omitted.
+- `indices`: string; Base64 little-endian u32, three per triangle. May be left out when id is given and only the positions changed.
+- `name`: string; Name for a new object (made unique); default Blender.
+- `positions`: string; required; Base64 little-endian f32 x, y, z per vertex, in formsculptor's axes (y up).
 
 ## print_check
 
