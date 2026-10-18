@@ -1280,5 +1280,7 @@
  "Add UV Sphere": "เพิ่มทรงกลม UV",
  "Icosahedron": "ทรงยี่สิบหน้า",
  "Quad Sphere": "ทรงกลมสี่เหลี่ยม",
- "UV Sphere": "ทรงกลม UV"
+ "UV Sphere": "ทรงกลม UV",
+ "Add Head": "เพิ่มศีรษะ",
+ "Head": "ศีรษะ"
 }

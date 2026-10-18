@@ -1280,5 +1280,7 @@
  "Add UV Sphere": "UV-bol toevoegen",
  "Icosahedron": "Icosaëder",
  "Quad Sphere": "Vierhoekenbol",
- "UV Sphere": "UV-bol"
+ "UV Sphere": "UV-bol",
+ "Add Head": "Hoofd toevoegen",
+ "Head": "Hoofd"
 }

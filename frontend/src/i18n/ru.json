@@ -1280,5 +1280,7 @@
  "Add UV Sphere": "Добавить UV-сферу",
  "Icosahedron": "Икосаэдр",
  "Quad Sphere": "Четырёхугольная сфера",
- "UV Sphere": "UV-сфера"
+ "UV Sphere": "UV-сфера",
+ "Add Head": "Добавить голову",
+ "Head": "Голова"
 }

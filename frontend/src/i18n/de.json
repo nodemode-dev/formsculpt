@@ -1280,5 +1280,7 @@
  "Add UV Sphere": "UV-Kugel hinzufügen",
  "Icosahedron": "Ikosaeder",
  "Quad Sphere": "Viereckskugel",
- "UV Sphere": "UV-Kugel"
+ "UV Sphere": "UV-Kugel",
+ "Add Head": "Kopf hinzufügen",
+ "Head": "Kopf"
 }
