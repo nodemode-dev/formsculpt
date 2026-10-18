@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.93.0 · 2026-10-18
+
+### Added
+
+- Focal Shift, as ZBrush has it, for every brush: below 0 the brush keeps full strength further out (-100 is a crisp stamp with no falloff), above 0 its strength fades sooner toward a point. It works over any falloff, including a drawn curve. In the panel it sits under Falloff.
+- A separate strength for the Paint brush (ZBrush's Rgb Intensity), so painting and sculpting each keep their own. In the panel and tablet layouts the usual Strength slider sets the Paint brush's strength while it is in hand.
+- The ZBrush layout's top shelf and QuickMenu now have all four of ZBrush's sliders, Draw Size, Focal Shift, Z Intensity and Rgb Intensity, with O and I opening Focal Shift and Rgb Intensity at the cursor beside S and U.
+- For agents: `sculpt_stroke` takes `focal_shift`.
+- 1320 interface strings in every language.
+
+### Notes
+
+- In the ZBrush layout, while the Paint brush is in hand, Z Intensity shows the paint strength too.
+
 ## 0.92.0 · 2026-10-18
 
 ### Added
