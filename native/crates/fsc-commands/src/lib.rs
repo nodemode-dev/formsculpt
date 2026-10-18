@@ -11,6 +11,7 @@ mod history;
 mod layer_cmds;
 pub mod live;
 mod mask_cmds;
+mod link_cmds;
 mod model_cmds;
 mod multires_cmds;
 mod object_cmds;
@@ -1941,6 +1942,28 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: file_cmds::id_free_schema,
         run: file_cmds::bridge_sync,
+    },
+    Command {
+        id: "file.link_pull",
+        mcp: "link_pull",
+        group: Group::File,
+        label: "Live Link Read",
+        description: "The live link's read side: an object's mesh as raw arrays for another app (the Blender add-on in integrations/blender polls it). Returns id, name, revision, vertices, triangles and changed, plus positions (base64 little-endian f32 x, y, z per vertex, y up) and indices (base64 little-endian u32, three per triangle). Give since (the revision already held) and an unchanged object replies changed false with no arrays, so polling is cheap. Read-only.",
+        keys: &[],
+        hints: READ,
+        schema: link_cmds::link_pull_schema,
+        run: link_cmds::link_pull,
+    },
+    Command {
+        id: "file.link_push",
+        mcp: "link_push",
+        group: Group::File,
+        label: "Live Link Write",
+        description: "The live link's write side: another app sends a mesh as base64 arrays (the same layout link_pull gives). With id and the same triangles (indices left out, or equal) only the positions move as one undo step, so the object's paint, mask, face groups and UVs stay; with new triangles the mesh is replaced as one undo step (refused with has_levels or a layer error as other topology changes are); without id it becomes a new object. Returns the object, its new revision, created and topology.",
+        keys: &[],
+        hints: WRITE,
+        schema: link_cmds::link_push_schema,
+        run: link_cmds::link_push,
     },
     Command {
         id: "file.print_check",
