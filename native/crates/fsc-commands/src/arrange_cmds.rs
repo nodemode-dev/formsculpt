@@ -246,18 +246,21 @@ fn vec3(args: &Value, key: &str) -> Result<Vec3, CommandError> {
 pub(crate) fn pick(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let origin = vec3(args, "origin")?;
     let dir = vec3(args, "direction")?.normalize_or(Vec3::NEG_Z);
-    let mut best: Option<(f32, ObjectId, Vec3, Vec3)> = None;
+    let mut best: Option<(f32, ObjectId, Vec3, Vec3, f32)> = None;
     for o in s.scene.objects.iter().filter(|o| o.visible) {
         if let Some(hit) = o.bvh.raycast(&o.mesh, origin, dir) {
             if best.is_none_or_farther(hit.t) {
                 let t = &o.mesh.indices[hit.triangle as usize * 3..hit.triangle as usize * 3 + 3];
                 let (a, b, c) = (o.mesh.position(t[0]), o.mesh.position(t[1]), o.mesh.position(t[2]));
-                best = Some((hit.t, o.id, hit.point, (b - a).cross(c - a).normalize_or(-dir)));
+                // The mask at the hit, read across the triangle by the hit's barycentric weights (a + u (b - a) + v (c - a)).
+                let m = |i: u32| o.mask.get(i as usize).copied().unwrap_or(0.0);
+                let mask = (1.0 - hit.u - hit.v) * m(t[0]) + hit.u * m(t[1]) + hit.v * m(t[2]);
+                best = Some((hit.t, o.id, hit.point, (b - a).cross(c - a).normalize_or(-dir), mask.clamp(0.0, 1.0)));
             }
         }
     }
     Ok(match best {
-        Some((t, id, p, n)) => json!({"hit": true, "id": id, "point": p.to_array(), "normal": n.to_array(), "distance": t}),
+        Some((t, id, p, n, mask)) => json!({"hit": true, "id": id, "point": p.to_array(), "normal": n.to_array(), "distance": t, "mask": mask}),
         None => json!({"hit": false}),
     })
 }
@@ -266,7 +269,7 @@ trait Farther {
     fn is_none_or_farther(&self, t: f32) -> bool;
 }
 
-impl Farther for Option<(f32, ObjectId, Vec3, Vec3)> {
+impl Farther for Option<(f32, ObjectId, Vec3, Vec3, f32)> {
     fn is_none_or_farther(&self, t: f32) -> bool {
         self.is_none_or(|b| t < b.0)
     }

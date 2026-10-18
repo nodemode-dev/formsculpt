@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.96.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.97.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -133,7 +133,7 @@ Note: removes or replaces (undoable).
 
 ## pick
 
-Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal and the distance. The window uses it to pivot the camera on a double-clicked point.
+Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal, the distance and the mask there (0 unmasked to 1 masked, read across the triangle). The window uses it to pivot the camera on a double-clicked point and for Nomad's one-tap mask shortcuts.
 
 - `direction`: array of number; required
 - `origin`: array of number; required

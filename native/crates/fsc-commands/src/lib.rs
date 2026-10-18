@@ -234,7 +234,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "pick",
         group: Group::View,
         label: "Pick",
-        description: "Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal and the distance. The window uses it to pivot the camera on a double-clicked point.",
+        description: "Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal, the distance and the mask there (0 unmasked to 1 masked, read across the triangle). The window uses it to pivot the camera on a double-clicked point and for Nomad's one-tap mask shortcuts.",
         keys: &[],
         hints: READ,
         schema: arrange_cmds::pick_schema,
