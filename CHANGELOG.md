@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.90.0 · 2026-10-18
+
+### Added
+
+- Real-world scale for printing. In the File panel, type how big the active object really is (Real size, along its longest side, height, width or depth) and Set real size. Nothing moves; from then on Print check measures at that size and STL and 3MF exports are written in millimetres at it. Leave the field empty to clear it. Saved in projects.
+- Render size for Path render: square 768 (as before), 1080p, 1440p, 4K UHD, or square 2048 and 4096. Larger pictures use fewer samples and the denoiser, so 4K takes about a minute; the download is named for its size.
+- For agents: `set_real_size`; `get_view` renders up to 4096 a side; `get_scene` reports `mm_per_unit`.
+- 1305 interface strings in every language.
+
+### Notes
+
+- Without a real size, exports are in scene units as before.
+- The live two-way link with Blender and a GoZ-style socket, the other half of this part of the plan, comes next, researched first.
+
 ## 0.89.0 · 2026-10-18
 
 ### Added
