@@ -3,7 +3,7 @@
  * Pixologic's ZBrush Starting Guide and Maxon's shortcut sheet; see the frontend side log). From the top: a title bar
  * (version and counts on the left, the window's notes in the middle, the layout presets on the right), the palette
  * menu bar with its palettes in alphabetical order, and the top shelf (the Draw, Move, Scale and Rotate modes, Rgb and
- * Mrgb, Zadd and Zsub, Draw Size and Z Intensity). Below it the left shelf holds the brush, stroke, alpha, material and
+ * Mrgb, Zadd and Zsub, Draw Size, Focal Shift, Z Intensity and Rgb Intensity). Below it the left shelf holds the brush, stroke, alpha, material and
  * colour; the right shelf the view buttons (Persp, Floor, symmetry, Frame, the Move, Zoom3D and Rotate drag buttons,
  * PolyF, Transp, Solo); and the right tray shows one palette at a time, the Tool palette (with its SubTool list) by
  * default. The keys are ZBrush's while this layout is on.
@@ -43,6 +43,10 @@ export interface ZBrushParts {
   brushButtons: HTMLButtonElement[];
   radius: HTMLInputElement;
   strength: HTMLInputElement;
+  /** The Paint brush's own strength, ZBrush's Rgb Intensity. */
+  paintStrength: HTMLInputElement;
+  /** Focal Shift over the falloff, -100 to 100. */
+  focalShift: HTMLInputElement;
   invert: HTMLInputElement;
   paintMaterial: HTMLInputElement;
   paintColor: HTMLInputElement;
@@ -194,10 +198,14 @@ export class ZBrushLayout {
     }
     const sliders = group();
     sliders.classList.add('zb-sliders');
+    // Rgb Intensity (I) sets the Paint brush's strength, Z Intensity (U) every other brush's, Focal Shift (O) the
+    // falloff for both, as the ZBrush Starting Guide's top shelf and Maxon's shortcut sheet have them.
     const size = new DragValue(parts.radius, t('Draw Size'), false, 'tb-field zb-field');
+    const focal = new DragValue(parts.focalShift, t('Focal Shift'), false, 'tb-field zb-field');
     const intensity = new DragValue(parts.strength, t('Z Intensity'), false, 'tb-field zb-field');
-    this.sliders.push(size, intensity);
-    sliders.append(size.node, intensity.node);
+    const rgb = new DragValue(parts.paintStrength, t('Rgb Intensity'), false, 'tb-field zb-field');
+    this.sliders.push(size, focal, intensity, rgb);
+    sliders.append(size.node, focal.node, intensity.node, rgb.node);
 
     // The left shelf: the brush, stroke, alpha and material as preview icons that open pop-ups of thumbnails (as
     // ZBrush's Starting Guide describes its left shelf), and the colour.
@@ -296,8 +304,10 @@ export class ZBrushLayout {
     const qRow = el('div', 'zb-qrow');
     qRow.append(qBrush, this.swatch('stroke', t('Stroke'), 'F3', true), this.swatch('alpha', t('Alpha'), 'F4', true), this.swatch('material', t('Material'), 'F6', true));
     const qSize = new DragValue(parts.radius, t('Draw Size'), false, 'tb-field zb-field');
+    const qFocal = new DragValue(parts.focalShift, t('Focal Shift'), false, 'tb-field zb-field');
     const qIntensity = new DragValue(parts.strength, t('Z Intensity'), false, 'tb-field zb-field');
-    this.sliders.push(qSize, qIntensity);
+    const qRgb = new DragValue(parts.paintStrength, t('Rgb Intensity'), false, 'tb-field zb-field');
+    this.sliders.push(qSize, qFocal, qIntensity, qRgb);
     const qZ = el('div', 'zb-qrow');
     for (const [key, word] of [['zadd', t('Zadd')], ['zsub', t('Zsub')]] as const) {
       const b = shelfButton(word, word, 'zb-small');
@@ -307,7 +317,7 @@ export class ZBrushLayout {
       this.qmodes.push([key, b]);
       qZ.append(b);
     }
-    this.qmenu.append(qRow, qSize.node, qIntensity.node, qZ);
+    this.qmenu.append(qRow, qSize.node, qFocal.node, qIntensity.node, qRgb.node, qZ);
     this.qmenu.hidden = true;
 
     parts.root.append(this.title, this.menu, this.top, this.left, this.right, this.divider, this.popup, this.quick, this.qmenu);
@@ -589,7 +599,8 @@ export class ZBrushLayout {
     return this.parts.brushButtons.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.brush ?? '';
   }
 
-  /** ZBrush's S and U: a slider for Draw Size or Z Intensity at the cursor, gone on the next click or Escape. */
+  /** ZBrush's S, O, U and I: a slider for Draw Size, Focal Shift, Z Intensity or Rgb Intensity at the cursor, gone on
+   * the next click or Escape. */
   private openQuick(source: HTMLInputElement, label: string): void {
     this.quickSlider = new DragValue(source, t(label), false, 'tb-field zb-field');
     this.quick.replaceChildren(this.quickSlider.node);
@@ -645,6 +656,8 @@ export class ZBrushLayout {
     else if (k === 'n' && !e.shiftKey) this.showPalette('Tool');
     else if (k === 's' && !e.shiftKey) this.openQuick(this.parts.radius, 'Draw Size');
     else if (k === 'u' && !e.shiftKey) this.openQuick(this.parts.strength, 'Z Intensity');
+    else if (k === 'o' && !e.shiftKey) this.openQuick(this.parts.focalShift, 'Focal Shift');
+    else if (k === 'i' && !e.shiftKey) this.openQuick(this.parts.paintStrength, 'Rgb Intensity');
     else if (e.key === 'Tab' && !e.shiftKey) this.setTray(!this.trayOpen);
     else done = false;
     if (!done) return;
