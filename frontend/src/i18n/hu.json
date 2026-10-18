@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Visszavert fény",
- "Bounce strength": "Visszavert fény erőssége"
+ "Bounce strength": "Visszavert fény erőssége",
+ "Add Group": "Csoport hozzáadása",
+ "Clear Parent": "Szülő törlése",
+ "Delete Group": "Csoport törlése",
+ "Delete group": "Csoport törlése",
+ "Delete With Children": "Törlés gyermekekkel",
+ "Group": "Csoport",
+ "Set Parent": "Szülő beállítása"
 }

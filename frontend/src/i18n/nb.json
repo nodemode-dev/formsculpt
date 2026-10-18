@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Reflektert lys",
- "Bounce strength": "Styrke på reflektert lys"
+ "Bounce strength": "Styrke på reflektert lys",
+ "Add Group": "Legg til gruppe",
+ "Clear Parent": "Fjern overordnet",
+ "Delete Group": "Slett gruppe",
+ "Delete group": "Slett gruppe",
+ "Delete With Children": "Slett med underordnede",
+ "Group": "Gruppe",
+ "Set Parent": "Angi overordnet"
 }

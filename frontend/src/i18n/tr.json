@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Yansıyan ışık",
- "Bounce strength": "Yansıyan ışık gücü"
+ "Bounce strength": "Yansıyan ışık gücü",
+ "Add Group": "Grup ekle",
+ "Clear Parent": "Üst öğeyi kaldır",
+ "Delete Group": "Grubu sil",
+ "Delete group": "Grubu sil",
+ "Delete With Children": "Alt öğelerle sil",
+ "Group": "Grup",
+ "Set Parent": "Üst öğe ata"
 }

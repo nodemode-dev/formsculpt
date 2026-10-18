@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "간접광",
- "Bounce strength": "간접광 강도"
+ "Bounce strength": "간접광 강도",
+ "Add Group": "그룹 추가",
+ "Clear Parent": "부모 해제",
+ "Delete Group": "그룹 삭제",
+ "Delete group": "그룹 삭제",
+ "Delete With Children": "자식까지 삭제",
+ "Group": "그룹",
+ "Set Parent": "부모 설정"
 }

@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Heijastunut valo",
- "Bounce strength": "Heijastuneen valon voimakkuus"
+ "Bounce strength": "Heijastuneen valon voimakkuus",
+ "Add Group": "Lisää ryhmä",
+ "Clear Parent": "Poista isäntä",
+ "Delete Group": "Poista ryhmä",
+ "Delete group": "Poista ryhmä",
+ "Delete With Children": "Poista alaobjekteineen",
+ "Group": "Ryhmä",
+ "Set Parent": "Aseta isäntä"
 }

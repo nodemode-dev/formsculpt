@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Відбите світло",
- "Bounce strength": "Сила відбитого світла"
+ "Bounce strength": "Сила відбитого світла",
+ "Add Group": "Додати групу",
+ "Clear Parent": "Зняти батька",
+ "Delete Group": "Видалити групу",
+ "Delete group": "Видалити групу",
+ "Delete With Children": "Видалити з нащадками",
+ "Group": "Група",
+ "Set Parent": "Задати батька"
 }

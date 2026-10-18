@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Indirect licht",
- "Bounce strength": "Sterkte indirect licht"
+ "Bounce strength": "Sterkte indirect licht",
+ "Add Group": "Groep toevoegen",
+ "Clear Parent": "Ouder wissen",
+ "Delete Group": "Groep verwijderen",
+ "Delete group": "Groep verwijderen",
+ "Delete With Children": "Verwijderen met kinderen",
+ "Group": "Groep",
+ "Set Parent": "Ouder instellen"
 }

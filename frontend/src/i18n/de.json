@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Indirektes Licht",
- "Bounce strength": "Stärke des indirekten Lichts"
+ "Bounce strength": "Stärke des indirekten Lichts",
+ "Add Group": "Gruppe hinzufügen",
+ "Clear Parent": "Übergeordnetes lösen",
+ "Delete Group": "Gruppe löschen",
+ "Delete group": "Gruppe löschen",
+ "Delete With Children": "Mit Untergeordneten löschen",
+ "Group": "Gruppe",
+ "Set Parent": "Übergeordnetes festlegen"
 }

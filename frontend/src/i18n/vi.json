@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Ánh sáng phản xạ",
- "Bounce strength": "Cường độ ánh sáng phản xạ"
+ "Bounce strength": "Cường độ ánh sáng phản xạ",
+ "Add Group": "Thêm nhóm",
+ "Clear Parent": "Bỏ đối tượng cha",
+ "Delete Group": "Xóa nhóm",
+ "Delete group": "Xóa nhóm",
+ "Delete With Children": "Xóa cùng đối tượng con",
+ "Group": "Nhóm",
+ "Set Parent": "Đặt đối tượng cha"
 }

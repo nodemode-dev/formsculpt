@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Odražené světlo",
- "Bounce strength": "Síla odraženého světla"
+ "Bounce strength": "Síla odraženého světla",
+ "Add Group": "Přidat skupinu",
+ "Clear Parent": "Zrušit rodiče",
+ "Delete Group": "Smazat skupinu",
+ "Delete group": "Smazat skupinu",
+ "Delete With Children": "Smazat i s potomky",
+ "Group": "Skupina",
+ "Set Parent": "Nastavit rodiče"
 }

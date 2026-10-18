@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "แสงสะท้อน",
- "Bounce strength": "ความแรงของแสงสะท้อน"
+ "Bounce strength": "ความแรงของแสงสะท้อน",
+ "Add Group": "เพิ่มกลุ่ม",
+ "Clear Parent": "ล้างพาเรนต์",
+ "Delete Group": "ลบกลุ่ม",
+ "Delete group": "ลบกลุ่ม",
+ "Delete With Children": "ลบพร้อมลูก",
+ "Group": "กลุ่ม",
+ "Set Parent": "ตั้งพาเรนต์"
 }

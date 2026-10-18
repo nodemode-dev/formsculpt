@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "間接光",
- "Bounce strength": "間接光の強さ"
+ "Bounce strength": "間接光の強さ",
+ "Add Group": "グループを追加",
+ "Clear Parent": "親を解除",
+ "Delete Group": "グループを削除",
+ "Delete group": "グループを削除",
+ "Delete With Children": "子ごと削除",
+ "Group": "グループ",
+ "Set Parent": "親を設定"
 }

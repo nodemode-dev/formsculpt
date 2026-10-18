@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Studsljus",
- "Bounce strength": "Studsljusets styrka"
+ "Bounce strength": "Studsljusets styrka",
+ "Add Group": "Lägg till grupp",
+ "Clear Parent": "Ta bort förälder",
+ "Delete Group": "Ta bort grupp",
+ "Delete group": "Ta bort grupp",
+ "Delete With Children": "Ta bort med underobjekt",
+ "Group": "Grupp",
+ "Set Parent": "Ange förälder"
 }

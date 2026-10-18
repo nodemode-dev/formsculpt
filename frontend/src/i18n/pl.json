@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Światło odbite",
- "Bounce strength": "Siła światła odbitego"
+ "Bounce strength": "Siła światła odbitego",
+ "Add Group": "Dodaj grupę",
+ "Clear Parent": "Usuń rodzica",
+ "Delete Group": "Usuń grupę",
+ "Delete group": "Usuń grupę",
+ "Delete With Children": "Usuń z potomkami",
+ "Group": "Grupa",
+ "Set Parent": "Ustaw rodzica"
 }

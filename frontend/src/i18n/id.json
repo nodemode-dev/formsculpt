@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Cahaya pantulan",
- "Bounce strength": "Kekuatan cahaya pantulan"
+ "Bounce strength": "Kekuatan cahaya pantulan",
+ "Add Group": "Tambah grup",
+ "Clear Parent": "Hapus induk",
+ "Delete Group": "Hapus grup",
+ "Delete group": "Hapus grup",
+ "Delete With Children": "Hapus beserta anak",
+ "Group": "Grup",
+ "Set Parent": "Atur induk"
 }

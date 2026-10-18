@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "反彈光",
- "Bounce strength": "反彈光強度"
+ "Bounce strength": "反彈光強度",
+ "Add Group": "新增群組",
+ "Clear Parent": "清除父級",
+ "Delete Group": "刪除群組",
+ "Delete group": "刪除群組",
+ "Delete With Children": "連同子級刪除",
+ "Group": "群組",
+ "Set Parent": "設定父級"
 }

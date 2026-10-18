@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Luce rimbalzata",
- "Bounce strength": "Intensità della luce rimbalzata"
+ "Bounce strength": "Intensità della luce rimbalzata",
+ "Add Group": "Aggiungi gruppo",
+ "Clear Parent": "Rimuovi genitore",
+ "Delete Group": "Elimina gruppo",
+ "Delete group": "Elimina gruppo",
+ "Delete With Children": "Elimina con i figli",
+ "Group": "Gruppo",
+ "Set Parent": "Imposta genitore"
 }

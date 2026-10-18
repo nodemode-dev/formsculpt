@@ -1267,5 +1267,12 @@
  "QuickMenu": "QuickMenu",
  "Sub": "Sub",
  "Bounce light": "Отражённый свет",
- "Bounce strength": "Сила отражённого света"
+ "Bounce strength": "Сила отражённого света",
+ "Add Group": "Добавить группу",
+ "Clear Parent": "Снять родителя",
+ "Delete Group": "Удалить группу",
+ "Delete group": "Удалить группу",
+ "Delete With Children": "Удалить с потомками",
+ "Group": "Группа",
+ "Set Parent": "Задать родителя"
 }
