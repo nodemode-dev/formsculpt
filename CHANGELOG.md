@@ -2,6 +2,24 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.87.0 · 2026-10-18
+
+### Added
+
+- Two primitives, as Nomad Sculpt has them:
+  - Quad Sphere: a cube of quads pushed onto a sphere, with no poles and quads of nearly even size, so it sculpts evenly all over.
+  - Icosahedron: twenty flat faces, split into more with Detail. Its edges are creases, so subdivision keeps them sharp, and each face is a face group. For agents, `project` rounds it into a sphere.
+- Quad Sphere, UV Sphere (which only agents could add before) and Icosahedron in the Add panel and the Add menu. The Add panel now has two columns, so long names fit.
+- 1282 interface strings in every language.
+
+### Fixed
+
+- A UV sphere is named UV sphere, not Uv sphere.
+
+### Notes
+
+- Like every mesh here, the icosahedron shades smoothly across its edges; its outline and creases are flat.
+
 ## 0.86.0 · 2026-10-18
 
 ### Added
