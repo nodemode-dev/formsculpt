@@ -5660,7 +5660,7 @@ class SceneView {
     }
     if (action === 'render') {
       const shading = this.shell.shading.value === 'pbr' ? 'pbr' : 'clay';
-      void this.download(`/api/engine/view?render=path&samples=64&bounces=4&width=768&height=768&shading=${shading}`, 'render.png');
+      void this.download(`/api/engine/view?render=path&samples=64&bounces=4&width=768&height=768&shading=${shading}&denoise=true`, 'render.png');
       this.note('Path rendering 64 samples per pixel; the picture downloads when it is done');
       return;
     }
