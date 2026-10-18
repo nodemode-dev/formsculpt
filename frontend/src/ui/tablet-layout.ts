@@ -114,6 +114,8 @@ const GLYPHS: Record<string, string> = {
   groom_comb: '<path d="M5 6h14M7 6v10M10 6v12M13 6v10M16 6v12"/>',
   groom_cut: '<path d="M7 7v10M11 7v6M15 7v10"/><path d="M4 15l16-4"/>',
   files: '<path d="M3.5 7.5a2 2 0 0 1 2-2H10l2 2.5h6.5a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  // An empty container: a dashed box holding two rows, for a scene group.
+  group_node: '<rect x="3.5" y="5" width="17" height="14" rx="2" stroke-dasharray="3 2.2"/><path d="M8 10h8M8 14h5"/>',
   scene: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="10" cy="18" r="2"/><path d="M8 6.5l8 1M7 8l2.5 8M16.5 9.5l-5 7"/>',
   remesh: '<path d="M8 4l4 2v4l-4 2-4-2V6zM16 10l4 2v4l-4 2-4-2v-4zM8 12l4 2v4l-4 2-4-2v-4z"/>',
   material: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/>',

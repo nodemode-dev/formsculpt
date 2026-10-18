@@ -9,6 +9,7 @@ import type { ObjectSummary, SceneSummary } from '../engine/service';
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
 import { glyph, iconOnly, labelled } from './tablet-layout';
+import { folded, objectsUnder, treeOrder, wireTreeDrag } from './scene-tree';
 
 export interface DockHooks {
   /** Runs an engine command and refreshes the window afterwards. */
@@ -105,7 +106,10 @@ export class SceneDock {
   private readonly tabs = new Map<Tab, HTMLButtonElement>();
   private readonly pages = new Map<Tab, HTMLElement>();
   private readonly objectList = el('ul', 'tb-dock-list');
-  private readonly objectRows = new Map<number, { row: HTMLLIElement; name: HTMLElement; count: HTMLElement; eye: HTMLButtonElement; lock: HTMLButtonElement }>();
+  /** Object and group rows by id (the two share id numbers, so one id is never both). */
+  private readonly objectRows = new Map<number, { kind: 'object' | 'group'; row: HTMLLIElement; name: HTMLElement; count: HTMLElement; eye: HTMLButtonElement; lock: HTMLButtonElement }>();
+  /** Groups whose rows are folded shut. */
+  private readonly collapsed = new Set<number>();
   private readonly layerOwner = el('p', 'tb-dock-owner');
   private readonly layerList = el('ul', 'tb-dock-list');
   private readonly layerRows: LayerRow[] = [];
@@ -150,6 +154,11 @@ export class SceneDock {
       b.dataset.cmd = cmd;
       objectActions.append(b);
     }
+    // Group: a new empty group holding the active object (Nomad's group, a node to move things together).
+    const group = labelled('group_node', 'Group', 'tb-dock-act');
+    group.addEventListener('click', () => void this.hooks.run('add_group', this.scene.active ? { children: [this.scene.active] } : {}));
+    objectActions.insertBefore(group, objectActions.lastElementChild);
+    wireTreeDrag(this.objectList, (id, parent) => void this.hooks.run('set_parent', { ids: [id], parent }));
     setText(this.emptyObjects, t('The scene is empty: add a sphere to start sculpting'));
     objects.append(this.objectList, this.emptyObjects, objectActions);
     this.objectList.setAttribute('aria-label', t('Objects'));
@@ -159,6 +168,19 @@ export class SceneDock {
       const id = Number(row?.dataset.id);
       if (!row || !id) return;
       const act = target.closest<HTMLElement>('[data-act]')?.dataset.act;
+      if (row.dataset.kind === 'group') {
+        // A group row: its eye hides or shows everything under it, its cross deletes it (the children move up), and
+        // the row itself folds or unfolds.
+        if (act === 'visible') {
+          const shown = objectsUnder(treeOrder(this.scene), id).some((o) => o.visible);
+          void this.hooks.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
+        } else if (act === 'delete') void this.hooks.run('delete_group', { id });
+        else {
+          if (!this.collapsed.delete(id)) this.collapsed.add(id);
+          this.patchObjects();
+        }
+        return;
+      }
       if (act === 'visible') {
         const o = this.scene.objects.find((x) => x.id === id);
         void this.hooks.run('set_visibility', { action: o?.visible ? 'hide' : 'show', ids: [id] });
@@ -288,37 +310,64 @@ export class SceneDock {
   }
 
   private patchObjects(): void {
-    const keep = new Set(this.scene.objects.map((o) => o.id));
+    const nodes = treeOrder(this.scene);
+    const keep = new Map(nodes.map((n) => [n.id, n.kind]));
     for (const [id, r] of this.objectRows) {
-      if (!keep.has(id)) {
+      if (keep.get(id) !== r.kind) {
         r.row.remove();
         this.objectRows.delete(id);
       }
     }
-    this.scene.objects.forEach((o, i) => {
-      let r = this.objectRows.get(o.id);
+    for (const id of this.collapsed) if (keep.get(id) !== 'group') this.collapsed.delete(id);
+    nodes.forEach((n, i) => {
+      let r = this.objectRows.get(n.id);
       if (!r) {
-        const row = el('li', 'tb-dock-row');
-        row.dataset.id = String(o.id);
+        const group = n.kind === 'group';
+        const row = el('li', group ? 'tb-dock-row tb-dock-group' : 'tb-dock-row');
+        row.dataset.id = String(n.id);
+        row.dataset.kind = n.kind;
         row.tabIndex = 0;
         const name = el('span', 'tb-dock-name', '');
-        const n = el('span', 'tb-dock-count', '');
+        const c = el('span', 'tb-dock-count', '');
         const eye = toggle('eye', 'Visible');
         eye.dataset.act = 'visible';
-        const lock = toggle('lock', 'Locked');
-        lock.dataset.act = 'lock';
-        row.append(name, n, eye, lock);
+        // An object's last toggle locks it; a group's deletes the group.
+        const lock = group ? toggle('close', 'Delete group') : toggle('lock', 'Locked');
+        lock.dataset.act = group ? 'delete' : 'lock';
+        if (group) {
+          const mark = glyph('group_node');
+          mark.classList.add('tb-dock-glyph');
+          row.append(mark);
+        }
+        row.append(name, c, eye, lock);
         row.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             row.click();
           }
         });
-        r = { row, name, count: n, eye, lock };
-        this.objectRows.set(o.id, r);
+        r = { kind: n.kind, row, name, count: c, eye, lock };
+        this.objectRows.set(n.id, r);
       }
-      // Keep the scene's order without moving rows that are already in place.
+      // Keep the tree's order without moving rows that are already in place.
       if (this.objectList.children[i] !== r.row) this.objectList.insertBefore(r.row, this.objectList.children[i] ?? null);
+      const depth = String(n.depth);
+      if (r.row.style.getPropertyValue('--depth') !== depth) r.row.style.setProperty('--depth', depth);
+      const hide = folded(nodes, n.id, this.collapsed);
+      if (r.row.hidden !== hide) r.row.hidden = hide;
+      const parent = n.parent === null ? '' : String(n.parent);
+      if (r.row.dataset.parent !== parent) r.row.dataset.parent = parent;
+      if (n.kind === 'group' && n.group) {
+        const g = n.group;
+        const shown = objectsUnder(nodes, g.id).some((o) => o.visible);
+        setText(r.name, g.name);
+        setText(r.count, String(g.objects));
+        setAttr(r.row, 'aria-expanded', this.collapsed.has(g.id) ? 'false' : 'true');
+        setAttr(r.row, 'data-hidden', shown || g.objects === 0 ? 'false' : 'true');
+        setAttr(r.eye, 'aria-pressed', shown ? 'true' : 'false');
+        return;
+      }
+      const o = n.object as ObjectSummary;
       setText(r.name, o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(r.count, count(o.vertices));
       setAttr(r.row, 'aria-current', o.id === this.scene.active ? 'true' : 'false');
@@ -326,7 +375,7 @@ export class SceneDock {
       setAttr(r.eye, 'aria-pressed', o.visible ? 'true' : 'false');
       setAttr(r.lock, 'aria-pressed', this.hooks.isLocked(o.id) ? 'true' : 'false');
     });
-    const empty = this.scene.objects.length === 0;
+    const empty = nodes.length === 0;
     if (this.emptyObjects.hidden !== !empty) this.emptyObjects.hidden = !empty;
   }
 

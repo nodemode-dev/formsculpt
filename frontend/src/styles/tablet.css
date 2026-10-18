@@ -139,6 +139,17 @@ body.panels-translucent #app.tablet .tb-dock { backdrop-filter: blur(14px) satur
 .tb-dock-row[aria-current="true"] { background: var(--tb-select); color: var(--tb-white); border-left-color: var(--tb-yellow); }
 .tb-dock-row[data-hidden="true"] .tb-dock-name { opacity: 0.5; }
 .tb-dock-row:focus-visible { outline: 2px solid var(--tb-yellow); outline-offset: -2px; }
+/* The scene hierarchy: depth indents, a folded group's rows hide, a group row shows its glyph, and a drag marks the
+   row under it (yellow, as Nomad marks a held row) and the row it would hang under. */
+.tb-dock-row { padding-left: calc(10px + var(--depth, 0) * 14px); }
+.tb-dock-row[hidden] { display: none; }
+.tb-dock-glyph { width: 15px; height: 15px; flex: none; opacity: 0.8; }
+.tb-dock-group .tb-dock-name { font-weight: 600; }
+.tb-dock-group[aria-expanded="false"] .tb-dock-glyph { opacity: 0.5; }
+.tb-dock-row[data-dragging="true"] { background: rgb(250 204 21 / 0.18); border-left-color: var(--tb-yellow); }
+.tb-dock-row[data-drop="into"] { box-shadow: inset 0 0 0 1px var(--tb-yellow); }
+.tb-dock-row[data-drop="beside"] { box-shadow: inset 0 2px 0 0 var(--tb-yellow); }
+.tb-dock-list[data-dragging="true"] { cursor: grabbing; user-select: none; }
 .tb-dock-layer { padding-left: 4px; }
 .tb-dock-glyph { display: grid; place-items: center; width: 18px; color: var(--tb-dim); }
 .tb-dock-glyph svg { width: 16px; height: 16px; }

@@ -23,7 +23,8 @@ import { DIM_ON, loadOverlays, parseOverlays, saveOverlays, StatsOverlay } from 
 import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, saveHistoryPrefs, type HistoryPrefs } from './ui/history-replay';
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
-import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
+import { glyph, TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
+import { folded, objectsUnder, treeOrder, wireTreeDrag } from './ui/scene-tree';
 import { ZBrushLayout } from './ui/zbrush-layout';
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
@@ -1711,11 +1712,23 @@ class SceneView {
       const defaults: Record<string, [string, string]> = { grid: ['4', '4'], strip: ['4', '4'], head: ['10', '2'], sphere: ['8', '2'] };
       [shell.patchColumns.value, shell.patchRows.value] = defaults[kind] ?? ['12', '3'];
     });
+    wireTreeDrag(shell.objectList, (id, parent) => void this.run('set_parent', { ids: [id], parent }));
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
       if (!row?.dataset.id) return;
       const id = Number(row.dataset.id);
       const act = (e.target as HTMLElement).closest<HTMLElement>('[data-row-act]')?.dataset.rowAct;
+      if (row.dataset.kind === 'group') {
+        if (act === 'visible') {
+          const shown = objectsUnder(treeOrder(this.scene), id).some((o) => o.visible);
+          void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
+        } else if (act === 'delete') void this.run('delete_group', { id });
+        else {
+          if (!this.collapsedGroups.delete(id)) this.collapsedGroups.add(id);
+          this.patchList(this.scene);
+        }
+        return;
+      }
       if (act === 'visible') {
         const shown = this.scene.objects.find((o) => o.id === id)?.visible ?? true;
         void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
@@ -4567,9 +4580,21 @@ class SceneView {
         risky: true,
         run: () => void this.run('delete_object', { id: this.scene.active }),
       },
+      // The scene hierarchy, as in Nomad Sculpt: a group holding the active object, Delete+ and taking a child out.
+      { id: 'object.group', label: 'Group', keys: ['Mod+G'], mutates: true, run: () => void this.run('add_group', this.scene.active ? { children: [this.scene.active] } : {}) },
+      { id: 'object.delete_children', label: 'Delete With Children', mutates: true, risky: true, run: () => void this.run('delete_object', { id: this.scene.active, children: true }) },
+      {
+        id: 'object.unparent',
+        label: 'Clear Parent',
+        mutates: true,
+        run: () => void this.run('set_parent', { ids: [this.scene.active], parent: null }),
+        enabled: () => (this.scene.objects.find((o) => o.id === this.scene.active)?.parent ?? null) !== null,
+      },
     );
     NEEDS_OBJECT.add('object.rename');
     NEEDS_OBJECT.add('object.delete');
+    NEEDS_OBJECT.add('object.delete_children');
+    NEEDS_OBJECT.add('object.unparent');
     list.push(
       { id: 'selection.save', label: 'Save Selection Set', mutates: true, run: () => void this.selectionSet('save') },
       { id: 'selection.restore', label: 'Restore Selection Set', mutates: true, run: () => void this.selectionSet('restore') },
@@ -6111,39 +6136,83 @@ class SceneView {
 
 
   private patchList(next: SceneSummary): void {
-    const keep = new Set(next.objects.map((o) => o.id));
+    const nodes = treeOrder(next);
+    const kinds = new Map(nodes.map((n) => [n.id, n.kind]));
     for (const [id, row] of this.rows) {
-      if (!keep.has(id)) {
+      if (kinds.get(id) !== row.dataset.kind) {
         row.remove();
         this.rows.delete(id);
       }
     }
-    for (const o of next.objects) {
-      let row = this.rows.get(o.id);
+    for (const id of this.collapsedGroups) if (kinds.get(id) !== 'group') this.collapsedGroups.delete(id);
+    nodes.forEach((n, i) => {
+      let row = this.rows.get(n.id);
       if (!row) {
-        row = el('li', 'object', '');
-        row.dataset.id = String(o.id);
-        // Per-row toggles, as a scene list on a tablet has them: shown or hidden, and locked against sculpting.
-        const eye = el('button', 'row-toggle', '');
-        eye.type = 'button';
-        eye.dataset.rowAct = 'visible';
-        eye.setAttribute('aria-label', 'Visible');
-        eye.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
-        const lock = el('button', 'row-toggle', '');
-        lock.type = 'button';
-        lock.dataset.rowAct = 'lock';
-        lock.setAttribute('aria-label', 'Locked');
-        lock.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-        row.append(el('span', 'name', o.name), el('span', 'count', ''), eye, lock);
-        this.shell.objectList.append(row);
-        this.rows.set(o.id, row);
+        row = el('li', n.kind === 'group' ? 'object group' : 'object', '');
+        row.dataset.id = String(n.id);
+        row.dataset.kind = n.kind;
+        if (n.kind === 'group') {
+          // A group row: its glyph, name, object count, an eye for everything under it and a cross that deletes it.
+          const eye = el('button', 'row-toggle', '');
+          eye.type = 'button';
+          eye.dataset.rowAct = 'visible';
+          eye.setAttribute('aria-label', 'Visible');
+          eye.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+          const del = el('button', 'row-toggle', '');
+          del.type = 'button';
+          del.dataset.rowAct = 'delete';
+          del.setAttribute('aria-label', 'Delete group');
+          del.setAttribute('aria-pressed', 'true');
+          del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+          const mark = glyph('group_node');
+          mark.classList.add('row-glyph');
+          row.append(el('span', 'name', ''), el('span', 'count', ''), eye, del, mark);
+        } else {
+          this.objectRow(row);
+        }
+        this.rows.set(n.id, row);
       }
+      if (this.shell.objectList.children[i] !== row) this.shell.objectList.insertBefore(row, this.shell.objectList.children[i] ?? null);
+      const depth = String(n.depth);
+      if (row.style.getPropertyValue('--depth') !== depth) row.style.setProperty('--depth', depth);
+      const hide = folded(nodes, n.id, this.collapsedGroups);
+      if (row.hidden !== hide) row.hidden = hide;
+      const parent = n.parent === null ? '' : String(n.parent);
+      if (row.dataset.parent !== parent) row.dataset.parent = parent;
+      if (n.kind === 'group' && n.group) {
+        const shown = objectsUnder(nodes, n.id).some((o) => o.visible);
+        setText(row.children[0], n.group.name);
+        setText(row.children[1], String(n.group.objects));
+        setAttr(row, 'aria-expanded', this.collapsedGroups.has(n.id) ? 'false' : 'true');
+        setAttr(row.children[2], 'aria-pressed', shown ? 'true' : 'false');
+        return;
+      }
+      const o = n.object as ObjectSummary;
       setText(row.children[0], o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(row.children[1], `${o.triangles.toLocaleString('en-US')} tris`);
       setAttr(row, 'aria-current', o.id === next.active ? 'true' : 'false');
       setAttr(row.children[2], 'aria-pressed', o.visible ? 'true' : 'false');
       setAttr(row.children[3], 'aria-pressed', this.locked.has(o.id) ? 'true' : 'false');
-    }
+    });
+  }
+
+  /** Groups folded shut in the panel layout's object list. */
+  private readonly collapsedGroups = new Set<number>();
+
+  /** Fills a new object row of the panel layout's list. */
+  private objectRow(row: HTMLLIElement): void {
+    // Per-row toggles, as a scene list on a tablet has them: shown or hidden, and locked against sculpting.
+    const eye = el('button', 'row-toggle', '');
+    eye.type = 'button';
+    eye.dataset.rowAct = 'visible';
+    eye.setAttribute('aria-label', 'Visible');
+    eye.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+    const lock = el('button', 'row-toggle', '');
+    lock.type = 'button';
+    lock.dataset.rowAct = 'lock';
+    lock.setAttribute('aria-label', 'Locked');
+    lock.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+    row.append(el('span', 'name', ''), el('span', 'count', ''), eye, lock);
   }
 
   private note(text: string): void {

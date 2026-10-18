@@ -157,6 +157,17 @@ button { font: inherit; color: inherit; }
 .object .row-toggle[data-row-act="visible"][aria-pressed="false"] { opacity: 0.45; }
 .object .row-toggle[data-row-act="lock"][aria-pressed="true"] { color: var(--accent-color); }
 .object .row-toggle[data-row-act="lock"][aria-pressed="false"] { opacity: 0.45; }
+/* The scene hierarchy: depth indents, folded rows hide, a group row leads with its glyph (last in the markup so the
+   toggles keep their places), and a drag marks the held row and the row it would hang under. */
+.object { padding-left: calc(var(--space-2) + var(--depth, 0) * 14px); }
+.object[hidden] { display: none; }
+.object .row-glyph { order: -1; width: 15px; height: 15px; flex: none; color: var(--text-muted); }
+.object.group .name { font-weight: 600; }
+.object.group[aria-expanded="false"] .row-glyph { opacity: 0.5; }
+.object[data-dragging="true"] { border-color: var(--accent-color); background: var(--accent-color-dim); }
+.object[data-drop="into"] { border-color: var(--accent-color); border-style: dashed; }
+.object[data-drop="beside"] { box-shadow: inset 0 2px 0 0 var(--accent-color); }
+.objects[data-dragging="true"] { cursor: grabbing; user-select: none; }
 /* A fixed three-line box: notes of any length never move the sections below (a longer one scrolls inside it). */
 .panel-note { margin: var(--space-2) 0 0; height: 48px; line-height: 16px; overflow-y: auto; font-size: 12px; color: var(--warn-color); }
 

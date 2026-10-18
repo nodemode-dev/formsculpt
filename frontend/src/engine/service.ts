@@ -25,6 +25,8 @@ export interface ObjectSummary {
   name: string;
   visible: boolean;
   folder?: string;
+  /** The object or group it hangs under in the scene hierarchy (engines before 0.86.0 leave it out). */
+  parent?: number | null;
   vertices: number;
   triangles: number;
   revision: number;
@@ -54,6 +56,16 @@ export interface SceneSummary {
   active: number | null;
   /** The saved camera views' names, in order (engines before 0.77.0 leave it out). */
   views?: string[];
+  /** Empty hierarchy nodes (engines before 0.86.0 leave it out). */
+  groups?: GroupSummary[];
+}
+
+export interface GroupSummary {
+  id: number;
+  name: string;
+  parent: number | null;
+  /** How many objects hang anywhere below it. */
+  objects: number;
 }
 
 export interface CommandError {

@@ -104,7 +104,7 @@ export const VIEWPORT_MENU: MenuItem[] = [
   'object.duplicate', 'object.delete', '-', 'sculpt.mirror_x',
 ];
 
-export const OBJECT_ROW_MENU: MenuItem[] = ['object.rename', 'object.duplicate', 'object.delete', '-', 'object.hide', 'object.isolate', 'object.show_all', '-', 'object.merge'];
+export const OBJECT_ROW_MENU: MenuItem[] = ['object.rename', 'object.duplicate', 'object.delete', 'object.delete_children', '-', 'object.group', 'object.unparent', '-', 'object.hide', 'object.isolate', 'object.show_all', '-', 'object.merge'];
 
 export const PIN_MENU = (id: string): MenuItem[] => [id, '-', 'rail.pin', 'toolbar.add'];
 
