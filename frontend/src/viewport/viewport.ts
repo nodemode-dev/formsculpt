@@ -28,7 +28,42 @@ export class Viewport {
   private dirty = true;
   private frame = 0;
   private lastFrameMs = 0;
-  private drag: { button: number; x: number; y: number; mode: 'camera' | 'stroke' | 'pending' } | null = null;
+  private drag: {
+    button: number;
+    x: number;
+    y: number;
+    mode: 'camera' | 'stroke' | 'pending';
+    /** The modifiers held at the press, and how far the pointer has gone since (the Nomad and ZBrush schemes). */
+    alt?: boolean;
+    shift?: boolean;
+    ctrl?: boolean;
+    moved?: number;
+    /** The ZBrush scheme's Alt+click on the model: a press that picks the object unless it moves. */
+    pick?: boolean;
+    /** Shift's 90 degree snapping in the ZBrush scheme: the turn the drag would have without it. */
+    free?: { yaw: number; pitch: number };
+  } | null = null;
+
+  /**
+   * The pointer conventions of the layout in use. 'panel' is the window's own. 'nomad' follows Nomad Sculpt's manual:
+   * Alt+drag moves the view and releasing Alt during the drag zooms; a two-finger tap undoes and a three-finger tap
+   * redoes. 'zbrush' follows ZBrush's Starting Guide and shortcut sheet: Alt sculpts inverted (Zsub), Shift smooths,
+   * Ctrl masks (Ctrl+Alt unmasks), Alt+click picks the SubTool under the pointer; on the background a drag rotates
+   * (Shift snaps to 90 degrees), Alt+drag moves, releasing Alt during the drag zooms, Ctrl+click inverts the mask and
+   * Ctrl+drag clears it.
+   */
+  scheme: 'panel' | 'nomad' | 'zbrush' = 'panel';
+  /** Set by the app: hold a tool for one stroke (smooth or mask); null gives the previous tool back. */
+  holdTool: ((kind: string | null) => void) | null = null;
+  /** Set by the app: pick the object under a ray (the ZBrush scheme's Alt+click). */
+  pickAt: ((ray: Ray) => void) | null = null;
+  /** Set by the app: a ZBrush Ctrl+click (blur the mask on the model, sharpen it with Alt, invert it off the model). */
+  ctrlClick: ((ray: Ray, alt: boolean) => void) | null = null;
+  /** Set by the app: run a registry command (undo, redo, the mask's invert and clear). */
+  command: ((id: string) => void) | null = null;
+  private holding = false;
+  /** Fingers' taps: when the first finger landed, the most fingers down at once, and whether they moved. */
+  private tap: { at: number; most: number; moved: boolean } | null = null;
   onFrame: ((stats: ViewportStats) => void) | null = null;
   strokes: StrokeHandler | null = null;
 
@@ -158,6 +193,8 @@ export class Viewport {
   private down(e: PointerEvent): void {
     if (e.pointerType === 'touch') {
       this.touches.set(e.pointerId, [e.clientX, e.clientY]);
+      if (this.touches.size === 1) this.tap = { at: performance.now(), most: 1, moved: false };
+      else if (this.tap) this.tap.most = Math.max(this.tap.most, this.touches.size);
       if (this.touches.size === 2) {
         // A second finger ends any stroke the first one began and starts pinch to zoom and two-finger pan.
         if (this.drag?.mode === 'stroke') this.strokes?.end();
@@ -185,15 +222,31 @@ export class Viewport {
         held = this.penHold?.(which, true) ?? false;
       }
     }
+    // The ZBrush scheme reads Alt, Shift and Ctrl as sculpting modifiers (a mouse or pen's main button).
+    const zb = this.scheme === 'zbrush' && e.pointerType !== 'touch' && e.button === 0 && !this.flying;
+    const ctrl = e.ctrlKey || e.metaKey;
     // Alt and Shift turn and pan the view, except on a tool handle that takes them as modifiers (the gizmo's).
-    const modified = e.altKey || e.shiftKey;
+    const modified = !zb && (e.altKey || e.shiftKey);
     // In fly navigation every drag looks around; nothing is sculpted.
     const sculpt = !this.flying && (e.button === 0 || held) && (!modified || (this.grabsModified?.(e.offsetX, e.offsetY) ?? false)) && this.strokes?.enabled();
+    // ZBrush: Ctrl masks and Shift smooths for this stroke; Alt inverts it, and an Alt press waits to see whether it is a
+    // click that picks a SubTool. A press on a tool handle (the gizmo's) keeps its modifiers for the handle.
+    const onHandle = this.grabsModified?.(e.offsetX, e.offsetY) ?? false;
+    const temporary = zb && sculpt && !onHandle ? (ctrl ? 'mask' : e.shiftKey ? 'smooth' : null) : null;
+    if (temporary) {
+      this.holdTool?.(temporary);
+      this.holding = true;
+    }
+    const pick = zb && sculpt && !onHandle && e.altKey && !ctrl && !e.shiftKey;
+    // ZBrush's Ctrl+click is not a mask dab: on the model it blurs the mask (sharpens with Alt), on the background it
+    // inverts it; so a Ctrl press, like an Alt press, waits to see whether it moves.
+    const ctrlClick = zb && sculpt && !onHandle && ctrl;
     // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
-    const pending = sculpt && e.pointerType === 'touch';
-    this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera' };
-    this.pendingStart = pending ? { ray: this.rayAt(e), pressure: this.pressure(e), ctrl: e.ctrlKey || e.metaKey } : null;
-    if (sculpt && !pending) this.beginStroke(this.rayAt(e), this.pressure(e), e.ctrlKey || e.metaKey, this.tilt(e));
+    const pending = sculpt && (e.pointerType === 'touch' || pick || ctrlClick);
+    const invert = zb ? e.altKey : ctrl;
+    this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera', alt: e.altKey, shift: e.shiftKey, ctrl, moved: 0, pick };
+    this.pendingStart = pending ? { ray: this.rayAt(e), pressure: this.pressure(e), ctrl: invert } : null;
+    if (sculpt && !pending) this.beginStroke(this.rayAt(e), this.pressure(e), invert, this.tilt(e));
   }
 
   private pendingStart: { ray: Ray | null; pressure: number; ctrl: boolean } | null = null;
@@ -216,6 +269,7 @@ export class Viewport {
       this.touches.set(e.pointerId, [e.clientX, e.clientY]);
       if (this.gesture && this.touches.size === 2) {
         const next = this.gestureFrame();
+        if (this.tap && (Math.abs(next.span - this.gesture.span) > 2 || Math.hypot(next.mid[0] - this.gesture.mid[0], next.mid[1] - this.gesture.mid[1]) > 2)) this.tap.moved = true;
         this.camera.pan(next.mid[0] - this.gesture.mid[0], next.mid[1] - this.gesture.mid[1], this.canvas.clientHeight);
         if (next.span > 1 && this.gesture.span > 1) this.camera.zoom(this.gesture.span / next.span);
         this.gesture = next;
@@ -224,8 +278,10 @@ export class Viewport {
       }
     }
     if (!this.drag) return;
+    this.drag.moved = (this.drag.moved ?? 0) + Math.hypot(e.clientX - this.drag.x, e.clientY - this.drag.y);
     if (this.drag.mode === 'pending') {
       if (Math.hypot(e.clientX - this.drag.x, e.clientY - this.drag.y) < 6 || !this.pendingStart) return;
+      this.drag.pick = false;
       this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
       this.pendingStart = null;
       this.drag.mode = 'stroke';
@@ -246,6 +302,27 @@ export class Viewport {
     const dy = e.clientY - this.drag.y;
     this.drag.x = e.clientX;
     this.drag.y = e.clientY;
+    if (this.scheme !== 'panel' && this.drag.button === 0 && !this.flying) {
+      // Nomad and ZBrush: a drag begun with Alt moves the view, and keeps zooming once Alt is let go.
+      if (this.scheme === 'zbrush' && this.drag.ctrl) return; // Ctrl on the background: the mask, on release.
+      if (this.drag.alt) {
+        if (e.altKey) this.camera.pan(dx, dy, this.canvas.clientHeight);
+        else this.camera.zoom(Math.exp(dy * 0.01));
+      } else if (this.scheme === 'zbrush' && this.drag.shift && !this.camera.trackball) {
+        // Shift snaps the turn to 90 degree steps, from the turn the drag would make without it.
+        const free = this.drag.free ?? { yaw: this.camera.yaw, pitch: this.camera.pitch };
+        this.camera.yaw = free.yaw;
+        this.camera.pitch = free.pitch;
+        this.camera.orbit(dx, dy);
+        this.drag.free = { yaw: this.camera.yaw, pitch: this.camera.pitch };
+        const q = Math.PI / 2;
+        this.camera.yaw = Math.round(this.camera.yaw / q) * q;
+        this.camera.pitch = Math.max(-q + 1e-3, Math.min(q - 1e-3, Math.round(this.camera.pitch / q) * q));
+      } else if (this.drag.shift && this.scheme === 'nomad') this.camera.pan(dx, dy, this.canvas.clientHeight);
+      else this.camera.orbit(dx, dy);
+      this.invalidate();
+      return;
+    }
     const panning = this.drag.button === 1 || this.drag.button === 2 || e.shiftKey;
     if (this.flying && !panning) this.camera.look(dx, dy);
     else if (panning) this.camera.pan(dx, dy, this.canvas.clientHeight);
@@ -258,6 +335,17 @@ export class Viewport {
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
     if (e.pointerType === 'touch') {
       this.touches.delete(e.pointerId);
+      // Nomad: a quick tap of two fingers undoes, of three redoes (when every finger has lifted).
+      if (this.touches.size === 0 && this.tap) {
+        const t = this.tap;
+        this.tap = null;
+        if (this.scheme === 'nomad' && !t.moved && t.most >= 2 && performance.now() - t.at < 300) {
+          this.command?.(t.most >= 3 ? 'history.redo' : 'history.undo');
+          this.gesture = null;
+          this.drag = null;
+          return;
+        }
+      }
       if (this.gesture) {
         // The gesture ends when a finger lifts; the remaining finger does nothing until it lifts too.
         if (this.touches.size < 2) this.gesture = null;
@@ -265,11 +353,30 @@ export class Viewport {
         return;
       }
     }
-    if (this.drag?.mode === 'pending' && this.pendingStart) {
-      // A tap: one dab where the finger touched.
-      this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
+    const d = this.drag;
+    if (d?.mode === 'pending' && this.pendingStart) {
+      if (d.pick) {
+        // ZBrush's Alt+click: pick the SubTool under the pointer.
+        if (this.pendingStart.ray) this.pickAt?.(this.pendingStart.ray);
+      } else if (this.scheme === 'zbrush' && d.ctrl && e.pointerType !== 'touch') {
+        if (this.pendingStart.ray) this.ctrlClick?.(this.pendingStart.ray, d.alt ?? false);
+      } else {
+        // A tap: one dab where the finger touched.
+        this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
+        this.strokes?.end();
+      }
+    } else if (d?.mode === 'stroke') {
+      const missed = this.strokes?.missed() ?? false;
       this.strokes?.end();
-    } else if (this.drag?.mode === 'stroke') this.strokes?.end();
+      if (missed && this.scheme === 'zbrush' && d.ctrl) this.command?.('mask.invert');
+    } else if (d?.mode === 'camera' && this.scheme === 'zbrush' && d.ctrl && d.button === 0) {
+      // ZBrush: Ctrl+click on the background inverts the mask, Ctrl+drag there clears it.
+      this.command?.((d.moved ?? 0) < 4 ? 'mask.invert' : 'mask.clear');
+    }
+    if (this.holding) {
+      this.holding = false;
+      this.holdTool?.(null);
+    }
     this.pendingStart = null;
     this.drag = null;
     if (this.penHeld) {

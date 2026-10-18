@@ -1634,6 +1634,14 @@ function buildShell(root: HTMLElement): Shell {
     run: (id) => commands.run(id),
     checked: (id) => commands.get(id)?.checked?.() ?? false,
   });
+  // The starting layout is chosen before the first paint, so the window never paints in one layout and moves to
+  // another (the engine-dependent wiring follows in wireTablet).
+  const startLayout = defaultLayout() || (ZBrushLayout.stored() ? 'zbrush' : '');
+  if (startLayout === 'zbrush') {
+    tablet.set(false, false);
+    zbrush.set(true, false);
+  } else if (startLayout === 'panel') tablet.set(false, false);
+  else if (startLayout === 'tablet') tablet.set(true, false);
   const tag = (list: HTMLButtonElement[], group: string, by: (b: HTMLButtonElement) => string | undefined): void => {
     for (const b of list) {
       const spec = PANEL_CMDS[group][by(b) ?? ''];
@@ -2539,14 +2547,45 @@ class SceneView {
     zb.chooseLayout = (name) => this.useLayout(name);
     zb.setDefault = (name) => setDefaultLayout(name);
     zb.defaultLayout = defaultLayout;
+    // Each layout brings the pointer conventions of the app it follows (viewport.ts's scheme).
+    const scheme = (): void => {
+      this.viewport.scheme = zb.enabled ? 'zbrush' : tablet.enabled ? 'nomad' : 'panel';
+    };
     const tabletToggle = tablet.onToggle;
     tablet.onToggle = (on) => {
       if (on && zb.enabled) zb.set(false);
       tabletToggle(on);
+      scheme();
     };
     zb.onToggle = (on) => {
       if (on && tablet.enabled) tablet.set(false);
+      scheme();
     };
+    // ZBrush's held tools (Shift smooths, Ctrl masks for one stroke), Alt+click picking and the background's mask
+    // clicks, and Nomad's finger taps, run through the same commands as everything else.
+    let heldFrom: string | null = null;
+    this.viewport.holdTool = (kind) => {
+      if (kind) {
+        heldFrom = this.brush;
+        commands.run(`tool.brush.${kind}`);
+      } else if (heldFrom !== null) {
+        commands.run(`tool.brush.${heldFrom}`);
+        heldFrom = null;
+      }
+    };
+    this.viewport.pickAt = (ray) => {
+      void dispatch<{ hit: boolean; id?: number }>('pick', { origin: ray.origin, direction: ray.dir }).then((reply) => {
+        if (reply.ok && reply.result.hit && reply.result.id !== undefined) void this.selectObject(reply.result.id);
+      });
+    };
+    this.viewport.ctrlClick = (ray, alt) => {
+      void dispatch<{ hit: boolean; id?: number }>('pick', { origin: ray.origin, direction: ray.dir }).then((reply) => {
+        const onModel = reply.ok && reply.result.hit;
+        commands.run(onModel ? (alt ? 'mask.sharpen' : 'mask.blur') : 'mask.invert');
+      });
+    };
+    this.viewport.command = (id) => void commands.run(id);
+    scheme();
     // Which layout opens: the one set as the default, if any, else the one last used.
     const start = defaultLayout() || (ZBrushLayout.stored() ? 'zbrush' : '');
     if (start) this.useLayout(start, false);

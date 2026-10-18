@@ -79,6 +79,7 @@ const GLYPHS: Record<string, string> = {
   zmodeler: '<path d="M5 5h14v14H5z"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>',
   orbit: '<rect x="4" y="7" width="16" height="11" rx="2"/><circle cx="12" cy="12.5" r="3"/><path d="M9 7l1.5-2h3L15 7"/>',
   relax: '<path d="M4 12h3l2-3 3 6 2-3h6"/>',
+  nudge: '<path d="M4 15c3-4 6-4 9 0"/><path d="M14 9h6M17 6l3 3-3 3"/>',
   planar: '<path d="M4 16l8-4 8 4-8 4z"/>',
   noise: '<path d="M4 13l2-3 2 4 2-5 2 6 2-4 2 3 2-2 2 2"/>',
   elastic: '<path d="M6 12c0-4 3-6 6-6s6 2 6 6-3 6-6 6"/>',
@@ -464,6 +465,10 @@ export class TabletLayout {
     const sym = labelled('symmetry', t('Sym'), 'tb-side');
     sym.dataset.cmd = 'sculpt.mirror_x';
     this.left.append(sym);
+    // Nomad's left toolbar has a Sub button that toggles subtract mode for the tool (its manual's Getting Started).
+    const sub = labelled('invert', t('Sub'), 'tb-side');
+    sub.dataset.cmd = 'sculpt.invert';
+    this.left.append(sub);
     for (const [kind, label] of [['smooth', 'Smooth'], ['mask', 'Mask'], ['gizmo', 'Transform']] as const) {
       const b = labelled(kind, label, 'tb-side');
       b.dataset.cmd = `tool.brush.${kind}`;
@@ -506,6 +511,8 @@ export class TabletLayout {
     this.quick.append(vox);
     q('grid', t('Grid'), 'view.floor_grid');
     q('wireframe', t('Wireframe'), 'view.wireframe');
+    // Nomad's bottom toolbar also toggles the face group overlay (its manual's Interface page).
+    q('mask_group', t('Face Group'), 'view.groups');
     const inspector = labelled('inspector', t('Inspector'), 'tb-qbtn');
     inspector.setAttribute('aria-pressed', 'true');
     inspector.addEventListener('click', () => {
@@ -539,6 +546,17 @@ export class TabletLayout {
     this.sheetHead.append(this.sheetTitle, close);
     parts.panel.prepend(this.sheetHead);
 
+    // Nomad's K opens Search (its manual labels Search with K), while this layout is on and no field has the keys.
+    window.addEventListener('keydown', (e) => {
+      if (!this.on || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.repeat || e.key.toLowerCase() !== 'k') return;
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target?.closest('input:not([type=checkbox]):not([type=range]), textarea, select, [contenteditable="true"], .xterm')) return;
+      const search = this.tr.querySelector<HTMLButtonElement>('[data-cmd="app.palette"]');
+      if (!search) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      search.click();
+    }, true);
     this.toast.setAttribute('role', 'status');
     this.toast.setAttribute('aria-live', 'polite');
     this.toast.hidden = true;
