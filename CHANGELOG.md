@@ -2,6 +2,23 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.82.0 · 2026-10-18
+
+### Added
+
+- A ZBrush layout, laid out like ZBrush's classic interface: a title bar, the palette menu bar in alphabetical order, top, left and right shelves, and a right tray. Turn it on with View > ZBrush Layout or the layout picker in its title bar.
+  - Top shelf: Draw, Move, Scale and Rotate; Mrgb and Rgb; Zadd and Zsub; Draw Size and Z Intensity.
+  - Left shelf: the brush (opens a picker of every tool), stroke, alpha, material and colour.
+  - Right shelf: Persp, Floor, Sym, Frame, the Move, Zoom3D and Rotate buttons that move the view while you drag them, PolyF, Transp and Solo.
+  - The tray shows one palette at a time: Tool by default, with the SubTool list (objects, layers and views) at its top. The divider or Tab opens and closes it.
+  - ZBrush's keys while it is on: Q W E R, S and U (a slider at the cursor), X, F, P, Shift+P, Shift+F, B, N, Tab, D and Shift+D, Ctrl+D, Ctrl+I, Shift+Ctrl+A.
+- Set as default (in the ZBrush layout's title bar) or View > Open in This Layout by Default (in any layout) chooses which layout the window opens in.
+- 1263 interface strings in every language.
+
+### Notes
+
+- Left out because formsculptor has no counterpart yet: LightBox, Projection Master, Quicksketch, Focal Shift, RGB Intensity, M, BPR, the 2.5D canvas buttons, docking several palettes, and building a custom UI.
+
 ## 0.81.0 · 2026-10-17
 
 ### Added
