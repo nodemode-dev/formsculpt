@@ -1,6 +1,7 @@
 pub mod border;
 pub mod bvh;
 pub mod curve;
+pub mod head;
 pub mod layers;
 pub mod mesh;
 pub mod multires;

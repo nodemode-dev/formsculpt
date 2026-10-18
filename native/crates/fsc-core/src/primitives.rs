@@ -42,7 +42,7 @@ impl Primitive {
 /// A cube of `n` by `n` quads a side, each point moved onto the sphere by the spherified-cube mapping
 /// x * sqrt(1 - y^2/2 - z^2/2 + y^2 z^2 / 3) (and likewise for y and z), which spreads the quads more evenly than
 /// pushing each point straight out along its direction.
-fn quad_sphere(radius: f32, n: u32) -> Mesh {
+pub(crate) fn quad_sphere(radius: f32, n: u32) -> Mesh {
     let mut mesh = cube(2.0, n);
     for p in &mut mesh.positions {
         let (x, y, z) = (p[0].clamp(-1.0, 1.0), p[1].clamp(-1.0, 1.0), p[2].clamp(-1.0, 1.0));

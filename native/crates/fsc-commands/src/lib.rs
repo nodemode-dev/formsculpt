@@ -330,7 +330,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "add_primitive",
         group: Group::Object,
         label: "Add Primitive",
-        description: "Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting). Returns the new object's summary.",
+        description: "Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting), and head (a simple base head with neck, facing +z, about 2.4 tall at size 1, on a quad sphere of detail quads a side, default 40; it comes with a sculpt layer named Feminine at strength 0, which blends from a masculine to a feminine head as its strength goes to 1 with layer_set). Returns the new object's summary.",
         keys: &[],
         hints: WRITE,
         schema: scene_cmds::add_primitive_schema,

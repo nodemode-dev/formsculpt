@@ -141,10 +141,10 @@ pub(crate) fn add_primitive_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "kind": {"type": "string", "enum": Primitive::KINDS},
+            "kind": {"type": "string", "enum": Primitive::KINDS.iter().chain(["head"].iter()).collect::<Vec<_>>()},
             "name": {"type": "string", "maxLength": 120},
             "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 1, "description": "Radius for sphere, uv_sphere, icosahedron, quad_sphere, cylinder, cone and the torus ring; edge length for cube and plane."},
-            "detail": {"type": "integer", "minimum": 0, "maximum": 2048, "description": "Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16), segments for the round kinds (default 64)."},
+            "detail": {"type": "integer", "minimum": 0, "maximum": 2048, "description": "Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16) and head (default 40), segments for the round kinds (default 64)."},
             "project": {"type": "boolean", "default": false, "description": "Icosahedron: push every point out onto the sphere (round, as sphere is) instead of keeping the faces flat."},
             "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 2, "description": "Cylinder and cone height."},
             "thickness": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 0.3, "description": "Torus tube radius."}
@@ -193,10 +193,21 @@ pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, Comm
         c
     });
     let name = s.scene.unique_name(&base);
+    // The head comes with a layer that turns its masculine form into a feminine one (strength 0 shows the first).
+    let (mesh, feminine) = if kind == "head" {
+        let (m, delta) = fsc_core::head::head(num(args, "size", 1.0, 0.0, 1000.0)?, int(args, "detail", 40, 256)?.max(4));
+        (m, Some(delta))
+    } else {
+        (mesh, None)
+    };
     let id = s.scene.add(name, mesh);
     let index = s.scene.index_of(id).expect("just added");
     s.history.push(Edit::Add { id, index, parked: None });
     let object = s.scene.get_mut(id).expect("just added");
+    if let Some(delta) = feminine {
+        object.layers.list.push(fsc_core::layers::Layer { name: "Feminine".into(), strength: 0.0, delta, ..Default::default() });
+        object.layers.active = None;
+    }
     // Open to edit with edit_primitive until anything else changes it.
     object.primitive = Some((args.to_string(), object.revision));
     Ok(json!({"object": summary(s.scene.get(id).expect("just added")), "active": id}))
@@ -262,6 +273,8 @@ fn primitive_mesh(args: &Value) -> Result<(fsc_core::Mesh, String), CommandError
         "plane" => Primitive::Plane { size, divisions: int(args, "detail", 16, 2048)?.max(1) },
         "icosahedron" => Primitive::Icosahedron { radius: size, subdivisions: int(args, "detail", 0, 9)?, project: args.get("project").and_then(Value::as_bool).unwrap_or(false) },
         "quad_sphere" => Primitive::QuadSphere { radius: size, divisions: int(args, "detail", 16, 1024)?.max(1) },
+        // Built with its layer by add_primitive; here only so the kind is known (a placeholder mesh is replaced).
+        "head" => Primitive::Icosahedron { radius: size, subdivisions: 0, project: true },
         other => return Err(CommandError::new("bad_arguments", format!("unknown kind {other}; use one of {}", Primitive::KINDS.join(", ")))),
     };
     Ok((primitive.build(), kind.to_string()))
