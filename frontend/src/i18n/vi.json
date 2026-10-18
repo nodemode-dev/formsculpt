@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Cầu tứ giác",
  "UV Sphere": "Cầu UV",
  "Add Head": "Thêm đầu",
- "Head": "Đầu"
+ "Head": "Đầu",
+ "Add Triplanar": "Thêm Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Che một hình trên mỗi mặt phẳng trong ba mặt phẳng, rồi Đối tượng > Xác nhận Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Xác nhận Triplanar"
 }

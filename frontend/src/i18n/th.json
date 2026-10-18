@@ -1282,5 +1282,9 @@
  "Quad Sphere": "ทรงกลมสี่เหลี่ยม",
  "UV Sphere": "ทรงกลม UV",
  "Add Head": "เพิ่มศีรษะ",
- "Head": "ศีรษะ"
+ "Head": "ศีรษะ",
+ "Add Triplanar": "เพิ่ม Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "มาสก์รูปทรงบนระนาบทั้งสาม แล้วเลือก วัตถุ > ยืนยัน Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "ยืนยัน Triplanar"
 }

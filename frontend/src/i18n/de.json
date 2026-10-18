@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Viereckskugel",
  "UV Sphere": "UV-Kugel",
  "Add Head": "Kopf hinzufügen",
- "Head": "Kopf"
+ "Head": "Kopf",
+ "Add Triplanar": "Triplanar hinzufügen",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Maskiere auf jeder der drei Ebenen eine Form, dann Objekt > Triplanar bestätigen",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Triplanar bestätigen"
 }

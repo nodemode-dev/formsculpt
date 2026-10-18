@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Bola segi empat",
  "UV Sphere": "Bola UV",
  "Add Head": "Tambah kepala",
- "Head": "Kepala"
+ "Head": "Kepala",
+ "Add Triplanar": "Tambah Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Mask sebuah bentuk di tiap bidang dari tiga bidang, lalu Objek > Validasi Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Validasi Triplanar"
 }

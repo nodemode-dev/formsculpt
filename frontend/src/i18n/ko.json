@@ -1282,5 +1282,9 @@
  "Quad Sphere": "사각형 구",
  "UV Sphere": "UV 구",
  "Add Head": "머리 추가",
- "Head": "머리"
+ "Head": "머리",
+ "Add Triplanar": "Triplanar 추가",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "세 평면 각각에 모양을 마스크한 다음 오브젝트 > Triplanar 확정",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Triplanar 확정"
 }

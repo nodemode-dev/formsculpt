@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Firkantkule",
  "UV Sphere": "UV-kule",
  "Add Head": "Legg til hode",
- "Head": "Hode"
+ "Head": "Hode",
+ "Add Triplanar": "Legg til Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Masker en form på hvert av de tre planene, og velg så Objekt > Godkjenn Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Godkjenn Triplanar"
 }

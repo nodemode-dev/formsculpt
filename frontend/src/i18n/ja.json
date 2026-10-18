@@ -1282,5 +1282,9 @@
  "Quad Sphere": "四角形球",
  "UV Sphere": "UV球",
  "Add Head": "頭部を追加",
- "Head": "頭部"
+ "Head": "頭部",
+ "Add Triplanar": "Triplanarを追加",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "3つの平面それぞれに形をマスクしてから、オブジェクト > Triplanarを確定",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Triplanarを確定"
 }

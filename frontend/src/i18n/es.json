@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Esfera de cuadriláteros",
  "UV Sphere": "Esfera UV",
  "Add Head": "Añadir cabeza",
- "Head": "Cabeza"
+ "Head": "Cabeza",
+ "Add Triplanar": "Añadir Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Enmascara una forma en cada uno de los tres planos y luego Objeto > Validar Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Validar Triplanar"
 }

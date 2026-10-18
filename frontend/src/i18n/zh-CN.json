@@ -1282,5 +1282,9 @@
  "Quad Sphere": "四边形球体",
  "UV Sphere": "UV 球体",
  "Add Head": "添加头部",
- "Head": "头部"
+ "Head": "头部",
+ "Add Triplanar": "添加 Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "在三个平面上各遮罩一个形状，然后选择 对象 > 确认 Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "确认 Triplanar"
 }

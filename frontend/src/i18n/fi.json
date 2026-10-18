@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Nelikulmiopallo",
  "UV Sphere": "UV-pallo",
  "Add Head": "Lisää pää",
- "Head": "Pää"
+ "Head": "Pää",
+ "Add Triplanar": "Lisää Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Maskaa muoto jokaiseen kolmeen tasoon, sitten Objekti > Vahvista Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Vahvista Triplanar"
 }

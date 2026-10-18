@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Čtyřúhelníková koule",
  "UV Sphere": "UV koule",
  "Add Head": "Přidat hlavu",
- "Head": "Hlava"
+ "Head": "Hlava",
+ "Add Triplanar": "Přidat Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Namaskujte tvar na každou ze tří rovin, pak Objekt > Potvrdit Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Potvrdit Triplanar"
 }

@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Négyszöggömb",
  "UV Sphere": "UV-gömb",
  "Add Head": "Fej hozzáadása",
- "Head": "Fej"
+ "Head": "Fej",
+ "Add Triplanar": "Triplanar hozzáadása",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Maszkolj egy formát mindhárom síkra, majd Objektum > Triplanar véglegesítése",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Triplanar véglegesítése"
 }

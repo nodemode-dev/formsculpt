@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Vierhoekenbol",
  "UV Sphere": "UV-bol",
  "Add Head": "Hoofd toevoegen",
- "Head": "Hoofd"
+ "Head": "Hoofd",
+ "Add Triplanar": "Triplanar toevoegen",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Maskeer een vorm op elk van de drie vlakken, daarna Object > Triplanar bevestigen",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Triplanar bevestigen"
 }

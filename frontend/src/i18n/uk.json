@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Чотирикутна сфера",
  "UV Sphere": "UV-сфера",
  "Add Head": "Додати голову",
- "Head": "Голова"
+ "Head": "Голова",
+ "Add Triplanar": "Додати Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Замаскуйте форму на кожній із трьох площин, потім Об'єкт > Підтвердити Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Підтвердити Triplanar"
 }

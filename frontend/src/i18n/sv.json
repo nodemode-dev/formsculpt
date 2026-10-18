@@ -1282,5 +1282,9 @@
  "Quad Sphere": "Fyrhörningssfär",
  "UV Sphere": "UV-sfär",
  "Add Head": "Lägg till huvud",
- "Head": "Huvud"
+ "Head": "Huvud",
+ "Add Triplanar": "Lägg till Triplanar",
+ "Mask a shape on each of the three planes, then Object > Validate Triplanar": "Maskera en form på vart och ett av de tre planen, sedan Objekt > Bekräfta Triplanar",
+ "Triplanar": "Triplanar",
+ "Validate Triplanar": "Bekräfta Triplanar"
 }
