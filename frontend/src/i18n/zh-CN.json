@@ -1314,5 +1314,9 @@
  "File up axis": "文件向上轴",
  "Import as one object": "导入为一个对象",
  "Y up (formsculptor, glTF)": "Y 轴向上 (formsculptor, glTF)",
- "Z up (Blender)": "Z 轴向上 (Blender)"
+ "Z up (Blender)": "Z 轴向上 (Blender)",
+ "Focal Shift": "焦点偏移",
+ "Focal shift": "焦点偏移",
+ "Paint strength": "绘画强度",
+ "Rgb Intensity": "Rgb 强度"
 }

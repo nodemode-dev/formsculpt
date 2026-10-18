@@ -1314,5 +1314,9 @@
  "File up axis": "Trục hướng lên của tệp",
  "Import as one object": "Nhập thành một đối tượng",
  "Y up (formsculptor, glTF)": "Y hướng lên (formsculptor, glTF)",
- "Z up (Blender)": "Z hướng lên (Blender)"
+ "Z up (Blender)": "Z hướng lên (Blender)",
+ "Focal Shift": "Dịch tiêu điểm",
+ "Focal shift": "Dịch tiêu điểm",
+ "Paint strength": "Cường độ tô màu",
+ "Rgb Intensity": "Cường độ Rgb"
 }

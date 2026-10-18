@@ -1314,5 +1314,9 @@
  "File up axis": "Dosyanın yukarı ekseni",
  "Import as one object": "Tek nesne olarak içe aktar",
  "Y up (formsculptor, glTF)": "Y yukarı (formsculptor, glTF)",
- "Z up (Blender)": "Z yukarı (Blender)"
+ "Z up (Blender)": "Z yukarı (Blender)",
+ "Focal Shift": "Odak kaydırma",
+ "Focal shift": "Odak kaydırma",
+ "Paint strength": "Boya gücü",
+ "Rgb Intensity": "Rgb yoğunluğu"
 }

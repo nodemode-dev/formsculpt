@@ -1314,5 +1314,9 @@
  "File up axis": "Verticale as van bestand",
  "Import as one object": "Importeren als één object",
  "Y up (formsculptor, glTF)": "Y omhoog (formsculptor, glTF)",
- "Z up (Blender)": "Z omhoog (Blender)"
+ "Z up (Blender)": "Z omhoog (Blender)",
+ "Focal Shift": "Focusverschuiving",
+ "Focal shift": "Focusverschuiving",
+ "Paint strength": "Sterkte van verf",
+ "Rgb Intensity": "Rgb-intensiteit"
 }

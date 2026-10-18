@@ -1314,5 +1314,9 @@
  "File up axis": "Sumbu atas file",
  "Import as one object": "Impor sebagai satu objek",
  "Y up (formsculptor, glTF)": "Y ke atas (formsculptor, glTF)",
- "Z up (Blender)": "Z ke atas (Blender)"
+ "Z up (Blender)": "Z ke atas (Blender)",
+ "Focal Shift": "Pergeseran fokus",
+ "Focal shift": "Pergeseran fokus",
+ "Paint strength": "Kekuatan cat",
+ "Rgb Intensity": "Intensitas Rgb"
 }

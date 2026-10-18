@@ -1314,5 +1314,9 @@
  "File up axis": "Filens oppakse",
  "Import as one object": "Importer som ett objekt",
  "Y up (formsculptor, glTF)": "Y opp (formsculptor, glTF)",
- "Z up (Blender)": "Z opp (Blender)"
+ "Z up (Blender)": "Z opp (Blender)",
+ "Focal Shift": "Fokusforskyvning",
+ "Focal shift": "Fokusforskyvning",
+ "Paint strength": "Malestyrke",
+ "Rgb Intensity": "Rgb-intensitet"
 }

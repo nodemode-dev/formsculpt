@@ -1314,5 +1314,9 @@
  "File up axis": "파일 위쪽 축",
  "Import as one object": "하나의 오브젝트로 가져오기",
  "Y up (formsculptor, glTF)": "Y 위쪽 (formsculptor, glTF)",
- "Z up (Blender)": "Z 위쪽 (Blender)"
+ "Z up (Blender)": "Z 위쪽 (Blender)",
+ "Focal Shift": "포컬 시프트",
+ "Focal shift": "포컬 시프트",
+ "Paint strength": "페인트 강도",
+ "Rgb Intensity": "Rgb 강도"
 }

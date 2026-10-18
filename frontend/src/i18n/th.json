@@ -1314,5 +1314,9 @@
  "File up axis": "แกนขึ้นของไฟล์",
  "Import as one object": "นำเข้าเป็นวัตถุเดียว",
  "Y up (formsculptor, glTF)": "Y ขึ้น (formsculptor, glTF)",
- "Z up (Blender)": "Z ขึ้น (Blender)"
+ "Z up (Blender)": "Z ขึ้น (Blender)",
+ "Focal Shift": "การเลื่อนโฟกัส",
+ "Focal shift": "การเลื่อนโฟกัส",
+ "Paint strength": "ความแรงของสี",
+ "Rgb Intensity": "ความเข้ม Rgb"
 }

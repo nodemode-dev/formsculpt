@@ -1314,5 +1314,9 @@
  "File up axis": "Fájl függőleges tengelye",
  "Import as one object": "Importálás egy objektumként",
  "Y up (formsculptor, glTF)": "Y felfelé (formsculptor, glTF)",
- "Z up (Blender)": "Z felfelé (Blender)"
+ "Z up (Blender)": "Z felfelé (Blender)",
+ "Focal Shift": "Fókuszeltolás",
+ "Focal shift": "Fókuszeltolás",
+ "Paint strength": "Festés erőssége",
+ "Rgb Intensity": "Rgb-intenzitás"
 }

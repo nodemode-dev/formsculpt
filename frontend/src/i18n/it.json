@@ -1314,5 +1314,9 @@
  "File up axis": "Asse verticale del file",
  "Import as one object": "Importa come un solo oggetto",
  "Y up (formsculptor, glTF)": "Y in alto (formsculptor, glTF)",
- "Z up (Blender)": "Z in alto (Blender)"
+ "Z up (Blender)": "Z in alto (Blender)",
+ "Focal Shift": "Spostamento focale",
+ "Focal shift": "Spostamento focale",
+ "Paint strength": "Intensità pittura",
+ "Rgb Intensity": "Intensità Rgb"
 }

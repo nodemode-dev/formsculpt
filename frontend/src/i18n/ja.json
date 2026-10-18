@@ -1314,5 +1314,9 @@
  "File up axis": "ファイルの上方向軸",
  "Import as one object": "1 つのオブジェクトとして読み込み",
  "Y up (formsculptor, glTF)": "Y が上 (formsculptor, glTF)",
- "Z up (Blender)": "Z が上 (Blender)"
+ "Z up (Blender)": "Z が上 (Blender)",
+ "Focal Shift": "フォーカルシフト",
+ "Focal shift": "フォーカルシフト",
+ "Paint strength": "ペイント強度",
+ "Rgb Intensity": "Rgb 強度"
 }

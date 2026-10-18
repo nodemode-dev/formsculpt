@@ -1314,5 +1314,9 @@
  "File up axis": "Oś pionowa pliku",
  "Import as one object": "Importuj jako jeden obiekt",
  "Y up (formsculptor, glTF)": "Y w górę (formsculptor, glTF)",
- "Z up (Blender)": "Z w górę (Blender)"
+ "Z up (Blender)": "Z w górę (Blender)",
+ "Focal Shift": "Przesunięcie ogniska",
+ "Focal shift": "Przesunięcie ogniska",
+ "Paint strength": "Siła malowania",
+ "Rgb Intensity": "Intensywność Rgb"
 }

@@ -1314,5 +1314,9 @@
  "File up axis": "Svislá osa souboru",
  "Import as one object": "Importovat jako jeden objekt",
  "Y up (formsculptor, glTF)": "Y nahoru (formsculptor, glTF)",
- "Z up (Blender)": "Z nahoru (Blender)"
+ "Z up (Blender)": "Z nahoru (Blender)",
+ "Focal Shift": "Posun ohniska",
+ "Focal shift": "Posun ohniska",
+ "Paint strength": "Síla malby",
+ "Rgb Intensity": "Intenzita Rgb"
 }

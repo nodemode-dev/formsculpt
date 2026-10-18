@@ -1314,5 +1314,9 @@
  "File up axis": "Tiedoston pystyakseli",
  "Import as one object": "Tuo yhtenä objektina",
  "Y up (formsculptor, glTF)": "Y ylös (formsculptor, glTF)",
- "Z up (Blender)": "Z ylös (Blender)"
+ "Z up (Blender)": "Z ylös (Blender)",
+ "Focal Shift": "Polttopisteen siirto",
+ "Focal shift": "Polttopisteen siirto",
+ "Paint strength": "Maalauksen voimakkuus",
+ "Rgb Intensity": "Rgb-voimakkuus"
 }

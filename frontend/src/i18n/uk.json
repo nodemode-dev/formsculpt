@@ -1314,5 +1314,9 @@
  "File up axis": "Вертикальна вісь файлу",
  "Import as one object": "Імпорт одним об'єктом",
  "Y up (formsculptor, glTF)": "Y вгору (formsculptor, glTF)",
- "Z up (Blender)": "Z вгору (Blender)"
+ "Z up (Blender)": "Z вгору (Blender)",
+ "Focal Shift": "Зсув фокуса",
+ "Focal shift": "Зсув фокуса",
+ "Paint strength": "Сила фарбування",
+ "Rgb Intensity": "Інтенсивність Rgb"
 }
