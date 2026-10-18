@@ -20,6 +20,8 @@ interface Exports {
   fsc_save(): number;
   fsc_open(data: number, len: number): void;
   fsc_import(name: number, nameLen: number, data: number, len: number): void;
+  /** Absent from browser engines built before 0.92.0, which import without options. */
+  fsc_import_with?(name: number, nameLen: number, data: number, len: number, opts: number, optsLen: number): void;
   fsc_export(name: number, nameLen: number, ids: number, idsLen: number): number;
   fsc_maps(id: number): number;
   fsc_boolean_preview(a: number, b: number, op: number): number;
@@ -165,16 +167,20 @@ export class WasmEngine {
     });
   }
 
-  importFile(name: string, bytes: Uint8Array): WasmReply {
-    return this.with([enc.encode(name), bytes], (np, nl, dp, dl) => {
-      this.x.fsc_import(np, nl, dp, dl);
+  /** Imports a mesh file; options are import_mesh's (scale, up_axis, merge). */
+  importFile(name: string, bytes: Uint8Array, options: Record<string, unknown> = {}): WasmReply {
+    return this.with([enc.encode(name), bytes, enc.encode(JSON.stringify(options))], (np, nl, dp, dl, op, ol) => {
+      if (this.x.fsc_import_with) this.x.fsc_import_with(np, nl, dp, dl, op, ol);
+      else this.x.fsc_import(np, nl, dp, dl);
       return JSON.parse(this.outText()) as WasmReply;
     });
   }
 
-  /** A file of the given name's format from the chosen objects (every visible one when null), or the error's message. */
-  exportFile(name: string, ids: number[] | null): Uint8Array | string {
-    return this.with([enc.encode(name), enc.encode(ids ? JSON.stringify(ids) : '')], (np, nl, ip, il) => (this.x.fsc_export(np, nl, ip, il) === 0 ? this.out() : (this.failed().error?.message ?? 'export failed')));
+  /** A file of the given name's format from the chosen objects (every visible one when null), with export_mesh's
+   * options (scale, up_axis, triangulate), or the error's message. */
+  exportFile(name: string, ids: number[] | null, options: Record<string, unknown> = {}): Uint8Array | string {
+    const args = JSON.stringify(ids ? { ...options, ids } : options);
+    return this.with([enc.encode(name), enc.encode(args)], (np, nl, ip, il) => (this.x.fsc_export(np, nl, ip, il) === 0 ? this.out() : (this.failed().error?.message ?? 'export failed')));
   }
 
   /** The live boolean preview of two objects as an FSCM payload, or the refusal's message. */

@@ -138,19 +138,19 @@ def open_bytes(data: bytes) -> dict:
     return reply
 
 
-def import_bytes(file_name: str, data: bytes) -> dict:
+def import_bytes(file_name: str, data: bytes, scale: float = 1.0, up_axis: str = "y", merge: bool = False) -> dict:
     _require()
     with _lock:
-        reply = json.loads(_engine.import_bytes(file_name, data))
+        reply = json.loads(_engine.import_bytes(file_name, data, None, scale, up_axis, merge))
     if reply.get("ok"):
         _bump()
     return reply
 
 
-def export_bytes(file_name: str, ids: list[int] | None) -> bytes:
+def export_bytes(file_name: str, ids: list[int] | None, scale: float = 1.0, up_axis: str = "y", triangulate: bool = False) -> bytes:
     _require()
     with _lock:
-        return _engine.export_bytes(file_name, ids)
+        return _engine.export_bytes(file_name, ids, scale, up_axis, triangulate)
 
 
 def maps_zip(object_id: int) -> bytes | None:

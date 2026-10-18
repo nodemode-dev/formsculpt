@@ -152,15 +152,26 @@ export async function dispatch<T>(name: string, args: Record<string, unknown> = 
   }
 }
 
-export async function uploadFile<T>(file: Blob, name: string): Promise<Reply<T>> {
+/** Import options for a mesh file (a project ignores them): import_mesh's scale, the file's up axis and merge. */
+export interface ImportOptions {
+  scale?: number;
+  up_axis?: 'y' | 'z';
+  merge?: boolean;
+}
+
+export async function uploadFile<T>(file: Blob, name: string, options: ImportOptions = {}): Promise<Reply<T>> {
   if (local) {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    return (name.toLowerCase().endsWith('.fsc') ? local.open(bytes) : local.importFile(name, bytes)) as Reply<T>;
+    return (name.toLowerCase().endsWith('.fsc') ? local.open(bytes) : local.importFile(name, bytes, { ...options })) as Reply<T>;
   }
   try {
     const form = new FormData();
     form.append('file', file, name);
-    const response = await fetch('/api/engine/import', { method: 'POST', body: form });
+    const q = new URLSearchParams();
+    if (options.scale !== undefined) q.set('scale', String(options.scale));
+    if (options.up_axis) q.set('up_axis', options.up_axis);
+    if (options.merge) q.set('merge', 'true');
+    const response = await fetch(`/api/engine/import${q.size ? `?${q}` : ''}`, { method: 'POST', body: form });
     if (!response.ok) return { ok: false, error: { code: `http_${response.status}`, message: (await response.text()) || response.statusText } };
     return (await response.json()) as Reply<T>;
   } catch (err) {
@@ -176,7 +187,11 @@ function localFile(engine: WasmEngine, path: string): Blob | string {
   if (url.pathname === '/api/engine/project') return bytes(engine.save(), 'application/x-formsculptor');
   if (url.pathname === '/api/engine/export') {
     const ids = q.get('ids');
-    return bytes(engine.exportFile(`export.${q.get('format') ?? 'glb'}`, ids ? ids.split(',').map(Number) : null), 'application/octet-stream');
+    const options: Record<string, unknown> = {};
+    if (q.has('scale')) options.scale = Number(q.get('scale'));
+    if (q.has('up_axis')) options.up_axis = q.get('up_axis');
+    if (q.get('triangulate') === 'true') options.triangulate = true;
+    return bytes(engine.exportFile(`export.${q.get('format') ?? 'glb'}`, ids ? ids.split(',').map(Number) : null, options), 'application/octet-stream');
   }
   const maps = /^\/api\/engine\/maps\/(\d+)$/.exec(url.pathname);
   if (maps) return bytes(engine.maps(Number(maps[1])), 'application/zip');

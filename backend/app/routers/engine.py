@@ -71,21 +71,24 @@ async def _read(upload: UploadFile) -> bytes:
 
 
 @router.post("/import")
-async def import_file(file: UploadFile) -> dict:
+async def import_file(file: UploadFile, scale: float = Query(1.0, gt=0, le=100000), up_axis: str = Query("y", pattern="^(y|z)$"), merge: bool = False) -> dict:
+    """A dropped or picked file: a project opens, a mesh imports with the import options (scale, the file's up axis,
+    joining its parts)."""
     _guard()
     data = await _read(file)
     name = file.filename or "upload"
     if name.lower().endswith(".fsc"):
         return await run_in_threadpool(engine.open_bytes, data)
-    return await run_in_threadpool(engine.import_bytes, name, data)
+    return await run_in_threadpool(engine.import_bytes, name, data, scale, up_axis, merge)
 
 
 @router.get("/export")
-async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|fbx|usda)$"), ids: str | None = None) -> Response:
+async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|fbx|usda)$"), ids: str | None = None, scale: float = Query(1.0, gt=0, le=100000), up_axis: str = Query("y", pattern="^(y|z)$"), triangulate: bool = False) -> Response:
+    """The chosen objects as a file, with the export options (scale, up axis for the formats without one, triangles)."""
     _guard()
     chosen = [int(x) for x in ids.split(",") if x.strip()] if ids else None
     try:
-        data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen)
+        data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen, scale, up_axis, triangulate)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc).strip("'\""))
     media = {"glb": "model/gltf-binary", "stl": "model/stl", "obj": "model/obj", "ply": "application/octet-stream", "3mf": "model/3mf", "fbx": "application/octet-stream", "usda": "model/vnd.usda"}[format]
