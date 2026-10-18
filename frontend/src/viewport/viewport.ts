@@ -59,6 +59,10 @@ export class Viewport {
   pickAt: ((ray: Ray) => void) | null = null;
   /** Set by the app: a ZBrush Ctrl+click (blur the mask on the model, sharpen it with Alt, invert it off the model). */
   ctrlClick: ((ray: Ray, alt: boolean) => void) | null = null;
+  /** Set by the app: whether a tap is a mask shortcut now (Nomad's One tap shortcuts with the Mask tool in hand). */
+  tapsMask: (() => boolean) | null = null;
+  /** Set by the app: a mask shortcut tap (invert off the model, blur on a masked area, sharpen on an unmasked one). */
+  maskTap: ((ray: Ray) => void) | null = null;
   /** Set by the app: run a registry command (undo, redo, the mask's invert and clear). */
   command: ((id: string) => void) | null = null;
   private holding = false;
@@ -274,7 +278,8 @@ export class Viewport {
     // inverts it; so a Ctrl press, like an Alt press, waits to see whether it moves.
     const ctrlClick = zb && sculpt && !onHandle && ctrl;
     // A finger's stroke waits until it has moved a little, so a second finger arriving for a pinch leaves no dab.
-    const pending = sculpt && (e.pointerType === 'touch' || pick || ctrlClick);
+    // A press with a mask shortcut waiting also waits, so a tap (not a drag) can be the shortcut.
+    const pending = sculpt && (e.pointerType === 'touch' || pick || ctrlClick || (this.tapsMask?.() ?? false));
     const invert = zb ? e.altKey : ctrl;
     this.drag = { button: e.button, x: e.clientX, y: e.clientY, mode: pending ? 'pending' : sculpt ? 'stroke' : 'camera', alt: e.altKey, shift: e.shiftKey, ctrl, moved: 0, pick };
     this.pendingStart = pending ? { ray: this.rayAt(e), pressure: this.pressure(e), ctrl: invert } : null;
@@ -414,6 +419,9 @@ export class Viewport {
         if (this.pendingStart.ray) this.pickAt?.(this.pendingStart.ray);
       } else if (this.scheme === 'zbrush' && d.ctrl && e.pointerType !== 'touch') {
         if (this.pendingStart.ray) this.ctrlClick?.(this.pendingStart.ray, d.alt ?? false);
+      } else if (this.pendingStart.ray && (this.tapsMask?.() ?? false)) {
+        // Nomad's One tap shortcuts: the tap works on the mask instead of leaving a dab.
+        this.maskTap?.(this.pendingStart.ray);
       } else {
         // A tap: one dab where the finger touched.
         this.beginStroke(this.pendingStart.ray, this.pendingStart.pressure, this.pendingStart.ctrl, 0);
