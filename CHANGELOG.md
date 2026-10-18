@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.97.0 · 2026-10-18
+
+### Added
+
+- Nomad's one-tap mask shortcuts, as One tap mask shortcuts in the panel's View section (off at first): with the Mask tool in hand, tap the background to invert the mask, a masked area to blur it, an unmasked area to sharpen it. A drag still paints the mask.
+- `pick` also reports the mask at the hit point.
+- 1341 interface strings in every language.
+
+### Notes
+
+- Nomad's Hide tool one-tap shortcuts (tap a face group to hide it, empty space to invert) are not built yet.
+
 ## 0.96.0 · 2026-10-18
 
 ### Added
