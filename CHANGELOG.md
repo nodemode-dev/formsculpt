@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.95.0 · 2026-10-18
+
+### Added
+
+- Textures in the ZBrush layout: a Texture swatch on the left shelf (between Alpha and Material, as in ZBrush) and F5 open a pop-up of the images held in Spotlight, with Load image first; click one to make it the active image. LightBox has a Texture shelf too (double-click to make one active, or Load image).
+- 1332 interface strings in every language.
+
+### Changed
+
+- In the ZBrush layout, Z Intensity now stays the sculpting strength while the Paint brush is in hand, so Z Intensity and Rgb Intensity are kept apart as in ZBrush.
+
 ## 0.94.0 · 2026-10-18
 
 ### Added
