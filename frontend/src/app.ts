@@ -622,6 +622,9 @@ const PRIMITIVES: [string, string][] = [
   ['cone', 'Cone'],
   ['torus', 'Torus'],
   ['plane', 'Plane'],
+  ['quad_sphere', 'Quad Sphere'],
+  ['uv_sphere', 'UV Sphere'],
+  ['icosahedron', 'Icosahedron'],
 ];
 
 function buildShell(root: HTMLElement): Shell {
@@ -715,7 +718,8 @@ function buildShell(root: HTMLElement): Shell {
   fileFields.append(field('Export format', exportFormat), field('NodeMode address', nodemode));
   panel.append(fileFields);
   panel.append(el('h2', 'gap', 'Add'));
-  const grid = el('div', 'add-grid');
+  // Two columns: nine shapes, some with long names (Icosahedron, and longer in some languages).
+  const grid = el('div', 'add-grid two shapes');
   const addButtons = PRIMITIVES.map(([kind, label]) => {
     const b = el('button', 'btn', label);
     b.type = 'button';
