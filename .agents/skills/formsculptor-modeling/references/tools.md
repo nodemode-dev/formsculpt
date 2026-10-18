@@ -1,11 +1,11 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.85.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.86.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
-- Scene: `get_scene`, `new_scene`, `edit_primitive`
+- Scene: `get_scene`, `new_scene`, `edit_primitive`, `add_group`, `set_parent`, `delete_group`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `save_view`, `list_views`, `delete_view`, `pick`
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
@@ -146,7 +146,7 @@ Hide or show objects, isolate some (hiding the rest) or show all. Hidden objects
 
 - `action`: string (hide | show | isolate | show_all); required; hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything.
 - `folder`: string; Instead of ids: every object in this folder.
-- `ids`: array of integer; The objects; the active object when omitted.
+- `ids`: array of integer; The objects or groups; the active object when omitted. Everything under each in the hierarchy goes with it.
 
 ## set_folder
 
@@ -428,11 +428,38 @@ Note: safe to repeat.
 
 ## delete_object
 
-Remove an object from the scene by id.
+Remove an object from the scene by id. Objects and groups under it in the hierarchy move up to its parent, or with children go too (Delete+). One undo step.
 
+- `children`: boolean; default false; Also delete every object and group below it in the hierarchy (Delete+); otherwise they move up to its parent.
 - `id`: integer; required; range 1 to inf; An object id from get_scene.
 
 Note: removes or replaces (undoable); in the window: Delete.
+
+## add_group
+
+Make an empty group in the scene hierarchy, optionally gathering objects or groups under it (grouping a selection). A group has no mesh; moving it with transform_object moves everything under it. Saved in projects. One undo step.
+
+- `children`: array of integer; Objects or groups to move under the new group (grouping a selection).
+- `name`: string; The group's name; Group (numbered if taken) when omitted.
+- `parent`: integer; range 1 to inf; An object or group to hang the new group under; where the first child was, or the top, when omitted.
+
+Note: in the window: Ctrl+G.
+
+## set_parent
+
+Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. A parent that is one of them or below one is refused. Saved in projects. One undo step.
+
+- `ids`: array of integer; required; Objects or groups to move in the hierarchy.
+- `parent`: ['integer', 'null']; required; range 1 to inf; The object or group they hang under from now on (moving it moves them); null puts them at the top.
+
+## delete_group
+
+Remove a group. What was under it moves up to the group's parent, or with children is deleted too. One undo step.
+
+- `children`: boolean; default false; Also delete every object and group below it; otherwise they move up to the group's parent.
+- `id`: integer; required; range 1 to inf; A group id from get_scene.
+
+Note: removes or replaces (undoable).
 
 ## sculpt_stroke
 
@@ -1424,7 +1451,7 @@ Give an object a new name.
 
 Move, rotate (degrees about x, y, z) and scale an object's vertices around its bounds centre. Masked vertices stay put in proportion to the mask, so a mask works as topology masking. One undo step.
 
-- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `id`: integer; range 1 to inf; Object or group id; the active object when omitted. Everything under it in the hierarchy moves with it, whole; a group turns and scales about the centre of what is under it.
 - `pivot`: array of number; Turn and scale about this world point instead of the bounds centre (the transform gizmo's picked pivot or the world origin).
 - `rotate`: array of number; Degrees about x, y and z (applied in that order) around the object's bounds centre.
 - `scale`: ['number', 'array']; A factor or [x, y, z] factors around the bounds centre.
