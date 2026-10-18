@@ -2,6 +2,24 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.86.0 · 2026-10-18
+
+### Added
+
+- A scene hierarchy, as in Nomad Sculpt. An object can hang under another object or under a group, an empty node for holding things together.
+  - Moving, turning or scaling a parent moves everything under it with it; hiding or showing it does the same.
+  - In the object list (in every layout), rows are indented under their parent. A group row folds when clicked, its eye hides everything under it, and its cross deletes it (what was under it moves up).
+  - Drag a row onto another row to hang it there, or to the top or bottom edge of a row to put it beside that row. With a mouse the drag starts as you move; on a touch screen, hold the row first.
+  - Group (Mod+G) puts the active object in a new group. The row menu adds Delete With Children and Clear Parent.
+  - Deleting an object moves what was under it up to its parent; Delete With Children deletes them too.
+  - Undo takes back each of these as one step, and projects save the hierarchy (older projects open flat).
+- For agents: `add_group`, `set_parent` and `delete_group`; `transform_object` and `set_visibility` take group ids and carry children; `delete_object` takes `children`; `get_scene` reports each object's `parent` and the `groups`.
+- 1276 interface strings in every language.
+
+### Changed
+
+- `delete_object` now replies with a list of the removed ids.
+
 ## 0.85.0 · 2026-10-18
 
 ### Added
