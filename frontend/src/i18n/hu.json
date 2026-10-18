@@ -1265,5 +1265,7 @@
  "Face Group": "Lapcsoport",
  "lit by the scene lights; this sphere is an approximation": "a jelenet fényei világítják meg; ez a gömb közelítés",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Visszavert fény",
+ "Bounce strength": "Visszavert fény erőssége"
 }

@@ -1265,5 +1265,7 @@
  "Face Group": "面群組",
  "lit by the scene lights; this sphere is an approximation": "由場景燈光照亮；此球體為近似效果",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "反彈光",
+ "Bounce strength": "反彈光強度"
 }

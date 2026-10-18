@@ -1265,5 +1265,7 @@
  "Face Group": "Pintaryhmä",
  "lit by the scene lights; this sphere is an approximation": "näkymän valojen valaisema; tämä pallo on likiarvo",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Heijastunut valo",
+ "Bounce strength": "Heijastuneen valon voimakkuus"
 }

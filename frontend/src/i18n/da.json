@@ -1265,5 +1265,7 @@
  "Face Group": "Fladegruppe",
  "lit by the scene lights; this sphere is an approximation": "belyst af scenens lys; denne kugle er en tilnærmelse",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Reflekteret lys",
+ "Bounce strength": "Styrke af reflekteret lys"
 }

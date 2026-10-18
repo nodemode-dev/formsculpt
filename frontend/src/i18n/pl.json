@@ -1265,5 +1265,7 @@
  "Face Group": "Grupa ścian",
  "lit by the scene lights; this sphere is an approximation": "oświetlone światłami sceny; ta kula jest przybliżeniem",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Światło odbite",
+ "Bounce strength": "Siła światła odbitego"
 }

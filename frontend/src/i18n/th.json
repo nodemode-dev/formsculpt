@@ -1265,5 +1265,7 @@
  "Face Group": "กลุ่มหน้า",
  "lit by the scene lights; this sphere is an approximation": "ส่องด้วยแสงของฉาก ทรงกลมนี้เป็นค่าประมาณ",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "แสงสะท้อน",
+ "Bounce strength": "ความแรงของแสงสะท้อน"
 }

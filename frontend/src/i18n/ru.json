@@ -1265,5 +1265,7 @@
  "Face Group": "Группа граней",
  "lit by the scene lights; this sphere is an approximation": "освещено светом сцены; эта сфера приблизительна",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Отражённый свет",
+ "Bounce strength": "Сила отражённого света"
 }

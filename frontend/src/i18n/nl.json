@@ -1265,5 +1265,7 @@
  "Face Group": "Vlakgroep",
  "lit by the scene lights; this sphere is an approximation": "verlicht door de scènelichten; deze bol is een benadering",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Indirect licht",
+ "Bounce strength": "Sterkte indirect licht"
 }

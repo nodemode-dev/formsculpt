@@ -1265,5 +1265,7 @@
  "Face Group": "Groupe de faces",
  "lit by the scene lights; this sphere is an approximation": "éclairé par les lumières de la scène ; cette sphère est une approximation",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Lumière indirecte",
+ "Bounce strength": "Intensité de la lumière indirecte"
 }

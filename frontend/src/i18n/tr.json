@@ -1265,5 +1265,7 @@
  "Face Group": "Yüz grubu",
  "lit by the scene lights; this sphere is an approximation": "sahne ışıklarıyla aydınlatılır; bu küre bir yaklaşımdır",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Yansıyan ışık",
+ "Bounce strength": "Yansıyan ışık gücü"
 }

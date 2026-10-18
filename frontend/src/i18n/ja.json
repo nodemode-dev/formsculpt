@@ -1265,5 +1265,7 @@
  "Face Group": "フェイスグループ",
  "lit by the scene lights; this sphere is an approximation": "シーンのライトで照らされます。この球は近似です",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "間接光",
+ "Bounce strength": "間接光の強さ"
 }

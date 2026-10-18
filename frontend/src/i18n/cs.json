@@ -1265,5 +1265,7 @@
  "Face Group": "Skupina ploch",
  "lit by the scene lights; this sphere is an approximation": "osvětleno světly scény; tato koule je přibližná",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Odražené světlo",
+ "Bounce strength": "Síla odraženého světla"
 }

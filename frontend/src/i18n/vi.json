@@ -1265,5 +1265,7 @@
  "Face Group": "Nhóm mặt",
  "lit by the scene lights; this sphere is an approximation": "được chiếu bằng đèn của cảnh; quả cầu này là ước lượng",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Ánh sáng phản xạ",
+ "Bounce strength": "Cường độ ánh sáng phản xạ"
 }

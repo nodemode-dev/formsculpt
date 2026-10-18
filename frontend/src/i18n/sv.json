@@ -1265,5 +1265,7 @@
  "Face Group": "Ytgrupp",
  "lit by the scene lights; this sphere is an approximation": "belyst av scenens ljus; den här sfären är en approximation",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Studsljus",
+ "Bounce strength": "Studsljusets styrka"
 }

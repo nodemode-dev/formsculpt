@@ -1265,5 +1265,7 @@
  "Face Group": "Grup muka",
  "lit by the scene lights; this sphere is an approximation": "diterangi cahaya adegan; bola ini adalah perkiraan",
  "QuickMenu": "QuickMenu",
- "Sub": "Sub"
+ "Sub": "Sub",
+ "Bounce light": "Cahaya pantulan",
+ "Bounce strength": "Kekuatan cahaya pantulan"
 }
