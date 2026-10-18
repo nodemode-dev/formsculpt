@@ -14,14 +14,21 @@ pub enum Primitive {
     Cone { radius: f32, height: f32, segments: u32 },
     Torus { major: f32, minor: f32, segments: u32, sides: u32 },
     Plane { size: f32, divisions: u32 },
+    /// The 20-faced icosahedron, its faces split `subdivisions` times; flat-faced unless `project` pushes every
+    /// point out onto the sphere (which makes it the icosphere).
+    Icosahedron { radius: f32, subdivisions: u32, project: bool },
+    /// A cube of quads pushed onto a sphere, as Nomad Sculpt's Sphere is: no poles, quads of nearly even size.
+    QuadSphere { radius: f32, divisions: u32 },
 }
 
 impl Primitive {
-    pub const KINDS: [&'static str; 7] = ["sphere", "uv_sphere", "cube", "cylinder", "cone", "torus", "plane"];
+    pub const KINDS: [&'static str; 9] = ["sphere", "uv_sphere", "cube", "cylinder", "cone", "torus", "plane", "icosahedron", "quad_sphere"];
 
     pub fn build(&self) -> Mesh {
         match *self {
-            Primitive::Sphere { radius, subdivisions } => icosphere(radius, subdivisions.min(9)),
+            Primitive::Sphere { radius, subdivisions } => icosphere(radius, subdivisions.min(9), true),
+            Primitive::Icosahedron { radius, subdivisions, project } => icosphere(radius, subdivisions.min(9), project),
+            Primitive::QuadSphere { radius, divisions } => quad_sphere(radius, divisions.clamp(1, 1024)),
             Primitive::UvSphere { radius, segments, rings } => uv_sphere(radius, segments.clamp(3, 2048), rings.clamp(2, 2048)),
             Primitive::Cube { size, divisions } => cube(size, divisions.clamp(1, 1024)),
             Primitive::Cylinder { radius, height, segments, rings } => cylinder(radius, height, segments.clamp(3, 2048), rings.clamp(1, 2048)),
@@ -32,7 +39,28 @@ impl Primitive {
     }
 }
 
-fn icosphere(radius: f32, subdivisions: u32) -> Mesh {
+/// A cube of `n` by `n` quads a side, each point moved onto the sphere by the spherified-cube mapping
+/// x * sqrt(1 - y^2/2 - z^2/2 + y^2 z^2 / 3) (and likewise for y and z), which spreads the quads more evenly than
+/// pushing each point straight out along its direction.
+fn quad_sphere(radius: f32, n: u32) -> Mesh {
+    let mut mesh = cube(2.0, n);
+    for p in &mut mesh.positions {
+        let (x, y, z) = (p[0].clamp(-1.0, 1.0), p[1].clamp(-1.0, 1.0), p[2].clamp(-1.0, 1.0));
+        let (x2, y2, z2) = (x * x, y * y, z * z);
+        let s = Vec3::new(
+            x * (1.0 - y2 / 2.0 - z2 / 2.0 + y2 * z2 / 3.0).max(0.0).sqrt(),
+            y * (1.0 - z2 / 2.0 - x2 / 2.0 + z2 * x2 / 3.0).max(0.0).sqrt(),
+            z * (1.0 - x2 / 2.0 - y2 / 2.0 + x2 * y2 / 3.0).max(0.0).sqrt(),
+        );
+        *p = (s.normalize_or_zero() * radius).to_array();
+    }
+    mesh.recompute_normals();
+    mesh
+}
+
+/// The icosahedron split `subdivisions` times; with `project` each new point goes out onto the sphere (the icosphere),
+/// without it the faces stay flat.
+fn icosphere(radius: f32, subdivisions: u32, project: bool) -> Mesh {
     let t = (1.0 + 5f32.sqrt()) / 2.0;
     let mut verts: Vec<Vec3> = [
         [-1.0, t, 0.0], [1.0, t, 0.0], [-1.0, -t, 0.0], [1.0, -t, 0.0],
@@ -48,26 +76,49 @@ fn icosphere(radius: f32, subdivisions: u32) -> Mesh {
         [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
         [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
     ];
+    // Flat: the icosahedron's 30 edges are creases (their pieces once split) and each of its 20 faces is a face group.
+    let key = |a: u32, b: u32| if a < b { (a, b) } else { (b, a) };
+    let mut creases: std::collections::HashSet<(u32, u32)> = faces.iter().flat_map(|&[a, b, c]| [key(a, b), key(b, c), key(c, a)]).collect();
+    let mut groups: Vec<u32> = (0..faces.len() as u32).collect();
     for _ in 0..subdivisions {
         let mut cache: HashMap<(u32, u32), u32> = HashMap::with_capacity(faces.len() * 3 / 2);
         let mut mid = |a: u32, b: u32, verts: &mut Vec<Vec3>| -> u32 {
             let key = if a < b { (a, b) } else { (b, a) };
             *cache.entry(key).or_insert_with(|| {
-                verts.push(((verts[a as usize] + verts[b as usize]) * 0.5).normalize());
+                let m = (verts[a as usize] + verts[b as usize]) * 0.5;
+                verts.push(if project { m.normalize() } else { m });
                 (verts.len() - 1) as u32
             })
         };
         let mut next = Vec::with_capacity(faces.len() * 4);
-        for [a, b, c] in faces {
+        let mut next_groups = Vec::with_capacity(faces.len() * 4);
+        let mut split = std::collections::HashSet::new();
+        for (f, [a, b, c]) in faces.into_iter().enumerate() {
             let ab = mid(a, b, &mut verts);
             let bc = mid(b, c, &mut verts);
             let ca = mid(c, a, &mut verts);
             next.extend_from_slice(&[[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]]);
+            next_groups.extend_from_slice(&[groups[f]; 4]);
+            for (p, q, m) in [(a, b, ab), (b, c, bc), (c, a, ca)] {
+                if creases.contains(&key(p, q)) {
+                    split.insert(key(p, m));
+                    split.insert(key(m, q));
+                }
+            }
         }
         faces = next;
+        groups = next_groups;
+        creases = split;
     }
     let positions = verts.iter().map(|v| (*v * radius).to_array()).collect();
-    Mesh::new(positions, faces.into_iter().flatten().collect())
+    let mut mesh = Mesh::new(positions, faces.into_iter().flatten().collect());
+    if !project {
+        let mut c: Vec<(u32, u32)> = creases.into_iter().collect();
+        c.sort_unstable();
+        mesh.creases = c;
+        mesh.groups = groups;
+    }
+    mesh
 }
 
 fn grid_indices(cols: u32, rows: u32, wrap_cols: bool, base: u32, out: &mut Vec<u32>) {

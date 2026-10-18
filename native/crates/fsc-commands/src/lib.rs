@@ -330,7 +330,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "add_primitive",
         group: Group::Object,
         label: "Add Primitive",
-        description: "Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus and plane. Returns the new object's summary.",
+        description: "Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting). Returns the new object's summary.",
         keys: &[],
         hints: WRITE,
         schema: scene_cmds::add_primitive_schema,

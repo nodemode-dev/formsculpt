@@ -143,8 +143,9 @@ pub(crate) fn add_primitive_schema() -> Value {
         "properties": {
             "kind": {"type": "string", "enum": Primitive::KINDS},
             "name": {"type": "string", "maxLength": 120},
-            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 1, "description": "Radius for sphere, uv_sphere, cylinder, cone and the torus ring; edge length for cube and plane."},
-            "detail": {"type": "integer", "minimum": 0, "maximum": 2048, "description": "Subdivisions for sphere (0 to 9, default 5), divisions for cube and plane (default 16), segments for the round kinds (default 64)."},
+            "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 1, "description": "Radius for sphere, uv_sphere, icosahedron, quad_sphere, cylinder, cone and the torus ring; edge length for cube and plane."},
+            "detail": {"type": "integer", "minimum": 0, "maximum": 2048, "description": "Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16), segments for the round kinds (default 64)."},
+            "project": {"type": "boolean", "default": false, "description": "Icosahedron: push every point out onto the sphere (round, as sphere is) instead of keeping the faces flat."},
             "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 2, "description": "Cylinder and cone height."},
             "thickness": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 0.3, "description": "Torus tube radius."}
         },
@@ -182,6 +183,9 @@ fn int(args: &Value, key: &str, default: u32, hi: u32) -> Result<u32, CommandErr
 pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let (mesh, kind) = primitive_mesh(args)?;
     let base = args.get("name").and_then(Value::as_str).filter(|n| !n.trim().is_empty()).map(str::to_string).unwrap_or_else(|| {
+        if kind == "uv_sphere" {
+            return "UV sphere".to_string();
+        }
         let mut c = kind.replace('_', " ");
         if let Some(f) = c.get_mut(0..1) {
             f.make_ascii_uppercase();
@@ -219,7 +223,7 @@ pub(crate) fn edit_primitive(s: &mut Session, args: &Value) -> Result<Value, Com
         return Err(CommandError::new("not_editable", "the primitive has been changed since it was made, so its shape is fixed"));
     }
     let mut merged: Value = serde_json::from_str(&made).unwrap_or_else(|_| json!({}));
-    for key in ["size", "detail", "height", "thickness"] {
+    for key in ["size", "detail", "height", "thickness", "project"] {
         if let Some(v) = args.get(key) {
             merged[key] = v.clone();
         }
@@ -256,6 +260,8 @@ fn primitive_mesh(args: &Value) -> Result<(fsc_core::Mesh, String), CommandError
             Primitive::Torus { major: size, minor: thickness, segments: d, sides: (d / 2).max(3) }
         }
         "plane" => Primitive::Plane { size, divisions: int(args, "detail", 16, 2048)?.max(1) },
+        "icosahedron" => Primitive::Icosahedron { radius: size, subdivisions: int(args, "detail", 0, 9)?, project: args.get("project").and_then(Value::as_bool).unwrap_or(false) },
+        "quad_sphere" => Primitive::QuadSphere { radius: size, divisions: int(args, "detail", 16, 1024)?.max(1) },
         other => return Err(CommandError::new("bad_arguments", format!("unknown kind {other}; use one of {}", Primitive::KINDS.join(", ")))),
     };
     Ok((primitive.build(), kind.to_string()))
