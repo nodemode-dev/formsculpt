@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.89.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.90.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -12,7 +12,7 @@ Generated from the engine's command registry (formsculptor 0.89.0) by `./formscu
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
-- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`
+- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `print_check`, `set_real_size`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`, `hide_shape`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`, `layer_set`, `layer_offset`, `layer_bake`, `layer_extract`
@@ -45,7 +45,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `exposure`: number; default 1; range 0 to 16; Path render grade: a multiplier on the light (2 is a stop brighter).
 - `focus`: number; range 0 to inf; Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted.
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
-- `height`: integer; default 640; range 64 to 2048
+- `height`: integer; default 640; range 64 to 4096
 - `ids`: array of integer; Only these objects; every visible object when omitted.
 - `lights`: array of object; Path render: directional and spot lights added to the key light (a rim, fill or a pool of light).
 - `pass`: string (beauty | depth | normal | ao); default "beauty"; Path render: the lit image, or a compositing pass (depth near white to far black, world normal as colour, ambient occlusion).
@@ -60,7 +60,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `temperature`: number; default 0; range -1 to 1; Path render grade: white balance, negative cooler, positive warmer.
 - `tone`: string (reinhard | aces | none | agx | neutral); default "reinhard"; Path render: how light is brought to the screen. reinhard is soft; aces filmic and contrasty; agx keeps hot colours from skewing, fading them toward white as film does; neutral keeps base colours almost exact and only compresses highlights; none clips.
 - `view`: string (three_quarter | front | back | right | left | top | bottom); default "three_quarter"; Camera direction; three_quarter is front-right and a little above, as the window opens. Front looks along -z.
-- `width`: integer; default 640; range 64 to 2048
+- `width`: integer; default 640; range 64 to 4096; Up to 4096, so 4K (3840 by 2160) renders; a path render that large takes minutes.
 - `yaw`: number; range -360 to 360; Degrees around the vertical axis from the front; overrides view.
 
 Note: read-only.
@@ -1736,9 +1736,18 @@ Check an object for 3D printing: watertight, non-manifold edges, inside-out, siz
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `min_wall_mm`: number; default 1.0; range 0 to inf; Thinnest wall the printer can make.
-- `units_per_mm`: number; default 0.1; range 0 to inf; Scene units in one millimetre (0.1 means the default 2-unit sphere prints 20 mm across).
+- `units_per_mm`: number; range 0 to inf; Scene units in one millimetre; the scene's real-world scale (set_real_size) when set, else 0.1 (the default 2-unit sphere prints 20 mm across).
 
 Note: read-only.
+
+## set_real_size
+
+Set the scene's real-world scale for printing: say how big one object really is (size_mm along its longest side, or x, y or z), or give mm_per_unit directly (null clears it). Nothing moves; from then on print_check measures in that scale and STL and 3MF exports are written in millimetres at that size (3MF's unit is millimetre; STL has no unit, so slicers read the numbers as given). Saved in projects. Reports every object's size in millimetres.
+
+- `axis`: string (longest | x | y | z); default "longest"; Which of the object's sides size_mm measures.
+- `id`: integer; range 1 to inf; The object to measure by; the active object when omitted.
+- `mm_per_unit`: ['number', 'null']; range 0 to inf; Or set the scale directly: millimetres in one scene unit; null clears it.
+- `size_mm`: number; range -inf to 100000; How big that object is in the real world along axis, in millimetres; sets the scene's scale from it.
 
 ## repair_mesh
 
