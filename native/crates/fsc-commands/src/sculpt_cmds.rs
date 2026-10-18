@@ -45,6 +45,11 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         }
         Some(_) => return Err(bad("falloff_curve is 2 to 64 weights from the centre to the rim")),
     };
+    // ZBrush's Focal Shift, over whichever falloff was chosen.
+    let falloff = match args.get("focal_shift") {
+        None | Some(Value::Null) => falloff,
+        Some(_) => falloff.focal_shifted(f(args, "focal_shift", 0.0, -100.0, 100.0)?),
+    };
     let stroke_mode = args.get("stroke").and_then(Value::as_str).unwrap_or("dots");
     if !["dots", "roll", "spray"].contains(&stroke_mode) {
         return Err(bad(format!("unknown stroke {stroke_mode}; use dots, roll or spray")));
@@ -592,6 +597,7 @@ pub(crate) fn brush_props() -> Value {
         "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
         "invert": {"type": "boolean", "default": false, "description": "Carve instead of build, deflate, unpinch, erase mask."},
         "falloff": {"type": "string", "enum": Falloff::NAMES, "default": "smooth"},
+        "focal_shift": {"type": "number", "minimum": -100, "maximum": 100, "default": 0, "description": "ZBrush's Focal Shift over the falloff (or falloff_curve): below 0 full strength reaches further out (-100 a crisp tip with no falloff), above 0 the falloff starts sooner (100 narrows the tip toward a point)."},
         "spacing": {"type": "number", "minimum": 0.02, "maximum": 2, "default": 0.15, "description": "Distance between dabs as a fraction of the radius."},
         "lazy": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0, "description": "Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length."},
         "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},

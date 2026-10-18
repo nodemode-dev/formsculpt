@@ -107,6 +107,33 @@ impl Falloff {
         Some(Falloff::Curve(table))
     }
 
+    /// ZBrush's Focal Shift applied to this falloff, as a curve: -100 to 100, 0 leaving it as it is. Below 0 the full
+    /// strength reaches further out (an inner circle at -shift percent of the radius, the falloff squeezed into the ring
+    /// outside it; -100 is a crisp tip); above 0 the falloff starts sooner (the distance from the centre is raised to the
+    /// power 1 / (1 + shift / 100), so the tip narrows toward a point at 100).
+    pub fn focal_shifted(&self, shift: f32) -> Falloff {
+        let shift = shift.clamp(-100.0, 100.0);
+        if shift == 0.0 {
+            return *self;
+        }
+        let mut table = [0.0; Falloff::CURVE_SAMPLES];
+        for (i, slot) in table.iter_mut().enumerate() {
+            let t = i as f32 / (Falloff::CURVE_SAMPLES - 1) as f32;
+            let moved = if shift < 0.0 {
+                let inner = -shift / 100.0;
+                if inner >= 1.0 {
+                    if t < 1.0 { 0.0 } else { 1.0 }
+                } else {
+                    ((t - inner) / (1.0 - inner)).max(0.0)
+                }
+            } else {
+                t.powf(1.0 / (1.0 + shift / 100.0))
+            };
+            *slot = self.weight(moved);
+        }
+        Falloff::Curve(table)
+    }
+
     pub fn parse(name: &str) -> Option<Falloff> {
         Some(match name {
             "smooth" => Falloff::Smooth,
