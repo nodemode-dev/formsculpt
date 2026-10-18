@@ -104,7 +104,12 @@ pub(crate) fn set_material(s: &mut Session, args: &Value) -> Result<Value, Comma
 
 pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
     Ok(json!({
-        "objects": s.scene.objects.iter().map(summary).collect::<Vec<_>>(),
+        "objects": s.scene.objects.iter().map(|o| {
+            let mut v = summary(o);
+            v["parent"] = json!(s.scene.parent_of(o.id));
+            v
+        }).collect::<Vec<_>>(),
+        "groups": crate::hierarchy_cmds::groups_report(s),
         "active": s.scene.active,
         // The saved views' names, in order (list_views has the cameras).
         "views": s.scene.views.iter().map(|v| v.name.clone()).collect::<Vec<_>>(),
@@ -113,11 +118,12 @@ pub(crate) fn get_scene(s: &mut Session, _: &Value) -> Result<Value, CommandErro
 
 pub(crate) fn new_scene(s: &mut Session, _: &Value) -> Result<Value, CommandError> {
     let removed = s.scene.objects.len();
-    if removed > 0 {
+    if removed > 0 || !s.scene.groups.is_empty() {
         let active = s.scene.active;
         let parked = std::mem::take(&mut s.scene.objects);
+        let groups = std::mem::take(&mut s.scene.groups);
         s.scene.active = None;
-        s.history.push(Edit::Clear { parked, active });
+        s.history.push(Edit::Clear { parked, active, groups });
     }
     Ok(json!({"removed": removed}))
 }
@@ -271,11 +277,22 @@ pub(crate) fn select_object(s: &mut Session, args: &Value) -> Result<Value, Comm
     Ok(json!({"active": id}))
 }
 
+pub(crate) fn delete_object_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "An object id from get_scene."},
+            "children": {"type": "boolean", "default": false, "description": "Also delete every object and group below it in the hierarchy (Delete+); otherwise they move up to its parent."}
+        },
+        "required": ["id"],
+        "additionalProperties": false
+    })
+}
+
 pub(crate) fn delete_object(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = object_id(args)?;
-    let index = s.scene.index_of(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")))?;
-    let removed = s.scene.remove(id).expect("found above");
-    let reply = json!({"removed": removed.id, "name": removed.name, "active": s.scene.active});
-    s.history.push(Edit::Delete { id, index, parked: Some(removed) });
+    let name = s.scene.get(id).map(|o| o.name.clone()).ok_or_else(|| CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")))?;
+    let mut reply = crate::hierarchy_cmds::remove_node(s, id, args.get("children").and_then(Value::as_bool).unwrap_or(false))?;
+    reply["name"] = json!(name);
     Ok(reply)
 }

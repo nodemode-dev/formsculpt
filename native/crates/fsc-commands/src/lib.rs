@@ -6,6 +6,7 @@ mod curve_cmds;
 mod cut_cmds;
 mod file_cmds;
 mod group_cmds;
+mod hierarchy_cmds;
 mod history;
 mod layer_cmds;
 pub mod live;
@@ -516,11 +517,44 @@ pub static COMMANDS: &[Command] = &[
         mcp: "delete_object",
         group: Group::Object,
         label: "Delete Object",
-        description: "Remove an object from the scene by id.",
+        description: "Remove an object from the scene by id. Objects and groups under it in the hierarchy move up to its parent, or with children go too (Delete+). One undo step.",
         keys: &["Delete"],
         hints: DESTROY,
-        schema: scene_cmds::id_schema,
+        schema: scene_cmds::delete_object_schema,
         run: scene_cmds::delete_object,
+    },
+    Command {
+        id: "scene.add_group",
+        mcp: "add_group",
+        group: Group::Scene,
+        label: "Add Group",
+        description: "Make an empty group in the scene hierarchy, optionally gathering objects or groups under it (grouping a selection). A group has no mesh; moving it with transform_object moves everything under it. Saved in projects. One undo step.",
+        keys: &["Ctrl+G"],
+        hints: WRITE,
+        schema: hierarchy_cmds::add_group_schema,
+        run: hierarchy_cmds::add_group,
+    },
+    Command {
+        id: "scene.set_parent",
+        mcp: "set_parent",
+        group: Group::Scene,
+        label: "Set Parent",
+        description: "Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. A parent that is one of them or below one is refused. Saved in projects. One undo step.",
+        keys: &[],
+        hints: WRITE,
+        schema: hierarchy_cmds::set_parent_schema,
+        run: hierarchy_cmds::set_parent,
+    },
+    Command {
+        id: "scene.delete_group",
+        mcp: "delete_group",
+        group: Group::Scene,
+        label: "Delete Group",
+        description: "Remove a group. What was under it moves up to the group's parent, or with children is deleted too. One undo step.",
+        keys: &[],
+        hints: DESTROY,
+        schema: hierarchy_cmds::delete_group_schema,
+        run: hierarchy_cmds::delete_group,
     },
     Command {
         id: "sculpt.stroke",

@@ -29,7 +29,11 @@ pub enum Edit {
     Topology { label: String, object: ObjectId, mesh: Mesh, mask: Vec<f32> },
     Add { id: ObjectId, index: usize, parked: Option<Object> },
     Delete { id: ObjectId, index: usize, parked: Option<Object> },
-    Clear { parked: Vec<Object>, active: Option<ObjectId> },
+    Clear { parked: Vec<Object>, active: Option<ObjectId>, groups: Vec<fsc_core::Group> },
+    /// Parents and groups swapped whole (set_parent, add_group, delete_group).
+    Hierarchy { label: String, state: fsc_core::Hierarchy },
+    /// Several steps as one: a parent's transform with its children's. Undone in reverse.
+    Many { label: String, edits: Vec<Edit> },
     Divide { object: ObjectId, count: usize, parked: Vec<(Mesh, Stencil)> },
     Level { object: ObjectId, from: usize, to: usize },
     Levels { label: String, object: ObjectId, multires: Option<Multires> },
@@ -61,6 +65,8 @@ impl Edit {
             | Edit::PaintLayers { label, .. }
             | Edit::Texels { label, .. }
             | Edit::TextureState { label, .. }
+            | Edit::Hierarchy { label, .. }
+            | Edit::Many { label, .. }
             | Edit::Channels { label, .. } => label.clone(),
             Edit::Rename { .. } => "Rename".into(),
             Edit::Material { .. } => "Material".into(),
@@ -93,6 +99,8 @@ impl Edit {
             Edit::TextureState { texture, .. } => weigh::texture(texture),
             Edit::Material { .. } => std::mem::size_of::<fsc_core::Material>(),
             Edit::Channels { state, .. } => weigh::channels(state),
+            Edit::Hierarchy { state, .. } => state.parents.len() * std::mem::size_of::<(ObjectId, Option<ObjectId>)>() + state.groups.iter().map(|g| std::mem::size_of::<fsc_core::Group>() + g.name.len()).sum::<usize>(),
+            Edit::Many { edits, .. } => edits.iter().map(Edit::bytes).sum(),
         }
     }
 
@@ -209,14 +217,30 @@ impl Edit {
                 edit.record_into_layer(o, *layer, if forward { 1.0 } else { -1.0 });
                 scene.active = Some(*object);
             }
-            Edit::Clear { parked, active } => {
+            Edit::Clear { parked, active, groups } => {
                 if forward {
                     *active = scene.active;
                     *parked = std::mem::take(&mut scene.objects);
+                    *groups = std::mem::take(&mut scene.groups);
                     scene.active = None;
                 } else {
                     scene.objects = std::mem::take(parked);
+                    scene.groups = std::mem::take(groups);
                     scene.active = *active;
+                }
+            }
+            Edit::Hierarchy { state, .. } => {
+                *state = scene.swap_hierarchy(std::mem::take(state));
+            }
+            Edit::Many { edits, .. } => {
+                if forward {
+                    for e in edits.iter_mut() {
+                        e.apply(scene, true)?;
+                    }
+                } else {
+                    for e in edits.iter_mut().rev() {
+                        e.apply(scene, false)?;
+                    }
                 }
             }
         }

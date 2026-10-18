@@ -36,6 +36,25 @@ pub struct Object {
     /// How light passes into and through the surface, beyond its painted colour, roughness and metalness.
     pub material: Material,
     pub selection_sets: Vec<crate::SelectionSet>,
+    /// The object or group this one hangs under in the scene hierarchy; moving a parent moves its children. An id that
+    /// no longer names anything (the parent was deleted) counts as none, so undoing the delete hangs it back.
+    pub parent: Option<ObjectId>,
+}
+
+/// An empty node of the scene hierarchy: it has no mesh, only a name and a place, and exists to hold and move the
+/// objects under it together. Groups share the objects' id numbers, so a parent id names either.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Group {
+    pub id: ObjectId,
+    pub name: String,
+    pub parent: Option<ObjectId>,
+}
+
+/// The scene hierarchy alone (every object's parent and the groups), swapped whole by an undo step.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Hierarchy {
+    pub parents: Vec<(ObjectId, Option<ObjectId>)>,
+    pub groups: Vec<Group>,
 }
 
 /// An object's light transport in lit shading: subsurface scattering (skin, wax, jade) and transmission with refraction
@@ -128,7 +147,7 @@ impl Object {
         let bvh = Bvh::build(&mesh);
         let topology = Topology::build(&mesh);
         let mask = vec![0.0; mesh.vertex_count()];
-        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, texture: None, tile_maps: Vec::new(), folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new() }
+        Object { id, name, mesh, bvh, topology, mask, visible: true, revision: 1, multires: None, layers: Layers::default(), maps: None, texture: None, tile_maps: Vec::new(), folder: String::new(), paint_layers: crate::PaintLayers::default(), primitive: None, instance: None, material: Material::default(), selection_sets: Vec::new(), parent: None }
     }
 
     /// Drops the baked maps, the single set and every UDIM tile's, and the texture, which every change of UVs ends.
@@ -210,6 +229,8 @@ pub struct Scene {
     next_id: ObjectId,
     /// Named camera views, in the order they were saved (saved in projects, not in the undo history).
     pub views: Vec<SavedView>,
+    /// Empty hierarchy nodes, in the order they were made.
+    pub groups: Vec<Group>,
 }
 
 impl Scene {
@@ -259,7 +280,91 @@ impl Scene {
 
     pub fn clear(&mut self) {
         self.objects.clear();
+        self.groups.clear();
         self.active = None;
+    }
+
+    /// Makes an empty group, under `parent` when given, and returns its id (from the objects' numbering).
+    pub fn add_group(&mut self, name: impl Into<String>, parent: Option<ObjectId>) -> ObjectId {
+        self.next_id += 1;
+        let id = self.next_id;
+        self.groups.push(Group { id, name: name.into(), parent });
+        id
+    }
+
+    pub fn group(&self, id: ObjectId) -> Option<&Group> {
+        self.groups.iter().find(|g| g.id == id)
+    }
+
+    /// Whether `id` names an object or a group.
+    pub fn exists(&self, id: ObjectId) -> bool {
+        self.get(id).is_some() || self.group(id).is_some()
+    }
+
+    /// The node `id` hangs under, if that node still exists.
+    pub fn parent_of(&self, id: ObjectId) -> Option<ObjectId> {
+        let p = self.get(id).map(|o| o.parent).or_else(|| self.group(id).map(|g| g.parent)).flatten()?;
+        self.exists(p).then_some(p)
+    }
+
+    /// Whether `ancestor` is `id` or above it in the hierarchy.
+    pub fn is_ancestor(&self, ancestor: ObjectId, id: ObjectId) -> bool {
+        let mut at = Some(id);
+        // The walk is bounded by the node count, so a cycle (which set_parent refuses) cannot hang it.
+        for _ in 0..=self.objects.len() + self.groups.len() {
+            match at {
+                Some(a) if a == ancestor => return true,
+                Some(a) => at = self.parent_of(a),
+                None => return false,
+            }
+        }
+        false
+    }
+
+    /// The objects below `id` (not `id` itself), in scene order.
+    pub fn descendants(&self, id: ObjectId) -> Vec<ObjectId> {
+        self.objects.iter().filter(|o| o.id != id && self.is_ancestor(id, o.id)).map(|o| o.id).collect()
+    }
+
+    /// Hangs `id` under `parent` (None: at the top). Refuses a parent that is the node itself or below it.
+    pub fn set_parent(&mut self, id: ObjectId, parent: Option<ObjectId>) -> Result<(), String> {
+        if let Some(p) = parent {
+            if !self.exists(p) {
+                return Err(format!("no object or group {p}"));
+            }
+            if self.is_ancestor(id, p) {
+                return Err(format!("{p} is {id} or below it, so it cannot be its parent"));
+            }
+        }
+        if let Some(o) = self.get_mut(id) {
+            o.parent = parent;
+            o.revision += 1;
+        } else if let Some(g) = self.groups.iter_mut().find(|g| g.id == id) {
+            g.parent = parent;
+        } else {
+            return Err(format!("no object or group {id}"));
+        }
+        Ok(())
+    }
+
+    /// The hierarchy as it stands, for an undo step.
+    pub fn hierarchy(&self) -> Hierarchy {
+        Hierarchy { parents: self.objects.iter().map(|o| (o.id, o.parent)).collect(), groups: self.groups.clone() }
+    }
+
+    /// Puts a hierarchy back and returns the one it replaced (objects made or removed since keep theirs).
+    pub fn swap_hierarchy(&mut self, h: Hierarchy) -> Hierarchy {
+        let old = self.hierarchy();
+        for (id, parent) in h.parents {
+            if let Some(o) = self.get_mut(id) {
+                if o.parent != parent {
+                    o.parent = parent;
+                    o.revision += 1;
+                }
+            }
+        }
+        self.groups = h.groups;
+        old
     }
 
     pub fn unique_name(&self, base: &str) -> String {

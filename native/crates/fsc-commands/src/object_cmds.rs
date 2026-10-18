@@ -49,6 +49,16 @@ fn ids_of(s: &Session, args: &Value, key: &str) -> Result<ObjectId, CommandError
 }
 
 pub(crate) fn set_positions(s: &mut Session, id: ObjectId, label: &str, positions: Vec<[f32; 3]>) -> Value {
+    let (reply, edit) = move_positions(s, id, label, positions);
+    if let Some(edit) = edit {
+        s.history.push(edit);
+    }
+    reply
+}
+
+/// Writes new positions and returns the reply with the undo step (None when nothing moved), for callers that bundle
+/// several objects into one step.
+pub(crate) fn move_positions(s: &mut Session, id: ObjectId, label: &str, positions: Vec<[f32; 3]>) -> (Value, Option<Edit>) {
     let object = s.scene.get_mut(id).expect("checked");
     let mut edit = VertexEdit::default();
     for (v, p) in positions.iter().enumerate() {
@@ -66,17 +76,15 @@ pub(crate) fn set_positions(s: &mut Session, id: ObjectId, label: &str, position
     object.revision += 1;
     let after = summary(object);
     let moved = edit.indices.len();
-    if moved > 0 {
-        s.history.push(Edit::Vertices { label: label.into(), object: id, edit });
-    }
-    json!({"object": after, "vertices_moved": moved})
+    let step = (moved > 0).then(|| Edit::Vertices { label: label.into(), object: id, edit });
+    (json!({"object": after, "vertices_moved": moved}), step)
 }
 
 pub(crate) fn transform_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "id": {"type": "integer", "minimum": 1, "description": "Object or group id; the active object when omitted. Everything under it in the hierarchy moves with it, whole; a group turns and scales about the centre of what is under it."},
             "translate": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "World offset."},
             "rotate": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Degrees about x, y and z (applied in that order) around the object's bounds centre."},
             "scale": {"type": ["number", "array"], "items": {"type": "number"}, "description": "A factor or [x, y, z] factors around the bounds centre."},
@@ -88,23 +96,60 @@ pub(crate) fn transform_schema() -> Value {
 }
 
 pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let id = target(s, args)?;
     let (translate, rotate_deg, scale) = (vec3(args, "translate", Vec3::ZERO)?, vec3(args, "rotate", Vec3::ZERO)?, vec3(args, "scale", Vec3::ONE)?);
-    let object = s.scene.get(id).expect("checked");
-    // The deformer turns and scales about the bounds centre C; about a pivot P instead is the same change plus a move:
-    // P + t + RS(p - P) = C + t' + RS(p - C) with t' = t + (P - C) - RS(P - C).
-    let translate = match args.get("pivot").filter(|v| !v.is_null()) {
-        None => translate,
-        Some(_) => {
-            let pivot = vec3(args, "pivot", Vec3::ZERO)?;
-            let c = object.mesh.bounds().center();
-            let r = glam::Quat::from_euler(glam::EulerRot::XYZ, rotate_deg.x.to_radians(), rotate_deg.y.to_radians(), rotate_deg.z.to_radians());
-            translate + (pivot - c) - r * ((pivot - c) * scale)
+    // A group id moves everything under the group; an object moves with everything under it in the hierarchy.
+    let group = args.get("id").and_then(Value::as_u64).map(|i| i as ObjectId).filter(|i| s.scene.group(*i).is_some());
+    let id = match group {
+        Some(g) => g,
+        None => target(s, args)?,
+    };
+    let movers: Vec<ObjectId> = if group.is_some() { s.scene.descendants(id) } else { std::iter::once(id).chain(s.scene.descendants(id)).collect() };
+    if movers.is_empty() {
+        return Err(CommandError::new("empty_group", format!("group {id} has no objects under it to move")));
+    }
+    // Every part turns and scales about one point: the pivot given, else the object's bounds centre, or for a group
+    // the centre of everything under it.
+    let centre = match args.get("pivot").filter(|v| !v.is_null()) {
+        Some(_) => vec3(args, "pivot", Vec3::ZERO)?,
+        None => {
+            let mut b = fsc_core::Aabb::EMPTY;
+            for &m in if group.is_some() { &movers[..] } else { &movers[..1] } {
+                let mb = s.scene.get(m).expect("listed").mesh.bounds();
+                b.grow(mb.min);
+                b.grow(mb.max);
+            }
+            b.center()
         }
     };
-    let d = Deformer::Transform { translate, rotate_deg, scale };
-    let positions = fsc_topo::deform(&object.mesh, &object.mask, d);
-    Ok(set_positions(s, id, "Transform", positions))
+    let r = glam::Quat::from_euler(glam::EulerRot::XYZ, rotate_deg.x.to_radians(), rotate_deg.y.to_radians(), rotate_deg.z.to_radians());
+    let mut edits = Vec::new();
+    let (mut moved, mut reply) = (0u64, Value::Null);
+    for &m in &movers {
+        let object = s.scene.get(m).expect("listed");
+        // The deformer turns and scales about the bounds centre C; about a pivot P instead is the same change plus a
+        // move: P + t + RS(p - P) = C + t' + RS(p - C) with t' = t + (P - C) - RS(P - C).
+        let c = object.mesh.bounds().center();
+        let d = Deformer::Transform { translate: translate + (centre - c) - r * ((centre - c) * scale), rotate_deg, scale };
+        // The object asked for keeps its mask (topology masking); what hangs under it moves whole.
+        let positions = if m == id { fsc_topo::deform(&object.mesh, &object.mask, d) } else { fsc_topo::deform(&object.mesh, &vec![0.0; object.mask.len()], d) };
+        let (r, edit) = move_positions(s, m, "Transform", positions);
+        moved += r["vertices_moved"].as_u64().unwrap_or(0);
+        if m == id || reply.is_null() {
+            reply = r;
+        }
+        edits.extend(edit);
+    }
+    match edits.len() {
+        0 => {}
+        1 => s.history.push(edits.pop().expect("one")),
+        _ => s.history.push(Edit::Many { label: "Transform".into(), edits }),
+    }
+    reply["vertices_moved"] = json!(moved);
+    reply["objects_moved"] = json!(movers.len());
+    if group.is_some() {
+        reply["group"] = json!(id);
+    }
+    Ok(reply)
 }
 
 pub(crate) fn lattice_schema() -> Value {

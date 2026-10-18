@@ -36,6 +36,10 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             "indices": w.put(&format!("{dir}/indices.u32"), &u32s(&o.mesh.indices))?,
             "mask": w.put(&format!("{dir}/mask.f32"), &f32s(&o.mask))?,
         });
+        // The hierarchy is an optional key, so projects without parents read as before in older versions.
+        if let Some(p) = o.parent {
+            entry["parent"] = json!(p);
+        }
         if o.mesh.has_paint() {
             entry["paint"] = json!(w.put(&format!("{dir}/paint.f32"), &o.mesh.paint_bytes())?);
         }
@@ -188,6 +192,9 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
             .map(|v| json!({"name": v.name, "target": v.target, "distance": v.distance, "yaw": v.yaw, "pitch": v.pitch, "ortho": v.ortho}))
             .collect::<Vec<_>>());
     }
+    if !scene.groups.is_empty() {
+        manifest["groups"] = json!(scene.groups.iter().map(|g| json!({"id": g.id, "name": g.name, "parent": g.parent})).collect::<Vec<_>>());
+    }
     w.put("manifest.json", &serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?)?;
     Ok(w.zip.finish().map_err(|e| e.to_string())?.into_inner())
 }
@@ -314,6 +321,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         let mut o = Object::new(id, e["name"].as_str().unwrap_or("Object").to_string(), mesh);
         o.visible = e["visible"].as_bool().unwrap_or(true);
         o.folder = e["folder"].as_str().unwrap_or("").chars().take(80).collect();
+        o.parent = e["parent"].as_u64().map(|p| p as u32);
         // Projects from before 0.24.0 have no material; they open opaque.
         let m = &e["material"];
         let f = |k: &str, d: f32, lo: f32, hi: f32| m[k].as_f64().map(|v| (v as f32).clamp(lo, hi)).unwrap_or(d);
@@ -459,6 +467,21 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
         scene.insert(at, o);
     }
     scene.active = manifest["active"].as_u64().map(|a| a as u32).filter(|a| scene.get(*a).is_some());
+    // Groups: each read whole or skipped. An id already used by an object is skipped, so ids stay unique.
+    for g in manifest["groups"].as_array().cloned().unwrap_or_default() {
+        if let Some(id) = g["id"].as_u64().map(|i| i as u32).filter(|i| *i > 0 && !scene.exists(*i)) {
+            scene.reserve(id);
+            scene.groups.push(fsc_core::Group { id, name: g["name"].as_str().unwrap_or("Group").chars().take(120).collect(), parent: g["parent"].as_u64().map(|p| p as u32) });
+        }
+    }
+    // A hand-edited file could hang a node under itself; such parents are dropped.
+    for id in scene.objects.iter().map(|o| o.id).chain(scene.groups.iter().map(|g| g.id)).collect::<Vec<_>>() {
+        if let Some(p) = scene.parent_of(id) {
+            if scene.is_ancestor(id, p) {
+                let _ = scene.set_parent(id, None);
+            }
+        }
+    }
     // Saved views: each one read whole or skipped, so a damaged entry never stops the project opening.
     for v in manifest["views"].as_array().cloned().unwrap_or_default() {
         let num = |k: &str| v[k].as_f64().filter(|x| x.is_finite()).map(|x| x as f32);

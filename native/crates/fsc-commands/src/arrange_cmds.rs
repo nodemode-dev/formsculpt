@@ -128,7 +128,7 @@ pub(crate) fn visibility_schema() -> Value {
         "type": "object",
         "properties": {
             "action": {"type": "string", "enum": ["hide", "show", "isolate", "show_all"], "description": "hide or show the ids; isolate shows only the ids (or the active object) and hides the rest; show_all shows everything."},
-            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects; the active object when omitted."},
+            "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "The objects or groups; the active object when omitted. Everything under each in the hierarchy goes with it."},
             "folder": {"type": "string", "description": "Instead of ids: every object in this folder."}
         },
         "required": ["action"],
@@ -180,8 +180,26 @@ pub(crate) fn set_visibility(s: &mut Session, args: &Value) -> Result<Value, Com
             found
         }
         (None | Some(Value::Null), None) => s.scene.active.into_iter().collect(),
-        _ => ids(s, args, false)?,
+        _ => {
+            // Group ids stand for what is under them; the rest are object ids.
+            let raw = args.get("ids").and_then(Value::as_array).ok_or_else(|| bad("ids must be an array"))?;
+            let (groups, rest): (Vec<&Value>, Vec<&Value>) = raw.iter().partition(|v| v.as_u64().is_some_and(|i| s.scene.group(i as ObjectId).is_some()));
+            let mut out = ids(s, &json!({"ids": rest}), false)?;
+            for g in groups {
+                out.extend(s.scene.descendants(g.as_u64().expect("checked") as ObjectId));
+            }
+            out
+        }
     };
+    // Hiding, showing or isolating a parent carries everything under it.
+    let mut chosen = chosen;
+    for id in chosen.clone() {
+        for d in s.scene.descendants(id) {
+            if !chosen.contains(&d) {
+                chosen.push(d);
+            }
+        }
+    }
     if chosen.is_empty() && action != "show_all" {
         return Err(CommandError::new("no_object", "the scene is empty"));
     }
