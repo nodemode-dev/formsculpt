@@ -1261,5 +1261,9 @@
  "ZBrush layout": "Раскладка ZBrush",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Группа граней",
+ "lit by the scene lights; this sphere is an approximation": "освещено светом сцены; эта сфера приблизительна",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush-indeling",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Vlakgroep",
+ "lit by the scene lights; this sphere is an approximation": "verlicht door de scènelichten; deze bol is een benadering",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

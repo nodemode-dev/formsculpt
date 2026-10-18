@@ -1261,5 +1261,9 @@
  "ZBrush layout": "Bố cục ZBrush",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Nhóm mặt",
+ "lit by the scene lights; this sphere is an approximation": "được chiếu bằng đèn của cảnh; quả cầu này là ước lượng",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

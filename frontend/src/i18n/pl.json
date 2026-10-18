@@ -1261,5 +1261,9 @@
  "ZBrush layout": "Układ ZBrush",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Grupa ścian",
+ "lit by the scene lights; this sphere is an approximation": "oświetlone światłami sceny; ta kula jest przybliżeniem",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

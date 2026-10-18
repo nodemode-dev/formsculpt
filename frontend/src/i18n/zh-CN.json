@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush 布局",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "面组",
+ "lit by the scene lights; this sphere is an approximation": "由场景灯光照亮；此球体为近似效果",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush-layout",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Ytgrupp",
+ "lit by the scene lights; this sphere is an approximation": "belyst av scenens ljus; den här sfären är en approximation",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

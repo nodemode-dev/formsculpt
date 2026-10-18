@@ -1261,5 +1261,9 @@
  "ZBrush layout": "Tata letak ZBrush",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Grup muka",
+ "lit by the scene lights; this sphere is an approximation": "diterangi cahaya adegan; bola ini adalah perkiraan",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

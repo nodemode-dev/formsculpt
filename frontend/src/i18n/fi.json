@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush-asettelu",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Pintaryhmä",
+ "lit by the scene lights; this sphere is an approximation": "näkymän valojen valaisema; tämä pallo on likiarvo",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush-elrendezés",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Lapcsoport",
+ "lit by the scene lights; this sphere is an approximation": "a jelenet fényei világítják meg; ez a gömb közelítés",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

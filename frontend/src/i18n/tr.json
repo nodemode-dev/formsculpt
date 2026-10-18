@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush yerleşimi",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Yüz grubu",
+ "lit by the scene lights; this sphere is an approximation": "sahne ışıklarıyla aydınlatılır; bu küre bir yaklaşımdır",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

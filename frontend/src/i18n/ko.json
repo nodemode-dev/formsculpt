@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush 레이아웃",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "면 그룹",
+ "lit by the scene lights; this sphere is an approximation": "장면 조명으로 비춰집니다. 이 구는 근사치입니다",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

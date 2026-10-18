@@ -1261,5 +1261,9 @@
  "ZBrush layout": "ZBrush レイアウト",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "フェイスグループ",
+ "lit by the scene lights; this sphere is an approximation": "シーンのライトで照らされます。この球は近似です",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }

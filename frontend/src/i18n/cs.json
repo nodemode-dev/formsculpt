@@ -1261,5 +1261,9 @@
  "ZBrush layout": "Rozvržení ZBrush",
  "Zoom3D": "Zoom3D",
  "Zplugin": "Zplugin",
- "Zsub": "Zsub"
+ "Zsub": "Zsub",
+ "Face Group": "Skupina ploch",
+ "lit by the scene lights; this sphere is an approximation": "osvětleno světly scény; tato koule je přibližná",
+ "QuickMenu": "QuickMenu",
+ "Sub": "Sub"
 }
