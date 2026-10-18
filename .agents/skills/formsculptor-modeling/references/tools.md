@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.87.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.88.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -207,11 +207,11 @@ Note: removes or replaces (undoable); in the window: Mod+Alt+N.
 
 ## add_primitive
 
-Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting). Returns the new object's summary.
+Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting), and head (a simple base head with neck, facing +z, about 2.4 tall at size 1, on a quad sphere of detail quads a side, default 40; it comes with a sculpt layer named Feminine at strength 0, which blends from a masculine to a feminine head as its strength goes to 1 with layer_set). Returns the new object's summary.
 
-- `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16), segments for the round kinds (default 64).
+- `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16) and head (default 40), segments for the round kinds (default 64).
 - `height`: number; default 2; range -inf to 1000; Cylinder and cone height.
-- `kind`: string (sphere | uv_sphere | cube | cylinder | cone | torus | plane | icosahedron | quad_sphere); required
+- `kind`: string (sphere | uv_sphere | cube | cylinder | cone | torus | plane | icosahedron | quad_sphere | head); required
 - `name`: string
 - `project`: boolean; default false; Icosahedron: push every point out onto the sphere (round, as sphere is) instead of keeping the faces flat.
 - `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, icosahedron, quad_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
@@ -234,7 +234,7 @@ Set how light passes into and through an object in lit shading: subsurface scatt
 
 Change a primitive's size, detail, height or thickness after making it, as long as nothing else has changed it since (no stroke, transform, remesh or level): get_scene shows primitive with its settings while it is still editable. Use it to settle proportions and resolution before sculpting. One undo step.
 
-- `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16), segments for the round kinds (default 64).
+- `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16) and head (default 40), segments for the round kinds (default 64).
 - `height`: number; default 2; range -inf to 1000; Cylinder and cone height.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `project`: boolean; default false; Icosahedron: push every point out onto the sphere (round, as sphere is) instead of keeping the faces flat.
