@@ -210,22 +210,42 @@ pub unsafe extern "C" fn fsc_import(name: *const u8, name_len: usize, data: *con
     put_json(SESSION.with(|s| reply(fsc_commands::import_data(&mut s.borrow_mut(), &name, bytes, None))));
 }
 
-/// Exports objects (a JSON list of ids, or empty for every visible object) to the format of `name`: 0 with the file
-/// as output, or -1 with the error JSON.
+/// Imports a mesh file with import options (a JSON object with scale, up_axis and merge, as import_mesh takes them);
+/// the output is the reply JSON.
+///
+/// # Safety
+/// All three pairs must be page input from `fsc_alloc`.
+#[no_mangle]
+pub unsafe extern "C" fn fsc_import_with(name: *const u8, name_len: usize, data: *const u8, len: usize, opts: *const u8, opts_len: usize) {
+    let name = text(name, name_len).to_string();
+    let bytes = input(data, len);
+    let args: serde_json::Value = serde_json::from_str(text(opts, opts_len)).unwrap_or(serde_json::Value::Null);
+    put_json(SESSION.with(|s| reply(fsc_commands::parse_exchange(&args).and_then(|ex| fsc_commands::import_data_with(&mut s.borrow_mut(), &name, bytes, None, &ex)))));
+}
+
+/// Exports objects to the format of `name`: 0 with the file as output, or -1 with the error JSON. The second pair is a
+/// JSON list of ids, an object with ids and the export options (scale, up_axis, triangulate), or empty for every
+/// visible object as it is.
 ///
 /// # Safety
 /// Both pairs must be page input from `fsc_alloc`.
 #[no_mangle]
 pub unsafe extern "C" fn fsc_export(name: *const u8, name_len: usize, ids: *const u8, ids_len: usize) -> i32 {
     let name = text(name, name_len).to_string();
-    let chosen: Option<Vec<u32>> = serde_json::from_str(text(ids, ids_len)).ok();
+    let args: serde_json::Value = serde_json::from_str(text(ids, ids_len)).unwrap_or(serde_json::Value::Null);
+    let (chosen, options) = match &args {
+        serde_json::Value::Array(_) => (serde_json::from_value::<Vec<u32>>(args.clone()).ok(), serde_json::Value::Null),
+        serde_json::Value::Object(o) => (o.get("ids").and_then(|v| serde_json::from_value::<Vec<u32>>(v.clone()).ok()), args.clone()),
+        _ => (None, serde_json::Value::Null),
+    };
     let result = SESSION.with(|s| {
         let s = s.borrow();
         let ids = chosen.unwrap_or_else(|| s.scene.objects.iter().filter(|o| o.visible).map(|o| o.id).collect());
         if let Some(missing) = ids.iter().find(|&&id| s.scene.get(id).is_none()) {
             return Err(fsc_commands::CommandError::new("not_found", format!("no object {missing}")));
         }
-        fsc_commands::export_data(&s, &name, &ids)
+        let ex = fsc_commands::parse_exchange(&options)?;
+        fsc_commands::export_data_with(&s, &name, &ids, &ex)
     });
     match result {
         Ok(bytes) => {

@@ -43,20 +43,22 @@ impl Engine {
         Ok(reply(fsc_commands::open_data(&mut session, data.to_vec())))
     }
 
-    #[pyo3(signature = (file_name, data, name=None))]
-    fn import_bytes(&self, file_name: &str, data: &[u8], name: Option<&str>) -> PyResult<String> {
+    #[pyo3(signature = (file_name, data, name=None, scale=1.0, up_axis="y", merge=false))]
+    fn import_bytes(&self, file_name: &str, data: &[u8], name: Option<&str>, scale: f32, up_axis: &str, merge: bool) -> PyResult<String> {
+        let ex = exchange(scale, up_axis, false, merge)?;
         let mut session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
-        Ok(reply(fsc_commands::import_data(&mut session, file_name, data, name)))
+        Ok(reply(fsc_commands::import_data_with(&mut session, file_name, data, name, &ex)))
     }
 
-    #[pyo3(signature = (file_name, ids=None))]
-    fn export_bytes<'py>(&self, py: Python<'py>, file_name: &str, ids: Option<Vec<u32>>) -> PyResult<Bound<'py, PyBytes>> {
+    #[pyo3(signature = (file_name, ids=None, scale=1.0, up_axis="y", triangulate=false))]
+    fn export_bytes<'py>(&self, py: Python<'py>, file_name: &str, ids: Option<Vec<u32>>, scale: f32, up_axis: &str, triangulate: bool) -> PyResult<Bound<'py, PyBytes>> {
+        let ex = exchange(scale, up_axis, triangulate, false)?;
         let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
         let ids = ids.unwrap_or_else(|| session.scene.objects.iter().filter(|o| o.visible).map(|o| o.id).collect());
         if let Some(missing) = ids.iter().find(|&&id| session.scene.get(id).is_none()) {
             return Err(PyKeyError::new_err(format!("no object {missing}")));
         }
-        let bytes = fsc_commands::export_data(&session, file_name, &ids).map_err(|e| PyValueError::new_err(e.message))?;
+        let bytes = fsc_commands::export_data_with(&session, file_name, &ids, &ex).map_err(|e| PyValueError::new_err(e.message))?;
         Ok(PyBytes::new(py, &bytes))
     }
 
@@ -139,6 +141,19 @@ fn reply(result: Result<Value, fsc_commands::CommandError>) -> String {
         Err(err) => json!({"ok": false, "error": err}),
     }
     .to_string()
+}
+
+/// Import and export options from the service's query parameters, refused the way the commands refuse them.
+fn exchange(scale: f32, up_axis: &str, triangulate: bool, merge: bool) -> PyResult<fsc_commands::Exchange> {
+    if !(scale > 0.0 && scale <= 100_000.0) {
+        return Err(PyValueError::new_err("scale must be above 0 and at most 100000"));
+    }
+    let z_up = match up_axis {
+        "y" => false,
+        "z" => true,
+        other => return Err(PyValueError::new_err(format!("up_axis is y or z, not {other}"))),
+    };
+    Ok(fsc_commands::Exchange { scale, z_up, triangulate, merge })
 }
 
 #[pyfunction]

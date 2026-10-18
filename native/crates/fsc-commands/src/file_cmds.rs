@@ -5,6 +5,7 @@ use fsc_io::{Format, GltfObject, Target};
 use glam::Vec3;
 use serde_json::{json, Value};
 
+use crate::exchange::{self, Exchange};
 use crate::history::Edit;
 use crate::multires_cmds::guard;
 use crate::scene_cmds::summary;
@@ -41,12 +42,26 @@ pub fn open_data(s: &mut Session, bytes: Vec<u8>) -> Result<Value, CommandError>
 }
 
 pub fn import_data(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>) -> Result<Value, CommandError> {
-    import_resolved(s, file_name, bytes, name, &|uri: &str| Err(format!("the glTF refers to an outside file ({uri}); import it from its path with import_mesh so the file beside it is read, or use GLB")))
+    import_data_with(s, file_name, bytes, name, &Exchange::default())
 }
 
-fn import_resolved(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>, resolve: fsc_io::Resolve) -> Result<Value, CommandError> {
+/// import_data with import options: a scale, the file's up axis and joining its parts into one object.
+pub fn import_data_with(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>, ex: &Exchange) -> Result<Value, CommandError> {
+    import_resolved(s, file_name, bytes, name, &|uri: &str| Err(format!("the glTF refers to an outside file ({uri}); import it from its path with import_mesh so the file beside it is read, or use GLB")), ex)
+}
+
+fn import_resolved(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>, resolve: fsc_io::Resolve, ex: &Exchange) -> Result<Value, CommandError> {
     let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor reads {}", Format::NAMES.join(", "))))?;
-    let meshes = fsc_io::import_with(format, bytes, resolve).map_err(|e| CommandError::new("bad_file", e))?;
+    let mut meshes = fsc_io::import_with(format, bytes, resolve).map_err(|e| CommandError::new("bad_file", e))?;
+    let turned = exchange::turns_in(format);
+    for (_, mesh) in meshes.iter_mut() {
+        exchange::inward_mesh(mesh, ex.scale, ex.z_up && turned);
+    }
+    if ex.merge && meshes.len() > 1 {
+        let parts: Vec<&fsc_core::Mesh> = meshes.iter().map(|(_, m)| m).collect();
+        let joined = fsc_topo::merge(&parts);
+        meshes = vec![(String::new(), joined)];
+    }
     s.history.push(Edit::Scene { label: "Import".into(), objects: s.scene.objects.clone(), active: s.scene.active });
     let stem = Path::new(file_name).file_stem().and_then(|x| x.to_str()).unwrap_or("Imported").to_string();
     let single = meshes.len() == 1;
@@ -79,36 +94,59 @@ fn chosen(s: &Session, args: &Value) -> Result<Vec<ObjectId>, CommandError> {
 }
 
 pub fn export_data(s: &Session, file_name: &str, ids: &[ObjectId]) -> Result<Vec<u8>, CommandError> {
+    export_data_with(s, file_name, ids, &Exchange::default())
+}
+
+/// The scale an export is written at: the option's, times millimetres per unit for the print formats when the scene
+/// has a real-world scale (3MF declares millimetre as its unit and STL carries none, so this makes the file print at
+/// the size set).
+fn written_scale(s: &Session, format: Format, ex: &Exchange) -> f32 {
+    match (s.scene.mm_per_unit, format) {
+        (Some(mm), Format::Stl | Format::ThreeMf) => ex.scale * mm,
+        _ => ex.scale,
+    }
+}
+
+/// Owned copies of the meshes and layer deltas an export writes, turned and scaled, or None for an object written as
+/// it is.
+type Prepared = Vec<Option<(fsc_core::Mesh, Vec<Vec<[f32; 3]>>)>>;
+
+fn prepare(s: &Session, ids: &[ObjectId], scale: f32, z_up: bool, triangulate: bool) -> Prepared {
+    ids.iter()
+        .map(|&id| {
+            let o = s.scene.get(id).expect("checked");
+            let mesh = exchange::outward_mesh(&o.mesh, scale, z_up, triangulate)?;
+            // A layer's delta is a direction, so it turns and scales without the move.
+            let deltas = o.layers.list.iter().map(|l| l.delta.iter().map(|d| exchange::outward(*d, scale, z_up)).collect()).collect();
+            Some((mesh, deltas))
+        })
+        .collect()
+}
+
+fn objects<'a>(s: &'a Session, ids: &[ObjectId], prepared: &'a Prepared, textured: &'a [Option<fsc_core::Maps>]) -> Vec<GltfObject<'a>> {
+    ids.iter()
+        .enumerate()
+        .map(|(k, &id)| {
+            let o = s.scene.get(id).expect("checked");
+            let (mesh, deltas) = match &prepared[k] {
+                Some((m, d)) => (m, Some(d)),
+                None => (&o.mesh, None),
+            };
+            let targets = o.layers.list.iter().enumerate().map(|(j, l)| Target { name: &l.name, weight: l.shape_scale(), delta: deltas.map(|d| d[j].as_slice()).unwrap_or(&l.delta) }).collect();
+            GltfObject { name: &o.name, mesh, targets, maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
+        })
+        .collect()
+}
+
+/// export_data with export options: a scale, a z-up axis for the formats without one of their own, and triangles.
+pub fn export_data_with(s: &Session, file_name: &str, ids: &[ObjectId], ex: &Exchange) -> Result<Vec<u8>, CommandError> {
     let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb, gltf, fbx, usda and 3mf, not {file_name}")))?;
     if ids.is_empty() {
         return Err(bad("there is nothing to export"));
     }
     let textured: Vec<Option<fsc_core::Maps>> = ids.iter().map(|&id| matches!(format, Format::Glb | Format::Gltf).then(|| crate::texture_cmds::export_maps(s.scene.get(id).expect("checked"))).flatten()).collect();
-    let objects: Vec<GltfObject> = ids
-        .iter()
-        .enumerate()
-        .map(|(k, &id)| {
-            let o = s.scene.get(id).expect("checked");
-            GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
-        })
-        .collect();
-    // With a real-world scale, the print formats are written in millimetres: 3MF declares millimetre as its unit and
-    // STL carries no unit at all, so scaling here is what makes the file print at the size set.
-    if let (Some(mm), Format::Stl | Format::ThreeMf) = (s.scene.mm_per_unit, format) {
-        let scaled: Vec<fsc_core::Mesh> = objects
-            .iter()
-            .map(|o| {
-                let mut m = o.mesh.clone();
-                for p in &mut m.positions {
-                    *p = [p[0] * mm, p[1] * mm, p[2] * mm];
-                }
-                m
-            })
-            .collect();
-        let objects: Vec<GltfObject> = objects.iter().zip(&scaled).map(|(o, m)| GltfObject { name: o.name, mesh: m, targets: Vec::new(), maps: None, tiles: None }).collect();
-        return fsc_io::export(format, &objects).map_err(io);
-    }
-    fsc_io::export(format, &objects).map_err(io)
+    let prepared = prepare(s, ids, written_scale(s, format, ex), ex.z_up && exchange::turns(format), ex.triangulate);
+    fsc_io::export(format, &objects(s, ids, &prepared, &textured)).map_err(io)
 }
 
 pub(crate) fn real_size_schema() -> Value {
@@ -189,7 +227,9 @@ pub(crate) fn open(s: &mut Session, args: &Value) -> Result<Value, CommandError>
 }
 
 pub(crate) fn import_schema() -> Value {
-    path_schema(json!({"name": {"type": "string", "minLength": 1, "maxLength": 120, "description": "Name for the new object; the file name when omitted."}}))
+    let mut extra = exchange::properties(false);
+    extra["name"] = json!({"type": "string", "minLength": 1, "maxLength": 120, "description": "Name for the new object; the file name when omitted."});
+    path_schema(extra)
 }
 
 pub(crate) fn import(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
@@ -204,11 +244,16 @@ pub(crate) fn import(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         }
         std::fs::read(dir.join(&decoded)).map_err(|e| format!("could not read {decoded} beside the glTF: {e}"))
     };
-    import_resolved(s, path, &bytes, args.get("name").and_then(Value::as_str), &beside)
+    let ex = exchange::parse(args)?;
+    let mut reply = import_resolved(s, path, &bytes, args.get("name").and_then(Value::as_str), &beside, &ex)?;
+    reply["options"] = exchange::applied(&ex, Format::parse(path).is_some_and(exchange::turns_in));
+    Ok(reply)
 }
 
 pub(crate) fn export_schema() -> Value {
-    path_schema(json!({"ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Objects to write; every visible object when omitted. STL and PLY join them into one mesh."}}))
+    let mut extra = exchange::properties(true);
+    extra["ids"] = json!({"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Objects to write; every visible object when omitted. STL and PLY join them into one mesh."});
+    path_schema(extra)
 }
 
 pub(crate) fn bridge_send_schema() -> Value {
@@ -288,6 +333,8 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
 pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let path = path_arg(args)?;
     let ids = chosen(s, args)?;
+    let ex = exchange::parse(args)?;
+    let options = exchange::applied(&ex, Format::parse(path).is_some_and(exchange::turns));
     if path.to_ascii_lowercase().ends_with(".gltf") {
         // The separate form: the .gltf document and a .bin of the same name beside it.
         if ids.is_empty() {
@@ -296,23 +343,17 @@ pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandErro
         let p = Path::new(path);
         let bin_name = format!("{}.bin", p.file_stem().and_then(|x| x.to_str()).unwrap_or("scene"));
         let textured: Vec<Option<fsc_core::Maps>> = ids.iter().map(|&id| crate::texture_cmds::export_maps(s.scene.get(id).expect("checked"))).collect();
-        let objects: Vec<GltfObject> = ids
-            .iter()
-            .enumerate()
-            .map(|(k, &id)| {
-                let o = s.scene.get(id).expect("checked");
-                GltfObject { name: &o.name, mesh: &o.mesh, targets: o.layers.list.iter().map(|l| Target { name: &l.name, weight: l.shape_scale(), delta: &l.delta }).collect(), maps: textured[k].as_ref().or(o.maps.as_ref()), tiles: crate::udim_cmds::tile_split(o) }
-            })
-            .collect();
-        let (doc, bin) = fsc_io::export_gltf(&objects, &bin_name);
+        // glTF is y up by its specification, so only the scale applies.
+        let prepared = prepare(s, &ids, ex.scale, false, false);
+        let (doc, bin) = fsc_io::export_gltf(&objects(s, &ids, &prepared, &textured), &bin_name);
         let bin_path = p.with_file_name(&bin_name);
         std::fs::write(&bin_path, &bin).map_err(|e| io(format!("could not write {}: {e}", bin_path.display())))?;
         std::fs::write(path, &doc).map_err(|e| io(format!("could not write {path}: {e}")))?;
-        return Ok(json!({"path": path, "bin": bin_path.to_string_lossy(), "bytes": doc.len() + bin.len(), "objects": ids.len()}));
+        return Ok(json!({"path": path, "bin": bin_path.to_string_lossy(), "bytes": doc.len() + bin.len(), "objects": ids.len(), "options": options}));
     }
-    let bytes = export_data(s, path, &ids)?;
+    let bytes = export_data_with(s, path, &ids, &ex)?;
     std::fs::write(path, &bytes).map_err(|e| io(format!("could not write {path}: {e}")))?;
-    Ok(json!({"path": path, "bytes": bytes.len(), "objects": ids.len()}))
+    Ok(json!({"path": path, "bytes": bytes.len(), "objects": ids.len(), "options": options}))
 }
 
 pub(crate) fn print_schema() -> Value {
