@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.92.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.93.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -498,6 +498,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `emissive`: number; range 0 to 1; Paint brush: paint this glow in the paint colour.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `falloff_curve`: array of number; A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring.
+- `focal_shift`: number; default 0; range -100 to 100; ZBrush's Focal Shift over the falloff (or falloff_curve): below 0 full strength reaches further out (-100 a crisp tip with no falloff), above 0 the falloff starts sooner (100 narrows the tip toward a point).
 - `front_facing`: boolean; default false; Only vertices whose normal faces the viewer are affected (dot of normal and minus view_dir above 0, easing in over 0 to 0.2), so a brush does not reach through to the back of a thin part. Uses view_dir; when that is absent in sculpt_stroke, the reverse of the surface normal at the stroke's first point (the nearest vertex's normal) stands in for the view (live strokes use each sample's ray direction).
 - `height`: number; default 0; range 0 to 10000; Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
