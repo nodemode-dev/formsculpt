@@ -1330,5 +1330,13 @@
  "Save to LightBox": "บันทึกลง LightBox",
  "Type a name first": "พิมพ์ชื่อก่อน",
  "Load image": "โหลดภาพ",
- "Texture (F5)": "พื้นผิว (F5)"
+ "Texture (F5)": "พื้นผิว (F5)",
+ "Finger always smooths": "นิ้วเกลี่ยเรียบเสมอ",
+ "Home view": "มุมมองเริ่มต้น",
+ "Home View": "มุมมองเริ่มต้น",
+ "Rotate lighting": "หมุนแสง",
+ "Three fingers side to side": "สามนิ้วซ้ายขวา",
+ "Three fingers up and down": "สามนิ้วขึ้นลง",
+ "Tool intensity": "ความแรงของเครื่องมือ",
+ "Tool radius": "รัศมีเครื่องมือ"
 }

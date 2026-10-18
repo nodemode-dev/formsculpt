@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Lưu vào LightBox",
  "Type a name first": "Hãy nhập tên trước",
  "Load image": "Tải ảnh",
- "Texture (F5)": "Kết cấu (F5)"
+ "Texture (F5)": "Kết cấu (F5)",
+ "Finger always smooths": "Ngón tay luôn làm mịn",
+ "Home view": "Góc nhìn ban đầu",
+ "Home View": "Góc nhìn ban đầu",
+ "Rotate lighting": "Xoay ánh sáng",
+ "Three fingers side to side": "Ba ngón sang ngang",
+ "Three fingers up and down": "Ba ngón lên xuống",
+ "Tool intensity": "Cường độ công cụ",
+ "Tool radius": "Bán kính công cụ"
 }

@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Opslaan in LightBox",
  "Type a name first": "Typ eerst een naam",
  "Load image": "Afbeelding laden",
- "Texture (F5)": "Textuur (F5)"
+ "Texture (F5)": "Textuur (F5)",
+ "Finger always smooths": "Vinger maakt altijd glad",
+ "Home view": "Beginweergave",
+ "Home View": "Beginweergave",
+ "Rotate lighting": "Belichting draaien",
+ "Three fingers side to side": "Drie vingers zijwaarts",
+ "Three fingers up and down": "Drie vingers op en neer",
+ "Tool intensity": "Gereedschapsintensiteit",
+ "Tool radius": "Gereedschapsstraal"
 }

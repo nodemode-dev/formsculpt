@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Сохранить в LightBox",
  "Type a name first": "Сначала введите имя",
  "Load image": "Загрузить изображение",
- "Texture (F5)": "Текстура (F5)"
+ "Texture (F5)": "Текстура (F5)",
+ "Finger always smooths": "Палец всегда сглаживает",
+ "Home view": "Исходный вид",
+ "Home View": "Исходный вид",
+ "Rotate lighting": "Вращать освещение",
+ "Three fingers side to side": "Три пальца влево и вправо",
+ "Three fingers up and down": "Три пальца вверх и вниз",
+ "Tool intensity": "Интенсивность инструмента",
+ "Tool radius": "Радиус инструмента"
 }

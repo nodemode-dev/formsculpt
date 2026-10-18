@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Salvar no LightBox",
  "Type a name first": "Digite um nome primeiro",
  "Load image": "Carregar imagem",
- "Texture (F5)": "Textura (F5)"
+ "Texture (F5)": "Textura (F5)",
+ "Finger always smooths": "O dedo sempre suaviza",
+ "Home view": "Vista inicial",
+ "Home View": "Vista inicial",
+ "Rotate lighting": "Girar a iluminação",
+ "Three fingers side to side": "Três dedos de um lado ao outro",
+ "Three fingers up and down": "Três dedos para cima e para baixo",
+ "Tool intensity": "Intensidade da ferramenta",
+ "Tool radius": "Raio da ferramenta"
 }

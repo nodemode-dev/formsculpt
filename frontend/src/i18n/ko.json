@@ -1330,5 +1330,13 @@
  "Save to LightBox": "LightBox에 저장",
  "Type a name first": "먼저 이름을 입력하세요",
  "Load image": "이미지 불러오기",
- "Texture (F5)": "텍스처 (F5)"
+ "Texture (F5)": "텍스처 (F5)",
+ "Finger always smooths": "손가락은 항상 스무드",
+ "Home view": "홈 뷰",
+ "Home View": "홈 뷰",
+ "Rotate lighting": "조명 회전",
+ "Three fingers side to side": "세 손가락 좌우",
+ "Three fingers up and down": "세 손가락 위아래",
+ "Tool intensity": "도구 강도",
+ "Tool radius": "도구 반경"
 }

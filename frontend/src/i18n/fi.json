@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Tallenna LightBoxiin",
  "Type a name first": "Kirjoita ensin nimi",
  "Load image": "Lataa kuva",
- "Texture (F5)": "Tekstuuri (F5)"
+ "Texture (F5)": "Tekstuuri (F5)",
+ "Finger always smooths": "Sormi tasoittaa aina",
+ "Home view": "Aloitusnäkymä",
+ "Home View": "Aloitusnäkymä",
+ "Rotate lighting": "Kierrä valaistusta",
+ "Three fingers side to side": "Kolme sormea sivuttain",
+ "Three fingers up and down": "Kolme sormea ylös ja alas",
+ "Tool intensity": "Työkalun voimakkuus",
+ "Tool radius": "Työkalun säde"
 }

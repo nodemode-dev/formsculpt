@@ -1330,5 +1330,13 @@
  "Save to LightBox": "儲存到 LightBox",
  "Type a name first": "請先輸入名稱",
  "Load image": "載入影像",
- "Texture (F5)": "紋理 (F5)"
+ "Texture (F5)": "紋理 (F5)",
+ "Finger always smooths": "手指一律平滑",
+ "Home view": "初始視圖",
+ "Home View": "初始視圖",
+ "Rotate lighting": "旋轉光照",
+ "Three fingers side to side": "三指左右",
+ "Three fingers up and down": "三指上下",
+ "Tool intensity": "工具強度",
+ "Tool radius": "工具半徑"
 }

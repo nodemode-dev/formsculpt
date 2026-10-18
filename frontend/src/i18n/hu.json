@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Mentés a LightBoxba",
  "Type a name first": "Előbb adjon meg egy nevet",
  "Load image": "Kép betöltése",
- "Texture (F5)": "Textúra (F5)"
+ "Texture (F5)": "Textúra (F5)",
+ "Finger always smooths": "Az ujj mindig simít",
+ "Home view": "Kezdőnézet",
+ "Home View": "Kezdőnézet",
+ "Rotate lighting": "Megvilágítás forgatása",
+ "Three fingers side to side": "Három ujj oldalra",
+ "Three fingers up and down": "Három ujj fel és le",
+ "Tool intensity": "Eszköz intenzitása",
+ "Tool radius": "Eszköz sugara"
 }

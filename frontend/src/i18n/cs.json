@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Uložit do LightBoxu",
  "Type a name first": "Nejprve zadejte název",
  "Load image": "Načíst obrázek",
- "Texture (F5)": "Textura (F5)"
+ "Texture (F5)": "Textura (F5)",
+ "Finger always smooths": "Prst vždy vyhlazuje",
+ "Home view": "Výchozí pohled",
+ "Home View": "Výchozí pohled",
+ "Rotate lighting": "Otočit osvětlení",
+ "Three fingers side to side": "Tři prsty do stran",
+ "Three fingers up and down": "Tři prsty nahoru a dolů",
+ "Tool intensity": "Intenzita nástroje",
+ "Tool radius": "Poloměr nástroje"
 }

@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Spara i LightBox",
  "Type a name first": "Skriv ett namn först",
  "Load image": "Läs in bild",
- "Texture (F5)": "Textur (F5)"
+ "Texture (F5)": "Textur (F5)",
+ "Finger always smooths": "Finger jämnar alltid ut",
+ "Home view": "Startvy",
+ "Home View": "Startvy",
+ "Rotate lighting": "Rotera belysning",
+ "Three fingers side to side": "Tre fingrar i sidled",
+ "Three fingers up and down": "Tre fingrar upp och ned",
+ "Tool intensity": "Verktygsintensitet",
+ "Tool radius": "Verktygsradie"
 }

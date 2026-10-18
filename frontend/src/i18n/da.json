@@ -1330,5 +1330,13 @@
  "Save to LightBox": "Gem i LightBox",
  "Type a name first": "Skriv først et navn",
  "Load image": "Indlæs billede",
- "Texture (F5)": "Tekstur (F5)"
+ "Texture (F5)": "Tekstur (F5)",
+ "Finger always smooths": "Finger udglatter altid",
+ "Home view": "Startvisning",
+ "Home View": "Startvisning",
+ "Rotate lighting": "Drej belysning",
+ "Three fingers side to side": "Tre fingre fra side til side",
+ "Three fingers up and down": "Tre fingre op og ned",
+ "Tool intensity": "Værktøjsintensitet",
+ "Tool radius": "Værktøjsradius"
 }
