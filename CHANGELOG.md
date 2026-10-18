@@ -2,6 +2,22 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.91.0 · 2026-10-18
+
+### Added
+
+- A live two-way link with Blender. File > Blender add-on saves a Blender extension; install it in Blender (Preferences, Extensions, Install from Disk) and the sidebar's formsculptor tab can:
+  - Send to formsculptor (the selected meshes) and Get from formsculptor (the active object), linking each.
+  - Live: keep linked objects in step on a timer. Edit or move the object in Blender and it changes here; sculpt it here and it changes in Blender. Undo here comes back too.
+  - When only the shape changes, only positions travel, so Blender keeps its quads and UVs and formsculptor keeps its paint, mask and face groups.
+- For agents and other apps: `link_pull` (an object's mesh as base64 arrays with its revision, or just "unchanged") and `link_push` (write one back, or make a new object).
+- 1310 interface strings in every language.
+
+### Notes
+
+- Tested with Blender 5.2.2. No file sits between the two apps; the file bridge (Bridge to App) still works for every other program.
+- GoZ for ZBrush is next: Maxon publishes a GoZ SDK, and its terms are read before anything is built on it.
+
 ## 0.90.0 · 2026-10-18
 
 ### Added
