@@ -1,0 +1,114 @@
+/* The ZBrush layout (ui/zbrush-layout.ts): ZBrush's classic arrangement in neutral greys, the window's orange marking
+   what is on. Title bar, palette menu bar and top shelf across the top; left shelf, viewport, right shelf, the tray's
+   divider and the right tray below. */
+
+#app.zb {
+  --zb-bg: #262626;
+  --zb-bar: #303030;
+  --zb-raised: #3d3d3d;
+  --zb-hover: #4a4a4a;
+  --zb-line: #1b1b1b;
+  --zb-text: #d6d6d6;
+  --zb-dim: #9a9a9a;
+  --zb-on: var(--accent, #f97316);
+  --zb-on-ink: #1a1206;
+  --zb-tray-w: 300px;
+  /* The SubTool list (the tablet layout's dock) takes these. */
+  --tb-panel: var(--zb-bar);
+  --tb-raised: var(--zb-raised);
+  --tb-sunk: var(--zb-bg);
+  --tb-text: var(--zb-text);
+  --tb-dim: var(--zb-dim);
+  --tb-white: #f2f2f2;
+  --tb-yellow: var(--zb-on);
+  --tb-yellow-ink: var(--zb-on-ink);
+  --tb-select: #5a5a5a;
+  --tb-line: rgb(255 255 255 / 0.06);
+  --tb-blue: var(--zb-on);
+  --tb-radius: 4px;
+  --tb-under: 0px;
+  grid-template-rows: 26px 28px 64px minmax(0, 1fr) var(--dock-h, 0px) 0;
+  grid-template-columns: 78px minmax(0, 1fr) 62px 12px var(--zb-tray-w);
+  grid-template-areas:
+    "zbtitle zbtitle zbtitle zbtitle zbtitle"
+    "zbmenu zbmenu zbmenu zbmenu zbmenu"
+    "zbtop zbtop zbtop zbdiv panel"
+    "zbleft stage zbright zbdiv panel"
+    "dock dock dock dock dock"
+    "status status status status status";
+  background: var(--zb-bg);
+}
+#app.zb.zb-tray-closed { --zb-tray-w: 0px; }
+#app.zb :is(.appbar, .rail, .status) { display: none; }
+#app:not(.zb) :is(.zb-title, .zb-menu, .zb-top, .zb-left, .zb-right, .zb-divider, .zb-pop, .zb-quick) { display: none; }
+#app:not(.zb) .panel .zb-tray-head { display: none; }
+#app.zb .panel .zb-off { display: none !important; }
+#app.zb .stage { background: linear-gradient(to bottom, #4a4a4a, #1f1f1f); }
+
+/* Title bar. */
+.zb-title { grid-area: zbtitle; display: flex; align-items: center; gap: 14px; padding: 0 10px; background: var(--zb-line); color: var(--zb-dim); font: 500 11px/1 var(--font-sans); white-space: nowrap; overflow: hidden; }
+.zb-title-name { color: var(--zb-text); font-weight: 600; }
+.zb-title-stats { font-variant-numeric: tabular-nums; }
+.zb-title-note { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--zb-on); }
+.zb-title-right { display: flex; align-items: center; gap: 6px; }
+.zb-layout-pick, .zb-title-btn { height: 20px; padding: 0 8px; border: 1px solid #3a3a3a; border-radius: 3px; background: var(--zb-bar); color: var(--zb-text); font: 500 11px/1 var(--font-sans); cursor: pointer; }
+.zb-title-btn[aria-pressed="true"] { border-color: var(--zb-on); color: var(--zb-on); }
+
+/* Palette menu bar. */
+.zb-menu { grid-area: zbmenu; display: flex; align-items: stretch; gap: 1px; padding: 0 6px; background: var(--zb-bar); border-bottom: 1px solid var(--zb-line); overflow-x: auto; scrollbar-width: none; }
+.zb-menu-item { padding: 0 9px; border: 0; background: transparent; color: var(--zb-text); font: 500 12px/1 var(--font-sans); cursor: pointer; white-space: nowrap; }
+.zb-menu-item:hover { background: var(--zb-raised); }
+.zb-menu-item[aria-pressed="true"] { color: var(--zb-on); box-shadow: inset 0 -2px 0 var(--zb-on); }
+
+/* Shelves. */
+.zb-top { grid-area: zbtop; display: flex; align-items: center; gap: 12px; padding: 0 10px; background: var(--zb-bar); border-bottom: 1px solid var(--zb-line); overflow-x: auto; scrollbar-width: none; }
+.zb-group { display: flex; align-items: center; gap: 3px; flex: none; }
+.zb-group + .zb-group { padding-left: 12px; border-left: 1px solid #3a3a3a; }
+.zb-sliders { flex-direction: column; align-items: stretch; gap: 4px; width: 230px; }
+.zb-left { grid-area: zbleft; display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; background: var(--zb-bar); border-right: 1px solid var(--zb-line); overflow-y: auto; scrollbar-width: none; }
+.zb-right { grid-area: zbright; display: flex; flex-direction: column; align-items: stretch; gap: 3px; padding: 6px 4px; background: var(--zb-bar); border-left: 1px solid var(--zb-line); overflow-y: auto; scrollbar-width: none; }
+.zb-gap { height: 8px; flex: none; }
+:is(.zb-big, .zb-small, .zb-side) { display: grid; place-items: center; gap: 2px; border: 1px solid transparent; border-radius: 4px; background: var(--zb-raised); color: var(--zb-text); cursor: pointer; padding: 0; }
+:is(.zb-big, .zb-small, .zb-side):hover { background: var(--zb-hover); }
+:is(.zb-big, .zb-small, .zb-side)[aria-pressed="true"] { background: var(--zb-on); color: var(--zb-on-ink); }
+:is(.zb-big, .zb-small, .zb-side):disabled { opacity: 0.4; cursor: default; }
+.zb-big { width: 52px; height: 50px; }
+.zb-big svg { width: 22px; height: 22px; }
+.zb-small { width: 46px; height: 24px; }
+.zb-side { width: 100%; height: 44px; flex: none; }
+.zb-side svg { width: 18px; height: 18px; }
+.zb-drag { cursor: grab; touch-action: none; }
+.zb-drag:active { cursor: grabbing; }
+.zb-word { font: 500 10px/1.1 var(--font-sans); text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+svg + .zb-word { margin-top: 1px; }
+.zb-field { min-width: 0; height: 22px; border-radius: 3px; }
+.zb-field .tb-fill { background: rgb(249 115 22 / 0.35); }
+
+/* Left shelf swatches: a picture or value over the name, a transparent select or colour input on top to change it. */
+.zb-swatch { position: relative; display: grid; place-items: center; gap: 3px; min-height: 62px; padding: 6px 2px; border-radius: 4px; background: var(--zb-raised); color: var(--zb-text); cursor: pointer; border: 0; text-align: center; flex: none; }
+.zb-swatch:hover { background: var(--zb-hover); }
+.zb-brush-icon svg { width: 28px; height: 28px; color: var(--zb-on); }
+.zb-choice-value { font: 500 10px/1.15 var(--font-sans); color: var(--zb-dim); overflow-wrap: anywhere; }
+.zb-choice select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.zb-colour input { width: 44px; height: 30px; padding: 0; border: 1px solid #555; border-radius: 3px; background: none; cursor: pointer; }
+
+/* The tray: its divider and the palette shown in it. */
+.zb-divider { grid-area: zbdiv; border: 0; padding: 0; background: var(--zb-line); cursor: pointer; position: relative; }
+.zb-divider::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 36px; transform: translate(-50%, -50%); border-radius: 2px; background: #555; }
+.zb-divider:hover::after { background: var(--zb-on); }
+#app.zb .panel { grid-area: panel; background: var(--zb-bar); border-left: 0; color: var(--zb-text); padding-top: 0; }
+#app.zb.zb-tray-closed .panel { padding: 0; overflow: hidden; }
+.zb-tray-head { position: sticky; top: 0; z-index: var(--z-raised); display: flex; align-items: center; height: 30px; margin: 0 calc(-1 * var(--space-4)) var(--space-3); padding: 0 var(--space-4); background: var(--zb-raised); border-bottom: 1px solid var(--zb-line); }
+.zb-tray-title { font: 600 12px/1 var(--font-sans); letter-spacing: 0.04em; color: var(--zb-on); }
+/* The SubTool list sits at the top of the Tool palette instead of over the viewport. */
+#app.zb .tb-dock:not(.zb-in-tray) { display: none; }
+#app.zb .tb-dock.zb-in-tray { position: static; width: auto; max-height: 340px; margin-bottom: var(--space-3); box-shadow: none; }
+
+/* The brush picker and the quick slider at the cursor. */
+.zb-pop { position: fixed; z-index: var(--z-menu); left: 84px; top: 124px; width: 440px; max-height: calc(100vh - 150px); overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 4px; padding: 8px; background: var(--zb-bar); border: 1px solid #444; border-radius: 4px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); }
+.zb-pop[hidden], .zb-quick[hidden] { display: none; }
+.zb-tile { display: grid; place-items: center; gap: 3px; height: 62px; border: 0; border-radius: 4px; background: var(--zb-raised); color: var(--zb-text); cursor: pointer; }
+.zb-tile:hover { background: var(--zb-hover); }
+.zb-tile[aria-pressed="true"] { background: var(--zb-on); color: var(--zb-on-ink); }
+.zb-tile svg { width: 22px; height: 22px; }
+.zb-quick { position: fixed; z-index: var(--z-menu); width: 220px; padding: 6px; background: var(--zb-bar); border: 1px solid #444; border-radius: 4px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.5); }

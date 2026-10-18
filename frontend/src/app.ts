@@ -24,6 +24,7 @@ import { formatBytes, HistoryReplay, loadHistoryPrefs, REPLAY_RATES, samePose, s
 import { add, cross, distance3, dot, normalize, scale, sub, type Vec3 } from './viewport/math';
 import { LATHES, SKELETONS } from './ui/presets';
 import { TabletLayout, type TabletControl, type TabletOption } from './ui/tablet-layout';
+import { ZBrushLayout } from './ui/zbrush-layout';
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
 import { BindingsDialog, InputBindings } from './ui/bindings';
@@ -141,6 +142,7 @@ interface Shell {
   statsReadout: StatsOverlay;
   flyBadge: HTMLElement;
   tablet: TabletLayout;
+  zbrush: ZBrushLayout;
   thicken: HTMLInputElement;
   toolSwap: HTMLInputElement;
   toolbars: Toolbars;
@@ -502,6 +504,24 @@ const FILE_ACTIONS: [string, string][] = [
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
 const BACKDROP_KEY = 'formsculptor.backdrop';
+/** The layout the window opens in when the person set one as the default: zbrush, tablet or panel. */
+const DEFAULT_LAYOUT_KEY = 'formsculptor.layout.default';
+
+function defaultLayout(): string {
+  try {
+    return localStorage.getItem(DEFAULT_LAYOUT_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function setDefaultLayout(name: string): void {
+  try {
+    localStorage.setItem(DEFAULT_LAYOUT_KEY, name);
+  } catch {
+    // storage blocked; the window keeps opening in the layout last used
+  }
+}
 const PROFILES_KEY = 'formsculptor.profiles';
 const PRESETS_KEY = 'formsculptor.toolPresets';
 
@@ -1595,6 +1615,25 @@ function buildShell(root: HTMLElement): Shell {
       return list(sculptOptions);
     },
   });
+  // The ZBrush layout over the same controls: ZBrush's classic shelves, palette bar and tray (ui/zbrush-layout.ts).
+  const zbrush = new ZBrushLayout({
+    root,
+    panel,
+    brushButtons,
+    radius,
+    strength,
+    invert,
+    paintMaterial,
+    paintColor,
+    shading,
+    stroke: strokeMode,
+    alpha,
+    gizmoMode,
+    message,
+    version: VERSION,
+    run: (id) => commands.run(id),
+    checked: (id) => commands.get(id)?.checked?.() ?? false,
+  });
   const tag = (list: HTMLButtonElement[], group: string, by: (b: HTMLButtonElement) => string | undefined): void => {
     for (const b of list) {
       const spec = PANEL_CMDS[group][by(b) ?? ''];
@@ -1625,7 +1664,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -2482,7 +2521,54 @@ class SceneView {
       this.applyShading();
       this.applyBackdrop();
     };
-    if (tablet.enabled) tablet.onToggle(true);
+    // The ZBrush layout: its SubTool list is this dock, its counts and drag buttons come from here, and only one of the
+    // two layouts is on at a time.
+    const zb = s.zbrush;
+    zb.subtools = this.dock.element;
+    zb.statsOf = () => {
+      const st = tablet.statsOf?.();
+      return { vertices: st?.vertices ?? 0, triangles: st?.triangles ?? 0, active: st?.active?.name ?? null };
+    };
+    zb.nav = (kind, dx, dy) => {
+      const cam = this.viewport.camera;
+      if (kind === 'rotate') cam.orbit(dx, dy);
+      else if (kind === 'move') cam.pan(dx, dy, s.canvas.clientHeight);
+      else cam.zoom(Math.exp(dy * 0.01));
+      this.viewport.invalidate();
+    };
+    zb.chooseLayout = (name) => this.useLayout(name);
+    zb.setDefault = (name) => setDefaultLayout(name);
+    zb.defaultLayout = defaultLayout;
+    const tabletToggle = tablet.onToggle;
+    tablet.onToggle = (on) => {
+      if (on && zb.enabled) zb.set(false);
+      tabletToggle(on);
+    };
+    zb.onToggle = (on) => {
+      if (on && tablet.enabled) tablet.set(false);
+    };
+    // Which layout opens: the one set as the default, if any, else the one last used.
+    const start = defaultLayout() || (ZBrushLayout.stored() ? 'zbrush' : '');
+    if (start) this.useLayout(start, false);
+    else if (tablet.enabled) tablet.onToggle(true);
+  }
+
+  /** Switches to the ZBrush, tablet or panel layout. */
+  private useLayout(name: string, keep = true): void {
+    const s = this.shell;
+    if (name === 'zbrush') s.zbrush.set(true, keep);
+    else if (name === 'tablet') {
+      if (s.zbrush.enabled) s.zbrush.set(false, keep);
+      s.tablet.set(true, keep);
+    } else {
+      s.zbrush.set(false, keep);
+      s.tablet.set(false, keep);
+    }
+  }
+
+  /** The layout in use now, by name. */
+  private layoutName(): string {
+    return this.shell.zbrush.enabled ? 'zbrush' : this.shell.tablet.enabled ? 'tablet' : 'panel';
   }
 
   /** The backdrop controls: the theme's gradient until the person changes it, then their choice, kept in this browser. */
@@ -4374,6 +4460,16 @@ class SceneView {
       { id: 'gizmo.pivot_view', label: 'Pivot to View', run: () => void this.pivotToView(), enabled: () => this.scene.active !== null },
       { id: 'gizmo.apply', label: 'Apply Typed Transform', run: () => void this.applyTypedTransform(), enabled: () => this.scene.active !== null },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
+      { id: 'view.zbrush_layout', label: 'ZBrush Layout', run: () => this.useLayout(s.zbrush.enabled ? 'panel' : 'zbrush'), checked: () => s.zbrush.enabled },
+      {
+        id: 'view.default_layout',
+        label: 'Open in This Layout by Default',
+        run: () => {
+          setDefaultLayout(this.layoutName());
+          this.note(t('This layout now opens by default'));
+        },
+        checked: () => defaultLayout() === this.layoutName(),
+      },
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
       { id: 'history.replay', label: 'Replay History', icon: 'refresh', run: () => this.toggleReplay(), checked: () => this.replay.playing },

@@ -113,7 +113,9 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 
 /* The Objects and Layers dock (ui/scene-dock.ts): beside the left strip, two tabs over a list and its actions. */
 .tb-dock { position: absolute; z-index: var(--z-rail); left: 80px; top: calc(var(--tb-under) + 46px); width: 248px; max-height: calc(100% - var(--tb-under) - 130px); display: flex; flex-direction: column; color: var(--tb-text); background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 4px 16px rgb(0 0 0 / 0.45); overflow: hidden; }
-#app:not(.tablet) :is(.tb-dock, .tb-toast) { display: none; }
+#app:not(.tablet) .tb-toast { display: none; }
+/* The dock shows in the ZBrush layout too, as its SubTool list (zbrush.css). */
+#app:not(.tablet):not(.zb) .tb-dock { display: none; }
 /* The window's note, over the viewport above the tool's pill; it takes no pointer, so it never gets in the way. */
 .tb-toast { position: absolute; z-index: var(--z-raised); left: 50%; bottom: 204px; transform: translateX(-50%); max-width: min(560px, calc(100% - 640px)); padding: 7px 14px; border-radius: 8px; background: rgb(20 24 32 / 0.9); border: 1px solid var(--tb-line); color: var(--tb-white); font: 500 12px/1.4 var(--font-sans); text-align: center; pointer-events: none; }
 .tb-toast[hidden] { display: none; }

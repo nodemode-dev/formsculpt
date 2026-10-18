@@ -228,7 +228,7 @@ export function iconOnly(icon: string, label: string, cls: string): HTMLButtonEl
 }
 
 /** Sets a panel control's value as a person would, so its own listeners run. */
-function write(control: HTMLInputElement | HTMLSelectElement, value: string): void {
+export function write(control: HTMLInputElement | HTMLSelectElement, value: string): void {
   if (control.value === value) return;
   control.value = value;
   control.dispatchEvent(new Event('input', { bubbles: true }));
@@ -237,8 +237,9 @@ function write(control: HTMLInputElement | HTMLSelectElement, value: string): vo
 
 const fmt = (n: number): string => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e5 ? 0 : 1)}k` : String(n));
 
-/** A value dragged along a bar, its share filled: horizontal (a field with its name inside) or vertical (a tall slider). */
-class DragValue {
+/** A value dragged along a bar, its share filled: horizontal (a field with its name inside) or vertical (a tall slider).
+ * The ZBrush layout's shelf sliders are these too (ui/zbrush-layout.ts). */
+export class DragValue {
   readonly node: HTMLElement;
   private readonly fill = el('span', 'tb-fill');
   private readonly value = el('span', 'tb-num');
