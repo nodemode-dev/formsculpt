@@ -1274,5 +1274,11 @@
  "Delete group": "Видалити групу",
  "Delete With Children": "Видалити з нащадками",
  "Group": "Група",
- "Set Parent": "Задати батька"
+ "Set Parent": "Задати батька",
+ "Add Icosahedron": "Додати ікосаедр",
+ "Add Quad Sphere": "Додати чотирикутну сферу",
+ "Add UV Sphere": "Додати UV-сферу",
+ "Icosahedron": "Ікосаедр",
+ "Quad Sphere": "Чотирикутна сфера",
+ "UV Sphere": "UV-сфера"
 }

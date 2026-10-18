@@ -1274,5 +1274,11 @@
  "Delete group": "Xóa nhóm",
  "Delete With Children": "Xóa cùng đối tượng con",
  "Group": "Nhóm",
- "Set Parent": "Đặt đối tượng cha"
+ "Set Parent": "Đặt đối tượng cha",
+ "Add Icosahedron": "Thêm khối hai mươi mặt",
+ "Add Quad Sphere": "Thêm cầu tứ giác",
+ "Add UV Sphere": "Thêm cầu UV",
+ "Icosahedron": "Khối hai mươi mặt",
+ "Quad Sphere": "Cầu tứ giác",
+ "UV Sphere": "Cầu UV"
 }

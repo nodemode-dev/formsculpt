@@ -1274,5 +1274,11 @@
  "Delete group": "Slet gruppe",
  "Delete With Children": "Slet med underordnede",
  "Group": "Gruppe",
- "Set Parent": "Angiv overordnet"
+ "Set Parent": "Angiv overordnet",
+ "Add Icosahedron": "Tilføj ikosaeder",
+ "Add Quad Sphere": "Tilføj firkantkugle",
+ "Add UV Sphere": "Tilføj UV-kugle",
+ "Icosahedron": "Ikosaeder",
+ "Quad Sphere": "Firkantkugle",
+ "UV Sphere": "UV-kugle"
 }

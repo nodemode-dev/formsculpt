@@ -1274,5 +1274,11 @@
  "Delete group": "Slett gruppe",
  "Delete With Children": "Slett med underordnede",
  "Group": "Gruppe",
- "Set Parent": "Angi overordnet"
+ "Set Parent": "Angi overordnet",
+ "Add Icosahedron": "Legg til ikosaeder",
+ "Add Quad Sphere": "Legg til firkantkule",
+ "Add UV Sphere": "Legg til UV-kule",
+ "Icosahedron": "Ikosaeder",
+ "Quad Sphere": "Firkantkule",
+ "UV Sphere": "UV-kule"
 }

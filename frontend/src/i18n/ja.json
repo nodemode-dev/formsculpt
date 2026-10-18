@@ -1274,5 +1274,11 @@
  "Delete group": "グループを削除",
  "Delete With Children": "子ごと削除",
  "Group": "グループ",
- "Set Parent": "親を設定"
+ "Set Parent": "親を設定",
+ "Add Icosahedron": "二十面体を追加",
+ "Add Quad Sphere": "四角形球を追加",
+ "Add UV Sphere": "UV球を追加",
+ "Icosahedron": "二十面体",
+ "Quad Sphere": "四角形球",
+ "UV Sphere": "UV球"
 }

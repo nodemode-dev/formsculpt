@@ -1274,5 +1274,11 @@
  "Delete group": "Gruppe löschen",
  "Delete With Children": "Mit Untergeordneten löschen",
  "Group": "Gruppe",
- "Set Parent": "Übergeordnetes festlegen"
+ "Set Parent": "Übergeordnetes festlegen",
+ "Add Icosahedron": "Ikosaeder hinzufügen",
+ "Add Quad Sphere": "Viereckskugel hinzufügen",
+ "Add UV Sphere": "UV-Kugel hinzufügen",
+ "Icosahedron": "Ikosaeder",
+ "Quad Sphere": "Viereckskugel",
+ "UV Sphere": "UV-Kugel"
 }

@@ -1274,5 +1274,11 @@
  "Delete group": "Usuń grupę",
  "Delete With Children": "Usuń z potomkami",
  "Group": "Grupa",
- "Set Parent": "Ustaw rodzica"
+ "Set Parent": "Ustaw rodzica",
+ "Add Icosahedron": "Dodaj dwudziestościan",
+ "Add Quad Sphere": "Dodaj kulę z czworokątów",
+ "Add UV Sphere": "Dodaj kulę UV",
+ "Icosahedron": "Dwudziestościan",
+ "Quad Sphere": "Kula z czworokątów",
+ "UV Sphere": "Kula UV"
 }

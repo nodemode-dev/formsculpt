@@ -1274,5 +1274,11 @@
  "Delete group": "그룹 삭제",
  "Delete With Children": "자식까지 삭제",
  "Group": "그룹",
- "Set Parent": "부모 설정"
+ "Set Parent": "부모 설정",
+ "Add Icosahedron": "정이십면체 추가",
+ "Add Quad Sphere": "사각형 구 추가",
+ "Add UV Sphere": "UV 구 추가",
+ "Icosahedron": "정이십면체",
+ "Quad Sphere": "사각형 구",
+ "UV Sphere": "UV 구"
 }

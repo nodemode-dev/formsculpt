@@ -1274,5 +1274,11 @@
  "Delete group": "ลบกลุ่ม",
  "Delete With Children": "ลบพร้อมลูก",
  "Group": "กลุ่ม",
- "Set Parent": "ตั้งพาเรนต์"
+ "Set Parent": "ตั้งพาเรนต์",
+ "Add Icosahedron": "เพิ่มทรงยี่สิบหน้า",
+ "Add Quad Sphere": "เพิ่มทรงกลมสี่เหลี่ยม",
+ "Add UV Sphere": "เพิ่มทรงกลม UV",
+ "Icosahedron": "ทรงยี่สิบหน้า",
+ "Quad Sphere": "ทรงกลมสี่เหลี่ยม",
+ "UV Sphere": "ทรงกลม UV"
 }

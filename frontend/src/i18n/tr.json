@@ -1274,5 +1274,11 @@
  "Delete group": "Grubu sil",
  "Delete With Children": "Alt öğelerle sil",
  "Group": "Grup",
- "Set Parent": "Üst öğe ata"
+ "Set Parent": "Üst öğe ata",
+ "Add Icosahedron": "İkosahedron ekle",
+ "Add Quad Sphere": "Dörtgen küre ekle",
+ "Add UV Sphere": "UV küre ekle",
+ "Icosahedron": "İkosahedron",
+ "Quad Sphere": "Dörtgen küre",
+ "UV Sphere": "UV küre"
 }

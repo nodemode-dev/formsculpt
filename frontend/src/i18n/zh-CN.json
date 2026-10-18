@@ -1274,5 +1274,11 @@
  "Delete group": "删除组",
  "Delete With Children": "连同子级删除",
  "Group": "组",
- "Set Parent": "设置父级"
+ "Set Parent": "设置父级",
+ "Add Icosahedron": "添加二十面体",
+ "Add Quad Sphere": "添加四边形球体",
+ "Add UV Sphere": "添加 UV 球体",
+ "Icosahedron": "二十面体",
+ "Quad Sphere": "四边形球体",
+ "UV Sphere": "UV 球体"
 }

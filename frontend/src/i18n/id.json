@@ -1274,5 +1274,11 @@
  "Delete group": "Hapus grup",
  "Delete With Children": "Hapus beserta anak",
  "Group": "Grup",
- "Set Parent": "Atur induk"
+ "Set Parent": "Atur induk",
+ "Add Icosahedron": "Tambah ikosahedron",
+ "Add Quad Sphere": "Tambah bola segi empat",
+ "Add UV Sphere": "Tambah bola UV",
+ "Icosahedron": "Ikosahedron",
+ "Quad Sphere": "Bola segi empat",
+ "UV Sphere": "Bola UV"
 }

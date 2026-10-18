@@ -1274,5 +1274,11 @@
  "Delete group": "Csoport törlése",
  "Delete With Children": "Törlés gyermekekkel",
  "Group": "Csoport",
- "Set Parent": "Szülő beállítása"
+ "Set Parent": "Szülő beállítása",
+ "Add Icosahedron": "Ikozaéder hozzáadása",
+ "Add Quad Sphere": "Négyszöggömb hozzáadása",
+ "Add UV Sphere": "UV-gömb hozzáadása",
+ "Icosahedron": "Ikozaéder",
+ "Quad Sphere": "Négyszöggömb",
+ "UV Sphere": "UV-gömb"
 }

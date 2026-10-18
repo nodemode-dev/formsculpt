@@ -1274,5 +1274,11 @@
  "Delete group": "Poista ryhmä",
  "Delete With Children": "Poista alaobjekteineen",
  "Group": "Ryhmä",
- "Set Parent": "Aseta isäntä"
+ "Set Parent": "Aseta isäntä",
+ "Add Icosahedron": "Lisää ikosaedri",
+ "Add Quad Sphere": "Lisää nelikulmiopallo",
+ "Add UV Sphere": "Lisää UV-pallo",
+ "Icosahedron": "Ikosaedri",
+ "Quad Sphere": "Nelikulmiopallo",
+ "UV Sphere": "UV-pallo"
 }

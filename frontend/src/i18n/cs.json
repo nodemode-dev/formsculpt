@@ -1274,5 +1274,11 @@
  "Delete group": "Smazat skupinu",
  "Delete With Children": "Smazat i s potomky",
  "Group": "Skupina",
- "Set Parent": "Nastavit rodiče"
+ "Set Parent": "Nastavit rodiče",
+ "Add Icosahedron": "Přidat dvacetistěn",
+ "Add Quad Sphere": "Přidat čtyřúhelníkovou kouli",
+ "Add UV Sphere": "Přidat UV kouli",
+ "Icosahedron": "Dvacetistěn",
+ "Quad Sphere": "Čtyřúhelníková koule",
+ "UV Sphere": "UV koule"
 }

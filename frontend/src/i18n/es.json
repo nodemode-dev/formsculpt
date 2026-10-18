@@ -1274,5 +1274,11 @@
  "Delete group": "Eliminar grupo",
  "Delete With Children": "Eliminar con hijos",
  "Group": "Grupo",
- "Set Parent": "Establecer padre"
+ "Set Parent": "Establecer padre",
+ "Add Icosahedron": "Añadir icosaedro",
+ "Add Quad Sphere": "Añadir esfera de cuadriláteros",
+ "Add UV Sphere": "Añadir esfera UV",
+ "Icosahedron": "Icosaedro",
+ "Quad Sphere": "Esfera de cuadriláteros",
+ "UV Sphere": "Esfera UV"
 }

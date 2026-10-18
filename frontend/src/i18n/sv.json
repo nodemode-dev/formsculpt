@@ -1274,5 +1274,11 @@
  "Delete group": "Ta bort grupp",
  "Delete With Children": "Ta bort med underobjekt",
  "Group": "Grupp",
- "Set Parent": "Ange förälder"
+ "Set Parent": "Ange förälder",
+ "Add Icosahedron": "Lägg till ikosaeder",
+ "Add Quad Sphere": "Lägg till fyrhörningssfär",
+ "Add UV Sphere": "Lägg till UV-sfär",
+ "Icosahedron": "Ikosaeder",
+ "Quad Sphere": "Fyrhörningssfär",
+ "UV Sphere": "UV-sfär"
 }
