@@ -14,7 +14,7 @@
  "No terminal is open. Start a shell with the plus button, Claude Code with the agent button, or Chat with the speech bubble.": "Aucun terminal n'est ouvert. Lancez un shell avec le bouton plus, Claude Code avec le bouton agent, ou le Clavardage avec la bulle.",
  "No UVs yet; Unwrap to make them": "Pas encore d'UV; utilisez Déplier pour en créer",
  "Opens the Chat tab, where Claude answers in plain language and works through formsculptor's tools.": "Ouvre l'onglet Clavardage, où Claude répond en langage simple et travaille avec les outils de formsculptor.",
- "Path rendering 64 samples per pixel; the picture downloads when it is done": "Rendu de chemin à 64 échantillons par pixel; l'image se télécharge à la fin",
+ "Path rendering {samples} samples per pixel at {size}; the picture downloads when it is done": "Rendu de chemin à {samples} échantillons par pixel en {size}; l'image se télécharge à la fin",
  "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Affiche ou masque le dock du terminal sous la vue; les programmes continuent de tourner tant qu'il est masqué.",
  "The active object is not in a folder; Put in folder first": "L'objet actif n'est pas dans un dossier; utilisez d'abord Mettre dans un dossier",
  "The scene is empty; there is nothing to send": "La scène est vide; il n'y a rien à envoyer",
