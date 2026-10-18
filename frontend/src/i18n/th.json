@@ -1328,5 +1328,7 @@
  "Project name": "ชื่อโปรเจกต์",
  "Projects": "โปรเจกต์",
  "Save to LightBox": "บันทึกลง LightBox",
- "Type a name first": "พิมพ์ชื่อก่อน"
+ "Type a name first": "พิมพ์ชื่อก่อน",
+ "Load image": "โหลดภาพ",
+ "Texture (F5)": "พื้นผิว (F5)"
 }

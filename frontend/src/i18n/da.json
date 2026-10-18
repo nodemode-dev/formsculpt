@@ -1328,5 +1328,7 @@
  "Project name": "Projektnavn",
  "Projects": "Projekter",
  "Save to LightBox": "Gem i LightBox",
- "Type a name first": "Skriv først et navn"
+ "Type a name first": "Skriv først et navn",
+ "Load image": "Indlæs billede",
+ "Texture (F5)": "Tekstur (F5)"
 }

@@ -1328,5 +1328,7 @@
  "Project name": "Projektnamn",
  "Projects": "Projekt",
  "Save to LightBox": "Spara i LightBox",
- "Type a name first": "Skriv ett namn först"
+ "Type a name first": "Skriv ett namn först",
+ "Load image": "Läs in bild",
+ "Texture (F5)": "Textur (F5)"
 }

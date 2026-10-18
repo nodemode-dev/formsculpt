@@ -1328,5 +1328,7 @@
  "Project name": "Název projektu",
  "Projects": "Projekty",
  "Save to LightBox": "Uložit do LightBoxu",
- "Type a name first": "Nejprve zadejte název"
+ "Type a name first": "Nejprve zadejte název",
+ "Load image": "Načíst obrázek",
+ "Texture (F5)": "Textura (F5)"
 }

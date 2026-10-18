@@ -1328,5 +1328,7 @@
  "Project name": "Назва проєкту",
  "Projects": "Проєкти",
  "Save to LightBox": "Зберегти в LightBox",
- "Type a name first": "Спершу введіть назву"
+ "Type a name first": "Спершу введіть назву",
+ "Load image": "Завантажити зображення",
+ "Texture (F5)": "Текстура (F5)"
 }

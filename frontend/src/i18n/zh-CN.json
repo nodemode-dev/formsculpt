@@ -1328,5 +1328,7 @@
  "Project name": "项目名称",
  "Projects": "项目",
  "Save to LightBox": "保存到 LightBox",
- "Type a name first": "请先输入名称"
+ "Type a name first": "请先输入名称",
+ "Load image": "载入图像",
+ "Texture (F5)": "纹理 (F5)"
 }

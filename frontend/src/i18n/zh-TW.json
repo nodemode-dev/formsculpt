@@ -1328,5 +1328,7 @@
  "Project name": "專案名稱",
  "Projects": "專案",
  "Save to LightBox": "儲存到 LightBox",
- "Type a name first": "請先輸入名稱"
+ "Type a name first": "請先輸入名稱",
+ "Load image": "載入影像",
+ "Texture (F5)": "紋理 (F5)"
 }

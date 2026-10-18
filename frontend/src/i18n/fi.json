@@ -1328,5 +1328,7 @@
  "Project name": "Projektin nimi",
  "Projects": "Projektit",
  "Save to LightBox": "Tallenna LightBoxiin",
- "Type a name first": "Kirjoita ensin nimi"
+ "Type a name first": "Kirjoita ensin nimi",
+ "Load image": "Lataa kuva",
+ "Texture (F5)": "Tekstuuri (F5)"
 }

@@ -1328,5 +1328,7 @@
  "Project name": "프로젝트 이름",
  "Projects": "프로젝트",
  "Save to LightBox": "LightBox에 저장",
- "Type a name first": "먼저 이름을 입력하세요"
+ "Type a name first": "먼저 이름을 입력하세요",
+ "Load image": "이미지 불러오기",
+ "Texture (F5)": "텍스처 (F5)"
 }
