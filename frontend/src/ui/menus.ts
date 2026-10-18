@@ -37,7 +37,7 @@ const EDIT: MenuItem[] = [
 ];
 
 const ADD: MenuItem[] = [
-  'add.sphere', 'add.quad_sphere', 'add.uv_sphere', 'add.icosahedron', 'add.cube', 'add.cylinder', 'add.cone', 'add.torus', 'add.plane', '-',
+  'add.sphere', 'add.quad_sphere', 'add.uv_sphere', 'add.icosahedron', 'add.head', 'add.cube', 'add.cylinder', 'add.cone', 'add.torus', 'add.plane', '-',
   'add.apply_primitive', '-',
   { label: 'Build', items: ['build.skeleton', 'build.lathe', 'build.text', 'build.shadow_box', 'build.clear_outlines', 'build.extrude_outline', 'sculpt.vdm_capture'] },
   { label: 'Array', items: ['build.array_line', 'build.array_radial', 'build.array_mirror', 'build.array_curve'] }, '-',

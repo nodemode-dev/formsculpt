@@ -799,3 +799,10 @@ Checked in a fresh profile under 4x CPU throttling (tree.mjs), in the dock and t
 Quad Sphere, UV Sphere (in the engine since early on but never in the window) and Icosahedron join the panel layout's Add buttons and the Add menu, beside Sphere. With nine shapes at three a row, Quad Sphere and UV Sphere wrapped and were clipped and Icosahedron overflowed its button, so the grid went to two columns (each 120 px wide at the default size) and its buttons may wrap onto a second line and grow rather than clip, for longer names in other languages.
 Removed from app.ts: `const grid = el('div', 'add-grid');` (now with two and shapes).
 Checked in a fresh profile under 4x CPU throttling (prims.mjs): each new button made its shape (Quad sphere 3072 triangles, UV sphere 3968, Icosahedron 20 with 20 groups); the Add menu listed Add Sphere, Add Quad Sphere, Add UV Sphere and Add Icosahedron and its Add Icosahedron made one; CLS 0, no errors, the viewport started. addgrid.mjs measured all nine buttons at 120 by 30 px, none overflowing.
+
+### Add Head
+- refers-to: src/app.ts :: PRIMITIVES (head); src/ui/command-map.ts :: add.head; src/ui/menus.ts :: the Add menu's list; src/i18n/*.json
+- kind: rationale
+- logged: v0.88.0 · 2026-10-18
+The engine's head primitive (native side log, 0.88.0) joins the Add panel and menu. Its Feminine layer shows in the Layers panel like any sculpt layer, so the blend is that layer's strength; nothing new was needed in the window for it.
+Checked in a fresh profile under 4x CPU throttling (headw.mjs): Add Head made a head of 9602 points with the layer Feminine at 0 and no active layer; the Layers panel listed Feminine at 0 percent; layer_set to 1 changed the head in the viewport; a clay stroke on it left the layer's strength at 0 and no layer active; CLS 0, no errors, the viewport started.

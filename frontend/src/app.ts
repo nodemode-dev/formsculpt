@@ -625,6 +625,7 @@ const PRIMITIVES: [string, string][] = [
   ['quad_sphere', 'Quad Sphere'],
   ['uv_sphere', 'UV Sphere'],
   ['icosahedron', 'Icosahedron'],
+  ['head', 'Head'],
 ];
 
 function buildShell(root: HTMLElement): Shell {
