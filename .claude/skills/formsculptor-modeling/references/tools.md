@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.83.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.84.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -41,6 +41,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `background`: string (dark | light | transparent); default "dark"
 - `bounces`: integer; default 4; range 1 to 8; Path render: how many times light may bounce.
 - `contrast`: number; default 1; range 0.25 to 2.5; Path render grade: contrast about mid grey (1 as rendered).
+- `denoise`: boolean; default false; Path render: smooth the noise with an edge-aware filter guided by the surfaces' normals, depth and colour, keeping edges and painted detail sharp; away from edges 32 samples denoised are about as clean as 128 without it. The beauty pass only.
 - `exposure`: number; default 1; range 0 to 16; Path render grade: a multiplier on the light (2 is a stop brighter).
 - `focus`: number; range 0 to inf; Path render: distance from the camera that stays sharp, in world units; the framed centre when omitted.
 - `frame`: string (all | active); default "all"; Fit the camera to all drawn objects or to the active one (others still drawn).
