@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Tải tiện ích Blender",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Trong Blender: Tùy chọn, Tiện ích mở rộng, Cài từ đĩa, rồi thẻ formsculptor ở thanh bên. Các đối tượng liên kết cập nhật ở đây khi chúng thay đổi ở đó",
  "Live Link Read": "Đọc liên kết trực tiếp",
- "Live Link Write": "Ghi liên kết trực tiếp"
+ "Live Link Write": "Ghi liên kết trực tiếp",
+ "Export triangles": "Xuất dạng tam giác",
+ "File scale": "Tỉ lệ tệp",
+ "File up axis": "Trục hướng lên của tệp",
+ "Import as one object": "Nhập thành một đối tượng",
+ "Y up (formsculptor, glTF)": "Y hướng lên (formsculptor, glTF)",
+ "Z up (Blender)": "Z hướng lên (Blender)"
 }

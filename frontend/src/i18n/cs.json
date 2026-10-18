@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Získat doplněk pro Blender",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "V Blenderu: Předvolby, Rozšíření, Instalovat z disku, pak karta formsculptor v postranním panelu. Propojené objekty se zde aktualizují, jak se mění tam",
  "Live Link Read": "Živé propojení: čtení",
- "Live Link Write": "Živé propojení: zápis"
+ "Live Link Write": "Živé propojení: zápis",
+ "Export triangles": "Exportovat trojúhelníky",
+ "File scale": "Měřítko souboru",
+ "File up axis": "Svislá osa souboru",
+ "Import as one object": "Importovat jako jeden objekt",
+ "Y up (formsculptor, glTF)": "Y nahoru (formsculptor, glTF)",
+ "Z up (Blender)": "Z nahoru (Blender)"
 }

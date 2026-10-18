@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Hent Blender-tilføjelse",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "I Blender: Indstillinger, Udvidelser, Installer fra disk, derefter fanen formsculptor i sidepanelet. Forbundne objekter opdateres her, når de ændres der",
  "Live Link Read": "Live-forbindelse: læs",
- "Live Link Write": "Live-forbindelse: skriv"
+ "Live Link Write": "Live-forbindelse: skriv",
+ "Export triangles": "Eksportér trekanter",
+ "File scale": "Filskala",
+ "File up axis": "Filens opadakse",
+ "Import as one object": "Importér som ét objekt",
+ "Y up (formsculptor, glTF)": "Y op (formsculptor, glTF)",
+ "Z up (Blender)": "Z op (Blender)"
 }

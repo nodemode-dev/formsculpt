@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Dapatkan add-on Blender",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Di Blender: Preferensi, Ekstensi, Pasang dari Disk, lalu tab formsculptor di bilah samping. Objek tertaut diperbarui di sini saat berubah di sana",
  "Live Link Read": "Tautan langsung: baca",
- "Live Link Write": "Tautan langsung: tulis"
+ "Live Link Write": "Tautan langsung: tulis",
+ "Export triangles": "Ekspor segitiga",
+ "File scale": "Skala file",
+ "File up axis": "Sumbu atas file",
+ "Import as one object": "Impor sebagai satu objek",
+ "Y up (formsculptor, glTF)": "Y ke atas (formsculptor, glTF)",
+ "Z up (Blender)": "Z ke atas (Blender)"
 }

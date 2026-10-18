@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Blender アドオンを入手",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blender で: プリファレンス、エクステンション、ディスクからインストール、続いてサイドバーの formsculptor タブ。リンクしたオブジェクトはあちらで変わるとこちらも更新されます",
  "Live Link Read": "ライブリンク読み取り",
- "Live Link Write": "ライブリンク書き込み"
+ "Live Link Write": "ライブリンク書き込み",
+ "Export triangles": "三角形で書き出し",
+ "File scale": "ファイルのスケール",
+ "File up axis": "ファイルの上方向軸",
+ "Import as one object": "1 つのオブジェクトとして読み込み",
+ "Y up (formsculptor, glTF)": "Y が上 (formsculptor, glTF)",
+ "Z up (Blender)": "Z が上 (Blender)"
 }

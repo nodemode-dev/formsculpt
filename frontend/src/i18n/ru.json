@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Получить дополнение для Blender",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "В Blender: Настройки, Расширения, Установить с диска, затем вкладка formsculptor на боковой панели. Связанные объекты обновляются здесь, когда меняются там",
  "Live Link Read": "Живая связь: чтение",
- "Live Link Write": "Живая связь: запись"
+ "Live Link Write": "Живая связь: запись",
+ "Export triangles": "Экспорт треугольниками",
+ "File scale": "Масштаб файла",
+ "File up axis": "Вертикальная ось файла",
+ "Import as one object": "Импорт одним объектом",
+ "Y up (formsculptor, glTF)": "Y вверх (formsculptor, glTF)",
+ "Z up (Blender)": "Z вверх (Blender)"
 }

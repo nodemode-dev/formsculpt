@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "获取 Blender 插件",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "在 Blender 中：偏好设置、扩展、从磁盘安装，然后打开侧边栏的 formsculptor 标签。链接的对象在那边改变时这里随之更新",
  "Live Link Read": "实时链接读取",
- "Live Link Write": "实时链接写入"
+ "Live Link Write": "实时链接写入",
+ "Export triangles": "导出为三角形",
+ "File scale": "文件缩放",
+ "File up axis": "文件向上轴",
+ "Import as one object": "导入为一个对象",
+ "Y up (formsculptor, glTF)": "Y 轴向上 (formsculptor, glTF)",
+ "Z up (Blender)": "Z 轴向上 (Blender)"
 }

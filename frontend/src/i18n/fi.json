@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Hae Blender-lisäosa",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blenderissä: Asetukset, Laajennukset, Asenna levyltä, sitten sivupalkin formsculptor-välilehti. Linkitetyt objektit päivittyvät täällä, kun ne muuttuvat siellä",
  "Live Link Read": "Live-linkki: luku",
- "Live Link Write": "Live-linkki: kirjoitus"
+ "Live Link Write": "Live-linkki: kirjoitus",
+ "Export triangles": "Vie kolmioina",
+ "File scale": "Tiedoston mittakaava",
+ "File up axis": "Tiedoston pystyakseli",
+ "Import as one object": "Tuo yhtenä objektina",
+ "Y up (formsculptor, glTF)": "Y ylös (formsculptor, glTF)",
+ "Z up (Blender)": "Z ylös (Blender)"
 }

@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Blender-bővítmény letöltése",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "A Blenderben: Beállítások, Bővítmények, Telepítés lemezről, majd az oldalsáv formsculptor lapja. A csatolt objektumok itt frissülnek, ahogy ott változnak",
  "Live Link Read": "Élő kapcsolat: olvasás",
- "Live Link Write": "Élő kapcsolat: írás"
+ "Live Link Write": "Élő kapcsolat: írás",
+ "Export triangles": "Exportálás háromszögekként",
+ "File scale": "Fájl léptéke",
+ "File up axis": "Fájl függőleges tengelye",
+ "Import as one object": "Importálás egy objektumként",
+ "Y up (formsculptor, glTF)": "Y felfelé (formsculptor, glTF)",
+ "Z up (Blender)": "Z felfelé (Blender)"
 }

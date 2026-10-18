@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "รับส่วนเสริม Blender",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "ใน Blender: การตั้งค่า, ส่วนขยาย, ติดตั้งจากดิสก์ แล้วแท็บ formsculptor ในแถบด้านข้าง วัตถุที่ลิงก์ไว้จะอัปเดตที่นี่เมื่อเปลี่ยนที่นั่น",
  "Live Link Read": "อ่านลิงก์สด",
- "Live Link Write": "เขียนลิงก์สด"
+ "Live Link Write": "เขียนลิงก์สด",
+ "Export triangles": "ส่งออกเป็นสามเหลี่ยม",
+ "File scale": "มาตราส่วนไฟล์",
+ "File up axis": "แกนขึ้นของไฟล์",
+ "Import as one object": "นำเข้าเป็นวัตถุเดียว",
+ "Y up (formsculptor, glTF)": "Y ขึ้น (formsculptor, glTF)",
+ "Z up (Blender)": "Z ขึ้น (Blender)"
 }

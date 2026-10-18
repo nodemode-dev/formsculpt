@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Blender eklentisini al",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blender'da: Tercihler, Uzantılar, Diskten yükle, ardından kenar çubuğundaki formsculptor sekmesi. Bağlı nesneler orada değiştikçe burada güncellenir",
  "Live Link Read": "Canlı bağlantı okuma",
- "Live Link Write": "Canlı bağlantı yazma"
+ "Live Link Write": "Canlı bağlantı yazma",
+ "Export triangles": "Üçgen olarak dışa aktar",
+ "File scale": "Dosya ölçeği",
+ "File up axis": "Dosyanın yukarı ekseni",
+ "Import as one object": "Tek nesne olarak içe aktar",
+ "Y up (formsculptor, glTF)": "Y yukarı (formsculptor, glTF)",
+ "Z up (Blender)": "Z yukarı (Blender)"
 }

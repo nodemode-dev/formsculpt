@@ -1308,5 +1308,11 @@
  "Get Blender Add-on": "Blender-add-on ophalen",
  "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "In Blender: Voorkeuren, Extensies, Installeren vanaf schijf, dan het tabblad formsculptor in de zijbalk. Gekoppelde objecten worden hier bijgewerkt zodra ze daar veranderen",
  "Live Link Read": "Live-koppeling lezen",
- "Live Link Write": "Live-koppeling schrijven"
+ "Live Link Write": "Live-koppeling schrijven",
+ "Export triangles": "Driehoeken exporteren",
+ "File scale": "Bestandsschaal",
+ "File up axis": "Verticale as van bestand",
+ "Import as one object": "Importeren als één object",
+ "Y up (formsculptor, glTF)": "Y omhoog (formsculptor, glTF)",
+ "Z up (Blender)": "Z omhoog (Blender)"
 }
