@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.85.0 · 2026-10-18
+
+### Added
+
+- Bounce light: Light > Bounce light. Light bounces once between surfaces in the viewport, so a coloured object tints what is near it and a bright floor lifts an object's shadowed underside. It works in every shading and stops at outlines.
+- Bounce strength (0 to 400 percent, 200 by default). 100 percent is the bounce as measured, which is faint; more exaggerates the colour bleeding.
+- 1269 interface strings in every language.
+
+### Notes
+
+- Like reflections, bounce light only knows what the viewport shows: light from something off screen or hidden behind another object is missed.
+
 ## 0.84.0 · 2026-10-18
 
 ### Added
