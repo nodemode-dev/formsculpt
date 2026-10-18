@@ -2,6 +2,23 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.84.0 · 2026-10-18
+
+### Added
+
+- A denoiser for the path render. It smooths the noise while keeping outlines, creases and painted detail sharp, because it follows each pixel's surface (its direction, distance and colour) and how noisy that pixel's own samples were. Away from edges, 32 samples denoised are about as clean as 128 without it.
+  - The window's Path Render uses it, at the same 64 samples and the same time as before.
+  - For agents: `get_view` takes `denoise` (off by default, the beauty pass only).
+
+### Fixed
+
+- In the browser engine, the view route passed `aperture` as text, so depth of field was ignored there.
+
+### Notes
+
+- Outlines where two surfaces meet keep some noise: a pixel there sees both, and the filter leaves it as traced rather than blur across the edge.
+- Screen-space global illumination in the window moves to the next release.
+
 ## 0.83.0 · 2026-10-18
 
 ### Changed
