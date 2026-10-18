@@ -1318,5 +1318,15 @@
  "Focal Shift": "Fókuszeltolás",
  "Focal shift": "Fókuszeltolás",
  "Paint strength": "Festés erőssége",
- "Rgb Intensity": "Rgb-intenzitás"
+ "Rgb Intensity": "Rgb-intenzitás",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox-elemek: dupla kattintással betöltés",
+ "Needs the engine service": "A motorszolgáltatás szükséges",
+ "No saved projects yet": "Még nincs mentett projekt",
+ "Opened {name}": "Megnyitva: {name}",
+ "Project name": "Projekt neve",
+ "Projects": "Projektek",
+ "Save to LightBox": "Mentés a LightBoxba",
+ "Type a name first": "Előbb adjon meg egy nevet"
 }

@@ -1318,5 +1318,15 @@
  "Focal Shift": "Dịch tiêu điểm",
  "Focal shift": "Dịch tiêu điểm",
  "Paint strength": "Cường độ tô màu",
- "Rgb Intensity": "Cường độ Rgb"
+ "Rgb Intensity": "Cường độ Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Mục trong LightBox: nhấp đúp để tải",
+ "Needs the engine service": "Cần dịch vụ engine",
+ "No saved projects yet": "Chưa có dự án nào được lưu",
+ "Opened {name}": "Đã mở {name}",
+ "Project name": "Tên dự án",
+ "Projects": "Dự án",
+ "Save to LightBox": "Lưu vào LightBox",
+ "Type a name first": "Hãy nhập tên trước"
 }

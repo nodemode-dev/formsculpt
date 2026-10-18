@@ -1318,5 +1318,15 @@
  "Focal Shift": "Зсув фокуса",
  "Focal shift": "Зсув фокуса",
  "Paint strength": "Сила фарбування",
- "Rgb Intensity": "Інтенсивність Rgb"
+ "Rgb Intensity": "Інтенсивність Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Елементи LightBox: двічі клацніть, щоб завантажити",
+ "Needs the engine service": "Потрібна служба рушія",
+ "No saved projects yet": "Збережених проєктів ще немає",
+ "Opened {name}": "Відкрито: {name}",
+ "Project name": "Назва проєкту",
+ "Projects": "Проєкти",
+ "Save to LightBox": "Зберегти в LightBox",
+ "Type a name first": "Спершу введіть назву"
 }

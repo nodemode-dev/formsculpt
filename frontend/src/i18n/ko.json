@@ -1318,5 +1318,15 @@
  "Focal Shift": "포컬 시프트",
  "Focal shift": "포컬 시프트",
  "Paint strength": "페인트 강도",
- "Rgb Intensity": "Rgb 강도"
+ "Rgb Intensity": "Rgb 강도",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox 항목: 두 번 클릭하여 불러오기",
+ "Needs the engine service": "엔진 서비스가 필요합니다",
+ "No saved projects yet": "아직 저장한 프로젝트가 없습니다",
+ "Opened {name}": "{name} 열림",
+ "Project name": "프로젝트 이름",
+ "Projects": "프로젝트",
+ "Save to LightBox": "LightBox에 저장",
+ "Type a name first": "먼저 이름을 입력하세요"
 }

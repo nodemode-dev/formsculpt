@@ -1318,5 +1318,15 @@
  "Focal Shift": "Odak kaydırma",
  "Focal shift": "Odak kaydırma",
  "Paint strength": "Boya gücü",
- "Rgb Intensity": "Rgb yoğunluğu"
+ "Rgb Intensity": "Rgb yoğunluğu",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox öğeleri: yüklemek için çift tıklayın",
+ "Needs the engine service": "Motor hizmeti gerekir",
+ "No saved projects yet": "Henüz kayıtlı proje yok",
+ "Opened {name}": "{name} açıldı",
+ "Project name": "Proje adı",
+ "Projects": "Projeler",
+ "Save to LightBox": "LightBox'a kaydet",
+ "Type a name first": "Önce bir ad yazın"
 }

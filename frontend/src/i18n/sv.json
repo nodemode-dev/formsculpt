@@ -1318,5 +1318,15 @@
  "Focal Shift": "Fokusförskjutning",
  "Focal shift": "Fokusförskjutning",
  "Paint strength": "Målarstyrka",
- "Rgb Intensity": "Rgb-intensitet"
+ "Rgb Intensity": "Rgb-intensitet",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox-objekt: dubbelklicka för att läsa in",
+ "Needs the engine service": "Kräver motortjänsten",
+ "No saved projects yet": "Inga sparade projekt än",
+ "Opened {name}": "Öppnade {name}",
+ "Project name": "Projektnamn",
+ "Projects": "Projekt",
+ "Save to LightBox": "Spara i LightBox",
+ "Type a name first": "Skriv ett namn först"
 }

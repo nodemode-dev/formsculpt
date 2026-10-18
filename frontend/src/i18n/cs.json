@@ -1318,5 +1318,15 @@
  "Focal Shift": "Posun ohniska",
  "Focal shift": "Posun ohniska",
  "Paint strength": "Síla malby",
- "Rgb Intensity": "Intenzita Rgb"
+ "Rgb Intensity": "Intenzita Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Položky LightBoxu: dvojklikem načtete",
+ "Needs the engine service": "Vyžaduje službu enginu",
+ "No saved projects yet": "Zatím žádné uložené projekty",
+ "Opened {name}": "Otevřeno {name}",
+ "Project name": "Název projektu",
+ "Projects": "Projekty",
+ "Save to LightBox": "Uložit do LightBoxu",
+ "Type a name first": "Nejprve zadejte název"
 }

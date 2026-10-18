@@ -1318,5 +1318,15 @@
  "Focal Shift": "Сдвиг фокуса",
  "Focal shift": "Сдвиг фокуса",
  "Paint strength": "Сила окраски",
- "Rgb Intensity": "Интенсивность Rgb"
+ "Rgb Intensity": "Интенсивность Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Элементы LightBox: двойной щелчок для загрузки",
+ "Needs the engine service": "Нужна служба движка",
+ "No saved projects yet": "Сохранённых проектов пока нет",
+ "Opened {name}": "Открыто: {name}",
+ "Project name": "Имя проекта",
+ "Projects": "Проекты",
+ "Save to LightBox": "Сохранить в LightBox",
+ "Type a name first": "Сначала введите имя"
 }

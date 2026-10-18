@@ -1318,5 +1318,15 @@
  "Focal Shift": "Pergeseran fokus",
  "Focal shift": "Pergeseran fokus",
  "Paint strength": "Kekuatan cat",
- "Rgb Intensity": "Intensitas Rgb"
+ "Rgb Intensity": "Intensitas Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Item LightBox: klik ganda untuk memuat",
+ "Needs the engine service": "Memerlukan layanan mesin",
+ "No saved projects yet": "Belum ada proyek tersimpan",
+ "Opened {name}": "{name} dibuka",
+ "Project name": "Nama proyek",
+ "Projects": "Proyek",
+ "Save to LightBox": "Simpan ke LightBox",
+ "Type a name first": "Ketik nama terlebih dahulu"
 }

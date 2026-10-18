@@ -1318,5 +1318,15 @@
  "Focal Shift": "การเลื่อนโฟกัส",
  "Focal shift": "การเลื่อนโฟกัส",
  "Paint strength": "ความแรงของสี",
- "Rgb Intensity": "ความเข้ม Rgb"
+ "Rgb Intensity": "ความเข้ม Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "รายการใน LightBox: ดับเบิลคลิกเพื่อโหลด",
+ "Needs the engine service": "ต้องใช้บริการเอนจิน",
+ "No saved projects yet": "ยังไม่มีโปรเจกต์ที่บันทึกไว้",
+ "Opened {name}": "เปิด {name} แล้ว",
+ "Project name": "ชื่อโปรเจกต์",
+ "Projects": "โปรเจกต์",
+ "Save to LightBox": "บันทึกลง LightBox",
+ "Type a name first": "พิมพ์ชื่อก่อน"
 }

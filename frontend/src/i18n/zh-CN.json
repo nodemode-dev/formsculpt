@@ -1318,5 +1318,15 @@
  "Focal Shift": "焦点偏移",
  "Focal shift": "焦点偏移",
  "Paint strength": "绘画强度",
- "Rgb Intensity": "Rgb 强度"
+ "Rgb Intensity": "Rgb 强度",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox 项目：双击载入",
+ "Needs the engine service": "需要引擎服务",
+ "No saved projects yet": "还没有保存的项目",
+ "Opened {name}": "已打开 {name}",
+ "Project name": "项目名称",
+ "Projects": "项目",
+ "Save to LightBox": "保存到 LightBox",
+ "Type a name first": "请先输入名称"
 }

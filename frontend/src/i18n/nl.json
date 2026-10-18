@@ -1318,5 +1318,15 @@
  "Focal Shift": "Focusverschuiving",
  "Focal shift": "Focusverschuiving",
  "Paint strength": "Sterkte van verf",
- "Rgb Intensity": "Rgb-intensiteit"
+ "Rgb Intensity": "Rgb-intensiteit",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox-items: dubbelklik om te laden",
+ "Needs the engine service": "Vereist de engineservice",
+ "No saved projects yet": "Nog geen opgeslagen projecten",
+ "Opened {name}": "{name} geopend",
+ "Project name": "Projectnaam",
+ "Projects": "Projecten",
+ "Save to LightBox": "Opslaan in LightBox",
+ "Type a name first": "Typ eerst een naam"
 }

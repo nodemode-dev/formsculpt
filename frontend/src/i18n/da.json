@@ -1318,5 +1318,15 @@
  "Focal Shift": "Fokusforskydning",
  "Focal shift": "Fokusforskydning",
  "Paint strength": "Malestyrke",
- "Rgb Intensity": "Rgb-intensitet"
+ "Rgb Intensity": "Rgb-intensitet",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBox-elementer: dobbeltklik for at indlæse",
+ "Needs the engine service": "Kræver motortjenesten",
+ "No saved projects yet": "Ingen gemte projekter endnu",
+ "Opened {name}": "Åbnede {name}",
+ "Project name": "Projektnavn",
+ "Projects": "Projekter",
+ "Save to LightBox": "Gem i LightBox",
+ "Type a name first": "Skriv først et navn"
 }

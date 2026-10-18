@@ -1318,5 +1318,15 @@
  "Focal Shift": "Polttopisteen siirto",
  "Focal shift": "Polttopisteen siirto",
  "Paint strength": "Maalauksen voimakkuus",
- "Rgb Intensity": "Rgb-voimakkuus"
+ "Rgb Intensity": "Rgb-voimakkuus",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "LightBoxin kohteet: lataa kaksoisnapsautuksella",
+ "Needs the engine service": "Vaatii moottoripalvelun",
+ "No saved projects yet": "Ei vielä tallennettuja projekteja",
+ "Opened {name}": "Avattu {name}",
+ "Project name": "Projektin nimi",
+ "Projects": "Projektit",
+ "Save to LightBox": "Tallenna LightBoxiin",
+ "Type a name first": "Kirjoita ensin nimi"
 }

@@ -1318,5 +1318,15 @@
  "Focal Shift": "Spostamento focale",
  "Focal shift": "Spostamento focale",
  "Paint strength": "Intensità pittura",
- "Rgb Intensity": "Intensità Rgb"
+ "Rgb Intensity": "Intensità Rgb",
+ "LightBox": "LightBox",
+ "LightBox (,)": "LightBox (,)",
+ "LightBox items: double-click to load": "Elementi di LightBox: doppio clic per caricare",
+ "Needs the engine service": "Richiede il servizio del motore",
+ "No saved projects yet": "Ancora nessun progetto salvato",
+ "Opened {name}": "Aperto {name}",
+ "Project name": "Nome del progetto",
+ "Projects": "Progetti",
+ "Save to LightBox": "Salva in LightBox",
+ "Type a name first": "Scrivi prima un nome"
 }
