@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.91.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.92.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -1701,17 +1701,23 @@ Note: removes or replaces (undoable); in the window: Mod+O.
 
 ## import_mesh
 
-Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x), USD (text .usda) or 3MF file as new objects (one per OBJ object, glTF node, FBX model, USD Mesh prim or 3MF object), placed by their transforms (USD prim transforms are not applied) with vertex colours as paint. A .gltf's .bin is read from beside it. One undo step.
+Add the meshes in an OBJ, STL, PLY, glTF/GLB, FBX (binary 7.x), USD (text .usda) or 3MF file as new objects (one per OBJ object, glTF node, FBX model, USD Mesh prim or 3MF object), placed by their transforms (USD prim transforms are not applied) with vertex colours as paint. A .gltf's .bin is read from beside it. Options: scale multiplies the size; up_axis z stands a file from a z-up app such as Blender upright (not used for glTF, which is y up); merge joins every part into one object. The reply's options say what was applied. One undo step.
 
+- `merge`: boolean; default false; Join every part of the file into one object.
 - `name`: string; Name for the new object; the file name when omitted.
 - `path`: string; required; A file path on this computer.
+- `scale`: number; default 1; range -inf to 100000; Multiply the size by this (100 turns metres into centimetres).
+- `up_axis`: string (y | z); default "y"; The file's up axis: z stands a file from a z-up app, such as Blender, upright. Not used for GLB and glTF, which are y up by their specification.
 
 ## export_mesh
 
-Write objects to OBJ, STL, PLY, GLB, glTF, FBX, USD (.usda: one Mesh prim per object with displayColor, displayOpacity and st) or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh.
+Write objects to OBJ, STL, PLY, GLB, glTF, FBX, USD (.usda: one Mesh prim per object with displayColor, displayOpacity and st) or 3MF, chosen by the path's extension, overwriting it. GLB, glTF and FBX keep sculpt layers as morph targets (blend shapes in FBX) at their strengths, paint as vertex colours and a material, and baked maps as textures; a .gltf is written with its buffer as a .bin of the same name beside it. STL and PLY join the objects into one mesh. Options: scale multiplies the size (with a real-world scale set, STL and 3MF are in millimetres times it); up_axis z writes OBJ, STL, PLY and 3MF z up for z-up apps such as Blender (GLB and glTF stay y up by their specification, FBX and USD declare y up); triangulate writes triangles where quads would be kept. The reply's options say what was applied.
 
 - `ids`: array of integer; Objects to write; every visible object when omitted. STL and PLY join them into one mesh.
 - `path`: string; required; A file path on this computer.
+- `scale`: number; default 1; range -inf to 100000; Multiply the size by this (100 turns metres into centimetres).
+- `triangulate`: boolean; default false; Write triangles where the mesh has quads (OBJ keeps quads otherwise).
+- `up_axis`: string (y | z); default "y"; The up axis to write: z for apps that are z up, such as Blender. Applies to OBJ, STL, PLY and 3MF; GLB and glTF are y up by their specification, and FBX and USD declare y up for their readers.
 
 Note: removes or replaces (undoable); in the window: Mod+E.
 
