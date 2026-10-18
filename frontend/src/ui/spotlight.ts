@@ -135,6 +135,12 @@ export class SpotlightDial {
     this.place();
   }
 
+  /** The images held, in the order they were loaded, with their pictures (for the ZBrush layout's Texture pop-up and
+   * LightBox shelf). */
+  pictures(): { image: number; name: string; active: boolean; src: string }[] {
+    return [...this.shown.values()].map((s) => ({ image: s.info.image, name: s.info.name, active: s.info.active, src: s.img.src }));
+  }
+
   /** Writes one image's box (or all of them) and the dial around the active one, in CSS pixels of the stage. */
   private place(only?: number): void {
     const w = this.stage.clientWidth;

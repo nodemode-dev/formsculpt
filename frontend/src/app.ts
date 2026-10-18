@@ -90,6 +90,7 @@ interface Shell {
   radius: HTMLInputElement;
   strength: HTMLInputElement;
   paintStrength: HTMLInputElement;
+  sculptStrength: HTMLInputElement;
   focalShift: HTMLInputElement;
   invert: HTMLInputElement;
   symX: HTMLInputElement;
@@ -841,6 +842,8 @@ function buildShell(root: HTMLElement): Shell {
   const radius = input('range', { min: '4', max: '300', value: '60', 'aria-label': 'Radius' });
   const strength = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Strength' });
   const paintStrength = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Paint strength' });
+  // Not shown in the panel: the sculpting strength the ZBrush layout's Z Intensity sets, kept by the app.
+  const sculptStrength = input('range', { min: '0', max: '100', value: '50', 'aria-label': 'Z Intensity' });
   const focalShift = input('range', { min: '-100', max: '100', value: '0', 'aria-label': 'Focal shift' });
   const invert = input('checkbox', { 'aria-label': 'Invert' });
   const symX = input('checkbox', { 'aria-label': 'Mirror X' });
@@ -1664,7 +1667,7 @@ function buildShell(root: HTMLElement): Shell {
     brushButtons,
     addButtons,
     radius,
-    strength,
+    strength: sculptStrength,
     paintStrength,
     focalShift,
     invert,
@@ -1717,7 +1720,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -1784,6 +1787,14 @@ class SceneView {
     shell.paintStrength.addEventListener('input', () => {
       if (this.brush === 'paint' && !this.switchingBrush) mirror(shell.paintStrength, shell.strength);
     });
+    // The sculpting strength (ZBrush's Z Intensity) follows Strength while a sculpting brush is in hand; while the
+    // Paint brush is, it keeps its own value, so Z Intensity and Rgb Intensity stay apart as in ZBrush.
+    shell.strength.addEventListener('input', () => {
+      if (this.brush !== 'paint' && !this.switchingBrush) mirror(shell.strength, shell.sculptStrength);
+    });
+    shell.sculptStrength.addEventListener('input', () => {
+      if (this.brush !== 'paint' && !this.switchingBrush) mirror(shell.sculptStrength, shell.strength);
+    });
     shell.brushButtons.forEach((b) =>
       this.on(b, () => {
         this.switchingBrush = true;
@@ -1805,16 +1816,13 @@ class SceneView {
         // The Paint brush has its own strength (ZBrush's Rgb Intensity); while it is in hand the shared Strength
         // slider shows and sets that one, and the sculpting strength comes back when another brush is picked.
         if (next !== this.brush && (next === 'paint' || this.brush === 'paint')) {
-          if (next === 'paint') {
-            this.sculptStrength = shell.strength.value;
-            mirror(shell.paintStrength, shell.strength);
-          } else if (shell.sharedRadius.checked || !this.perBrush.has(next)) {
-            shell.strength.value = this.sculptStrength;
-            shell.strength.dispatchEvent(new Event('input', { bubbles: true }));
-          }
+          if (next === 'paint') mirror(shell.paintStrength, shell.strength);
+          else if (shell.sharedRadius.checked || !this.perBrush.has(next)) mirror(shell.sculptStrength, shell.strength);
         }
         this.brush = next;
         this.switchingBrush = false;
+        // A sculpting brush's own strength (Shared radius off) becomes the sculpting strength.
+        if (this.brush !== 'paint') mirror(shell.strength, shell.sculptStrength);
         if (!SHAPE_TOOLS.has(this.brush) && !CLICK_TOOLS.has(this.brush) && this.brush !== 'orbit' && this.brush !== 'tube') this.lastBrush = this.brush;
         this.drawTools();
         // A tool change draws no frame, so the ZModeler and retopology overlays are updated here too.
@@ -2627,6 +2635,12 @@ class SceneView {
       },
       preview: lightboxPreview,
     };
+    // Textures are Spotlight's images: the Texture swatch, F5 and LightBox's Texture shelf pick or load them.
+    zb.textures = {
+      list: () => this.spotlight.pictures(),
+      activate: (image) => void this.spotlight.set({ image, activate: true }),
+      load: () => s.spotlightInput.click(),
+    };
     zb.nav = (kind, dx, dy) => {
       const cam = this.viewport.camera;
       if (kind === 'rotate') cam.orbit(dx, dy);
@@ -2885,8 +2899,6 @@ class SceneView {
   private strokeSeed = 1;
   /** Each brush's own radius and strength while Shared radius is off. */
   private perBrush = new Map<string, { radius: string; strength: string }>();
-  /** The sculpting strength the Strength slider held before the Paint brush took it over. */
-  private sculptStrength = '50';
   /** True while a brush change moves values between the strength sliders, so they are not mirrored back. */
   private switchingBrush = false;
 

@@ -67,7 +67,7 @@ function primitiveIcon(kind: string): SVGSVGElement {
 }
 
 /** LightBox's shelves: the Starting Guide names Project and Alpha; the rest are the kinds ZBrush's pop-ups hold here. */
-type LightBoxShelf = 'project' | 'tool' | 'brush' | 'stroke' | 'alpha' | 'material';
+type LightBoxShelf = 'project' | 'tool' | 'brush' | 'stroke' | 'alpha' | 'texture' | 'material';
 
 /** The Project shelf's service calls (the app wires them to the engine service). */
 export interface LightBoxProjects {
@@ -79,6 +79,13 @@ export interface LightBoxProjects {
   preview: (name: string, saved: number) => string;
 }
 
+/** The textures: the images Spotlight holds, which one is active, and loading another from a file. */
+export interface ZBrushTextures {
+  list: () => { image: number; name: string; active: boolean; src: string }[];
+  activate: (image: number) => void;
+  load: () => void;
+}
+
 export interface ZBrushParts {
   root: HTMLElement;
   panel: HTMLElement;
@@ -86,6 +93,7 @@ export interface ZBrushParts {
   /** The Add buttons (one per primitive, data-kind), LightBox's Tool shelf. */
   addButtons: HTMLButtonElement[];
   radius: HTMLInputElement;
+  /** Z Intensity: the sculpting brushes' strength, kept apart from the Paint brush's even while it is in hand. */
   strength: HTMLInputElement;
   /** The Paint brush's own strength, ZBrush's Rgb Intensity. */
   paintStrength: HTMLInputElement;
@@ -165,6 +173,8 @@ export class ZBrushLayout {
   statsOf: (() => ZBrushStats) | null = null;
   /** Set by the app: LightBox's Project shelf (saved projects with pictures), through the engine service. */
   projects: LightBoxProjects | null = null;
+  /** Set by the app: the textures (Spotlight's images) for the Texture swatch, F5 and LightBox's Texture shelf. */
+  textures: ZBrushTextures | null = null;
   /** Set by the app: the SubTool list (the Objects and Layers dock), shown at the top of the Tool palette. */
   subtools: HTMLElement | null = null;
   /** Set by the app: a drag on the right shelf's Move, Zoom3D or Rotate button, in pixels. */
@@ -279,7 +289,9 @@ export class ZBrushLayout {
     brush.addEventListener('click', () => this.openPicker('brush', brush));
     this.left.append(brush);
     this.pickerAnchors.push(brush);
-    this.left.append(this.swatch('stroke', t('Stroke'), 'F3'), this.swatch('alpha', t('Alpha'), 'F4'), this.swatch('material', t('Material'), 'F6'));
+    // Texture (F5) sits between Alpha and Material, as the Starting Guide lists the shelf; formsculptor's textures are
+    // the images held in Spotlight, where Maxon's shortcut sheet says LightBox loads textures.
+    this.left.append(this.swatch('stroke', t('Stroke'), 'F3'), this.swatch('alpha', t('Alpha'), 'F4'), this.textureSwatch(), this.swatch('material', t('Material'), 'F6'));
     const colour = el('label', 'zb-swatch zb-colour');
     const picker = el('input');
     picker.type = 'color';
@@ -405,7 +417,7 @@ export class ZBrushLayout {
 
   private readonly syncs: (() => void)[] = [];
   /** The pop-up's kind while open, and the letters typed so far to narrow the brushes (ZBrush's B, then letters). */
-  private picker: 'brush' | 'stroke' | 'alpha' | 'material' | null = null;
+  private picker: 'brush' | 'stroke' | 'alpha' | 'texture' | 'material' | null = null;
   private letters = '';
   /** Buttons that open the pop-up (a click on one does not count as a click outside it). */
   private readonly pickerAnchors: HTMLElement[] = [];
@@ -530,7 +542,7 @@ export class ZBrushLayout {
     this.lbTabs.setAttribute('role', 'tablist');
     // 'Projects' rather than ZBrush's 'Project': the window already has Project as a verb (project detail), which
     // translates differently.
-    const shelves: [LightBoxShelf, string][] = [['project', t('Projects')], ['tool', t('Tool')], ['brush', t('Brush')], ['stroke', t('Stroke')], ['alpha', t('Alpha')], ['material', t('Material')]];
+    const shelves: [LightBoxShelf, string][] = [['project', t('Projects')], ['tool', t('Tool')], ['brush', t('Brush')], ['stroke', t('Stroke')], ['alpha', t('Alpha')], ['texture', t('Texture')], ['material', t('Material')]];
     for (const [shelf, label] of shelves) {
       const tab = el('button', 'zb-lb-tab', label);
       tab.type = 'button';
@@ -592,6 +604,17 @@ export class ZBrushLayout {
       for (const b of this.parts.brushButtons) {
         const tool = b.dataset.brush ?? '';
         tiles.push(this.lbTile(t(this.toolLabels.get(tool) ?? tool), glyph(tool), () => b.click(), b.getAttribute('aria-pressed') === 'true'));
+      }
+    } else if (shelf === 'texture') {
+      const tex = this.textures;
+      if (tex) {
+        tiles.push(this.lbTile(t('Load image'), glyph('files'), () => tex.load()));
+        for (const x of tex.list()) {
+          tiles.push(this.lbTile(x.name, this.texturePicture(x.src, 56), () => {
+            tex.activate(x.image);
+            void this.showShelf('texture');
+          }, x.active));
+        }
       }
     } else {
       const control = this.controlOf(shelf);
@@ -688,8 +711,48 @@ export class ZBrushLayout {
     return b;
   }
 
+  /** A texture's picture at a size: the Spotlight image, contained in a square. */
+  private texturePicture(src: string, size: number): HTMLImageElement {
+    const img = el('img', 'zb-tex') as HTMLImageElement;
+    img.src = src;
+    img.alt = '';
+    img.width = size;
+    img.height = size;
+    return img;
+  }
+
+  /** The left shelf's Texture swatch (F5): the active Spotlight image, or an empty frame before any is loaded. */
+  private textureSwatch(): HTMLButtonElement {
+    const b = el('button', 'zb-swatch zb-pick');
+    b.type = 'button';
+    const pic = el('span', 'zb-thumb');
+    b.append(pic, el('span', 'zb-word', t('Texture')));
+    b.title = t('Texture (F5)');
+    b.setAttribute('aria-label', t('Texture (F5)'));
+    b.addEventListener('click', () => this.openPicker('texture', b));
+    this.pickerAnchors.push(b);
+    let shown: string | null = null;
+    let held = '';
+    this.syncs.push(() => {
+      const all = this.textures?.list() ?? [];
+      // An open Texture shelf follows images loaded or removed elsewhere (the panel, an agent).
+      const now = all.map((x) => `${x.image}${x.active ? '*' : ''}`).join(',');
+      if (now !== held) {
+        held = now;
+        if (!this.lightbox.hidden && this.lbShelf === 'texture') void this.showShelf('texture');
+      }
+      const active = all.find((x) => x.active);
+      const src = active?.src ?? '';
+      if (src === shown) return;
+      shown = src;
+      pic.replaceChildren(src ? this.texturePicture(src, 40) : glyph('files'));
+      b.title = active ? `${t('Texture')}: ${active.name} (F5)` : t('Texture (F5)');
+    });
+    return b;
+  }
+
   /** Opens the pop-up of thumbnails for a kind, beside the button that asked (or at the pointer, from a key). */
-  private openPicker(kind: 'brush' | 'stroke' | 'alpha' | 'material', anchor?: HTMLElement): void {
+  private openPicker(kind: 'brush' | 'stroke' | 'alpha' | 'texture' | 'material', anchor?: HTMLElement): void {
     if (this.picker === kind && !this.popup.hidden) {
       this.togglePopup(false);
       return;
@@ -697,7 +760,32 @@ export class ZBrushLayout {
     this.picker = kind;
     this.letters = '';
     const tiles: HTMLElement[] = [];
-    if (kind === 'brush') {
+    if (kind === 'texture') {
+      // The textures are Spotlight's images; a click makes one active, Load image adds another.
+      this.popup.setAttribute('aria-label', t('Texture'));
+      const tex = this.textures;
+      const load = el('button', 'zb-tile zb-thumb-tile');
+      load.type = 'button';
+      load.title = t('Load image');
+      load.append(glyph('files'), el('span', 'zb-word', t('Load image')));
+      load.addEventListener('click', () => {
+        this.togglePopup(false);
+        tex?.load();
+      });
+      tiles.push(load);
+      for (const x of tex?.list() ?? []) {
+        const tile = el('button', 'zb-tile zb-thumb-tile');
+        tile.type = 'button';
+        tile.title = x.name;
+        setAttr(tile, 'aria-pressed', x.active ? 'true' : 'false');
+        tile.append(this.texturePicture(x.src, 44), el('span', 'zb-word', x.name));
+        tile.addEventListener('click', () => {
+          tex?.activate(x.image);
+          this.togglePopup(false);
+        });
+        tiles.push(tile);
+      }
+    } else if (kind === 'brush') {
       this.popup.setAttribute('aria-label', t('Brushes'));
       for (const b of this.parts.brushButtons) {
         const tool = b.dataset.brush ?? '';
@@ -839,6 +927,7 @@ export class ZBrushLayout {
     else if (plain && e.key === 'F2') this.openPicker('brush');
     else if (plain && e.key === 'F3') this.openPicker('stroke');
     else if (plain && e.key === 'F4') this.openPicker('alpha');
+    else if (plain && e.key === 'F5') this.openPicker('texture');
     else if (plain && e.key === 'F6') this.openPicker('material');
     else if (plain && e.key === ' ' && !e.repeat) this.toggleQuickMenu();
     else if (plain && e.key === '[') this.stepSize(-1);

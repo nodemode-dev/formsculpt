@@ -121,6 +121,7 @@ svg + .zb-word { margin-top: 1px; }
 .zb-thumb { display: grid; place-items: center; width: 40px; height: 40px; }
 .zb-mini .zb-thumb { width: 30px; height: 30px; }
 .zb-thumb img { display: block; border-radius: 3px; }
+img.zb-tex { object-fit: contain; background: #1b1b1b; }
 .zb-mini { min-height: 0; width: 44px; height: 44px; padding: 4px; }
 .zb-mini .zb-brush-icon svg { width: 22px; height: 22px; }
 .zb-colour input { width: 44px; height: 30px; padding: 0; border: 1px solid #555; border-radius: 3px; background: none; cursor: pointer; }
