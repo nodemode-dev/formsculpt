@@ -161,6 +161,49 @@ pub(crate) fn shadow_box_schema() -> Value {
     })
 }
 
+pub(crate) fn triplanar_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "A triplanar object (add_primitive kind triplanar); the active object when omitted."},
+            "blend": {"type": "number", "minimum": 0, "maximum": 0.5, "default": 0.04, "description": "Rounds the edges where the three masks meet, as a fraction of the solid's size."},
+            "resolution": {"type": "integer", "minimum": 32, "maximum": 256, "default": 128, "description": "Voxel cells along the longest side."},
+            "keep_planes": {"type": "boolean", "default": false, "description": "Add the solid as a new object and keep the planes to paint further (a preview); otherwise the planes become the solid (Validate)."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+/// Triplanar: the solid where all three planes' masks agree. Replaces the planes (one undo step) or, with keep_planes,
+/// adds the solid beside them.
+pub(crate) fn triplanar_solid(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let started = Instant::now();
+    let id = crate::sculpt_cmds::target(s, args)?;
+    let blend = args.get("blend").and_then(Value::as_f64).unwrap_or(0.04).clamp(0.0, 0.5) as f32;
+    let resolution = args.get("resolution").and_then(Value::as_u64).unwrap_or(128).clamp(32, 256) as u32;
+    let object = s.scene.get(id).expect("checked");
+    let made_as = object.primitive.as_ref().is_some_and(|(a, _)| a.contains("\"triplanar\""));
+    if !made_as {
+        return Err(CommandError::new("not_triplanar", "this object was not made as a triplanar (add_primitive with kind triplanar)"));
+    }
+    let solid = fsc_topo::triplanar_solid(&object.mesh, &object.mask, blend, resolution).map_err(|e| CommandError::new("build_failed", e))?;
+    let name = object.name.clone();
+    if args.get("keep_planes").and_then(Value::as_bool).unwrap_or(false) {
+        let new = s.scene.unique_name(&format!("{name} solid"));
+        let made = s.scene.add(new, solid);
+        let index = s.scene.index_of(made).expect("just added");
+        s.history.push(Edit::Add { id: made, index, parked: None });
+        return Ok(json!({"object": summary(s.scene.get(made).expect("just added")), "planes": id, "ms": started.elapsed().as_millis()}));
+    }
+    let object = s.scene.get_mut(id).expect("checked");
+    let mask = vec![0.0; solid.vertex_count()];
+    let (old_mesh, old_mask) = object.replace_mesh(solid, mask);
+    object.revision += 1;
+    s.history.push(Edit::Topology { label: "Validate Triplanar".into(), object: id, mesh: old_mesh, mask: old_mask });
+    Ok(json!({"object": summary(s.scene.get(id).expect("checked")), "ms": started.elapsed().as_millis()}))
+}
+
 /// Shadow box: a base mesh from two or three outlines, the solid that casts those silhouettes.
 pub(crate) fn shadow_box(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let started = Instant::now();

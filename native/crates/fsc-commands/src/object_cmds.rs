@@ -130,8 +130,10 @@ pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandE
         // move: P + t + RS(p - P) = C + t' + RS(p - C) with t' = t + (P - C) - RS(P - C).
         let c = object.mesh.bounds().center();
         let d = Deformer::Transform { translate: translate + (centre - c) - r * ((centre - c) * scale), rotate_deg, scale };
-        // The object asked for keeps its mask (topology masking); what hangs under it moves whole.
-        let positions = if m == id { fsc_topo::deform(&object.mesh, &object.mask, d) } else { fsc_topo::deform(&object.mesh, &vec![0.0; object.mask.len()], d) };
+        // The object asked for keeps its mask (topology masking); what hangs under it moves whole, and so does a
+        // triplanar, whose mask is the shape it describes rather than a part to hold still.
+        let triplanar = object.primitive.as_ref().is_some_and(|(a, _)| a.contains("\"triplanar\"")) && fsc_core::triplanar::divisions(&object.mesh).is_some();
+        let positions = if m == id && !triplanar { fsc_topo::deform(&object.mesh, &object.mask, d) } else { fsc_topo::deform(&object.mesh, &vec![0.0; object.mask.len()], d) };
         let (r, edit) = move_positions(s, m, "Transform", positions);
         moved += r["vertices_moved"].as_u64().unwrap_or(0);
         if m == id || reply.is_null() {

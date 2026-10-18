@@ -12,6 +12,7 @@ pub mod selection;
 pub mod texture;
 pub mod time;
 pub mod topology;
+pub mod triplanar;
 
 pub use bvh::{Bvh, Hit};
 pub use curve::{Curve, CurvePoint, CurveSample, Interp};

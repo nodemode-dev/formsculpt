@@ -12,6 +12,8 @@ pub(crate) fn summary(o: &Object) -> Value {
         "visible": o.visible,
         "folder": o.folder,
         "instance_of": o.instance.as_ref().map(|i| i.source),
+        // Made as a triplanar and still three plane grids, so triplanar_solid can read it.
+        "triplanar": o.primitive.as_ref().is_some_and(|(a, _)| a.contains("\"triplanar\"")) && fsc_core::triplanar::divisions(&o.mesh).is_some(),
         "primitive": o.primitive.as_ref().filter(|(a, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty() && !a.contains("\"build\":")).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()),
         // A tube or lathe that edit_build can still remake ("tube" or "lathe"), without its whole curve.
         "editable_build": o.primitive.as_ref().filter(|(_, r)| *r == o.revision && o.multires.is_none() && o.layers.list.is_empty()).and_then(|(a, _)| serde_json::from_str::<Value>(a).ok()).and_then(|v| v.get("build").cloned()),
@@ -141,7 +143,7 @@ pub(crate) fn add_primitive_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
-            "kind": {"type": "string", "enum": Primitive::KINDS.iter().chain(["head"].iter()).collect::<Vec<_>>()},
+            "kind": {"type": "string", "enum": Primitive::KINDS.iter().chain(["head", "triplanar"].iter()).collect::<Vec<_>>()},
             "name": {"type": "string", "maxLength": 120},
             "size": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000, "default": 1, "description": "Radius for sphere, uv_sphere, icosahedron, quad_sphere, cylinder, cone and the torus ring; edge length for cube and plane."},
             "detail": {"type": "integer", "minimum": 0, "maximum": 2048, "description": "Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16) and head (default 40), segments for the round kinds (default 64)."},
@@ -200,10 +202,20 @@ pub(crate) fn add_primitive(s: &mut Session, args: &Value) -> Result<Value, Comm
     } else {
         (mesh, None)
     };
+    // The triplanar's three planes come with a masked disc on each (triplanar_solid turns the masks into a solid).
+    let (mesh, start_mask) = if kind == "triplanar" {
+        let (m, mask) = fsc_core::triplanar::planes(num(args, "size", 1.0, 0.0, 1000.0)?, int(args, "detail", 64, 512)?.max(8));
+        (m, Some(mask))
+    } else {
+        (mesh, None)
+    };
     let id = s.scene.add(name, mesh);
     let index = s.scene.index_of(id).expect("just added");
     s.history.push(Edit::Add { id, index, parked: None });
     let object = s.scene.get_mut(id).expect("just added");
+    if let Some(mask) = start_mask {
+        object.mask = mask;
+    }
     if let Some(delta) = feminine {
         object.layers.list.push(fsc_core::layers::Layer { name: "Feminine".into(), strength: 0.0, delta, ..Default::default() });
         object.layers.active = None;
@@ -274,7 +286,7 @@ fn primitive_mesh(args: &Value) -> Result<(fsc_core::Mesh, String), CommandError
         "icosahedron" => Primitive::Icosahedron { radius: size, subdivisions: int(args, "detail", 0, 9)?, project: args.get("project").and_then(Value::as_bool).unwrap_or(false) },
         "quad_sphere" => Primitive::QuadSphere { radius: size, divisions: int(args, "detail", 16, 1024)?.max(1) },
         // Built with its layer by add_primitive; here only so the kind is known (a placeholder mesh is replaced).
-        "head" => Primitive::Icosahedron { radius: size, subdivisions: 0, project: true },
+        "head" | "triplanar" => Primitive::Icosahedron { radius: size, subdivisions: 0, project: true },
         other => return Err(CommandError::new("bad_arguments", format!("unknown kind {other}; use one of {}", Primitive::KINDS.join(", ")))),
     };
     Ok((primitive.build(), kind.to_string()))

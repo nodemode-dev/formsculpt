@@ -116,6 +116,128 @@ pub fn silhouette_mesh(front: Option<&[glam::Vec2]>, side: Option<&[glam::Vec2]>
     Ok(mesh)
 }
 
+/// The solid a triplanar's masks describe: a point is inside where it projects inside the masked part of all three
+/// planes (masks of 0.5 and above), each plane read as the grid it was made as, from its own corner and edges, so the
+/// planes may have been moved or turned together. The masks are bilinear between grid points and scaled to roughly a
+/// distance (half a cell across the mask's rim) so `blend`, a fraction of the solid's size, rounds where they meet.
+pub fn triplanar_solid(mesh: &Mesh, mask: &[f32], blend: f32, resolution: u32) -> Result<Mesh, String> {
+    let n = fsc_core::triplanar::divisions(mesh).ok_or("this object is no longer three plane grids (its topology changed), so it cannot be read as a triplanar")?;
+    let side = (n + 1) as usize;
+    let pos = |i: usize| Vec3::from_array(mesh.positions[i]);
+    // Each plane: its corner, the step along a row and along a column, and its normal.
+    let frames: Vec<(usize, Vec3, Vec3, Vec3, Vec3)> = (0..3)
+        .map(|k| {
+            let base = k * side * side;
+            let o = pos(base);
+            let du = pos(base + 1) - o;
+            let dv = pos(base + side) - o;
+            (base, o, du, dv, du.cross(dv).normalize_or_zero())
+        })
+        .collect();
+    if frames.iter().any(|f| f.4 == Vec3::ZERO) {
+        return Err("a triplanar plane has collapsed".into());
+    }
+    for (k, name) in ["front", "side", "top"].iter().enumerate() {
+        if !(0..side * side).any(|i| mask.get(k * side * side + i).copied().unwrap_or(0.0) >= 0.5) {
+            return Err(format!("the {name} plane has nothing masked: mask a shape on each of the three planes"));
+        }
+    }
+    let cell = frames.iter().map(|f| f.2.length().min(f.3.length())).fold(f32::INFINITY, f32::min).max(1e-6);
+    // Each plane's mask as a signed distance in world units, per grid point (negative inside, mask 0.5 and above). The
+    // mask values alone are not distances, and the rounding blend, a share of the solid's size, outweighed them once
+    // the planes were turned and the bounds grew. Points next to the other side start at the fraction of the way to
+    // where the mask crosses 0.5 along that edge (so the outline sits between grid points, not on them, which a plain
+    // inside test left as terraces); a two-pass chamfer (steps 1 and the square root of 2) carries it to the rest.
+    let sdf: Vec<f32> = {
+        let mut out = vec![0.0f32; mask.len().min(3 * side * side)];
+        for (k, f) in frames.iter().enumerate() {
+            let step = f.2.length().min(f.3.length());
+            let mv: Vec<f32> = (0..side * side).map(|i| mask.get(k * side * side + i).copied().unwrap_or(0.0)).collect();
+            let inside: Vec<bool> = mv.iter().map(|&m| m >= 0.5).collect();
+            {
+                let mut d = vec![f32::INFINITY; side * side];
+                for y in 0..side {
+                    for x in 0..side {
+                        let i = y * side + x;
+                        for (nx, ny) in [(x.wrapping_sub(1), y), (x + 1, y), (x, y.wrapping_sub(1)), (x, y + 1)] {
+                            if nx >= side || ny >= side {
+                                continue;
+                            }
+                            let j = ny * side + nx;
+                            if inside[j] != inside[i] {
+                                let t = ((mv[i] - 0.5) / (mv[i] - mv[j])).clamp(0.0, 1.0);
+                                d[i] = d[i].min(t);
+                            }
+                        }
+                    }
+                }
+                let diag = std::f32::consts::SQRT_2;
+                for y in 0..side {
+                    for x in 0..side {
+                        let i = y * side + x;
+                        let mut v = d[i];
+                        if x > 0 { v = v.min(d[i - 1] + 1.0); }
+                        if y > 0 { v = v.min(d[i - side] + 1.0); }
+                        if x > 0 && y > 0 { v = v.min(d[i - side - 1] + diag); }
+                        if x + 1 < side && y > 0 { v = v.min(d[i - side + 1] + diag); }
+                        d[i] = v;
+                    }
+                }
+                for y in (0..side).rev() {
+                    for x in (0..side).rev() {
+                        let i = y * side + x;
+                        let mut v = d[i];
+                        if x + 1 < side { v = v.min(d[i + 1] + 1.0); }
+                        if y + 1 < side { v = v.min(d[i + side] + 1.0); }
+                        if x + 1 < side && y + 1 < side { v = v.min(d[i + side + 1] + diag); }
+                        if x > 0 && y + 1 < side { v = v.min(d[i + side - 1] + diag); }
+                        d[i] = v;
+                    }
+                }
+                for (i, &s) in inside.iter().enumerate() {
+                    // Nothing on the other side at all leaves the distance infinite: the whole plane is one side.
+                    let v = if d[i].is_finite() { d[i] * step } else { side as f32 * step };
+                    out[k * side * side + i] = if s { -v } else { v };
+                }
+            }
+        }
+        out
+    };
+    let sample = |(base, o, du, dv, nrm): &(usize, Vec3, Vec3, Vec3, Vec3), p: Vec3| -> f32 {
+        // Coordinates in grid steps (solving against the two edge steps in the plane).
+        let q = p - *o;
+        let q = q - *nrm * q.dot(*nrm);
+        let (uu, uv, vv) = (du.dot(*du), du.dot(*dv), dv.dot(*dv));
+        let (qu, qv) = (q.dot(*du), q.dot(*dv));
+        let det = (uu * vv - uv * uv).max(1e-12);
+        let (a, b) = ((qu * vv - qv * uv) / det, (qv * uu - qu * uv) / det);
+        // Outside the plane's square: outside the solid, by at least the distance past the square's edge.
+        let past = (-a).max(-b).max(a - n as f32).max(b - n as f32);
+        if past > 0.0 {
+            return (past + 1.0) * cell;
+        }
+        let (i, j) = ((a.floor() as usize).min(side - 2), (b.floor() as usize).min(side - 2));
+        let (fa, fb) = (a - i as f32, b - j as f32);
+        let m = |x: usize, y: usize| sdf.get(base + y * side + x).copied().unwrap_or(cell);
+        m(i, j) * (1.0 - fa) * (1.0 - fb) + m(i + 1, j) * fa * (1.0 - fb) + m(i, j + 1) * (1.0 - fa) * fb + m(i + 1, j + 1) * fa * fb
+    };
+    let mut bounds = Aabb::EMPTY;
+    for p in &mesh.positions {
+        bounds.grow(Vec3::from_array(*p));
+    }
+    let size = bounds.extent().max_element().max(1e-4);
+    bounds.grow(bounds.min - Vec3::splat(size * 0.05));
+    bounds.grow(bounds.max + Vec3::splat(size * 0.05));
+    let k = blend.clamp(0.0, 0.5) * size;
+    let field = |p: Vec3| -> f32 { frames.iter().map(|f| sample(f, p)).reduce(|a, b| -smin(-a, -b, k)).unwrap_or(f32::INFINITY) };
+    let (mut solid, _) = crate::manifold::split_nonmanifold(&implicit_mesh(bounds, resolution, field)?);
+    if solid.indices.is_empty() {
+        return Err("the three masks do not overlap anywhere: mask a shape on each plane".into());
+    }
+    solid.quads = true;
+    Ok(solid)
+}
+
 pub fn skeleton_mesh(balls: &[Ball], links: &[(usize, usize)], blend: f32, resolution: u32) -> Result<Mesh, String> {
     if balls.is_empty() {
         return Err("give at least one sphere".into());
