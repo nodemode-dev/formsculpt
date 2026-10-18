@@ -2,6 +2,23 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.92.0 · 2026-10-18
+
+### Added
+
+- Import and export options in the File panel, used both ways:
+  - File scale: multiply the size (for example 100 to go from metres to centimetres).
+  - File up axis: Z up for apps such as Blender, so a model leaves standing up there and arrives standing up here. It applies to OBJ, STL, PLY and 3MF on export; GLB and glTF are always Y up, and FBX and USD say Y up in the file for the other app to follow.
+  - Export triangles: write triangles where OBJ would keep quads.
+  - Import as one object: join every part of a file into one object.
+- For agents: `import_mesh` takes `scale`, `up_axis` and `merge`; `export_mesh` takes `scale`, `up_axis` and `triangulate`; both say what they applied.
+- 1316 interface strings in every language.
+
+### Notes
+
+- The options also work with the browser engine.
+- GoZ for ZBrush is still waiting: Maxon's GoZ SDK documentation gives no licence, and its downloads page could not be read from here.
+
 ## 0.91.0 · 2026-10-18
 
 ### Added
