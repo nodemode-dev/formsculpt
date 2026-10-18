@@ -2,6 +2,31 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.83.0 · 2026-10-18
+
+### Changed
+
+- The ZBrush layout now behaves like ZBrush, not just looks like it:
+  - Holding a key during a stroke swaps the tool for that stroke: Shift smooths, Ctrl masks, Alt inverts the brush (Zsub while Zadd is on). The tool comes back when you let go.
+  - Alt+click on an object selects it. Alt+drag on the background moves the view; let go of Alt mid-drag and it zooms. Shift+drag on the background turns the view and snaps it to the nearest side view when you let go.
+  - Ctrl+click on the background inverts the mask, Ctrl+drag on the background clears it, and Ctrl+click on the model blurs the mask.
+  - The left shelf shows the current stroke, alpha and material as thumbnails. Each opens a pop-up of thumbnails, also from F3, F4 and F6 (F2 for the brush).
+  - B opens the brush pop-up; the next two letters pick a brush by its short code, as in ZBrush (B, S, M for Smooth).
+  - Space opens the QuickMenu at the cursor: the four thumbnails, Draw Size, Z Intensity, Zadd and Zsub. [ and ] change Draw Size in steps.
+  - The SubTool list keeps a fixed place in the tray, so the window no longer shifts as it opens.
+- The Nomad-style layout gains Nomad's own controls:
+  - Sub in the side bar, beside Sym, inverts the brush.
+  - A Face Group button in the quick bar.
+  - K opens the search.
+  - On a touch screen, a two-finger tap undoes and a three-finger tap redoes.
+- The window opens directly in the chosen layout, without redrawing after the first frame.
+- Thumbnails are drawn by formsculptor itself: alpha thumbnails come from the same code as the engine's alphas, and material spheres use the viewport's matcap shading (lit materials are marked as an approximation).
+- 1267 interface strings in every language.
+
+### Notes
+
+- Still left out because formsculptor has no counterpart yet, or the behaviour could not be confirmed from two sources: LightBox, Focal Shift, RGB Intensity, the F5 texture pop-up, Nomad's gesture options (the finger that always smooths, the one-tap mask shortcuts, the three-finger radius and intensity drag) and dragging the navigation cube.
+
 ## 0.82.0 · 2026-10-18
 
 ### Added
