@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.94.0 · 2026-10-18
+
+### Added
+
+- LightBox in the ZBrush layout, as ZBrush has it: press comma (or the LightBox button on the top shelf) and a strip of thumbnails opens over the bottom of the canvas. Click a thumbnail to select it, double-click (or press Enter) to load it; Escape closes it.
+  - Projects: type a name and Save to LightBox to keep the scene with a picture of it; double-click one to open it. They are kept in your formsculptor folder, under LightBox/Project.
+  - Tool (every primitive, each with its own drawing), Brush, Stroke, Alpha and Material.
+- 1330 interface strings in every language.
+
+### Notes
+
+- Projects need the engine service, so they are not on the browser-only build.
+
 ## 0.93.0 · 2026-10-18
 
 ### Added
