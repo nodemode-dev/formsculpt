@@ -112,6 +112,9 @@ interface Shell {
   fileButtons: HTMLButtonElement[];
   fileInput: HTMLInputElement;
   exportFormat: HTMLSelectElement;
+  realSize: HTMLInputElement;
+  realAxis: HTMLSelectElement;
+  renderSize: HTMLSelectElement;
   nodemode: HTMLInputElement;
   objectButtons: HTMLButtonElement[];
   deformAxis: HTMLSelectElement;
@@ -500,6 +503,7 @@ const FILE_ACTIONS: [string, string][] = [
   ['save', 'Save'],
   ['export', 'Export'],
   ['print', 'Print check'],
+  ['real_size', 'Set real size'],
   ['repair', 'Repair'],
   ['recover', 'Recover'],
   ['nodemode', 'Send to NodeMode'],
@@ -716,8 +720,13 @@ function buildShell(root: HTMLElement): Shell {
     // storage blocked; the default address stands
   }
   const nodemode = input('url', { value: remembered || 'http://localhost:8000', 'aria-label': 'NodeMode address', spellcheck: 'false' });
+  // Real-world scale: how big the active object really is, which sets the scene's millimetres per unit for Print
+  // check and STL and 3MF export (empty clears it). Render size: Path render's picture, up to 4K.
+  const realSize = input('number', { min: '0', step: '0.1', placeholder: 'mm', 'aria-label': 'Real size (mm)' });
+  const realAxis = choices('Real size axis', [['longest', 'Longest side'], ['y', 'Height (Y)'], ['x', 'Width (X)'], ['z', 'Depth (Z)']]);
+  const renderSize = choices('Render size', [['768x768', 'Square 768'], ['1920x1080', '1080p (1920 x 1080)'], ['2560x1440', '1440p (2560 x 1440)'], ['3840x2160', '4K UHD (3840 x 2160)'], ['2048x2048', 'Square 2048'], ['4096x4096', 'Square 4096']]);
   const fileFields = el('div', 'fields');
-  fileFields.append(field('Export format', exportFormat), field('NodeMode address', nodemode));
+  fileFields.append(field('Export format', exportFormat), field('Real size (mm)', realSize), field('Real size axis', realAxis), field('Render size', renderSize), field('NodeMode address', nodemode));
   panel.append(fileFields);
   panel.append(el('h2', 'gap', 'Add'));
   // Two columns: nine shapes, some with long names (Icosahedron, and longer in some languages).
@@ -1683,7 +1692,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -5702,8 +5711,11 @@ class SceneView {
     }
     if (action === 'render') {
       const shading = this.shell.shading.value === 'pbr' ? 'pbr' : 'clay';
-      void this.download(`/api/engine/view?render=path&samples=64&bounces=4&width=768&height=768&shading=${shading}&denoise=true`, 'render.png');
-      this.note('Path rendering 64 samples per pixel; the picture downloads when it is done');
+      // Larger pictures take fewer samples (the denoiser cleans them), so 4K stays near a minute rather than five.
+      const [w, h] = this.shell.renderSize.value.split('x').map(Number);
+      const samples = w * h > 4_000_000 ? 16 : w * h > 1_500_000 ? 32 : 64;
+      void this.download(`/api/engine/view?render=path&samples=${samples}&bounces=4&width=${w}&height=${h}&shading=${shading}&denoise=true`, `render-${w}x${h}.png`);
+      this.note(t('Path rendering {samples} samples per pixel at {size}; the picture downloads when it is done').replace('{samples}', String(samples)).replace('{size}', `${w} x ${h}`));
       return;
     }
     if (action === 'substance') {
@@ -5780,6 +5792,17 @@ class SceneView {
       const size = r.size_mm.map((v) => v.toFixed(1)).join(' x ');
       const wall = r.wall_mm.min === null ? 'no wall samples' : `thinnest wall ${r.wall_mm.min.toFixed(2)} mm`;
       this.note(r.printable ? `Printable: ${size} mm, ${Math.round(r.volume_mm3).toLocaleString('en-US')} mm3, ${wall}` : `Not printable: ${r.problems.join('; ')}`);
+    } else if (action === 'real_size') {
+      // The active object's real size sets the scene's scale; an empty field clears it. Nothing moves.
+      const mm = Number(this.shell.realSize.value);
+      const args = this.shell.realSize.value.trim() === '' || !(mm > 0) ? { mm_per_unit: null } : { id, size_mm: mm, axis: this.shell.realAxis.value };
+      const reply = await dispatch<{ mm_per_unit: number | null; objects: { id: number; size_mm: number[] | null }[] }>('set_real_size', args);
+      if (!reply.ok) {
+        this.note(reply.error.message);
+        return;
+      }
+      const mine = reply.result.objects.find((o) => o.id === id)?.size_mm;
+      this.note(reply.result.mm_per_unit === null ? t('Real size cleared: exports are in scene units') : t('Real size set: this object is {size} mm; Print check and STL and 3MF exports use it').replace('{size}', (mine ?? []).map((v) => v.toFixed(1)).join(' x ')));
     }
   }
 

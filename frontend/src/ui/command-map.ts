@@ -15,6 +15,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     save: c('file.save', 'Save Project', { keys: ['Mod+S'], icon: 'save' }),
     export: c('file.export', 'Export', { keys: ['Mod+E'] }),
     print: n('file.print_check', 'Print Check'),
+    real_size: n('file.real_size', 'Set Real Size'),
     repair: n('file.repair', 'Repair Mesh'),
     recover: c('file.recover', 'Recover Autosave'),
     nodemode: c('file.send_nodemode', 'Send to NodeMode'),
