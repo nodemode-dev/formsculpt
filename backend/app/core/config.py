@@ -19,6 +19,14 @@ def dist_dir() -> Path | None:
     return path if (path / "index.html").is_file() else None
 
 
+def blender_addon_dir() -> Path | None:
+    """The Blender add-on's source folder: beside the frozen engine when FSC_INTEGRATIONS says so, else the repo's."""
+    configured = os.environ.get("FSC_INTEGRATIONS")
+    root = Path(configured) if configured else REPO / "integrations"
+    path = root / "blender" / "formsculptor_link"
+    return path if (path / "blender_manifest.toml").is_file() else None
+
+
 def engine_port() -> int:
     raw = os.environ.get("FSC_PORT", "").strip()
     return int(raw) if raw.isdigit() and int(raw) > 0 else BACKEND_PORT

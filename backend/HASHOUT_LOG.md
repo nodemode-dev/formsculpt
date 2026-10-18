@@ -17,7 +17,7 @@ backend/
   app/main.py              FastAPI app, middleware, routers, static mount
   app/core/config.py       names, ports, dist_dir, is_desktop, cors_origins
   app/core/isolation.py    CrossOriginIsolation ASGI middleware
-  app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module)
+  app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module), /api/integrations/blender
   app/routers/engine.py    /api/engine/catalogue, /api/engine/dispatch, /api/engine/mesh/{id}
   app/services/engine.py   the one fsc_engine.Engine, status, dispatch, mesh_payload (FSCM binary)
 ```
@@ -260,3 +260,9 @@ The path render's new denoise argument is passed through /api/engine/view as a b
 - kind: rationale
 - logged: v0.90.0 · 2026-10-18
 The engine renders up to 4096 by 4096 now (native side log, 0.90.0), so the view route's width and height go to le=4096 for the window's 4K Render size. Removed: `width: int = Query(640, ge=64, le=2048), height: int = Query(640, ge=64, le=2048)`.
+
+### routers/system.py · the Blender add-on download
+- refers-to: app/routers/system.py :: blender_addon (new, GET /api/integrations/blender); app/core/config.py :: blender_addon_dir (new); formsculptor_engine.py :: main (FSC_INTEGRATIONS); setup/freeze_backend (the add-on folder as data)
+- kind: rationale
+- logged: v0.91.0 · 2026-10-18
+The live link's Blender half (native side log, 0.91.0) lives in integrations/blender/formsculptor_link. The window's File panel offers it, so the service zips that folder on request (the manifest and __init__.py at the zip's root, the layout Blender's own extension build writes, skipping __pycache__) as formsculptor_link-<version>.zip, or answers 404 when the folder is not in the build. The frozen engine carries the folder as PyInstaller data under integrations/ and points FSC_INTEGRATIONS at it, as it does FSC_DIST for the frontend. The add-on itself talks to /api/engine/dispatch, which every write already passes through, so a Blender push bumps the epoch and the window refreshes as it does for an agent. Checked: the served zip installed into bpy 5.2.2 and ran the whole headless link check; the window downloaded it.

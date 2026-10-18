@@ -5,6 +5,7 @@
 ## Repo layout notes
 
 - `assets/` is repo-level art (the README logo and the desktop icon source), not app runtime assets: runtime files live in `frontend/public/` and `frontend/src/`.
+- `integrations/blender/formsculptor_link/` is the Blender Live Link add-on (an extension: `blender_manifest.toml` and `__init__.py`). It only calls `link_pull` and `link_push` over `/api/engine/dispatch`; the service zips it at `/api/integrations/blender` and the desktop freeze bundles it. Its manifest `version` follows the release.
 - `native/crates/fsc-commands` is the only place a command is declared. The UI, the MCP server and the agent skills read its catalogue; never add a tool name anywhere else. The one exception is window-only service commands that must never reach MCP (`terminal.*`, `claudecode.*`, `chat.*`, `agents.prefs`), which live on the service's bus in `backend/app/services/`.
 - `./build_app` (and `build_app.bat`) builds the installable desktop app start to finish; `./formsculptor app` runs it.
 - A new interface string lands in every table under `frontend/src/i18n/` in the same change (`./formsculptor i18n extract`, then `check`).

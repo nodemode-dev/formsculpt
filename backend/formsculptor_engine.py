@@ -96,6 +96,9 @@ def main() -> int:
     bundled = os.path.join(resource_dir(), "frontend_dist")
     if os.path.isdir(bundled):
         os.environ.setdefault("FSC_DIST", bundled)
+    integrations = os.path.join(resource_dir(), "integrations")
+    if os.path.isdir(integrations):
+        os.environ.setdefault("FSC_INTEGRATIONS", integrations)
     os.environ.setdefault("FSC_DESKTOP", "1")
     import uvicorn
 

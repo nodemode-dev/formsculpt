@@ -19,6 +19,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     repair: n('file.repair', 'Repair Mesh'),
     recover: c('file.recover', 'Recover Autosave'),
     nodemode: c('file.send_nodemode', 'Send to NodeMode'),
+    blender: c('file.blender_addon', 'Get Blender Add-on'),
   },
   add: {
     sphere: c('add.sphere', 'Add Sphere', { icon: 'cube' }),

@@ -507,6 +507,7 @@ const FILE_ACTIONS: [string, string][] = [
   ['repair', 'Repair'],
   ['recover', 'Recover'],
   ['nodemode', 'Send to NodeMode'],
+  ['blender', 'Blender add-on'],
 ];
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
@@ -5778,6 +5779,11 @@ class SceneView {
       if (reply.ok) this.frameActive();
     } else if (action === 'nodemode') {
       await this.sendToNodeMode();
+    } else if (action === 'blender') {
+      // The live link's other half: Blender installs the zip, then its sidebar's formsculptor tab sends and receives.
+      if (await this.download('/api/integrations/blender', `formsculptor_link-${VERSION}.zip`)) {
+        this.note(t('In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there'));
+      }
     } else if (id === null) {
       this.note('Select an object first');
     } else if (action === 'repair') {
@@ -5823,23 +5829,26 @@ class SceneView {
     await this.refresh();
   }
 
-  private async download(path: string, name: string): Promise<void> {
+  /** Fetches and saves a file; true once it is saved (false on an error or a cancelled save dialog). */
+  private async download(path: string, name: string): Promise<boolean> {
     const result = await fetchFile(path);
     if (typeof result === 'string') {
       this.note(result);
-      return;
+      return false;
     }
     if (inDesktop) {
       try {
         const saved = await saveNative(result, name);
         this.note(saved ? `Saved ${saved}` : '');
+        return Boolean(saved);
       } catch (err) {
         this.note(`Could not save: ${String(err)}`);
       }
-      return;
+      return false;
     }
     saveBlob(result, name);
     this.note(`Saved ${name}`);
+    return true;
   }
 
   private async sendToNodeMode(): Promise<void> {
