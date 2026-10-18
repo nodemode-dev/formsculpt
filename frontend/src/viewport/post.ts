@@ -14,14 +14,83 @@ export interface PostSettings {
   /** Screen-space reflections: lit surfaces reflect what the frame shows, by their reflectivity (the scene target's
    * alpha, which lit shading writes while this is on). */
   ssr: boolean;
+  /** Bounce light: one diffuse bounce gathered from what the frame shows, so a coloured surface tints its neighbours. */
+  ssgi: boolean;
+  /** Bounce light's strength: 1 is the estimate as gathered; above it exaggerates the bleeding, as the paper's boost does. */
+  ssgiStrength: number;
 }
 
-export const NO_POST: PostSettings = { ssao: false, bloom: false, dof: false, vignette: false, grain: false, ssr: false };
+export const NO_POST: PostSettings = { ssao: false, bloom: false, dof: false, vignette: false, grain: false, ssr: false, ssgi: false, ssgiStrength: 2 };
 
 /** Whether any effect needs the offscreen pipeline. */
 export function anyPost(p: PostSettings): boolean {
-  return p.ssao || p.bloom || p.dof || p.vignette || p.grain || p.ssr;
+  return p.ssao || p.bloom || p.dof || p.vignette || p.grain || p.ssr || p.ssgi;
 }
+
+// One bounce of diffuse light gathered in screen space, after Mara, McGuire, Nowrouzezahrai and Luebke, "Deep G-Buffers
+// for Stable Global Illumination Approximation" (HPG 2016), section 3.2, on one depth layer: samples on a spiral around
+// the pixel, each visible point Y lighting the receiver X by its colour times the cosine at X, kept only where Y faces X
+// (w.nX > 0 and w.nY < 0); E = 2 / N times the sum, which folds in the paper's confidence M / N with no light probe to
+// fall back to. Unlike the paper, a sample farther than the gather radius in view space fades out, since a single layer
+// cannot tell a far object that only looks near on screen.
+const GI_FS = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uColor;
+uniform sampler2D uDepth;
+uniform mat4 uProj;
+uniform mat4 uInvProj;
+uniform float uReach;
+out vec4 outColor;
+vec3 viewPos(vec2 uv) {
+  float d = texture(uDepth, uv).r;
+  vec4 p = uInvProj * vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+  return p.xyz / p.w;
+}
+vec3 normalAt(vec2 uv) {
+  vec2 t = 4.0 / vec2(textureSize(uDepth, 0));
+  vec3 c = viewPos(uv);
+  vec3 l = viewPos(uv - vec2(t.x, 0.0));
+  vec3 r = viewPos(uv + vec2(t.x, 0.0));
+  vec3 d = viewPos(uv - vec2(0.0, t.y));
+  vec3 u = viewPos(uv + vec2(0.0, t.y));
+  vec3 dx = abs(r.z - c.z) < abs(c.z - l.z) ? r - c : c - l;
+  vec3 dy = abs(u.z - c.z) < abs(c.z - d.z) ? u - c : c - d;
+  vec3 n = normalize(cross(dx, dy));
+  return dot(n, c) > 0.0 ? -n : n;
+}
+void main() {
+  if (texture(uDepth, vUv).r >= 1.0) { outColor = vec4(0.0); return; }
+  vec3 p = viewPos(vUv);
+  vec3 n = normalAt(vUv);
+  // The gather radius: a share of the view distance in view space, as a radius on screen at this depth.
+  float reach = uReach * 0.3;
+  vec2 rad = min(vec2(uProj[0][0], uProj[1][1]) * reach / max(-p.z, 1e-4) * 0.5, vec2(0.25));
+  // The spiral turns by a 4 by 4 interleaved pattern, which the composite's 4 by 4 gather cancels.
+  vec2 cell = mod(floor(gl_FragCoord.xy), 4.0);
+  float phi = (cell.x + cell.y * 4.0 + 0.5) / 16.0 * 6.2831853;
+  const int N = 16;
+  const float TURNS = 7.0;
+  vec3 e = vec3(0.0);
+  for (int i = 0; i < N; i++) {
+    float k = (float(i) + 0.5) / float(N);
+    float a = 6.2831853 * k * TURNS + phi;
+    vec2 uv = vUv + vec2(cos(a), sin(a)) * rad * k;
+    if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) continue;
+    if (texture(uDepth, uv).r >= 1.0) continue;
+    vec3 y = viewPos(uv);
+    vec3 v = y - p;
+    float len = length(v);
+    if (len < 1e-5) continue;
+    vec3 w = v / len;
+    float cx = dot(w, n);
+    if (cx <= 0.0) continue;
+    if (dot(w, normalAt(uv)) >= 0.0) continue;
+    float fall = 1.0 - smoothstep(reach, reach * 1.5, len);
+    e += pow(texture(uColor, uv).rgb, vec3(2.2)) * cx * fall;
+  }
+  outColor = vec4(e * 2.0 / float(N), 1.0);
+}`;
 
 const SSR_FS = `#version 300 es
 precision highp float;
@@ -204,9 +273,12 @@ uniform sampler2D uDepth;
 uniform sampler2D uAo;
 uniform sampler2D uBloom;
 uniform sampler2D uSsr;
+uniform sampler2D uGi;
 uniform mat4 uInvProj;
 uniform vec2 uTexel;
 uniform float uSsrOn;
+uniform float uGiOn;
+uniform float uGiStrength;
 uniform float uSsao;
 uniform float uBloomOn;
 uniform float uDof;
@@ -223,6 +295,26 @@ float viewDepth(vec2 uv) {
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
   vec3 c = texture(uColor, vUv).rgb;
+  if (uGiOn > 0.5 && texture(uDepth, vUv).r < 1.0) {
+    // Bounce light, found at half size, gathered over 4 by 4 weighted by depth so it does not cross outlines. The
+    // frame keeps no albedo, so the receiver's own hue at 0.8 stands in for it (the paper multiplies by albedo). The
+    // strength is 1 for the estimate as gathered, which is faint because without a light probe the share of samples
+    // that found nothing counts as no light; more exaggerates the bleeding, as the paper's boost control does.
+    float z0 = viewDepth(vUv);
+    vec3 g = vec3(0.0);
+    float total = 0.0;
+    for (int x = -2; x <= 1; x++)
+      for (int y = -2; y <= 1; y++) {
+        vec2 uv = vUv + (vec2(x, y) + 0.5) * uTexel * 2.0;
+        float w = exp(-abs(viewDepth(uv) - z0) / max(z0 * 0.02, 1e-4));
+        g += texture(uGi, uv).rgb * w;
+        total += w;
+      }
+    g /= max(total, 1e-4);
+    vec3 lin = pow(c, vec3(2.2));
+    vec3 albedo = lin / max(max(lin.r, max(lin.g, lin.b)), 0.04) * 0.8;
+    c = pow(lin + g * albedo * uGiStrength, vec3(1.0 / 2.2));
+  }
   if (uSsrOn > 0.5) {
     // Reflections, found at half size, gathered over 2 by 2 so their stepping pattern smooths out; each pixel takes
     // them by its own reflectivity (alpha), so a rough or matcap surface beside a mirror stays as it was.
@@ -307,6 +399,8 @@ function texture(gl: WebGL2RenderingContext, w: number, h: number): WebGLTexture
 export class PostFx {
   private ssr: WebGLProgram;
   private reflections: Target | null = null;
+  private gi: WebGLProgram;
+  private bounce: Target | null = null;
   private ssao: WebGLProgram;
   private bright: WebGLProgram;
   private blur: WebGLProgram;
@@ -319,6 +413,7 @@ export class PostFx {
 
   constructor(private gl: WebGL2RenderingContext) {
     this.ssr = compile(gl, SSR_FS);
+    this.gi = compile(gl, GI_FS);
     this.ssao = compile(gl, SSAO_FS);
     this.bright = compile(gl, BRIGHT_FS);
     this.blur = compile(gl, BLUR_FS);
@@ -433,6 +528,17 @@ export class PostFx {
       gl.uniform1f(gl.getUniformLocation(this.ssr, 'uReach'), focus);
       this.pass(this.ssr, this.reflections, this.reflections.w, this.reflections.h);
     }
+    if (settings.ssgi) {
+      // At half size: bounce light is soft, and the composite gathers it back up.
+      this.bounce = this.target(this.bounce, Math.max(1, w >> 1), Math.max(1, h >> 1));
+      gl.useProgram(this.gi);
+      this.bind(this.gi, 'uColor', 0, s.color);
+      this.bind(this.gi, 'uDepth', 1, s.depth);
+      gl.uniformMatrix4fv(gl.getUniformLocation(this.gi, 'uProj'), false, proj);
+      gl.uniformMatrix4fv(gl.getUniformLocation(this.gi, 'uInvProj'), false, invProj);
+      gl.uniform1f(gl.getUniformLocation(this.gi, 'uReach'), focus);
+      this.pass(this.gi, this.bounce, this.bounce.w, this.bounce.h);
+    }
     if (settings.bloom) {
       const bw = Math.max(1, w >> 2);
       const bh = Math.max(1, h >> 2);
@@ -459,6 +565,9 @@ export class PostFx {
     this.bind(c, 'uBloom', 3, this.bloomA?.tex ?? s.color);
     this.bind(c, 'uSsr', 4, this.reflections?.tex ?? s.color);
     gl.uniform1f(gl.getUniformLocation(c, 'uSsrOn'), settings.ssr ? 1 : 0);
+    this.bind(c, 'uGi', 5, this.bounce?.tex ?? s.color);
+    gl.uniform1f(gl.getUniformLocation(c, 'uGiOn'), settings.ssgi ? 1 : 0);
+    gl.uniform1f(gl.getUniformLocation(c, 'uGiStrength'), settings.ssgiStrength);
     gl.uniformMatrix4fv(gl.getUniformLocation(c, 'uInvProj'), false, invProj);
     gl.uniform2f(gl.getUniformLocation(c, 'uTexel'), 1 / w, 1 / h);
     gl.uniform1f(gl.getUniformLocation(c, 'uSsao'), settings.ssao ? 1 : 0);
