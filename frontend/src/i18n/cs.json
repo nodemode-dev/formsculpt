@@ -1303,5 +1303,10 @@
  "Square 2048": "Čtverec 2048",
  "Square 4096": "Čtverec 4096",
  "Square 768": "Čtverec 768",
- "Width (X)": "Šířka (X)"
+ "Width (X)": "Šířka (X)",
+ "Blender add-on": "Doplněk pro Blender",
+ "Get Blender Add-on": "Získat doplněk pro Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "V Blenderu: Předvolby, Rozšíření, Instalovat z disku, pak karta formsculptor v postranním panelu. Propojené objekty se zde aktualizují, jak se mění tam",
+ "Live Link Read": "Živé propojení: čtení",
+ "Live Link Write": "Živé propojení: zápis"
 }

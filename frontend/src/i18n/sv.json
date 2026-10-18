@@ -1303,5 +1303,10 @@
  "Square 2048": "Kvadrat 2048",
  "Square 4096": "Kvadrat 4096",
  "Square 768": "Kvadrat 768",
- "Width (X)": "Bredd (X)"
+ "Width (X)": "Bredd (X)",
+ "Blender add-on": "Blender-tillägg",
+ "Get Blender Add-on": "Hämta Blender-tillägg",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "I Blender: Inställningar, Tillägg, Installera från disk, sedan fliken formsculptor i sidopanelen. Länkade objekt uppdateras här när de ändras där",
+ "Live Link Read": "Direktlänk: läs",
+ "Live Link Write": "Direktlänk: skriv"
 }

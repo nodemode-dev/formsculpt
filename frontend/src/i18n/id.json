@@ -1303,5 +1303,10 @@
  "Square 2048": "Persegi 2048",
  "Square 4096": "Persegi 4096",
  "Square 768": "Persegi 768",
- "Width (X)": "Lebar (X)"
+ "Width (X)": "Lebar (X)",
+ "Blender add-on": "Add-on Blender",
+ "Get Blender Add-on": "Dapatkan add-on Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Di Blender: Preferensi, Ekstensi, Pasang dari Disk, lalu tab formsculptor di bilah samping. Objek tertaut diperbarui di sini saat berubah di sana",
+ "Live Link Read": "Tautan langsung: baca",
+ "Live Link Write": "Tautan langsung: tulis"
 }

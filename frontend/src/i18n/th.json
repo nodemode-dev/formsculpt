@@ -1303,5 +1303,10 @@
  "Square 2048": "สี่เหลี่ยมจัตุรัส 2048",
  "Square 4096": "สี่เหลี่ยมจัตุรัส 4096",
  "Square 768": "สี่เหลี่ยมจัตุรัส 768",
- "Width (X)": "ความกว้าง (X)"
+ "Width (X)": "ความกว้าง (X)",
+ "Blender add-on": "ส่วนเสริม Blender",
+ "Get Blender Add-on": "รับส่วนเสริม Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "ใน Blender: การตั้งค่า, ส่วนขยาย, ติดตั้งจากดิสก์ แล้วแท็บ formsculptor ในแถบด้านข้าง วัตถุที่ลิงก์ไว้จะอัปเดตที่นี่เมื่อเปลี่ยนที่นั่น",
+ "Live Link Read": "อ่านลิงก์สด",
+ "Live Link Write": "เขียนลิงก์สด"
 }

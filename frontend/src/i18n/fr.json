@@ -1303,5 +1303,10 @@
  "Square 2048": "Carré 2048",
  "Square 4096": "Carré 4096",
  "Square 768": "Carré 768",
- "Width (X)": "Largeur (X)"
+ "Width (X)": "Largeur (X)",
+ "Blender add-on": "Module Blender",
+ "Get Blender Add-on": "Obtenir le module Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Dans Blender : Préférences, Extensions, Installer depuis le disque, puis l'onglet formsculptor de la barre latérale. Les objets liés se mettent à jour ici à mesure qu'ils changent là-bas",
+ "Live Link Read": "Lien direct : lecture",
+ "Live Link Write": "Lien direct : écriture"
 }

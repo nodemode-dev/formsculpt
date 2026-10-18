@@ -1303,5 +1303,10 @@
  "Square 2048": "정사각형 2048",
  "Square 4096": "정사각형 4096",
  "Square 768": "정사각형 768",
- "Width (X)": "너비 (X)"
+ "Width (X)": "너비 (X)",
+ "Blender add-on": "Blender 애드온",
+ "Get Blender Add-on": "Blender 애드온 받기",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blender에서: 환경 설정, 확장, 디스크에서 설치, 그다음 사이드바의 formsculptor 탭. 연결된 오브젝트는 그쪽에서 바뀌면 여기서도 업데이트됩니다",
+ "Live Link Read": "라이브 링크 읽기",
+ "Live Link Write": "라이브 링크 쓰기"
 }

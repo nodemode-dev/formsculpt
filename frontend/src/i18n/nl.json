@@ -1303,5 +1303,10 @@
  "Square 2048": "Vierkant 2048",
  "Square 4096": "Vierkant 4096",
  "Square 768": "Vierkant 768",
- "Width (X)": "Breedte (X)"
+ "Width (X)": "Breedte (X)",
+ "Blender add-on": "Blender-add-on",
+ "Get Blender Add-on": "Blender-add-on ophalen",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "In Blender: Voorkeuren, Extensies, Installeren vanaf schijf, dan het tabblad formsculptor in de zijbalk. Gekoppelde objecten worden hier bijgewerkt zodra ze daar veranderen",
+ "Live Link Read": "Live-koppeling lezen",
+ "Live Link Write": "Live-koppeling schrijven"
 }

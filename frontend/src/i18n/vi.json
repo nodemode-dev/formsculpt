@@ -1303,5 +1303,10 @@
  "Square 2048": "Vuông 2048",
  "Square 4096": "Vuông 4096",
  "Square 768": "Vuông 768",
- "Width (X)": "Chiều rộng (X)"
+ "Width (X)": "Chiều rộng (X)",
+ "Blender add-on": "Tiện ích Blender",
+ "Get Blender Add-on": "Tải tiện ích Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Trong Blender: Tùy chọn, Tiện ích mở rộng, Cài từ đĩa, rồi thẻ formsculptor ở thanh bên. Các đối tượng liên kết cập nhật ở đây khi chúng thay đổi ở đó",
+ "Live Link Read": "Đọc liên kết trực tiếp",
+ "Live Link Write": "Ghi liên kết trực tiếp"
 }

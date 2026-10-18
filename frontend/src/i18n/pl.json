@@ -1303,5 +1303,10 @@
  "Square 2048": "Kwadrat 2048",
  "Square 4096": "Kwadrat 4096",
  "Square 768": "Kwadrat 768",
- "Width (X)": "Szerokość (X)"
+ "Width (X)": "Szerokość (X)",
+ "Blender add-on": "Dodatek do Blendera",
+ "Get Blender Add-on": "Pobierz dodatek do Blendera",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "W Blenderze: Preferencje, Rozszerzenia, Zainstaluj z dysku, potem karta formsculptor na pasku bocznym. Połączone obiekty aktualizują się tutaj, gdy zmieniają się tam",
+ "Live Link Read": "Połączenie na żywo: odczyt",
+ "Live Link Write": "Połączenie na żywo: zapis"
 }

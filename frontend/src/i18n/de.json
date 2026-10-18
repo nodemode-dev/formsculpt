@@ -1303,5 +1303,10 @@
  "Square 2048": "Quadrat 2048",
  "Square 4096": "Quadrat 4096",
  "Square 768": "Quadrat 768",
- "Width (X)": "Breite (X)"
+ "Width (X)": "Breite (X)",
+ "Blender add-on": "Blender-Add-on",
+ "Get Blender Add-on": "Blender-Add-on holen",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "In Blender: Einstellungen, Erweiterungen, Von Datenträger installieren, dann der Reiter formsculptor in der Seitenleiste. Verknüpfte Objekte werden hier aktualisiert, sobald sie sich dort ändern",
+ "Live Link Read": "Live-Verbindung lesen",
+ "Live Link Write": "Live-Verbindung schreiben"
 }

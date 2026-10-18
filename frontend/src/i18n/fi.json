@@ -1303,5 +1303,10 @@
  "Square 2048": "Neliö 2048",
  "Square 4096": "Neliö 4096",
  "Square 768": "Neliö 768",
- "Width (X)": "Leveys (X)"
+ "Width (X)": "Leveys (X)",
+ "Blender add-on": "Blender-lisäosa",
+ "Get Blender Add-on": "Hae Blender-lisäosa",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blenderissä: Asetukset, Laajennukset, Asenna levyltä, sitten sivupalkin formsculptor-välilehti. Linkitetyt objektit päivittyvät täällä, kun ne muuttuvat siellä",
+ "Live Link Read": "Live-linkki: luku",
+ "Live Link Write": "Live-linkki: kirjoitus"
 }

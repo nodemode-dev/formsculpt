@@ -1303,5 +1303,10 @@
  "Square 2048": "Négyzet 2048",
  "Square 4096": "Négyzet 4096",
  "Square 768": "Négyzet 768",
- "Width (X)": "Szélesség (X)"
+ "Width (X)": "Szélesség (X)",
+ "Blender add-on": "Blender-bővítmény",
+ "Get Blender Add-on": "Blender-bővítmény letöltése",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "A Blenderben: Beállítások, Bővítmények, Telepítés lemezről, majd az oldalsáv formsculptor lapja. A csatolt objektumok itt frissülnek, ahogy ott változnak",
+ "Live Link Read": "Élő kapcsolat: olvasás",
+ "Live Link Write": "Élő kapcsolat: írás"
 }

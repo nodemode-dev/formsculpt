@@ -1303,5 +1303,10 @@
  "Square 2048": "Квадрат 2048",
  "Square 4096": "Квадрат 4096",
  "Square 768": "Квадрат 768",
- "Width (X)": "Ширина (X)"
+ "Width (X)": "Ширина (X)",
+ "Blender add-on": "Доповнення для Blender",
+ "Get Blender Add-on": "Отримати доповнення для Blender",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "У Blender: Налаштування, Розширення, Установити з диска, потім вкладка formsculptor на бічній панелі. Пов'язані об'єкти оновлюються тут, коли змінюються там",
+ "Live Link Read": "Жива зв'язка: читання",
+ "Live Link Write": "Жива зв'язка: запис"
 }

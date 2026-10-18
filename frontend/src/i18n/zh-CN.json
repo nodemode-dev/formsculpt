@@ -1303,5 +1303,10 @@
  "Square 2048": "正方形 2048",
  "Square 4096": "正方形 4096",
  "Square 768": "正方形 768",
- "Width (X)": "宽度 (X)"
+ "Width (X)": "宽度 (X)",
+ "Blender add-on": "Blender 插件",
+ "Get Blender Add-on": "获取 Blender 插件",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "在 Blender 中：偏好设置、扩展、从磁盘安装，然后打开侧边栏的 formsculptor 标签。链接的对象在那边改变时这里随之更新",
+ "Live Link Read": "实时链接读取",
+ "Live Link Write": "实时链接写入"
 }

@@ -1303,5 +1303,10 @@
  "Square 2048": "正方形 2048",
  "Square 4096": "正方形 4096",
  "Square 768": "正方形 768",
- "Width (X)": "幅 (X)"
+ "Width (X)": "幅 (X)",
+ "Blender add-on": "Blender アドオン",
+ "Get Blender Add-on": "Blender アドオンを入手",
+ "In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there": "Blender で: プリファレンス、エクステンション、ディスクからインストール、続いてサイドバーの formsculptor タブ。リンクしたオブジェクトはあちらで変わるとこちらも更新されます",
+ "Live Link Read": "ライブリンク読み取り",
+ "Live Link Write": "ライブリンク書き込み"
 }
