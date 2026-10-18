@@ -18,6 +18,7 @@ backend/
   app/core/config.py       names, ports, dist_dir, is_desktop, cors_origins
   app/core/isolation.py    CrossOriginIsolation ASGI middleware
   app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module), /api/integrations/blender
+  app/routers/lightbox.py  /api/lightbox/projects: LightBox's Project shelf (list, save with a picture, open, picture)
   app/routers/engine.py    /api/engine/catalogue, /api/engine/dispatch, /api/engine/mesh/{id}
   app/services/engine.py   the one fsc_engine.Engine, status, dispatch, mesh_payload (FSCM binary)
 ```
@@ -272,3 +273,10 @@ The live link's Blender half (native side log, 0.91.0) lives in integrations/ble
 - kind: rationale
 - logged: v0.92.0 · 2026-10-18
 The engine's import and export options (native side log, 0.92.0) reach the window's file routes as query parameters: POST /api/engine/import takes scale (gt 0, le 100000), up_axis (y or z) and merge; GET /api/engine/export takes scale, up_axis and triangulate. They default to the old behaviour, so the NodeMode route's export_bytes("scene.glb", None) and every other caller is unchanged; the service wrappers pass them on to the module's new keyword arguments. Removed: `async def import_file(file: UploadFile) -> dict:`, `return await run_in_threadpool(engine.import_bytes, name, data)`, `async def export_file(format: str = Query(...), ids: str | None = None) -> Response:` and `data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen)`, and in services/engine.py `def import_bytes(file_name: str, data: bytes) -> dict:` and `def export_bytes(file_name: str, ids: list[int] | None) -> bytes:` with their two module calls. Checked: export z at x2 gave a 4 by 4 by 12 OBJ, up_axis q answered 422, an upload at z and x0.5 stood 1 by 3 by 1.
+
+### routers/lightbox.py · LightBox's Project shelf
+- refers-to: app/routers/lightbox.py (new) :: projects, preview, save, open_project, _save, _folder, _checked, _guard; app/main.py (the router under /api)
+- kind: rationale
+- logged: v0.94.0 · 2026-10-18
+The ZBrush layout's LightBox (frontend side log, 0.94.0) has a Project shelf, as ZBrush's does (the Starting Guide opens DefaultSphere.ZBP from LightBox's Project section with a double click). Projects live in the app's folder, data_dir()/LightBox/Project (FSC_DATA_DIR or ~/Formsculptor), each as name.fsc with name.png beside it. GET /api/lightbox/projects lists them newest first with bytes, saved time and whether a picture is kept; POST /api/lightbox/projects/{name} saves the scene (engine.save_bytes) and renders a 160 by 160 clay picture on a transparent background through get_view (no picture for an empty scene, and a stale one is removed); POST /api/lightbox/projects/{name}/open opens it through engine.open_bytes, which bumps the epoch like any other change; GET .../{name}/preview serves the picture. Names are 1 to 64 letters, digits, spaces, dots, dashes or underscores, starting with a letter or digit and not ending in a dot, so a name cannot leave the folder; anything else is a 400. The routes refuse with 503 when the engine module is not built, as the engine routes do. The browser engine has no service, so the window says the shelf needs it.
+Checked: an empty list; a torus saved (23,792 bytes, picture kept, the picture looked at); listed; a new scene then open brought the torus back; "..%2Fx" never reached the route (405) and a missing name answered 404.
