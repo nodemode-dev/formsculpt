@@ -626,6 +626,7 @@ const PRIMITIVES: [string, string][] = [
   ['uv_sphere', 'UV Sphere'],
   ['icosahedron', 'Icosahedron'],
   ['head', 'Head'],
+  ['triplanar', 'Triplanar'],
 ];
 
 function buildShell(root: HTMLElement): Shell {
@@ -4585,6 +4586,13 @@ class SceneView {
         risky: true,
         run: () => void this.run('delete_object', { id: this.scene.active }),
       },
+      {
+        id: 'object.triplanar_validate',
+        label: 'Validate Triplanar',
+        mutates: true,
+        run: () => void this.run('triplanar_solid', { id: this.scene.active }),
+        enabled: () => this.scene.objects.find((o) => o.id === this.scene.active)?.triplanar === true,
+      },
       // The scene hierarchy, as in Nomad Sculpt: a group holding the active object, Delete+ and taking a child out.
       { id: 'object.group', label: 'Group', keys: ['Mod+G'], mutates: true, run: () => void this.run('add_group', this.scene.active ? { children: [this.scene.active] } : {}) },
       { id: 'object.delete_children', label: 'Delete With Children', mutates: true, risky: true, run: () => void this.run('delete_object', { id: this.scene.active, children: true }) },
@@ -6607,6 +6615,11 @@ class SceneView {
     const first = this.scene.objects.length === 0;
     await this.refresh();
     if (first) this.frameActive();
+    // A triplanar is shaped with the Mask tool on its three planes, then validated (as Nomad Sculpt's manual has it).
+    if (kind === 'triplanar') {
+      commands.run('tool.brush.mask');
+      this.note('Mask a shape on each of the three planes, then Object > Validate Triplanar');
+    }
   }
 
   private frameActive(): void {

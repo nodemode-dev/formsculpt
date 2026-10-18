@@ -806,3 +806,10 @@ Checked in a fresh profile under 4x CPU throttling (prims.mjs): each new button 
 - logged: v0.88.0 · 2026-10-18
 The engine's head primitive (native side log, 0.88.0) joins the Add panel and menu. Its Feminine layer shows in the Layers panel like any sculpt layer, so the blend is that layer's strength; nothing new was needed in the window for it.
 Checked in a fresh profile under 4x CPU throttling (headw.mjs): Add Head made a head of 9602 points with the layer Feminine at 0 and no active layer; the Layers panel listed Feminine at 0 percent; layer_set to 1 changed the head in the viewport; a clay stroke on it left the layer's strength at 0 and no layer active; CLS 0, no errors, the viewport started.
+
+### Add Triplanar and Validate Triplanar
+- refers-to: src/app.ts :: PRIMITIVES (triplanar), add (the Mask tool and a note after a triplanar), object.triplanar_validate; src/ui/command-map.ts :: add.triplanar; src/ui/menus.ts :: the Add menu, OBJECT, OBJECT_ROW_MENU; src/engine/service.ts :: ObjectSummary.triplanar; src/i18n/*.json
+- kind: rationale
+- logged: v0.89.0 · 2026-10-18
+The engine's triplanar (native side log, 0.89.0) joins the Add panel and menu. After adding one the window picks the Mask tool and says to mask a shape on each plane and then Validate, since Nomad's manual has the Masking tool shape it. Validate Triplanar sits in the Object menu and the object row's menu and is enabled only while the active object reports triplanar (made as one and still three plane grids). Triplanar stays untranslated as Nomad's term, as Zadd and Zsub do.
+Checked in a fresh profile under 4x CPU throttling (tri.mjs): Add Triplanar made 12675 points in 3 groups, reported triplanar, showed the note and pressed the Mask tool; a mask stroke up the middle and Object > Validate Triplanar gave a 24096-point solid 1.5 tall (the bump the stroke added) that no longer reports triplanar; undo brought the planes back; on a sphere the item was disabled; CLS 0, no errors, the viewport started.

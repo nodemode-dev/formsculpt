@@ -25,6 +25,8 @@ export interface ObjectSummary {
   name: string;
   visible: boolean;
   folder?: string;
+  /** Made as a triplanar and still its three plane grids, so triplanar_solid can validate it (engines from 0.89.0). */
+  triplanar?: boolean;
   /** The object or group it hangs under in the scene hierarchy (engines before 0.86.0 leave it out). */
   parent?: number | null;
   vertices: number;

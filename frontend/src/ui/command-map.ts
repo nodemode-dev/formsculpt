@@ -30,6 +30,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     uv_sphere: c('add.uv_sphere', 'Add UV Sphere', { icon: 'cube' }),
     icosahedron: c('add.icosahedron', 'Add Icosahedron', { icon: 'cube' }),
     head: c('add.head', 'Add Head', { icon: 'cube' }),
+    triplanar: c('add.triplanar', 'Add Triplanar', { icon: 'cube' }),
   },
   build: {
     skeleton: c('build.skeleton', 'Build Skeleton'),
