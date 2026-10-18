@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.96.0 · 2026-10-18
+
+### Added
+
+- The tablet layout's view cube works as Nomad Sculpt's: drag it to turn the view (a tap still jumps to that side), and beside it Frame active object and a new Home view, which goes back to the opening view framing everything shown. Home View is also a command.
+- Nomad's gesture options, in the panel's View section:
+  - Finger always smooths: a stroke made with a finger smooths, whatever the tool; a pen or mouse keeps the tool.
+  - Three fingers up and down, and side to side: drag with three fingers to change the tool radius, the tool intensity, or turn the lighting. Choosing the same for both turns the other off.
+- 1340 interface strings in every language.
+
+### Notes
+
+- Nomad's one-tap mask shortcuts are not built yet.
+
 ## 0.95.0 · 2026-10-18
 
 ### Added
