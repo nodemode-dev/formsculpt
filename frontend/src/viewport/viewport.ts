@@ -143,6 +143,19 @@ export class Viewport {
     this.invalidate();
   }
 
+  /** The home view, framing the given bounds (everything shown) when there are any. */
+  home(min?: Vec3, max?: Vec3): void {
+    this.camera.home();
+    if (min && max) this.camera.frame(min, max);
+    this.invalidate();
+  }
+
+  /** Turns the view by a drag of dx, dy pixels (the nav cube's drag). */
+  orbit(dx: number, dy: number): void {
+    this.camera.orbit(dx, dy);
+    this.invalidate();
+  }
+
   toggleOrtho(): boolean {
     this.camera.orthographic = !this.camera.orthographic;
     this.invalidate();
@@ -184,6 +197,17 @@ export class Viewport {
   /** Fingers on the canvas, by pointer id, and the last two-finger span and midpoint while a gesture runs. */
   private touches = new Map<number, [number, number]>();
   private gesture: { span: number; mid: [number, number] } | null = null;
+  /** The last three-finger midpoint while three fingers drag. */
+  private three: [number, number] | null = null;
+  /** Nomad's Finger always smooths: a one-finger stroke uses Smooth whatever the tool. */
+  fingerSmooths = false;
+  /** Set by the app: a three-finger drag by dx, dy pixels (Nomad's three-finger shortcuts). */
+  threeFinger: ((dx: number, dy: number) => void) | null = null;
+
+  private threeMid(): [number, number] {
+    const all = [...this.touches.values()];
+    return [all.reduce((s, p) => s + p[0], 0) / all.length, all.reduce((s, p) => s + p[1], 0) / all.length];
+  }
 
   private gestureFrame(): { span: number; mid: [number, number] } {
     const [a, b] = [...this.touches.values()];
@@ -202,6 +226,12 @@ export class Viewport {
         this.gesture = this.gestureFrame();
         this.canvas.setPointerCapture(e.pointerId);
         return;
+      }
+      if (this.touches.size === 3) {
+        // A third finger turns the pinch into a three-finger drag (its shortcuts, when the app has any).
+        this.gesture = null;
+        this.three = this.threeMid();
+        this.canvas.setPointerCapture(e.pointerId);
       }
       if (this.touches.size > 2) return;
     }
@@ -232,7 +262,9 @@ export class Viewport {
     // ZBrush: Ctrl masks and Shift smooths for this stroke; Alt inverts it, and an Alt press waits to see whether it is a
     // click that picks a SubTool. A press on a tool handle (the gizmo's) keeps its modifiers for the handle.
     const onHandle = this.grabsModified?.(e.offsetX, e.offsetY) ?? false;
-    const temporary = zb && sculpt && !onHandle ? (ctrl ? 'mask' : e.shiftKey ? 'smooth' : null) : null;
+    // Nomad's Finger always smooths: a finger's stroke smooths, whatever the tool (a pen or mouse keeps the tool).
+    const fingerSmooth = this.fingerSmooths && e.pointerType === 'touch' && sculpt && !onHandle;
+    const temporary = fingerSmooth ? 'smooth' : zb && sculpt && !onHandle ? (ctrl ? 'mask' : e.shiftKey ? 'smooth' : null) : null;
     if (temporary) {
       this.holdTool?.(temporary);
       this.holding = true;
@@ -274,6 +306,17 @@ export class Viewport {
         if (next.span > 1 && this.gesture.span > 1) this.camera.zoom(this.gesture.span / next.span);
         this.gesture = next;
         this.invalidate();
+        return;
+      }
+      if (this.three && this.touches.size === 3) {
+        const next = this.threeMid();
+        const dx = next[0] - this.three[0];
+        const dy = next[1] - this.three[1];
+        if (this.tap && Math.hypot(dx, dy) > 2) this.tap.moved = true;
+        if (this.tap?.moved) {
+          this.three = next;
+          this.threeFinger?.(dx, dy);
+        }
         return;
       }
     }
@@ -335,6 +378,15 @@ export class Viewport {
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
     if (e.pointerType === 'touch') {
       this.touches.delete(e.pointerId);
+      if (this.touches.size < 3) this.three = null;
+      // A tool held for the first finger (Finger always smooths) is let go once every finger is up, also when a
+      // pinch or a tap took over.
+      const release = (): void => {
+        if (this.touches.size === 0 && this.holding) {
+          this.holding = false;
+          this.holdTool?.(null);
+        }
+      };
       // Nomad: a quick tap of two fingers undoes, of three redoes (when every finger has lifted).
       if (this.touches.size === 0 && this.tap) {
         const t = this.tap;
@@ -343,6 +395,7 @@ export class Viewport {
           this.command?.(t.most >= 3 ? 'history.redo' : 'history.undo');
           this.gesture = null;
           this.drag = null;
+          release();
           return;
         }
       }
@@ -350,6 +403,7 @@ export class Viewport {
         // The gesture ends when a finger lifts; the remaining finger does nothing until it lifts too.
         if (this.touches.size < 2) this.gesture = null;
         this.drag = null;
+        release();
         return;
       }
     }

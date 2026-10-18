@@ -191,6 +191,16 @@ export class OrbitCamera {
     }
   }
 
+  /** The home view: the turn and tilt the camera opens with, upright (Nomad's nav cube home icon). */
+  home(): void {
+    this.yaw = Math.PI / 6;
+    this.pitch = Math.PI / 9;
+    if (this.trackball) {
+      this.dir = this.turntableDir();
+      this.up = [0, 1, 0];
+    }
+  }
+
   snap(view: ViewName): void {
     [this.yaw, this.pitch] = VIEWS[view];
     if (this.trackball) {

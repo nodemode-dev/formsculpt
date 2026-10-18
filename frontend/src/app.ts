@@ -190,6 +190,9 @@ interface Shell {
   showGroups: HTMLInputElement;
   uvChecker: HTMLInputElement;
   trackball: HTMLInputElement;
+  fingerSmooths: HTMLInputElement;
+  threeVertical: HTMLSelectElement;
+  threeHorizontal: HTMLSelectElement;
   insertKind: HTMLSelectElement;
   insertSize: HTMLInputElement;
   arrayCount: HTMLInputElement;
@@ -1380,6 +1383,13 @@ function buildShell(root: HTMLElement): Shell {
   const showGroups = input('checkbox', { 'aria-label': 'Show face groups' });
   const uvChecker = input('checkbox', { 'aria-label': 'UV checker' });
   const trackball = input('checkbox', { 'aria-label': 'Trackball rotation' });
+  // Nomad's gesture options (its manual's Interface page): a finger stroke always smooths; three-finger drags, up and
+  // down or side to side, change the tool radius, the tool intensity or turn the lighting.
+  const fingerSmooths = input('checkbox', { 'aria-label': 'Finger always smooths' });
+  const threeVertical = choices('Three fingers up and down', [['', 'Nothing'], ['radius', 'Tool radius'], ['intensity', 'Tool intensity'], ['light', 'Rotate lighting']]);
+  const threeHorizontal = choices('Three fingers side to side', [['', 'Nothing'], ['radius', 'Tool radius'], ['intensity', 'Tool intensity'], ['light', 'Rotate lighting']]);
+  threeVertical.value = 'radius';
+  threeHorizontal.value = 'intensity';
   const referenceOpacity = input('range', { min: '5', max: '100', value: '45', 'aria-label': 'Reference opacity' });
   const referenceInput = input('file', { accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a reference image' });
   referenceInput.hidden = true;
@@ -1450,7 +1460,7 @@ function buildShell(root: HTMLElement): Shell {
     }
   });
   viewFields.append(field('Second press swaps', toolSwap));
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Theme', themePick), field('Translucent panels', translucent), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Finger always smooths', fingerSmooths), field('Three fingers up and down', threeVertical), field('Three fingers side to side', threeHorizontal), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Theme', themePick), field('Translucent panels', translucent), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -1720,7 +1730,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -2590,6 +2600,7 @@ class SceneView {
       };
     };
     tablet.camera = () => ({ yaw: this.viewport.camera.yaw, pitch: this.viewport.camera.pitch });
+    tablet.orbit = (dx, dy) => this.viewport.orbit(dx, dy);
     const shade = (value: string): void => {
       s.shading.value = value;
       s.shading.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2676,6 +2687,38 @@ class SceneView {
         commands.run(`tool.brush.${heldFrom}`);
         heldFrom = null;
       }
+    };
+    // Nomad's gesture options: Finger always smooths, and what three-finger drags change. As Nomad's manual has it, a
+    // shortcut chosen for both directions is turned off for the other.
+    s.fingerSmooths.addEventListener('change', () => {
+      this.viewport.fingerSmooths = s.fingerSmooths.checked;
+    });
+    for (const [mine, other] of [[s.threeVertical, s.threeHorizontal], [s.threeHorizontal, s.threeVertical]]) {
+      mine.addEventListener('change', () => {
+        if (mine.value !== '' && other.value === mine.value) other.value = '';
+      });
+    }
+    const nudge = (field: HTMLInputElement, by: number, wrap = false): void => {
+      const lo = Number(field.min);
+      const hi = Number(field.max);
+      let v = Number(field.value) + by;
+      v = wrap ? ((((v - lo) % (hi - lo)) + (hi - lo)) % (hi - lo)) + lo : Math.max(lo, Math.min(hi, v));
+      field.value = String(Math.round(v));
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const three = (kind: string, by: number): void => {
+      if (kind === 'radius') nudge(s.radius, by * 0.5);
+      else if (kind === 'intensity') nudge(s.strength, by * 0.25);
+      else if (kind === 'light') {
+        // Rotate lighting turns the environment and the key light together.
+        nudge(s.envRotate, by * 0.5, true);
+        nudge(s.keyAzimuth, by * 0.5, true);
+      }
+    };
+    this.viewport.threeFinger = (dx, dy) => {
+      three(s.threeVertical.value, -dy);
+      three(s.threeHorizontal.value, dx);
     };
     this.viewport.pickAt = (ray) => {
       void dispatch<{ hit: boolean; id?: number }>('pick', { origin: ray.origin, direction: ray.dir }).then((reply) => {
@@ -4559,6 +4602,7 @@ class SceneView {
     list.push(
       { id: 'view.ortho', label: 'Toggle Orthographic', keys: ['5'], run: () => this.viewport.toggleOrtho() },
       { id: 'view.frame', label: 'Frame Active Object', keys: ['F'], icon: 'frame', run: () => this.frameActive(), enabled: () => this.scene.active !== null },
+      { id: 'view.home', label: 'Home View', icon: 'home', run: () => this.homeView() },
       { id: 'view.groups', label: 'Show Face Groups', run: () => toggle(s.showGroups), checked: () => s.showGroups.checked },
       { id: 'view.uv_checker', label: 'UV Checker', run: () => toggle(s.uvChecker), checked: () => s.uvChecker.checked },
       { id: 'view.trackball', label: 'Trackball Rotation', run: () => toggle(s.trackball), checked: () => s.trackball.checked },
@@ -6742,6 +6786,24 @@ class SceneView {
   private frameActive(): void {
     const o = this.scene.objects.find((x) => x.id === this.scene.active);
     if (o) this.viewport.frameBounds(o.bounds.min, o.bounds.max);
+  }
+
+  /** The home view (the opening turn and tilt) framing every shown object, as Nomad's nav cube home icon does. */
+  private homeView(): void {
+    const shown = this.scene.objects.filter((o) => o.visible);
+    if (shown.length === 0) {
+      this.viewport.home();
+      return;
+    }
+    const min: Vec3 = [Infinity, Infinity, Infinity];
+    const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+    for (const o of shown) {
+      for (let k = 0; k < 3; k++) {
+        min[k] = Math.min(min[k], o.bounds.min[k]);
+        max[k] = Math.max(max[k], o.bounds.max[k]);
+      }
+    }
+    this.viewport.home(min, max);
   }
 }
 

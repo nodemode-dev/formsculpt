@@ -64,7 +64,7 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 .tb-views { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 4px); right: calc(var(--tb-tools-w) + 100px); display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
 .tb-small { width: 36px; height: 32px; color: var(--tb-white); filter: drop-shadow(0 1px 2px #000); }
 .tb-small svg { width: 20px; height: 20px; }
-.tb-cube { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 8px); right: calc(var(--tb-tools-w) + 26px); width: 60px; height: 60px; perspective: 400px; }
+.tb-cube { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 8px); right: calc(var(--tb-tools-w) + 26px); width: 60px; height: 60px; perspective: 400px; touch-action: none; cursor: grab; }
 .tb-cube-body { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 80ms linear; }
 .tb-face { position: absolute; inset: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #fff; font: 700 10px/1 var(--font-sans); cursor: pointer; backface-visibility: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
 .tb-face.front { background: #3a6fe0; transform: translateZ(30px); }

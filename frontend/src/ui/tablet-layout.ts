@@ -135,6 +135,7 @@ const GLYPHS: Record<string, string> = {
   fullscreen: '<path d="M4 9V5h4M16 5h4v4M20 15v4h-4M8 19H4v-4"/>',
   grid: '<path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
   home: '<path d="M4 11l8-7 8 7M6 10v9h12v-9"/>',
+  frame: '<path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/><circle cx="12" cy="12" r="3"/>',
   undo: '<path d="M9 7L4.5 11.5 9 16"/><path d="M5 11.5h9a5 5 0 0 1 0 10h-3"/>',
   redo: '<path d="M15 7l4.5 4.5L15 16"/><path d="M19 11.5h-9a5 5 0 0 0 0 10h3"/>',
   solo: '<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/>',
@@ -364,6 +365,8 @@ export class TabletLayout {
   statsOf: (() => TabletStats) | null = null;
   /** Set by the app: the camera's turn and tilt in radians, for the view cube. */
   camera: (() => { yaw: number; pitch: number }) | null = null;
+  /** Set by the app: turns the view by a drag of dx, dy pixels (dragging the view cube). */
+  orbit: ((dx: number, dy: number) => void) | null = null;
   /** Set by the app: called when the layout is switched on or off (the black background and orange clay go with it). */
   onToggle: ((on: boolean) => void) | null = null;
 
@@ -433,7 +436,9 @@ export class TabletLayout {
     });
     this.views.append(full);
     cmd('grid', t('Floor Grid'), 'view.floor_grid', this.views, 'tb-small');
-    cmd('home', t('Frame active object'), 'view.frame', this.views, 'tb-small');
+    // The two small icons beside the cube, as Nomad's manual has them: frame the current object, and the home view.
+    cmd('frame', t('Frame active object'), 'view.frame', this.views, 'tb-small');
+    cmd('home', t('Home view'), 'view.home', this.views, 'tb-small');
     for (const [face, view, label] of [['front', 'view.front', 'Front'], ['back', 'view.back', 'Back'], ['right', 'view.right', 'Right'], ['left', 'view.left', 'Left'], ['top', 'view.top', 'Top'], ['bottom', 'view.bottom', 'Bottom']]) {
       const f = el('button', `tb-face ${face}`, t(label));
       f.type = 'button';
@@ -442,6 +447,40 @@ export class TabletLayout {
       this.cubeBody.append(f);
     }
     this.cube.append(this.cubeBody);
+    // Nomad: tapping the cube jumps to the tapped side, dragging it rotates the view. A press that moves more than a
+    // few pixels is a drag, and the click it would end in is swallowed so no side is jumped to.
+    let drag: { x: number; y: number; moved: boolean } | null = null;
+    this.cube.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      drag = { x: e.clientX, y: e.clientY, moved: false };
+    });
+    this.cube.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      // Captured only once it is a drag: a capture from the press would send a tap's click to the cube, not the side.
+      if (!drag.moved) this.cube.setPointerCapture(e.pointerId);
+      drag.moved = true;
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+      this.orbit?.(dx, dy);
+    });
+    const end = (e: PointerEvent): void => {
+      if (this.cube.hasPointerCapture(e.pointerId)) this.cube.releasePointerCapture(e.pointerId);
+      if (drag?.moved) {
+        // Swallow the click this release makes, then let clicks through again.
+        const swallow = (c: Event): void => {
+          c.stopPropagation();
+          c.preventDefault();
+        };
+        this.cube.addEventListener('click', swallow, { capture: true, once: true });
+        window.setTimeout(() => this.cube.removeEventListener('click', swallow, { capture: true }), 0);
+      }
+      drag = null;
+    };
+    this.cube.addEventListener('pointerup', end);
+    this.cube.addEventListener('pointercancel', end);
 
     // Right: the tool palette.
     for (const b of parts.brushButtons) {
