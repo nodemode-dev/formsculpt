@@ -37,10 +37,54 @@ const PALETTES: [string, string[]][] = [
   ['Zplugin', ['Plugins']],
 ];
 
+/** Line drawings of the primitives for LightBox's Tool shelf (currentColor, 24 unit box). */
+const PRIMITIVE_ICONS: Record<string, string> = {
+  sphere: '<circle cx="12" cy="12" r="8"/><path d="M4 12c2 2.5 14 2.5 16 0"/>',
+  cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+  cylinder: '<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/>',
+  cone: '<path d="M12 3L5 18M12 3l7 15"/><ellipse cx="12" cy="18" rx="7" ry="2.5"/>',
+  torus: '<ellipse cx="12" cy="12" rx="9" ry="5"/><ellipse cx="12" cy="11.5" rx="3.5" ry="1.6"/>',
+  plane: '<path d="M3 15l7-6h11l-7 6z"/>',
+  quad_sphere: '<circle cx="12" cy="12" r="8"/><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  uv_sphere: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-3 3-3 13 0 16M12 4c3 3 3 13 0 16"/>',
+  icosahedron: '<path d="M12 3l8 5v8l-8 5-8-5V8z"/><path d="M12 3L7 13h10zM4 8l3 5M20 8l-3 5M7 13l5 8 5-8"/>',
+  head: '<path d="M12 3c-4 0-7 3-7 7.5 0 3 1.5 5 3 6.5v4h7v-2.5h2.5v-3.5l1.5-1-1.5-3C17.5 6 15.5 3 12 3z"/>',
+  triplanar: '<path d="M4 12h16M12 4v16"/><path d="M6 7l12 10"/>',
+};
+
+function primitiveIcon(kind: string): SVGSVGElement {
+  if (!PRIMITIVE_ICONS[kind]) return glyph('scene');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.6');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.innerHTML = PRIMITIVE_ICONS[kind];
+  return svg;
+}
+
+/** LightBox's shelves: the Starting Guide names Project and Alpha; the rest are the kinds ZBrush's pop-ups hold here. */
+type LightBoxShelf = 'project' | 'tool' | 'brush' | 'stroke' | 'alpha' | 'material';
+
+/** The Project shelf's service calls (the app wires them to the engine service). */
+export interface LightBoxProjects {
+  list: () => Promise<{ name: string; saved: number; preview: boolean }[] | string>;
+  /** Saves the scene under a name: null when saved, else why not. */
+  save: (name: string) => Promise<string | null>;
+  /** Opens a saved project, replacing the scene: null when opened, else why not. */
+  open: (name: string) => Promise<string | null>;
+  preview: (name: string, saved: number) => string;
+}
+
 export interface ZBrushParts {
   root: HTMLElement;
   panel: HTMLElement;
   brushButtons: HTMLButtonElement[];
+  /** The Add buttons (one per primitive, data-kind), LightBox's Tool shelf. */
+  addButtons: HTMLButtonElement[];
   radius: HTMLInputElement;
   strength: HTMLInputElement;
   /** The Paint brush's own strength, ZBrush's Rgb Intensity. */
@@ -102,6 +146,13 @@ export class ZBrushLayout {
   private readonly trayTitle = el('span', 'zb-tray-title');
   private readonly popup = el('div', 'zb-pop');
   private readonly quick = el('div', 'zb-quick');
+  // LightBox: a browser of shelves (Project, Tool, Brush, Stroke, Alpha, Material) along the bottom of the canvas.
+  private readonly lightbox = el('section', 'zb-lightbox');
+  private readonly lbTabs = el('div', 'zb-lb-tabs');
+  private readonly lbStrip = el('div', 'zb-lb-strip');
+  private readonly lbHead = el('div', 'zb-lb-head');
+  private readonly lbButton = el('button', 'zb-small zb-lb-button');
+  private lbShelf: LightBoxShelf = 'project';
   private readonly brushShown = el('span', 'zb-word');
   private readonly brushIcon = el('span', 'zb-brush-icon');
   private readonly layoutPick = el('select', 'zb-layout-pick');
@@ -112,6 +163,8 @@ export class ZBrushLayout {
 
   /** Set by the app: the scene's counts for the title bar. */
   statsOf: (() => ZBrushStats) | null = null;
+  /** Set by the app: LightBox's Project shelf (saved projects with pictures), through the engine service. */
+  projects: LightBoxProjects | null = null;
   /** Set by the app: the SubTool list (the Objects and Layers dock), shown at the top of the Tool palette. */
   subtools: HTMLElement | null = null;
   /** Set by the app: a drag on the right shelf's Move, Zoom3D or Rotate button, in pixels. */
@@ -206,6 +259,15 @@ export class ZBrushLayout {
     const rgb = new DragValue(parts.paintStrength, t('Rgb Intensity'), false, 'tb-field zb-field');
     this.sliders.push(size, focal, intensity, rgb);
     sliders.append(size.node, focal.node, intensity.node, rgb.node);
+    // The utilities the Starting Guide lists on the top shelf; LightBox is the one built (comma, as Maxon's sheet has it).
+    const utilities = group();
+    this.lbButton.type = 'button';
+    this.lbButton.textContent = t('LightBox');
+    this.lbButton.title = t('LightBox (,)');
+    this.lbButton.setAttribute('aria-pressed', 'false');
+    this.lbButton.addEventListener('click', () => this.toggleLightBox());
+    utilities.append(this.lbButton);
+    this.buildLightBox();
 
     // The left shelf: the brush, stroke, alpha and material as preview icons that open pop-ups of thumbnails (as
     // ZBrush's Starting Guide describes its left shelf), and the colour.
@@ -320,7 +382,7 @@ export class ZBrushLayout {
     this.qmenu.append(qRow, qSize.node, qFocal.node, qIntensity.node, qRgb.node, qZ);
     this.qmenu.hidden = true;
 
-    parts.root.append(this.title, this.menu, this.top, this.left, this.right, this.divider, this.popup, this.quick, this.qmenu);
+    parts.root.append(this.title, this.menu, this.top, this.left, this.right, this.divider, this.popup, this.quick, this.qmenu, this.lightbox);
 
     window.addEventListener('pointermove', (e) => {
       this.pointer = { x: e.clientX, y: e.clientY };
@@ -459,6 +521,149 @@ export class ZBrushLayout {
 
   private previewOf(kind: 'stroke' | 'alpha' | 'material', value: string, size: number): HTMLImageElement {
     return kind === 'stroke' ? strokePreview(value, size) : kind === 'alpha' ? alphaPreview(value, size) : materialPreview(value, size);
+  }
+
+  /** LightBox's frame: its shelves as tabs, a head (the Project shelf's save field), and the strip of thumbnails. */
+  private buildLightBox(): void {
+    this.lightbox.setAttribute('aria-label', t('LightBox'));
+    this.lightbox.hidden = true;
+    this.lbTabs.setAttribute('role', 'tablist');
+    // 'Projects' rather than ZBrush's 'Project': the window already has Project as a verb (project detail), which
+    // translates differently.
+    const shelves: [LightBoxShelf, string][] = [['project', t('Projects')], ['tool', t('Tool')], ['brush', t('Brush')], ['stroke', t('Stroke')], ['alpha', t('Alpha')], ['material', t('Material')]];
+    for (const [shelf, label] of shelves) {
+      const tab = el('button', 'zb-lb-tab', label);
+      tab.type = 'button';
+      tab.dataset.shelf = shelf;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', 'false');
+      tab.addEventListener('click', () => void this.showShelf(shelf));
+      this.lbTabs.append(tab);
+    }
+    this.lbStrip.setAttribute('role', 'listbox');
+    this.lbStrip.setAttribute('aria-label', t('LightBox items: double-click to load'));
+    this.lightbox.append(this.lbTabs, this.lbHead, this.lbStrip);
+  }
+
+  /** Shows or hides LightBox (comma, or its shelf button). */
+  private toggleLightBox(show = this.lightbox.hidden): void {
+    this.lightbox.hidden = !show;
+    setAttr(this.lbButton, 'aria-pressed', show ? 'true' : 'false');
+    if (show) void this.showShelf(this.lbShelf);
+  }
+
+  /** One LightBox thumbnail: a click selects it, a double click or Enter loads it, as ZBrush's LightBox does. */
+  private lbTile(label: string, picture: Node, load: () => void, current = false): HTMLButtonElement {
+    const tile = el('button', 'zb-lb-tile');
+    tile.type = 'button';
+    tile.title = label;
+    tile.setAttribute('role', 'option');
+    tile.setAttribute('aria-selected', 'false');
+    if (current) tile.classList.add('current');
+    tile.append(picture, el('span', 'zb-word', label));
+    tile.addEventListener('click', () => {
+      for (const x of this.lbStrip.querySelectorAll('.zb-lb-tile')) setAttr(x as HTMLElement, 'aria-selected', x === tile ? 'true' : 'false');
+    });
+    tile.addEventListener('dblclick', load);
+    tile.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      load();
+    });
+    return tile;
+  }
+
+  /** Fills the strip with one shelf's items. */
+  private async showShelf(shelf: LightBoxShelf): Promise<void> {
+    this.lbShelf = shelf;
+    for (const tab of this.lbTabs.querySelectorAll<HTMLElement>('.zb-lb-tab')) setAttr(tab, 'aria-selected', tab.dataset.shelf === shelf ? 'true' : 'false');
+    this.lbHead.replaceChildren();
+    const tiles: HTMLElement[] = [];
+    if (shelf === 'project') {
+      await this.fillProjects();
+      return;
+    }
+    if (shelf === 'tool') {
+      for (const b of this.parts.addButtons) {
+        const label = b.textContent?.trim() || (b.dataset.kind ?? '');
+        tiles.push(this.lbTile(label, primitiveIcon(b.dataset.kind ?? ''), () => b.click()));
+      }
+    } else if (shelf === 'brush') {
+      for (const b of this.parts.brushButtons) {
+        const tool = b.dataset.brush ?? '';
+        tiles.push(this.lbTile(t(this.toolLabels.get(tool) ?? tool), glyph(tool), () => b.click(), b.getAttribute('aria-pressed') === 'true'));
+      }
+    } else {
+      const control = this.controlOf(shelf);
+      for (const o of Array.from(control.options)) {
+        tiles.push(this.lbTile(o.textContent ?? o.value, this.previewOf(shelf, o.value, 56), () => {
+          write(control, o.value);
+          void this.showShelf(shelf);
+        }, control.value === o.value));
+      }
+    }
+    this.lbStrip.replaceChildren(...tiles);
+  }
+
+  /** The Project shelf: a name field and Save, then every saved project with its picture, newest first. */
+  private async fillProjects(): Promise<void> {
+    const name = el('input', 'zb-lb-name') as HTMLInputElement;
+    name.type = 'text';
+    name.maxLength = 64;
+    name.placeholder = t('Project name');
+    name.setAttribute('aria-label', t('Project name'));
+    const save = el('button', 'zb-small', t('Save to LightBox'));
+    save.type = 'button';
+    const status = el('span', 'zb-lb-status');
+    status.setAttribute('role', 'status');
+    this.lbHead.append(name, save, status);
+    const api = this.projects;
+    if (!api) {
+      setText(status, t('Needs the engine service'));
+      this.lbStrip.replaceChildren();
+      return;
+    }
+    save.addEventListener('click', () => {
+      const wanted = name.value.trim();
+      if (!wanted) {
+        setText(status, t('Type a name first'));
+        name.focus();
+        return;
+      }
+      void api.save(wanted).then((problem) => {
+        if (problem) setText(status, problem);
+        else void this.showShelf('project');
+      });
+    });
+    name.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') save.click();
+    });
+    const listed = await api.list();
+    if (this.lbShelf !== 'project') return;
+    if (typeof listed === 'string') {
+      setText(status, listed);
+      this.lbStrip.replaceChildren();
+      return;
+    }
+    if (listed.length === 0) setText(status, t('No saved projects yet'));
+    this.lbStrip.replaceChildren(
+      ...listed.map((p) => {
+        let picture: Node = glyph('files');
+        if (p.preview) {
+          const img = el('img', 'zb-lb-pic') as HTMLImageElement;
+          img.src = api.preview(p.name, p.saved);
+          img.alt = '';
+          img.width = 56;
+          img.height = 56;
+          picture = img;
+        }
+        return this.lbTile(p.name, picture, () => {
+          void api.open(p.name).then((problem) => {
+            setText(status, problem ?? t('Opened {name}').replace('{name}', p.name));
+          });
+        });
+      }),
+    );
   }
 
   /** A shelf swatch: the current stroke, alpha or material as a thumbnail over its name; a click opens its pop-up. */
@@ -624,11 +829,13 @@ export class ZBrushLayout {
     const mod = e.ctrlKey || e.metaKey;
     let done = true;
     const plain = !mod && !e.altKey && !e.shiftKey;
-    if (e.key === 'Escape' && (!this.popup.hidden || !this.quick.hidden || !this.qmenu.hidden)) {
+    if (e.key === 'Escape' && (!this.popup.hidden || !this.quick.hidden || !this.qmenu.hidden || !this.lightbox.hidden)) {
       this.togglePopup(false);
       this.closeQuick();
       this.qmenu.hidden = true;
-    } else if (plain && !this.popup.hidden && this.picker === 'brush' && /^[a-z]$/.test(k)) this.brushLetter(k);
+      this.toggleLightBox(false);
+    } else if (plain && e.key === ',' && !e.repeat) this.toggleLightBox();
+    else if (plain && !this.popup.hidden && this.picker === 'brush' && /^[a-z]$/.test(k)) this.brushLetter(k);
     else if (plain && e.key === 'F2') this.openPicker('brush');
     else if (plain && e.key === 'F3') this.openPicker('stroke');
     else if (plain && e.key === 'F4') this.openPicker('alpha');

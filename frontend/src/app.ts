@@ -1,7 +1,7 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
 import { el, saveBlob, setAttr, setText } from './ui/dom';
-import { browserEngine, dispatch, fetchBooleanPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
+import { browserEngine, dispatch, fetchBooleanPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, lightboxOpen, lightboxPreview, lightboxProjects, lightboxSave, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
 import { WasmEngine } from './engine/wasm';
 import { dataUrl, HostLink } from './host';
 import { inDesktop, saveNative } from './ui/desktop';
@@ -1662,6 +1662,7 @@ function buildShell(root: HTMLElement): Shell {
     root,
     panel,
     brushButtons,
+    addButtons,
     radius,
     strength,
     paintStrength,
@@ -2612,6 +2613,19 @@ class SceneView {
     zb.statsOf = () => {
       const st = tablet.statsOf?.();
       return { vertices: st?.vertices ?? 0, triangles: st?.triangles ?? 0, active: st?.active?.name ?? null };
+    };
+    // LightBox's Project shelf: saved projects through the engine service; opening one reloads the scene and frames it.
+    zb.projects = {
+      list: lightboxProjects,
+      save: lightboxSave,
+      open: async (name) => {
+        const problem = await lightboxOpen(name);
+        if (problem) return problem;
+        await this.refresh();
+        this.frameActive();
+        return null;
+      },
+      preview: lightboxPreview,
     };
     zb.nav = (kind, dx, dy) => {
       const cam = this.viewport.camera;

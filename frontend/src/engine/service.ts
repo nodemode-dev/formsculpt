@@ -219,6 +219,54 @@ export async function fetchFile(path: string): Promise<Blob | string> {
   }
 }
 
+/** A project kept on LightBox's Project shelf (the service's /api/lightbox routes). */
+export interface LightBoxProject {
+  name: string;
+  saved: number;
+  preview: boolean;
+}
+
+async function lightboxCall(path: string, method: 'GET' | 'POST'): Promise<unknown> {
+  if (local) return NEEDS_SERVICE;
+  try {
+    const response = await fetch(path, { method, cache: 'no-store' });
+    const text = await response.text();
+    if (!response.ok) {
+      try {
+        return String((JSON.parse(text) as { detail?: unknown }).detail ?? text);
+      } catch {
+        return text || response.statusText;
+      }
+    }
+    return JSON.parse(text) as unknown;
+  } catch (err) {
+    return String(err);
+  }
+}
+
+/** The saved projects, newest first, or why they could not be listed. */
+export async function lightboxProjects(): Promise<LightBoxProject[] | string> {
+  const r = await lightboxCall('/api/lightbox/projects', 'GET');
+  return typeof r === 'string' ? r : (r as { projects: LightBoxProject[] }).projects;
+}
+
+/** Saves the scene to the Project shelf under a name; null when saved, else why not. */
+export async function lightboxSave(name: string): Promise<string | null> {
+  const r = await lightboxCall(`/api/lightbox/projects/${encodeURIComponent(name)}`, 'POST');
+  return typeof r === 'string' ? r : null;
+}
+
+/** Opens a project from the Project shelf, replacing the scene; null when opened, else why not. */
+export async function lightboxOpen(name: string): Promise<string | null> {
+  const r = await lightboxCall(`/api/lightbox/projects/${encodeURIComponent(name)}/open`, 'POST');
+  return typeof r === 'string' ? r : null;
+}
+
+/** The address of a saved project's picture. */
+export function lightboxPreview(name: string, saved: number): string {
+  return `/api/lightbox/projects/${encodeURIComponent(name)}/preview?v=${Math.round(saved)}`;
+}
+
 export async function postJson<T>(path: string): Promise<Reply<T>> {
   if (local) return { ok: false, error: { code: 'no_service', message: NEEDS_SERVICE } };
   try {
