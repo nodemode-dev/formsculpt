@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.88.0 · 2026-10-18
+
+### Added
+
+- A Head primitive (Add > Head), as Nomad Sculpt has: a simple base head with ears and a neck, on even quads, facing front.
+  - It comes with a sculpt layer named Feminine at 0 percent. Raise it in the Layers panel to blend from a masculine head (heavier brow, jaw and neck) to a feminine one. Strokes do not record into it.
+  - For agents: `add_primitive` with kind `head`, `size` and `detail` (quads a side, 40 by default); `layer_set` on layer 0 blends it.
+- 1284 interface strings in every language.
+
+### Notes
+
+- The head is a base to sculpt from, not a finished likeness. The bottom rim of the neck is still a little uneven.
+
 ## 0.87.0 · 2026-10-18
 
 ### Added
