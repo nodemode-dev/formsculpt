@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.89.0 · 2026-10-18
+
+### Added
+
+- A Triplanar primitive (Add > Triplanar), as Nomad Sculpt has: three crossing planes (front, side and top), each starting with a masked disc.
+  - Mask a shape on each plane with the Mask tool (picked for you when you add one), then Object > Validate Triplanar. The solid is everything that falls inside the masked part of all three planes, with rounded edges, as a watertight quad mesh. Undo brings the planes back.
+  - The planes can be moved, turned and scaled before validating; a triplanar moves whole (its mask is its shape, not a part to hold still).
+  - For agents: `add_primitive` with kind `triplanar`, then `triplanar_solid` (with `keep_planes` to add the solid beside the planes as a preview).
+- 1288 interface strings in every language.
+
+### Notes
+
+- The solid updates when you validate, not live while you paint.
+- A mask stroke near where two planes cross masks both of them.
+
 ## 0.88.0 · 2026-10-18
 
 ### Added
