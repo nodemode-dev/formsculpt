@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.88.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.89.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`, `add_group`, `set_parent`, `delete_group`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `save_view`, `list_views`, `delete_view`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `triplanar_solid`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -207,11 +207,11 @@ Note: removes or replaces (undoable); in the window: Mod+Alt+N.
 
 ## add_primitive
 
-Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting), and head (a simple base head with neck, facing +z, about 2.4 tall at size 1, on a quad sphere of detail quads a side, default 40; it comes with a sculpt layer named Feminine at strength 0, which blends from a masculine to a feminine head as its strength goes to 1 with layer_set). Returns the new object's summary.
+Add a primitive mesh centred at the origin and make it active. Kinds: sphere (an icosphere; subdivisions 0 to 9, each level four times the triangles; 6 gives 81,920), uv_sphere, cube (divisions per edge), cylinder, cone, torus, plane, icosahedron (20 flat faces, split by detail, or round with project) and quad_sphere (a cube of quads pushed onto a sphere: no poles, even quads, good for sculpting), and head (a simple base head with neck, facing +z, about 2.4 tall at size 1, on a quad sphere of detail quads a side, default 40; it comes with a sculpt layer named Feminine at strength 0, which blends from a masculine to a feminine head as its strength goes to 1 with layer_set), and triplanar (three crossing planes of detail cells a side, default 64, each with a masked disc; mask shapes on them and triplanar_solid turns them into a solid). Returns the new object's summary.
 
 - `detail`: integer; range 0 to 2048; Subdivisions for sphere (0 to 9, default 5) and icosahedron (0 to 9, default 0: the 20 faces), divisions per side for cube, plane and quad_sphere (default 16) and head (default 40), segments for the round kinds (default 64).
 - `height`: number; default 2; range -inf to 1000; Cylinder and cone height.
-- `kind`: string (sphere | uv_sphere | cube | cylinder | cone | torus | plane | icosahedron | quad_sphere | head); required
+- `kind`: string (sphere | uv_sphere | cube | cylinder | cone | torus | plane | icosahedron | quad_sphere | head | triplanar); required
 - `name`: string
 - `project`: boolean; default false; Icosahedron: push every point out onto the sphere (round, as sphere is) instead of keeping the faces flat.
 - `size`: number; default 1; range -inf to 1000; Radius for sphere, uv_sphere, icosahedron, quad_sphere, cylinder, cone and the torus ring; edge length for cube and plane.
@@ -261,6 +261,15 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 - `resolution`: integer; default 128; range 32 to 256; Voxel cells along the longest side.
 - `side`: array of array; The outline seen from the side (the right view), as [z, y] points.
 - `top`: array of array; The outline seen from above, as [x, z] points.
+
+## triplanar_solid
+
+Turn a triplanar's masks into a solid, as Nomad Sculpt's Triplanar does: add_primitive kind triplanar makes three crossing planes (front x, y; side z, y; top x, z), each starting with a masked disc; mask a shape on each (mask brush, mask_fill and the rest, mask 1 is solid), then this keeps every point whose projections lie in the masked part of all three, rounded where they meet and polygonized into a watertight quad mesh. The planes become the solid (one undo step), or with keep_planes the solid is added beside them to preview.
+
+- `blend`: number; default 0.04; range 0 to 0.5; Rounds the edges where the three masks meet, as a fraction of the solid's size.
+- `id`: integer; range 1 to inf; A triplanar object (add_primitive kind triplanar); the active object when omitted.
+- `keep_planes`: boolean; default false; Add the solid as a new object and keep the planes to paint further (a preview); otherwise the planes become the solid (Validate).
+- `resolution`: integer; default 128; range 32 to 256; Voxel cells along the longest side.
 
 ## edit_build
 
