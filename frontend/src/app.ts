@@ -192,6 +192,7 @@ interface Shell {
   trackball: HTMLInputElement;
   fingerSmooths: HTMLInputElement;
   oneTapMask: HTMLInputElement;
+  oneTapHide: HTMLInputElement;
   threeVertical: HTMLSelectElement;
   threeHorizontal: HTMLSelectElement;
   insertKind: HTMLSelectElement;
@@ -1389,6 +1390,8 @@ function buildShell(root: HTMLElement): Shell {
   const fingerSmooths = input('checkbox', { 'aria-label': 'Finger always smooths' });
   // Nomad's One tap shortcuts (its manual's Interface page, Mask): with the Mask tool, a tap inverts, blurs or sharpens.
   const oneTapMask = input('checkbox', { 'aria-label': 'One tap mask shortcuts' });
+  // Its Hide section's One tap shortcuts: with a hide tool, a tap on a face group hides it, on empty space inverts.
+  const oneTapHide = input('checkbox', { 'aria-label': 'One tap hide shortcuts' });
   const threeVertical = choices('Three fingers up and down', [['', 'Nothing'], ['radius', 'Tool radius'], ['intensity', 'Tool intensity'], ['light', 'Rotate lighting']]);
   const threeHorizontal = choices('Three fingers side to side', [['', 'Nothing'], ['radius', 'Tool radius'], ['intensity', 'Tool intensity'], ['light', 'Rotate lighting']]);
   threeVertical.value = 'radius';
@@ -1463,7 +1466,7 @@ function buildShell(root: HTMLElement): Shell {
     }
   });
   viewFields.append(field('Second press swaps', toolSwap));
-  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Finger always smooths', fingerSmooths), field('One tap mask shortcuts', oneTapMask),field('Three fingers up and down', threeVertical), field('Three fingers side to side', threeHorizontal), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Theme', themePick), field('Translucent panels', translucent), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
+  viewFields.append(field('Field of view', fov), field('Face groups', showGroups), field('UV checker', uvChecker), field('Trackball', trackball), field('Finger always smooths', fingerSmooths), field('One tap mask shortcuts', oneTapMask), field('One tap hide shortcuts', oneTapHide), field('Three fingers up and down', threeVertical), field('Three fingers side to side', threeHorizontal), field('Reference opacity', referenceOpacity), field('Reference place', referencePlace), field('Shade active only', shadeActive), field('Smooth preview', smoothPick), field('Panel on the left', panelLeft), field('Interface size', uiSize), field('Theme', themePick), field('Translucent panels', translucent), field('Language', langPick), field('Background', backdropMode), field('Background top', backdropTop), field('Background bottom', backdropBottom), field('Gradient midpoint', backdropMid), field('Background vignette', backdropVignette), field('Floor grid', floorGrid));
   panel.append(viewFields);
   const viewGrid = el('div', 'add-grid three after-fields');
   const viewButtons = (
@@ -1733,7 +1736,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, oneTapHide, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -2361,7 +2364,7 @@ class SceneView {
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null && !this.locked.has(this.scene.active)),
       begin: (ray, pressure, wpp, inv, tilt) => {
         if (this.brush === 'tube') this.tubeBegin(ray, wpp);
-        else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp };
+        else if (SHAPE_TOOLS.has(this.brush)) this.shape = { kind: this.brush, pts: [], subtract: inv, wpp, ray };
         else if (CLICK_TOOLS.has(this.brush)) {
           const picked = this.clickTool(ray, wpp, inv);
           // Slide point is a drag: the corner is found on press and moved where the pointer is let go.
@@ -2399,7 +2402,7 @@ class SceneView {
   private host = new HostLink(() => undefined, () => undefined);
   private tube: { points: Vec3[]; step: number; anchor: Vec3; normal: Vec3; screen: string[] } | null = null;
 
-  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number; edit?: number; miss?: boolean } | null = null;
+  private shape: { kind: string; pts: [number, number][]; subtract: boolean; wpp: number; edit?: number; miss?: boolean; ray?: Ray } | null = null;
   private gizmoDrag: GizmoDrag | null = null;
   /** A lattice point being dragged: its index (i + j * n + k * n * n) and world offset so far. */
   private latticeDrag: { index: number; offset: Vec3 } | null = null;
@@ -2886,6 +2889,13 @@ class SceneView {
     const box = shape?.kind === 'mask_box';
     const kind = box ? 'box' : this.shell.selectShape.value;
     const least = kind === 'box' || kind === 'line' || kind === 'path' ? 2 : 3;
+    // Nomad's Hide one-tap shortcuts: a selection tool set to Hide, tapped (no point four pixels from the first).
+    const first = shape?.pts[0];
+    const tapped = shape?.ray !== undefined && (first === undefined || shape.pts.every(([x, y]) => Math.hypot(x - first[0], y - first[1]) < 4));
+    if (shape?.ray && tapped && this.shell.oneTapHide.checked && this.shell.selectAction.value === 'hide') {
+      await this.hideTap(shape.ray);
+      return;
+    }
     if (!shape || id === null || shape.pts.length < least) {
       this.note(box ? 'Drag a box over the area to mask' : 'Draw around the area to mask');
       return;
@@ -5028,12 +5038,25 @@ class SceneView {
     stone: ['#8a877f', 90, 0],
   };
 
+  /** Nomad's Hide one-tap shortcuts: a tap on a face group hides it, on empty space inverts what the active object hides. */
+  private async hideTap(ray: Ray): Promise<void> {
+    const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
+    if (!hit.ok) return;
+    const r = hit.result;
+    if (r.hit && r.id !== undefined && r.point) await this.run('hide_faces', { id: r.id, action: 'hide', point: r.point });
+    else if (this.scene.active !== null) await this.run('hide_faces', { id: this.scene.active, action: 'invert' });
+  }
+
   private async clickTool(ray: Ray, wpp: number, ctrl: boolean): Promise<void> {
     const id = this.scene.active;
     if (id === null) return;
     const tool = this.brush;
     const hit = await dispatch<{ hit: boolean; id?: number; point?: Vec3; normal?: Vec3 }>('pick', { origin: ray.origin, direction: ray.dir });
     // Retopology lands on the sculpt or on the retopology already laid over it; the engine snaps to the sculpt.
+    if (tool === 'hide_group' && this.shell.oneTapHide.checked && hit.ok && !hit.result.hit) {
+      await this.run('hide_faces', { id, action: 'invert' });
+      return;
+    }
     const onActive = hit.ok && hit.result.hit && hit.result.point !== undefined && (tool === 'insert' || tool === 'plugin' || tool === 'retopo' || tool === 'retopo_patch' || hit.result.id === id);
     if (!hit.ok || !onActive || !hit.result.point) {
       this.note(tool === 'insert' ? 'Click on a surface to insert there' : 'Click on the active object');
