@@ -15,6 +15,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.core import config
+from app.services import engine
 
 router = APIRouter()
 
@@ -99,3 +100,42 @@ def _hand(file: str) -> dict:
 async def formsurface(body: Hand) -> dict:
     """Copy a GLB from the GoF folder into FormSurface's meshes folder and load it in its editor when linked."""
     return await run_in_threadpool(_hand, body.file)
+
+
+class Back(BaseModel):
+    id: int
+
+
+def _stem(name: str) -> str:
+    # gof_send's and substance_sync's stem: letters and digits kept, anything else an underscore.
+    return "".join(c if c.isascii() and c.isalnum() else "_" for c in name)
+
+
+def _back(object_id: int) -> dict:
+    if not engine.available():
+        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculptor engine build")
+    scene = engine.dispatch("get_scene", {})
+    found = [o for o in scene.get("result", {}).get("objects", []) if o.get("id") == object_id]
+    if not found:
+        raise HTTPException(status_code=404, detail=f"no object {object_id}")
+    health = _health()
+    if health is None:
+        return {"running": False, "painted": False}
+    stem = _stem(found[0]["name"])
+    folder = Path(str(health.get("data", ""))) / "exports" / stem
+    if not (folder / f"{stem}_BaseColor.png").is_file():
+        # Nothing exported yet is an ordinary state, as FormSurface not running is.
+        return {"running": True, "painted": False, "missing": f"{stem}_BaseColor.png", "folder": str(folder)}
+    # FormSurface stores a mesh's V as 1 - v whatever the file, and paints with that V down the texture, so its maps
+    # sit where substance_sync samples them (1 - v), and its Blender template writes the names substance_sync reads.
+    reply = engine.dispatch("substance_sync", {"id": object_id, "folder": str(folder)})
+    if not reply.get("ok"):
+        error = reply.get("error") or {}
+        raise HTTPException(status_code=400, detail=error.get("message") or "the maps could not be read")
+    return {"running": True, "painted": True, "folder": str(folder), "result": reply.get("result")}
+
+
+@router.post("/gof/formsurface/back")
+async def formsurface_back(body: Back) -> dict:
+    """Bring FormSurface's painted maps for an object back into its paint, from FormSurface's exports folder."""
+    return await run_in_threadpool(_back, body.id)
