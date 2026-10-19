@@ -405,6 +405,7 @@ const BRUSHES: [string, string][] = [
   ['orbit', 'Orbit'],
   ['draw', 'Draw'],
   ['clay', 'Clay'],
+  ['clay_strips', 'Clay strips'],
   ['inflate', 'Inflate'],
   ['pinch', 'Pinch'],
   ['crease', 'Crease'],

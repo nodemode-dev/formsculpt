@@ -61,6 +61,7 @@ const COLUMN = ['clay', 'draw', 'grab', 'smooth', 'flatten', 'crease', 'pinch', 
 const GLYPHS: Record<string, string> = {
   draw: '<path d="M4 16c3-6 6-8 8-8s3 3 5 3 3-1 3-1"/>',
   clay: '<path d="M5 9c4-3 10-3 14 0M5 13c4-3 10-3 14 0M5 17c4-3 10-3 14 0"/>',
+  clay_strips: '<path d="M5 7h14v3H5zM5 12h14v3H5zM5 17h9"/>',
   inflate: '<circle cx="12" cy="12" r="6"/><path d="M12 9v6M9 12h6"/>',
   smooth: '<path d="M4 14c3-3 5-3 8 0s5 3 8 0"/>',
   flatten: '<path d="M4 15h16M12 5v6M9.5 8.5L12 11l2.5-2.5"/>',

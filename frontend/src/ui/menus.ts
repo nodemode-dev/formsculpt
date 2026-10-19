@@ -45,7 +45,7 @@ const ADD: MenuItem[] = [
 ];
 
 const SCULPT: MenuItem[] = [
-  ...tool('orbit', 'draw', 'clay', 'inflate', 'pinch', 'crease', 'flatten', 'smooth', 'grab', 'relax', 'planar', 'trim', 'snake_hook', 'noise', 'smudge', 'elastic', 'polish', 'layer', 'nudge', 'layer_reset'), '-',
+  ...tool('orbit', 'draw', 'clay', 'clay_strips', 'inflate', 'pinch', 'crease', 'flatten', 'smooth', 'grab', 'relax', 'planar', 'trim', 'snake_hook', 'noise', 'smudge', 'elastic', 'polish', 'layer', 'nudge', 'layer_reset'), '-',
   ...tool('stamp', 'dragdot', 'curve', 'silhouette'), '-',
   'sculpt.apply_curve', 'sculpt.clear_curve', 'curve.edit_last_stroke', 'curve.from_mask_edge', 'curve.from_group_border', 'curve.snake_mask', 'curve.bridge_groups', 'sculpt.alpha_load', '-',
   'sculpt.mirror_x', 'sculpt.invert', 'sculpt.dyntopo',
