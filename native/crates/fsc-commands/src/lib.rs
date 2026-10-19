@@ -6,6 +6,7 @@ mod curve_cmds;
 mod cut_cmds;
 mod exchange;
 mod file_cmds;
+mod gof_cmds;
 mod group_cmds;
 mod hierarchy_cmds;
 mod history;
@@ -1944,6 +1945,17 @@ pub static COMMANDS: &[Command] = &[
         hints: WRITE,
         schema: file_cmds::id_free_schema,
         run: file_cmds::bridge_sync,
+    },
+    Command {
+        id: "file.gof_send",
+        mcp: "gof_send",
+        group: Group::File,
+        label: "Send with GoF",
+        description: "GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own). The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.",
+        keys: &[],
+        hints: WRITE,
+        schema: gof_cmds::gof_send_schema,
+        run: gof_cmds::gof_send,
     },
     Command {
         id: "file.link_pull",

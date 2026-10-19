@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 0.98.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 0.99.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -12,7 +12,7 @@ Generated from the engine's command registry (formsculptor 0.98.0) by `./formscu
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
-- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `link_pull`, `link_push`, `print_check`, `set_real_size`
+- Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `gof_send`, `link_pull`, `link_push`, `print_check`, `set_real_size`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
 - Face groups: `group_from_mask`, `group_from_outline`, `group_paint`, `group_auto`, `group_clear`, `hide_faces`, `hide_shape`
 - Layers: `layer_add`, `surface_noise`, `layer_select`, `layer_set_strength`, `layer_delete`, `layer_apply`, `layer_set`, `layer_offset`, `layer_bake`, `layer_extract`
@@ -1736,6 +1736,14 @@ Note: removes or replaces (undoable).
 Bring back every bridged file another app has saved since it was sent or last synced, replacing its object's mesh (same object and name, one undo step each). The window syncs on its own every few seconds while bridges are open; agents call this after the other app saves. Lists the open bridges.
 
 - no parameters
+
+## gof_send
+
+GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own). The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.
+
+- `folder`: string; The GoF folder; FORMSCULPTOR_GOF when set, otherwise Formsculptor/GoF in the home folder.
+- `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `target`: string (blender | unreal | unity | formsurface | substance | any); required; The app it is for, which picks the file: blender, unreal and formsurface get GLB, unity FBX, substance a Substance 3D Painter package (OBJ meshes, baked maps, a README; needs UVs), any OBJ.
 
 ## link_pull
 
