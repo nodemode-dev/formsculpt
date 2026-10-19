@@ -67,7 +67,7 @@ const TOPOLOGY: MenuItem[] = [
 ];
 
 const OBJECT: MenuItem[] = [
-  'object.duplicate', 'object.split', 'object.merge', 'object.rename', 'object.triplanar_validate', '-',
+  'object.duplicate', 'object.instance', 'object.uninstance', 'object.sync_instances', 'object.split', 'object.merge', 'object.rename', 'object.triplanar_validate', '-',
   'object.union', 'object.difference', 'object.intersection', '-',
   'object.align', 'object.distribute', 'object.folder', 'object.isolate_folder', '-',
   'object.cloth_drape', 'object.pose', 'object.fibers', ...tool('pose_joint', 'groom_comb', 'groom_cut'), '-',
@@ -104,7 +104,7 @@ export const VIEWPORT_MENU: MenuItem[] = [
   'object.duplicate', 'object.delete', '-', 'sculpt.mirror_x',
 ];
 
-export const OBJECT_ROW_MENU: MenuItem[] = ['object.rename', 'object.duplicate', 'object.delete', 'object.delete_children', 'object.triplanar_validate', '-', 'object.group', 'object.unparent', '-', 'object.hide', 'object.isolate', 'object.show_all', '-', 'object.merge'];
+export const OBJECT_ROW_MENU: MenuItem[] = ['object.rename', 'object.duplicate', 'object.instance', 'object.uninstance', 'object.sync_instances', 'object.delete', 'object.delete_children', 'object.triplanar_validate', '-', 'object.group', 'object.unparent', '-', 'object.hide', 'object.isolate', 'object.show_all', '-', 'object.merge'];
 
 export const PIN_MENU = (id: string): MenuItem[] => [id, '-', 'rail.pin', 'toolbar.add'];
 

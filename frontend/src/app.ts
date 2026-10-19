@@ -4826,6 +4826,27 @@ class SceneView {
         run: () => void this.run('set_parent', { ids: [this.scene.active], parent: null }),
         enabled: () => (this.scene.objects.find((o) => o.id === this.scene.active)?.parent ?? null) !== null,
       },
+      // Nomad Sculpt's instances: Instance, Un-instance, and Sync to give every instance the same children.
+      { id: 'object.instance', label: 'Instance', icon: 'copy', mutates: true, run: () => void this.run('instance_object', { id: this.scene.active }) },
+      {
+        id: 'object.uninstance',
+        label: 'Un-instance',
+        mutates: true,
+        run: () => void this.run('uninstance_object', { id: this.scene.active }),
+        enabled: () => (this.scene.objects.find((o) => o.id === this.scene.active)?.instance_of ?? null) !== null,
+      },
+      {
+        id: 'object.sync_instances',
+        label: 'Sync Instances',
+        mutates: true,
+        run: () => void this.run('sync_instance_children', { id: this.scene.active }),
+        enabled: () => {
+          const a = this.scene.objects.find((o) => o.id === this.scene.active);
+          if (!a) return false;
+          const source = a.instance_of ?? a.id;
+          return this.scene.objects.some((o) => o.id !== a.id && (o.id === source || o.instance_of === source)) && this.scene.objects.some((o) => o.parent === a.id);
+        },
+      },
     );
     NEEDS_OBJECT.add('object.rename');
     NEEDS_OBJECT.add('object.delete');
@@ -4950,7 +4971,7 @@ class SceneView {
       if (!row?.dataset.id) return;
       e.preventDefault();
       const { clientX, clientY } = e;
-      void this.run('select_object', { id: Number(row.dataset.id) }).then(() => {
+      void this.selectObject(Number(row.dataset.id)).then(() => {
         rows.setItems(tidy(OBJECT_ROW_MENU));
         rows.openAt(clientX, clientY);
       });
