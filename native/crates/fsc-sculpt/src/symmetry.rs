@@ -6,9 +6,20 @@ pub struct Symmetry {
     pub y: bool,
     pub z: bool,
     pub radial: u32,
+    /// Local mode: mirror and turn about the object's centre (set by the command from the object's bounds) instead of
+    /// the world origin.
+    pub local: bool,
+    /// Where the mirror planes and the radial axis meet: the world origin, or with local the object's centre.
+    pub center: [f32; 3],
 }
 
 impl Symmetry {
+    /// A point's copy under transform `m`, about the symmetry's centre.
+    pub fn place(&self, m: Mat3, p: Vec3) -> Vec3 {
+        let c = Vec3::from_array(self.center);
+        c + m * (p - c)
+    }
+
     pub fn transforms(&self) -> Vec<Mat3> {
         let mut mirrors = vec![Mat3::IDENTITY];
         for (on, axis) in [(self.x, 0), (self.y, 1), (self.z, 2)] {

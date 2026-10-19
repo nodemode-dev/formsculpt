@@ -104,6 +104,7 @@ pub fn triplanar_payload(s: &Session, id: u32, resolution: u32) -> Result<Vec<u8
 pub fn stroke_begin(s: &mut Session, id: u32, settings: &Value) -> Result<(), CommandError> {
     let mut brush = crate::parse_brush(settings)?;
     let object = s.scene.get(id).ok_or_else(|| not_found(id))?;
+    crate::sculpt_cmds::local_symmetry(&mut brush, object);
     if brush.texture && object.live_texture().is_none() {
         return Err(crate::sculpt_cmds::no_texture());
     }

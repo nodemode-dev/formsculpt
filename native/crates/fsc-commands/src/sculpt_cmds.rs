@@ -159,7 +159,7 @@ pub fn parse_brush(args: &Value) -> Result<BrushSettings, CommandError> {
         falloff,
         spacing: f(args, "spacing", 0.15, 0.02, 2.0)?,
         lazy: f(args, "lazy", 0.0, 0.0, 0.95)?,
-        symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial },
+        symmetry: Symmetry { x: flag("x"), y: flag("y"), z: flag("z"), radial, local: flag("local"), center: [0.0; 3] },
         dyntopo: dyntopo.or(size.map(|_| 0.25)),
         dyntopo_size: size,
         dyntopo_mode: match args.get("dyntopo_mode").and_then(Value::as_str) {
@@ -600,7 +600,7 @@ pub(crate) fn brush_props() -> Value {
         "focal_shift": {"type": "number", "minimum": -100, "maximum": 100, "default": 0, "description": "ZBrush's Focal Shift over the falloff (or falloff_curve): below 0 full strength reaches further out (-100 a crisp tip with no falloff), above 0 the falloff starts sooner (100 narrows the tip toward a point)."},
         "spacing": {"type": "number", "minimum": 0.02, "maximum": 2, "default": 0.15, "description": "Distance between dabs as a fraction of the radius."},
         "lazy": {"type": "number", "minimum": 0, "maximum": 0.95, "default": 0, "description": "Lazy rope: the brush trails the path on a rope of lazy times three radii and moves only when it pulls taut, which steadies a line but stops short of the path's end by the rope length."},
-        "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}}, "additionalProperties": false},
+        "symmetry": {"type": "object", "properties": {"x": {"type": "boolean"}, "y": {"type": "boolean"}, "z": {"type": "boolean"}, "radial": {"type": "integer", "minimum": 1, "maximum": 150}, "local": {"type": "boolean", "default": false, "description": "Mirror and turn about the object's own centre (the centre of its bounds when the stroke starts) instead of the world origin, so an object moved off the origin still sculpts symmetrically (Nomad Sculpt's Local mode). The planes keep the world's directions."}}, "additionalProperties": false},
         "dyntopo": {"type": ["number", "boolean"], "description": "Dynamic topology: split edges longer than this fraction of the radius (0.05 to 1; true means 0.25) under the brush as it moves, adding detail where you sculpt, and collapse edges under 0.4 of that length. Off when omitted. Not used by grab or mask, nor on objects with subdivision levels."},
         "dyntopo_size": {"type": "number", "exclusiveMinimum": 0, "maximum": 10000, "description": "Constant detail: the target edge length in world units, whatever the radius. Turns dynamic topology on and overrides the dyntopo fraction."},
         "dyntopo_mode": {"type": "string", "enum": fsc_sculpt::DyntopoMode::NAMES, "default": "balanced", "description": "With dyntopo: speed refines once per dab and does not even out the new triangles (fastest, rougher); balanced refines twice and evens twice; quality four times each (smoothest, slowest)."},
@@ -633,9 +633,18 @@ pub(crate) fn target(s: &Session, args: &Value) -> Result<ObjectId, CommandError
     Ok(id)
 }
 
+/// With local symmetry, the mirror planes and the radial axis pass through the object's centre (its bounds' centre now)
+/// rather than the world origin.
+pub(crate) fn local_symmetry(settings: &mut BrushSettings, object: &fsc_core::Object) {
+    if settings.symmetry.local {
+        settings.symmetry.center = object.mesh.bounds().center().to_array();
+    }
+}
+
 pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
-    let settings = parse_brush(args)?;
+    let mut settings = parse_brush(args)?;
+    local_symmetry(&mut settings, s.scene.get(id).expect("checked"));
     let alpha = stroke_alpha(s, args)?;
     let points = args.get("points").and_then(Value::as_array).ok_or_else(|| bad("points is required"))?;
     let mut parsed = Vec::with_capacity(points.len());

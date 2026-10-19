@@ -396,7 +396,7 @@ impl Stroke {
                 if let Some(prev) = self.snake_prev {
                     for k in 0..self.transforms.len() {
                         let m = self.transforms[k];
-                        self.snake_dab(object, k, m * prev, m * (c - prev));
+                        self.snake_dab(object, k, self.settings.symmetry.place(m, prev), m * (c - prev));
                     }
                     self.dabs += 1;
                 }
@@ -407,7 +407,7 @@ impl Stroke {
                 if let Some(prev) = self.snake_prev {
                     for k in 0..self.transforms.len() {
                         let m = self.transforms[k];
-                        self.nudge_dab(object, k, m * ((prev + c) * 0.5), m * (c - prev), pressure.clamp(0.0, 1.0));
+                        self.nudge_dab(object, k, self.settings.symmetry.place(m, (prev + c) * 0.5), m * (c - prev), pressure.clamp(0.0, 1.0));
                     }
                     self.dabs += 1;
                 }
@@ -416,7 +416,7 @@ impl Stroke {
             }
             for k in 0..self.transforms.len() {
                 let m = self.transforms[k];
-                self.dab(object, k, m * c, pressure.clamp(0.0, 1.0));
+                self.dab(object, k, self.settings.symmetry.place(m, c), pressure.clamp(0.0, 1.0));
             }
             self.dabs += 1;
         }
@@ -442,12 +442,12 @@ impl Stroke {
         let method = self.settings.dyntopo_method;
         let protect = self.settings.dyntopo_protect_mask;
         for k in 0..self.transforms.len() {
-            let m = self.transforms[k];
+            let at = self.settings.symmetry.place(self.transforms[k], mid);
             if method != crate::brush::DyntopoMethod::Collapse {
-                splits += fsc_topo::refine_sphere_protected(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge, passes, protect);
+                splits += fsc_topo::refine_sphere_protected(&mut object.mesh, &mut object.mask, at, reach, max_edge, passes, protect);
             }
             if method != crate::brush::DyntopoMethod::Subdivide {
-                splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, m * mid, reach, max_edge * 0.4);
+                splits += fsc_topo::collapse_sphere(&mut object.mesh, &mut object.mask, at, reach, max_edge * 0.4);
             }
         }
         if splits > 0 {
@@ -459,7 +459,7 @@ impl Stroke {
             let mut region = Vec::new();
             for k in 0..self.transforms.len() {
                 let mut found = Vec::new();
-                object.bvh.vertices_in_sphere(&object.mesh, self.transforms[k] * mid, reach, &mut found);
+                object.bvh.vertices_in_sphere(&object.mesh, self.settings.symmetry.place(self.transforms[k], mid), reach, &mut found);
                 region.extend(found);
             }
             region.sort_unstable();
@@ -1030,7 +1030,7 @@ impl Stroke {
         let reach = if kelvin { s.radius * KELVIN_REACH } else { s.radius };
         let mut copies = Vec::new();
         for (copy, m) in self.transforms.clone().into_iter().enumerate() {
-            let c = m * anchor;
+            let c = s.symmetry.place(m, anchor);
             let mut found = Vec::new();
             object.bvh.vertices_in_sphere(&object.mesh, c, reach, &mut found);
             let mult = self.filter(object, copy, &found, c, s.radius);
@@ -1057,7 +1057,7 @@ impl Stroke {
         let amount = self.settings.strength.max(0.05) * pressure.max(0.05) * 2.0;
         for (m, list) in &grab.copies {
             let d = *m * delta;
-            let centre = *m * grab.anchor;
+            let centre = self.settings.symmetry.place(*m, grab.anchor);
             for &(v, w, p0) in list {
                 let moved = if grab.kelvin { kelvinlet(p0 - centre, d * (w * amount).min(1.0), self.settings.radius) } else { d * (w * amount).min(1.0) };
                 object.mesh.positions[v as usize] = (p0 + moved).to_array();

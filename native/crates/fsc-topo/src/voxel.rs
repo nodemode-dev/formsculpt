@@ -532,3 +532,126 @@ pub(crate) fn signed_volume(mesh: &Mesh) -> f32 {
         })
         .sum()
 }
+
+/// Eigenvalues and eigenvectors (columns) of a symmetric 3 x 3 matrix, by Jacobi rotations.
+fn symmetric_eigen(m: glam::Mat3) -> ([f32; 3], glam::Mat3) {
+    let mut a = [[m.x_axis.x, m.y_axis.x, m.z_axis.x], [m.x_axis.y, m.y_axis.y, m.z_axis.y], [m.x_axis.z, m.y_axis.z, m.z_axis.z]];
+    let mut v = [[1.0f32, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+    for _ in 0..24 {
+        let (mut p, mut q, mut big) = (0, 1, 0.0f32);
+        for (i, j) in [(0, 1), (0, 2), (1, 2)] {
+            if a[i][j].abs() > big {
+                big = a[i][j].abs();
+                p = i;
+                q = j;
+            }
+        }
+        if big < 1e-12 {
+            break;
+        }
+        let theta = 0.5 * (2.0 * a[p][q]).atan2(a[q][q] - a[p][p]);
+        let (s, c) = theta.sin_cos();
+        for row in a.iter_mut() {
+            let (x, y) = (row[p], row[q]);
+            row[p] = c * x - s * y;
+            row[q] = s * x + c * y;
+        }
+        for k in 0..3 {
+            let (x, y) = (a[p][k], a[q][k]);
+            a[p][k] = c * x - s * y;
+            a[q][k] = s * x + c * y;
+        }
+        for row in v.iter_mut() {
+            let (x, y) = (row[p], row[q]);
+            row[p] = c * x - s * y;
+            row[q] = s * x + c * y;
+        }
+    }
+    let cols = glam::Mat3::from_cols(Vec3::new(v[0][0], v[1][0], v[2][0]), Vec3::new(v[0][1], v[1][1], v[2][1]), Vec3::new(v[0][2], v[1][2], v[2][2]));
+    ([a[0][0], a[1][1], a[2][2]], cols)
+}
+
+/// Keep-sharp for a voxel remesh: the remeshed surface rounds every edge and corner to about a voxel, because the
+/// polygonizer only knows the field at grid points. Where the source's faces near a new vertex disagree in direction by
+/// more than `hard_angle` degrees (an edge or a corner), the vertex is moved to the point that best fits those faces'
+/// planes, the quadric error minimiser of dual contouring (Ju, Losasso, Schaefer and Warren, SIGGRAPH 2002), solved
+/// with small eigenvalues cut so a flat or edge-only neighbourhood keeps the free directions at the vertex itself, and
+/// it moves no more than one and a half voxels. Smooth places are left as they were. Returns how many vertices moved.
+pub fn sharpen_to(mesh: &mut Mesh, source: &Mesh, source_bvh: &Bvh, cell: f32, hard_angle: f32) -> usize {
+    let normals = source.face_normals();
+    let cos_hard = hard_angle.to_radians().cos();
+    let reach = cell * 1.5;
+    let before = mesh.positions.clone();
+    let mut moved = 0;
+    let mut tris = Vec::new();
+    for i in 0..mesh.vertex_count() {
+        let p = mesh.position(i as u32);
+        tris.clear();
+        source_bvh.triangles_in_sphere(source, p, reach, &mut tris);
+        if tris.len() < 2 {
+            continue;
+        }
+        let first = normals[tris[0] as usize];
+        if !tris.iter().any(|&t| normals[t as usize].dot(first) < cos_hard) && !tris.iter().any(|&t| tris.iter().any(|&u| normals[t as usize].dot(normals[u as usize]) < cos_hard)) {
+            continue;
+        }
+        // The quadric about the vertex: sum over faces (weighted by area) of (n.(x - c))^2.
+        let (mut ata, mut atb) = (glam::Mat3::ZERO, Vec3::ZERO);
+        for &t in &tris {
+            let [a, b, c] = source.triangle(t as usize);
+            let (pa, pb, pc) = (source.position(a), source.position(b), source.position(c));
+            let n = normals[t as usize];
+            let area = (pb - pa).cross(pc - pa).length() * 0.5;
+            if area <= 0.0 || n == Vec3::ZERO {
+                continue;
+            }
+            let d = n.dot(pa) - n.dot(p);
+            ata += glam::Mat3::from_cols(n * n.x, n * n.y, n * n.z) * area;
+            atb += n * (d * area);
+        }
+        let (values, vectors) = symmetric_eigen(ata);
+        let top = values.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+        if top <= 0.0 {
+            continue;
+        }
+        let mut step = Vec3::ZERO;
+        for k in 0..3 {
+            if values[k].abs() > top * 0.1 {
+                let e = vectors.col(k);
+                step += e * (e.dot(atb) / values[k]);
+            }
+        }
+        if step.length() <= reach {
+            mesh.positions[i] = (p + step).to_array();
+            moved += 1;
+        }
+    }
+    // Several points drawn onto one corner can fold a triangle over; any triangle that turned over (or collapsed) puts
+    // its corners back where the remesh left them, until none does.
+    let normal_of = |pos: &[[f32; 3]], t: &[u32]| {
+        let (a, b, c) = (Vec3::from(pos[t[0] as usize]), Vec3::from(pos[t[1] as usize]), Vec3::from(pos[t[2] as usize]));
+        (b - a).cross(c - a)
+    };
+    for _ in 0..8 {
+        let mut undo = Vec::new();
+        for t in mesh.indices.chunks_exact(3) {
+            let (n0, n1) = (normal_of(&before, t), normal_of(&mesh.positions, t));
+            if n1.dot(n0) <= 0.0 || n1.length_squared() <= n0.length_squared() * 1e-6 {
+                undo.extend_from_slice(t);
+            }
+        }
+        if undo.is_empty() {
+            break;
+        }
+        for v in undo {
+            if mesh.positions[v as usize] != before[v as usize] {
+                mesh.positions[v as usize] = before[v as usize];
+                moved -= 1;
+            }
+        }
+    }
+    if moved > 0 {
+        mesh.recompute_normals();
+    }
+    moved
+}

@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.12.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.13.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -527,7 +527,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `spray`: number; default 0.6; range 0.05 to 2; Spray stroke: how far dabs scatter from the path, in radii.
 - `strength`: number; default 0.5; range 0 to 1
 - `stroke`: string (dots | roll | spray); default "dots"; dots keeps the alpha's orientation; roll turns it along the stroke's direction (chains, stitches, scales along a line); spray scatters each dab up to spray radii off the path, turned at random and at a random share of the strength (pores, gravel, speckle). Spray is seeded, so the same stroke repeats exactly.
-- `symmetry`: object; fields radial, x, y, z
+- `symmetry`: object; fields local, radial, x, y, z
 - `target`: string (vertex | texture); default "vertex"; Paint brush only: vertex paints the mesh's vertex paint; texture paints the object's texture per texel in UV space (texture_create first), so a stroke can be finer than the mesh. Refused with bad_arguments for any other brush. Invert erases toward the default paint in the chosen channels.
 - `view_dir`: array of number; The direction the viewer looks along, [x, y, z], for front_facing; mirrored with each symmetry copy. Absent in sculpt_stroke, the first point's normal approximates it.
 
@@ -1329,6 +1329,7 @@ Subdivide an object's mesh, each level multiplying the triangles by four (Loop s
 Rebuild an object as an even, closed mesh by sampling its surface on a voxel grid (like DynaMesh or Nomad's voxel remesher). Fixes stretched triangles after heavy grab or inflate strokes and merges intersecting parts. resolution is voxels along the longest side. The mask is cleared.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
+- `keep_sharp`: number; default 0; range 0 to 180; Keep hard edges and corners, in degrees; 0 is off. Where the original's faces near a new point turn by more than this, the point moves onto the edge or corner they make (the best fit to their planes), so a cube stays a cube instead of rounding by a voxel. 30 suits most hard-surface parts.
 - `resolution`: integer; default 128; range 8 to 320; Voxels along the object's longest side; higher keeps more detail and makes more triangles.
 - `thicken`: number; default 0; range 0 to 100; Thicken thin parts, in percent: at 100 every part comes out at least a voxel thick, so sheets and strands thinner than a voxel survive the remesh; the rest of the surface moves out by up to half a voxel.
 

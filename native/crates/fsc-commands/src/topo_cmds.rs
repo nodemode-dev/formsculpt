@@ -72,7 +72,8 @@ pub(crate) fn remesh_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "resolution": {"type": "integer", "minimum": 8, "maximum": 320, "default": 128, "description": "Voxels along the object's longest side; higher keeps more detail and makes more triangles."},
-            "thicken": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Thicken thin parts, in percent: at 100 every part comes out at least a voxel thick, so sheets and strands thinner than a voxel survive the remesh; the rest of the surface moves out by up to half a voxel."}
+            "thicken": {"type": "number", "minimum": 0, "maximum": 100, "default": 0, "description": "Thicken thin parts, in percent: at 100 every part comes out at least a voxel thick, so sheets and strands thinner than a voxel survive the remesh; the rest of the surface moves out by up to half a voxel."},
+            "keep_sharp": {"type": "number", "minimum": 0, "maximum": 180, "default": 0, "description": "Keep hard edges and corners, in degrees; 0 is off. Where the original's faces near a new point turn by more than this, the point moves onto the edge or corner they make (the best fit to their planes), so a cube stays a cube instead of rounding by a voxel. 30 suits most hard-surface parts."}
         },
         "required": [],
         "additionalProperties": false
@@ -90,8 +91,17 @@ pub(crate) fn remesh_voxel(s: &mut Session, args: &Value) -> Result<Value, Comma
         None | Some(Value::Null) => 0.0,
         Some(v) => v.as_f64().filter(|t| (0.0..=100.0).contains(t)).ok_or_else(|| bad("thicken must be 0 to 100"))?,
     };
+    let keep_sharp = match args.get("keep_sharp") {
+        None | Some(Value::Null) => 0.0,
+        Some(v) => v.as_f64().filter(|a| (0.0..=180.0).contains(a)).ok_or_else(|| bad("keep_sharp must be 0 to 180 degrees"))?,
+    };
     let object = s.scene.get(id).expect("checked");
-    let mesh = fsc_topo::voxel_remesh_thick(&object.mesh, &object.bvh, resolution as u32, (thicken / 100.0) as f32).map_err(|e| CommandError::new("remesh_failed", e))?;
+    let mut mesh = fsc_topo::voxel_remesh_thick(&object.mesh, &object.bvh, resolution as u32, (thicken / 100.0) as f32).map_err(|e| CommandError::new("remesh_failed", e))?;
+    if keep_sharp > 0.0 {
+        let b = object.mesh.bounds();
+        let cell = (b.max - b.min).max_element() / resolution as f32;
+        fsc_topo::sharpen_to(&mut mesh, &object.mesh, &object.bvh, cell, keep_sharp as f32);
+    }
     let mask = vec![0.0; mesh.vertex_count()];
     apply(s, id, "Voxel Remesh", mesh, mask)
 }
