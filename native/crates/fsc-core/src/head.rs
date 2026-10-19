@@ -114,18 +114,83 @@ fn reach(c: Vec3, d: Vec3, f: &Form) -> Vec3 {
     c + d * ((lo + hi) * 0.5)
 }
 
+/// The field's gradient at `p`, by central differences.
+fn gradient(p: Vec3, f: &Form) -> Vec3 {
+    const H: f32 = 1e-3;
+    Vec3::new(
+        field(p + Vec3::X * H, f) - field(p - Vec3::X * H, f),
+        field(p + Vec3::Y * H, f) - field(p - Vec3::Y * H, f),
+        field(p + Vec3::Z * H, f) - field(p - Vec3::Z * H, f),
+    ) / (2.0 * H)
+}
+
+fn normal(p: Vec3, f: &Form) -> Vec3 {
+    gradient(p, f).normalize_or(Vec3::Y)
+}
+
+/// Moves `p` onto the surface along the field's gradient (a few Newton steps; the field is close to a distance).
+fn settle(mut p: Vec3, f: &Form) -> Vec3 {
+    for _ in 0..6 {
+        let v = field(p, f);
+        let g = gradient(p, f);
+        let gg = g.length_squared();
+        if gg < 1e-8 || v.abs() < 1e-6 {
+            break;
+        }
+        p -= g * (v / gg);
+    }
+    p
+}
+
+/// Below the jaw the rays from the centre meet the neck's end at a grazing angle, so its points bunch on one side of
+/// the rounded rim and thin out on the other and the rim comes out uneven. There each point is pulled toward the
+/// average of its neighbours and put back on the surface, a few times over, which spreads them evenly; the pull
+/// fades in over the top of the neck so the face is untouched.
+fn even_neck(points: &mut [Vec3], neighbours: &[Vec<u32>], f: &Form) {
+    const TOP: f32 = -1.05;
+    const FULL: f32 = -1.2;
+    let weight = |y: f32| ((TOP - y) / (TOP - FULL)).clamp(0.0, 1.0);
+    for _ in 0..60 {
+        let before = points.to_vec();
+        for (i, p) in points.iter_mut().enumerate() {
+            let w = weight(before[i].y);
+            if w <= 0.0 || neighbours[i].is_empty() {
+                continue;
+            }
+            let mean = neighbours[i].iter().map(|&n| before[n as usize]).sum::<Vec3>() / neighbours[i].len() as f32;
+            // Only the pull along the surface: the part across it would draw points off the curved rim.
+            let n = normal(before[i], f);
+            let pull = mean - before[i];
+            *p = settle(before[i] + (pull - n * pull.dot(n)) * (0.8 * w), f);
+        }
+    }
+}
+
 /// The masculine head on a quad sphere of `divisions` quads a side (scaled by `size`) and, per point, how far each
 /// moves to give the feminine head.
 pub fn head(size: f32, divisions: u32) -> (Mesh, Vec<[f32; 3]>) {
     let mut mesh = crate::primitives::quad_sphere(1.0, divisions.clamp(4, 256));
     let centre = Vec3::new(0.0, -0.15, 0.05);
-    let mut delta = Vec::with_capacity(mesh.positions.len());
-    for p in &mut mesh.positions {
-        let d = Vec3::from_array(*p).normalize_or(Vec3::Y);
-        let a = reach(centre, d, &MASCULINE) * size;
-        let b = reach(centre, d, &FEMININE) * size;
-        *p = a.to_array();
-        delta.push((b - a).to_array());
+    let rays: Vec<Vec3> = mesh.positions.iter().map(|p| Vec3::from_array(*p).normalize_or(Vec3::Y)).collect();
+    let mut a: Vec<Vec3> = rays.iter().map(|&d| reach(centre, d, &MASCULINE)).collect();
+    let mut b: Vec<Vec3> = rays.iter().map(|&d| reach(centre, d, &FEMININE)).collect();
+    // Both forms are evened over the same mesh, so their points still pair up for the blend.
+    let mut neighbours = vec![Vec::new(); a.len()];
+    for t in mesh.indices.chunks(3) {
+        for k in 0..3 {
+            let (u, v) = (t[k], t[(k + 1) % 3]);
+            if !neighbours[u as usize].contains(&v) {
+                neighbours[u as usize].push(v);
+                neighbours[v as usize].push(u);
+            }
+        }
+    }
+    even_neck(&mut a, &neighbours, &MASCULINE);
+    even_neck(&mut b, &neighbours, &FEMININE);
+    let mut delta = Vec::with_capacity(a.len());
+    for (i, p) in mesh.positions.iter_mut().enumerate() {
+        *p = (a[i] * size).to_array();
+        delta.push(((b[i] - a[i]) * size).to_array());
     }
     mesh.recompute_normals();
     (mesh, delta)
