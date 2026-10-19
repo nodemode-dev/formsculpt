@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.5.0 · 2026-10-19
+
+### Added
+
+- Reorder objects and groups by dragging their rows: drop on a row's top edge to put it just above, on its bottom edge just below (the middle still hangs it inside). The order is saved in projects and undoes in one step. Agents use `set_parent` with `before`.
+
 ## 1.4.0 · 2026-10-19
 
 ### Added
