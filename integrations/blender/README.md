@@ -17,6 +17,16 @@ Tested with Blender 5.2.2. formsculptor must be running (the window, `./formscul
 - **Live** keeps every linked object in step on a timer (Interval in the preferences): an edit in Blender is sent, a sculpt in formsculptor comes back. Objects in Edit Mode wait until they are back in Object Mode.
 - **Sync now** does one round by hand; **Unlink** stops linking the selected objects (both copies stay).
 
+### GoF
+
+GoF is formsculptor's own hand-off to other apps: a folder (Formsculptor/GoF in the home folder by default) with one file per object and a `gof.json` manifest. The add-on reads it beside the live link:
+
+- In formsculptor, File > GoF target Blender, then Send with GoF, writes the object as a GLB.
+- **Import from GoF** brings in every file sent to Blender that is new or was sent again; an object already brought in keeps its name and transform and takes the new mesh. **Watch GoF** does it on its own as files arrive.
+- **Send back to GoF** writes the selected GoF objects over their files with Blender's glTF exporter (+Y up, modifiers applied); formsculptor brings the edit back into the same object.
+
+The GoF folder is in the add-on's preferences; left empty, the add-on asks formsculptor (`GET /api/gof`) and falls back to Formsculptor/GoF in the home folder. Files go through Blender's own glTF importer and exporter, so GoF needs nothing else in Blender.
+
 When only the vertex positions change, only positions travel: Blender keeps its quads, UVs and modifiers, and formsculptor keeps its paint, mask and face groups. A change of topology on either side replaces the other side's mesh. formsculptor works in triangles, so a mesh replaced from formsculptor arrives in Blender as triangles.
 
 ## How it talks

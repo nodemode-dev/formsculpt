@@ -8,11 +8,17 @@ as base64 little-endian arrays over formsculptor's local dispatch (POST /api/eng
 
 When only the positions change on either side, only the positions move: Blender keeps its quads, UVs and modifiers,
 formsculptor keeps its paint, mask and face groups.
+
+GoF, formsculptor's own hand-off, works beside the link: formsculptor's Send with GoF (target Blender) writes a GLB
+into the GoF folder and lists it in gof.json; Import from GoF (or Watch GoF) brings it in through Blender's own glTF
+importer, and Send back to GoF writes the object over that GLB with Blender's glTF exporter, which formsculptor's
+bridge sync reads back into the same object.
 """
 
 import base64
 import hashlib
 import json
+import os
 import urllib.error
 import urllib.request
 
@@ -207,6 +213,132 @@ def _tick():
     return prefs.interval if prefs is not None else 0.5
 
 
+GOF_FILE = "gof_file"
+GOF_SENT = "gof_sent"
+_gof = {"stamp": None}
+
+
+def gof_folder():
+    """The GoF folder: the preference, else the one formsculptor's service reports, else ~/Formsculptor/GoF."""
+    prefs = _prefs()
+    if prefs is not None and prefs.gof_folder.strip():
+        return bpy.path.abspath(prefs.gof_folder.strip())
+    try:
+        with urllib.request.urlopen(_url() + "/api/gof", timeout=3) as reply:
+            folder = json.loads(reply.read().decode("utf-8")).get("folder")
+            if folder:
+                return folder
+    except (urllib.error.URLError, OSError, ValueError):
+        pass
+    return os.path.join(os.path.expanduser("~"), "Formsculptor", "GoF")
+
+
+def gof_entries(folder):
+    """gof.json's GLB entries meant for Blender (or for no app in particular), oldest first."""
+    try:
+        with open(os.path.join(folder, "gof.json"), encoding="utf-8") as f:
+            objects = json.load(f).get("objects", [])
+    except (OSError, ValueError):
+        return []
+    return [o for o in objects if o.get("format") == "glb" and o.get("target") in ("blender", "any")]
+
+
+def gof_import(context, folder, entry):
+    """Import one GoF GLB with Blender's glTF importer. An object already brought from the same file keeps its
+    transform and name and takes the new mesh. Returns the objects that now hold it."""
+    path = os.path.join(folder, entry["file"])
+    if not os.path.isfile(path):
+        raise LinkError(f"{entry['file']} is not in {folder}")
+    before = set(bpy.data.objects)
+    result = bpy.ops.import_scene.gltf(filepath=path, merge_vertices=True)
+    if "FINISHED" not in result:
+        raise LinkError(f"Blender's glTF importer could not read {entry['file']}")
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    existing = [o for o in bpy.data.objects if o not in new and o.get(GOF_FILE) == entry["file"] and o.type == "MESH"]
+    if existing and meshes:
+        target = existing[0]
+        old = target.data
+        target.data = meshes[0].data
+        for o in new:
+            bpy.data.objects.remove(o, do_unlink=True)
+        if old.users == 0:
+            bpy.data.meshes.remove(old)
+        held = [target]
+    else:
+        held = meshes
+    for o in held:
+        o[GOF_FILE] = entry["file"]
+        o[GOF_SENT] = int(entry.get("sent", 0))
+    return held
+
+
+def gof_check(context, folder=None):
+    """Import every GoF entry for Blender that is new or was sent again since it was last imported."""
+    folder = folder or gof_folder()
+    done = 0
+    for entry in gof_entries(folder):
+        current = [o for o in bpy.data.objects if o.get(GOF_FILE) == entry["file"]]
+        if current and all(int(o.get(GOF_SENT, 0)) >= int(entry.get("sent", 0)) for o in current):
+            continue
+        gof_import(context, folder, entry)
+        done += 1
+    return done
+
+
+def gof_return(context, obj, folder=None):
+    """Write obj over its GoF GLB with Blender's glTF exporter (+Y up, glTF's convention), so formsculptor's bridge
+    sync brings the edit back into the object it came from."""
+    name = obj.get(GOF_FILE)
+    if not name:
+        raise LinkError(f"{obj.name} did not come from GoF")
+    path = os.path.join(folder or gof_folder(), name)
+    selected = list(context.selected_objects)
+    active = context.view_layer.objects.active
+    for o in selected:
+        o.select_set(False)
+    obj.select_set(True)
+    context.view_layer.objects.active = obj
+    try:
+        result = bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_yup=True, export_apply=True, export_materials="NONE")
+    finally:
+        obj.select_set(False)
+        for o in selected:
+            o.select_set(True)
+        context.view_layer.objects.active = active
+    if "FINISHED" not in result:
+        raise LinkError(f"Blender's glTF exporter could not write {name}")
+    return path
+
+
+def _gof_tick():
+    prefs = _prefs()
+    if prefs is not None and not prefs.gof_watch:
+        return None
+    folder = gof_folder()
+    try:
+        stamp = os.path.getmtime(os.path.join(folder, "gof.json"))
+    except OSError:
+        stamp = None
+    if stamp is not None and stamp != _gof["stamp"]:
+        _gof["stamp"] = stamp
+        try:
+            done = gof_check(bpy.context, folder)
+            if done:
+                _status["text"] = f"GoF: imported {done}"
+        except LinkError as e:
+            _status["text"] = str(e)
+    return 1.0
+
+
+def _set_gof_watch(self, context):
+    if self.gof_watch and not bpy.app.timers.is_registered(_gof_tick):
+        _gof["stamp"] = None
+        bpy.app.timers.register(_gof_tick, first_interval=0.1, persistent=True)
+    elif not self.gof_watch and bpy.app.timers.is_registered(_gof_tick):
+        bpy.app.timers.unregister(_gof_tick)
+
+
 def _set_live(self, context):
     if self.live and not bpy.app.timers.is_registered(_tick):
         bpy.app.timers.register(_tick, first_interval=0.1, persistent=True)
@@ -220,10 +352,13 @@ class FormsculptorPreferences(bpy.types.AddonPreferences):
     url: bpy.props.StringProperty(name="Address", default="http://127.0.0.1:8196", description="Where formsculptor's engine service listens")
     interval: bpy.props.FloatProperty(name="Interval", default=0.5, min=0.1, max=10.0, subtype="TIME_ABSOLUTE", unit="TIME_ABSOLUTE", description="Seconds between live updates")
     live: bpy.props.BoolProperty(name="Live", default=False, update=_set_live, description="Keep linked objects in step both ways")
+    gof_folder: bpy.props.StringProperty(name="GoF folder", default="", subtype="DIR_PATH", description="formsculptor's GoF folder; empty asks formsculptor, then uses Formsculptor/GoF in the home folder")
+    gof_watch: bpy.props.BoolProperty(name="Watch GoF", default=False, update=_set_gof_watch, description="Import what formsculptor sends to Blender with GoF as it arrives")
 
     def draw(self, context):
         self.layout.prop(self, "url")
         self.layout.prop(self, "interval")
+        self.layout.prop(self, "gof_folder")
 
 
 class FORMSCULPTOR_OT_send(bpy.types.Operator):
@@ -296,6 +431,45 @@ class FORMSCULPTOR_OT_unlink(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class FORMSCULPTOR_OT_gof_import(bpy.types.Operator):
+    bl_idname = "formsculptor.gof_import"
+    bl_label = "Import from GoF"
+    bl_description = "Bring in what formsculptor sent to Blender with GoF (new files, and newer copies of ones already here)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        try:
+            done = gof_check(context)
+        except LinkError as e:
+            self.report({"ERROR"}, str(e))
+            return {"CANCELLED"}
+        self.report({"INFO"}, f"GoF: imported {done}" if done else "GoF: nothing new")
+        return {"FINISHED"}
+
+
+class FORMSCULPTOR_OT_gof_return(bpy.types.Operator):
+    bl_idname = "formsculptor.gof_return"
+    bl_label = "Send back to GoF"
+    bl_description = "Write the selected GoF objects over their files, so formsculptor brings the edits back"
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == "OBJECT" and any(o.get(GOF_FILE) for o in context.selected_objects)
+
+    def execute(self, context):
+        folder = gof_folder()
+        sent = 0
+        for obj in [o for o in context.selected_objects if o.get(GOF_FILE)]:
+            try:
+                gof_return(context, obj, folder)
+                sent += 1
+            except LinkError as e:
+                self.report({"ERROR"}, str(e))
+                return {"CANCELLED"}
+        self.report({"INFO"}, f"GoF: sent back {sent}")
+        return {"FINISHED"}
+
+
 class FORMSCULPTOR_PT_link(bpy.types.Panel):
     bl_label = "Live Link"
     bl_idname = "FORMSCULPTOR_PT_link"
@@ -315,11 +489,18 @@ class FORMSCULPTOR_PT_link(bpy.types.Panel):
         col.operator("formsculptor.unlink", icon="UNLINKED")
         linked = linked_objects()
         layout.label(text=f"Linked: {len(linked)}")
+        layout.separator()
+        layout.label(text="GoF")
+        if prefs is not None:
+            layout.prop(prefs, "gof_watch", toggle=True)
+        col = layout.column(align=True)
+        col.operator("formsculptor.gof_import", icon="IMPORT")
+        col.operator("formsculptor.gof_return", icon="EXPORT")
         if _status["text"]:
             layout.label(text=_status["text"])
 
 
-CLASSES = (FormsculptorPreferences, FORMSCULPTOR_OT_send, FORMSCULPTOR_OT_fetch, FORMSCULPTOR_OT_sync, FORMSCULPTOR_OT_unlink, FORMSCULPTOR_PT_link)
+CLASSES = (FormsculptorPreferences, FORMSCULPTOR_OT_send, FORMSCULPTOR_OT_fetch, FORMSCULPTOR_OT_sync, FORMSCULPTOR_OT_unlink, FORMSCULPTOR_OT_gof_import, FORMSCULPTOR_OT_gof_return, FORMSCULPTOR_PT_link)
 
 
 def register():
@@ -328,8 +509,9 @@ def register():
 
 
 def unregister():
-    if bpy.app.timers.is_registered(_tick):
-        bpy.app.timers.unregister(_tick)
+    for timer in (_tick, _gof_tick):
+        if bpy.app.timers.is_registered(timer):
+            bpy.app.timers.unregister(timer)
     for cls in reversed(CLASSES):
         bpy.utils.unregister_class(cls)
     _seen.clear()
