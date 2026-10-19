@@ -421,15 +421,70 @@ pub enum Pass {
     Occlusion,
 }
 
-/// One traced pixel before display: its linear light and coverage, and what the denoiser is guided by.
+/// One traced pixel before display: its linear light and coverage, and what the denoiser works on.
 struct Traced {
     color: Vec3,
     alpha: f32,
+    /// The samples whose first surface was the pixel's main one (most samples), and those that met another surface
+    /// (an outline between two surfaces splits a pixel), each with its own guides; light from the backdrop apart.
+    main: Layer,
+    other: Layer,
+    backdrop: Vec3,
+}
+
+/// The samples of a pixel that met one surface first: how many, their mean light, the surface's mean colour, normal
+/// and depth, which object it was, and the variance of their mean brightness.
+#[derive(Clone, Copy, Default)]
+struct Layer {
+    count: u32,
+    light: Vec3,
     albedo: Vec3,
     normal: Vec3,
     depth: f32,
+    object: usize,
     variance: f32,
-    hit: bool,
+}
+
+/// Sums for a Layer while the samples are traced.
+#[derive(Clone, Copy, Default)]
+struct LayerSum {
+    count: u32,
+    light: Vec3,
+    albedo: Vec3,
+    normal: Vec3,
+    depth: f32,
+    object: usize,
+    m1: f32,
+    m2: f32,
+}
+
+impl LayerSum {
+    fn add(&mut self, object: usize, light: Vec3, albedo: Vec3, normal: Vec3, depth: f32) {
+        let l = light.dot(Vec3::new(0.2126, 0.7152, 0.0722));
+        self.object = object;
+        self.count += 1;
+        self.light += light;
+        self.albedo += albedo;
+        self.normal += normal;
+        self.depth += depth;
+        self.m1 += l;
+        self.m2 += l * l;
+    }
+
+    /// The same surface, near the same depth (a twentieth of it), so a part of one object in front of another part of
+    /// it still counts as a second surface.
+    fn takes(&self, object: usize, depth: f32) -> bool {
+        self.count == 0 || (self.object == object && (depth - self.depth / self.count as f32).abs() <= 0.05 * depth.max(1e-6))
+    }
+
+    fn mean(&self) -> Layer {
+        if self.count == 0 {
+            return Layer::default();
+        }
+        let k = self.count as f32;
+        let (mean, square) = (self.m1 / k, self.m2 / k);
+        Layer { count: self.count, light: self.light / k, albedo: self.albedo / k, normal: self.normal.normalize_or_zero(), depth: self.depth / k, object: self.object, variance: (square - mean * mean).max(0.0) / k }
+    }
 }
 
 /// A light added to the sun: its colour times intensity, and either the direction it shines from (world space; a
@@ -587,12 +642,22 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
         let mut rng = Rng((i as u32).wrapping_mul(2_654_435_761) ^ 0x9e37_79b9 | 1);
         let mut total = Vec3::ZERO;
         let mut alpha = 0.0f32;
-        // The denoiser's guides: the first surface each sample meets, and the moments of the samples' brightness.
-        let (mut g_albedo, mut g_normal, mut g_depth, mut g_hits) = (Vec3::ZERO, Vec3::ZERO, 0.0f32, 0u32);
-        let (mut m1, mut m2) = (0.0f32, 0.0f32);
-        for _ in 0..samples {
-            let sx = ((x as f32 + rng.next()) / view.width as f32) * 2.0 - 1.0;
-            let sy = 1.0 - ((y as f32 + rng.next()) / view.height as f32) * 2.0;
+        // For the denoiser: each sample's light filed by the first surface it met (the main one, another, or none).
+        let (mut main, mut other, mut backdrop) = (LayerSum::default(), LayerSum::default(), Vec3::ZERO);
+        // Where in the pixel each sample looks: Latin hypercube (N-rooks) sampling, one sample in each of N columns and
+        // each of N rows, the rows matched to the columns at random (McKay, Beckman and Conover, Technometrics 1979;
+        // pbrt's Latin hypercube sampler). Pure random positions left how much of a pixel each of two surfaces covers
+        // as noisy as a coin count, which no filter can tell from shading noise on an outline.
+        let mut rows: Vec<u32> = (0..samples).collect();
+        for s in (1..rows.len()).rev() {
+            let j = ((rng.next() * (s + 1) as f32) as usize).min(s);
+            rows.swap(s, j);
+        }
+        let strata = samples as f32;
+        for s in 0..samples {
+            let mut first_surface: Option<(usize, Vec3, Vec3, f32)> = None;
+            let sx = ((x as f32 + (s as f32 + rng.next()) / strata) / view.width as f32) * 2.0 - 1.0;
+            let sy = 1.0 - ((y as f32 + (rows[s as usize] as f32 + rng.next()) / strata) / view.height as f32) * 2.0;
             let mut d = (cam.fwd + cam.right * (sx * cam.tan * cam.aspect) + cam.up * (sy * cam.tan)).normalize();
             let mut p = cam.eye;
             if lens > 0.0 {
@@ -656,10 +721,7 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                 let albedo = Vec3::new(paint[0], paint[1], paint[2]).clamp(Vec3::ZERO, Vec3::ONE);
                 if guide {
                     guide = false;
-                    g_albedo += albedo;
-                    g_normal += n;
-                    g_depth += (q - cam.eye).length();
-                    g_hits += 1;
+                    first_surface = Some((oi, albedo, n, (q - cam.eye).length()));
                 }
                 let (rough, metal, opacity, glow) = (paint[3].clamp(0.05, 1.0), paint[4].clamp(0.0, 1.0), paint[5].clamp(0.0, 1.0), paint[6].clamp(0.0, 1.0));
                 let material = &objects[oi].material;
@@ -755,32 +817,78 @@ pub fn path_trace_with(objects: &[RenderObject], view: &View, options: &PathOpti
                 }
             }
             total += light;
-            let l = light.dot(Vec3::new(0.2126, 0.7152, 0.0722));
-            m1 += l;
-            m2 += l * l;
+            match first_surface {
+                Some((oi, albedo, n, depth)) if main.takes(oi, depth) => main.add(oi, light, albedo, n, depth),
+                Some((oi, albedo, n, depth)) => other.add(oi, light, albedo, n, depth),
+                None => backdrop += light,
+            }
         }
         let k = samples as f32;
         let a = if view.background.is_some() { 1.0 } else { alpha / k };
-        // A pixel is guided only when every sample met a surface: edges against the backdrop mix in its colour, so they
-        // stay as traced and are not borrowed from.
-        let hit = g_hits == samples;
-        let h = g_hits.max(1) as f32;
-        let (mean, square) = (m1 / k, m2 / k);
-        Traced { color: total / k, alpha: a, albedo: g_albedo / h, normal: g_normal.normalize_or_zero(), depth: g_depth / h, variance: (square - mean * mean).max(0.0) / k, hit }
+        // The main surface is the one most samples met; on an outline between two surfaces it can be the second seen.
+        if other.count > main.count {
+            std::mem::swap(&mut main, &mut other);
+        }
+        Traced { color: total / k, alpha: a, main: main.mean(), other: other.mean(), backdrop }
     };
     #[cfg(feature = "parallel")]
     let mut traced: Vec<Traced> = (0..view.width * view.height).into_par_iter().map(trace).collect();
     #[cfg(not(feature = "parallel"))]
     let mut traced: Vec<Traced> = (0..view.width * view.height).map(trace).collect();
     if options.denoise && options.pass == Pass::Beauty {
-        let mut color: Vec<Vec3> = traced.iter().map(|t| t.color).collect();
-        let albedo: Vec<Vec3> = traced.iter().map(|t| t.albedo).collect();
-        let normal: Vec<Vec3> = traced.iter().map(|t| t.normal).collect();
-        let depth: Vec<f32> = traced.iter().map(|t| t.depth).collect();
-        let variance: Vec<f32> = traced.iter().map(|t| t.variance).collect();
-        let hit: Vec<bool> = traced.iter().map(|t| t.hit).collect();
+        // The filter runs over each pixel's main surface alone, so a pixel split by an outline is guided by one
+        // surface's normal and depth (an average of two surfaces fits neither neighbour, and such pixels kept their
+        // noise). Its samples on another surface then take the filtered light of a nearby pixel whose main surface is
+        // that one, and the parts are put back together by their sample counts.
+        let main: Vec<Layer> = traced.iter().map(|t| t.main).collect();
+        let mut color: Vec<Vec3> = main.iter().map(|l| l.light).collect();
+        let albedo: Vec<Vec3> = main.iter().map(|l| l.albedo).collect();
+        let normal: Vec<Vec3> = main.iter().map(|l| l.normal).collect();
+        let depth: Vec<f32> = main.iter().map(|l| l.depth).collect();
+        let variance: Vec<f32> = main.iter().map(|l| l.variance).collect();
+        let hit: Vec<bool> = main.iter().map(|l| l.count > 0).collect();
         crate::denoise::denoise(&mut color, &crate::denoise::Guides { width: view.width, height: view.height, albedo: &albedo, normal: &normal, depth: &depth, variance: &variance, hit: &hit });
-        for (t, c) in traced.iter_mut().zip(color) {
+        let (w, h) = (view.width as isize, view.height as isize);
+        let floor = Vec3::splat(0.02);
+        let k = samples as f32;
+        let mixed: Vec<Vec3> = (0..traced.len())
+            .map(|i| {
+                let t = &traced[i];
+                if t.main.count == 0 {
+                    return t.color;
+                }
+                let o = t.other;
+                let mut other = o.light;
+                if o.count > 0 {
+                    // The nearest pixel within two whose main surface is this one, its filtered light with its own
+                    // colour divided out and this sample group's colour put back.
+                    let (x, y) = ((i % view.width) as isize, (i / view.width) as isize);
+                    let mut best: Option<(isize, usize)> = None;
+                    for dy in -2..=2isize {
+                        for dx in -2..=2isize {
+                            let (nx, ny) = (x + dx, y + dy);
+                            if nx < 0 || ny < 0 || nx >= w || ny >= h || (dx == 0 && dy == 0) {
+                                continue;
+                            }
+                            let j = (ny * w + nx) as usize;
+                            let m = &main[j];
+                            if m.count == 0 || m.object != o.object || (m.depth - o.depth).abs() > 0.05 * o.depth.max(1e-6) {
+                                continue;
+                            }
+                            let d = dx * dx + dy * dy;
+                            if best.is_none_or(|(b, _)| d < b) {
+                                best = Some((d, j));
+                            }
+                        }
+                    }
+                    if let Some((_, j)) = best {
+                        other = color[j] / albedo[j].max(floor) * o.albedo.max(floor);
+                    }
+                }
+                (color[i] * t.main.count as f32 + other * o.count as f32 + t.backdrop) / k
+            })
+            .collect();
+        for (t, c) in traced.iter_mut().zip(mixed) {
             t.color = c;
         }
     }
