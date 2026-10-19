@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.98.0 · 2026-10-19
+
+### Added
+
+- Nomad's one-tap hide shortcuts, as One tap hide shortcuts in the panel's View section (off at first): with Box mask or Lasso mask set to Hide, tap a face group to hide it, or tap empty space to invert what is hidden. Drawn shapes still hide as before. With the option on, the Hide group tool's empty-space tap inverts too.
+- 1342 interface strings in every language.
+
 ## 0.97.0 · 2026-10-18
 
 ### Added
