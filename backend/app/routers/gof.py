@@ -75,7 +75,8 @@ def _hand(file: str) -> dict:
         raise HTTPException(status_code=404, detail=f"send it with GoF for FormSurface first; {file} is not a GLB in the GoF folder")
     health = _health()
     if health is None:
-        raise HTTPException(status_code=503, detail="FormSurface is not running; start it with ./formsurface")
+        # Not running is an ordinary state, not a failure: the file waits in the GoF folder.
+        return {"copied": None, "loaded": False, "running": False}
     meshes = Path(str(health.get("data", ""))) / "meshes"
     try:
         meshes.mkdir(parents=True, exist_ok=True)
@@ -83,7 +84,7 @@ def _hand(file: str) -> dict:
     except OSError as error:
         raise HTTPException(status_code=500, detail=f"could not copy into FormSurface's meshes folder: {error}") from error
     if not health.get("editor_linked"):
-        return {"copied": str(meshes / file), "loaded": False, "note": "Turn on Agent link in FormSurface to load it there, or open it from its meshes folder"}
+        return {"copied": str(meshes / file), "loaded": False, "running": True, "note": "Turn on Agent link in FormSurface to load it there, or open it from its meshes folder"}
     try:
         # reproject keeps FormSurface's painting on the surface when a sculpt comes back changed.
         _call("POST", "/api/agent", {"command": "load_mesh", "args": {"file": file, "reproject": True}, "timeout": 180}, timeout=185)
@@ -91,7 +92,7 @@ def _hand(file: str) -> dict:
         raise HTTPException(status_code=502, detail=f"FormSurface refused it: {error.read().decode(errors='replace')[:300]}") from error
     except (urllib.error.URLError, OSError) as error:
         raise HTTPException(status_code=502, detail=f"FormSurface did not answer: {error}") from error
-    return {"copied": str(meshes / file), "loaded": True}
+    return {"copied": str(meshes / file), "loaded": True, "running": True}
 
 
 @router.post("/gof/formsurface")
