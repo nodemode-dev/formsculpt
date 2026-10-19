@@ -119,6 +119,7 @@ interface Shell {
   fileUp: HTMLSelectElement;
   exportTriangles: HTMLInputElement;
   importMerge: HTMLInputElement;
+  gofTarget: HTMLSelectElement;
   realSize: HTMLInputElement;
   realAxis: HTMLSelectElement;
   renderSize: HTMLSelectElement;
@@ -527,6 +528,7 @@ const FILE_ACTIONS: [string, string][] = [
   ['recover', 'Recover'],
   ['nodemode', 'Send to NodeMode'],
   ['blender', 'Blender add-on'],
+  ['gof', 'Send with GoF'],
 ];
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
@@ -751,8 +753,10 @@ function buildShell(root: HTMLElement): Shell {
   const fileUp = choices('File up axis', [['y', 'Y up (formsculptor, glTF)'], ['z', 'Z up (Blender)']]);
   const exportTriangles = input('checkbox', { 'aria-label': 'Export triangles' });
   const importMerge = input('checkbox', { 'aria-label': 'Import as one object' });
+  // GoF, formsculptor's own hand-off: the app Send with GoF writes for, into the shared GoF folder.
+  const gofTarget = choices('GoF target', [['blender', 'Blender'], ['unreal', 'Unreal Engine'], ['unity', 'Unity'], ['formsurface', 'FormSurface'], ['substance', 'Substance 3D Painter'], ['any', 'Any app (OBJ)']]);
   const fileFields = el('div', 'fields');
-  fileFields.append(field('Export format', exportFormat), field('File scale', fileScale), field('File up axis', fileUp), field('Export triangles', exportTriangles), field('Import as one object', importMerge), field('Real size (mm)', realSize), field('Real size axis', realAxis), field('Render size', renderSize), field('NodeMode address', nodemode));
+  fileFields.append(field('GoF target', gofTarget), field('Export format', exportFormat), field('File scale', fileScale), field('File up axis', fileUp), field('Export triangles', exportTriangles), field('Import as one object', importMerge), field('Real size (mm)', realSize), field('Real size axis', realAxis), field('Render size', renderSize), field('NodeMode address', nodemode));
   panel.append(fileFields);
   panel.append(el('h2', 'gap', 'Add'));
   // Two columns: nine shapes, some with long names (Icosahedron, and longer in some languages).
@@ -1736,7 +1740,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, oneTapHide, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, oneTapHide, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, gofTarget, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -5944,6 +5948,8 @@ class SceneView {
       if (await this.download('/api/integrations/blender', `formsculptor_link-${VERSION}.zip`)) {
         this.note(t('In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there'));
       }
+    } else if (action === 'gof' && id !== null) {
+      await this.gofOut(id);
     } else if (id === null) {
       this.note('Select an object first');
     } else if (action === 'repair') {
@@ -6096,6 +6102,27 @@ class SceneView {
     }
     this.note(`Open ${body.result.path} in the other app; saving there brings it back here`);
     if (this.bridgeTimer) return;
+    this.bridgeTimer = window.setInterval(() => void this.bridgeSync(), 3000);
+  }
+
+  /** GoF: writes the object into the GoF folder for the chosen app; FormSurface also gets it loaded when it is running
+   *  with Agent link on. Files that come back are bridges, so the window syncs them as Bridge to app does. */
+  private async gofOut(id: number): Promise<void> {
+    const target = this.shell.gofTarget.value;
+    const sent = await dispatch<{ path: string; folder: string; entry: { file: string; returns: boolean } }>('gof_send', { id, target });
+    if (!sent.ok) {
+      this.note(sent.error.message);
+      return;
+    }
+    const { path, entry } = sent.result;
+    if (target === 'formsurface') {
+      const reply = await postBody<{ loaded: boolean }>('/api/gof/formsurface', { file: entry.file });
+      if (!reply.ok) this.note(t('Sent to {path}; FormSurface: {reason}').replace('{path}', path).replace('{reason}', reply.error.message));
+      else this.note(reply.result.loaded ? t('Sent to FormSurface and loaded there') : t('Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder'));
+    } else {
+      this.note(t('Sent with GoF to {path}').replace('{path}', path));
+    }
+    if (!entry.returns || this.bridgeTimer) return;
     this.bridgeTimer = window.setInterval(() => void this.bridgeSync(), 3000);
   }
 

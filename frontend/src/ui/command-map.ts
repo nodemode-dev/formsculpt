@@ -20,6 +20,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     recover: c('file.recover', 'Recover Autosave'),
     nodemode: c('file.send_nodemode', 'Send to NodeMode'),
     blender: c('file.blender_addon', 'Get Blender Add-on'),
+    gof: n('file.gof', 'Send with GoF'),
   },
   add: {
     sphere: c('add.sphere', 'Add Sphere', { icon: 'cube' }),
