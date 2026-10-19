@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.13.0 · 2026-10-19
+
+### Added
+
+- Local symmetry, as Nomad Sculpt has it: tick Local symmetry beside Mirror X and strokes mirror about the object's own centre instead of the world origin, so an object moved aside still sculpts symmetrically. Agents use `symmetry.local`.
+- Keep hard edges on Voxel remesh: give an angle (30 suits most hard-surface parts) and edges and corners stay sharp instead of rounding by a voxel. Agents use `remesh_voxel` `keep_sharp`.
+- 1377 interface strings in every language.
+
 ## 1.12.0 · 2026-10-19
 
 ### Added
