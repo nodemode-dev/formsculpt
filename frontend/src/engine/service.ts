@@ -49,7 +49,7 @@ export interface ObjectSummary {
   uvs?: boolean;
   texture_size?: number | null;
   /** blend and opacity come from engines 0.80.0 and later (absent from older ones: opaque). */
-  material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number; blend?: 'opaque' | 'dithered' | 'additive'; opacity?: number };
+  material?: { subsurface: number; subsurface_color: [number, number, number]; subsurface_radius: number; transmission: number; ior: number; blend?: 'opaque' | 'dithered' | 'additive'; opacity?: number; smooth_shading?: 'auto' | 'on' | 'off' };
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 

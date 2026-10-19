@@ -139,6 +139,9 @@ uniform float uIor;
 // The material's blend (0 opaque, 1 dithered, 2 additive) and its opacity.
 uniform float uBlend;
 uniform float uOpacity;
+// 1 shades each face on its own (smooth shading off): the normal of the face this pixel is on, from the screen-space
+// change of its view position, so the topology shows.
+uniform float uFlat;
 // 1 while screen-space reflections are on: alpha then carries the pixel's reflectivity.
 uniform float uReflectOut;
 // How much material lies between this point and the key light, in world units, from the light's depth map; -1 when
@@ -216,7 +219,7 @@ void main() {
     float gate = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
     if (opacity <= gate) discard;
   }
-  vec3 n = normalize(vNrm);
+  vec3 n = uFlat > 0.5 ? normalize(cross(dFdx(vViewPos), dFdy(vViewPos))) : normalize(vNrm);
   vec3 v = uOrtho > 0.5 ? vec3(0.0, 0.0, 1.0) : normalize(-vViewPos);
   if (dot(n, v) < 0.0) n = -n;
   vec3 albedo = uPainted > 0.5 ? vCol : uBase;
@@ -743,6 +746,24 @@ export class GlRenderer {
 
   private materials = new Map<number, ObjectMaterial>();
 
+  /** The view's Smooth shading (Nomad's global option); objects set to on or off override it, auto follows it. */
+  smoothShading = true;
+  private smoothOf = new Map<number, boolean>();
+
+  /** An object's smooth shading as the engine stores it: on, off, or auto (follow the view). Returns whether the
+   * drawing changes. */
+  setSmooth(id: number, value: 'auto' | 'on' | 'off'): boolean {
+    const was = this.smoothOf.get(id);
+    if (value === 'auto') return this.smoothOf.delete(id);
+    const on = value === 'on';
+    this.smoothOf.set(id, on);
+    return was !== on;
+  }
+
+  private flat(id: number): boolean {
+    return !(this.smoothOf.get(id) ?? this.smoothShading);
+  }
+
   /** An object's subsurface, transmission and blend, as the engine stores them (null clears it to opaque). Returns
    * whether the drawing changes, so the caller redraws only then. */
   setMaterial(id: number, m: ObjectMaterial | null): boolean {
@@ -978,6 +999,7 @@ export class GlRenderer {
     const order = [...this.meshes].sort(([a], [b]) => Number(additive(a)) - Number(additive(b)));
     const blendAt = gl.getUniformLocation(this.meshProgram, 'uBlend');
     const opacityAt = gl.getUniformLocation(this.meshProgram, 'uOpacity');
+    const flatAt = gl.getUniformLocation(this.meshProgram, 'uFlat');
     let adding = false;
     for (const [id, m] of order) {
       gl.uniformMatrix4fv(model, false, this.previews.get(id) ?? IDENTITY);
@@ -990,6 +1012,7 @@ export class GlRenderer {
       }
       gl.uniform1f(blendAt, mat?.blend === 'dithered' ? 1 : mat?.blend === 'additive' ? 2 : 0);
       gl.uniform1f(opacityAt, mat?.opacity ?? 1);
+      gl.uniform1f(flatAt, this.flat(id) ? 1 : 0);
       gl.uniform1f(sss, mat?.subsurface ?? 0);
       gl.uniform3f(sssColor, ...(mat?.subsurfaceColor ?? [1, 0.35, 0.25]));
       gl.uniform1f(sssRadius, mat?.subsurfaceRadius ?? 0.2);
