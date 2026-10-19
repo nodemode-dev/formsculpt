@@ -1375,5 +1375,12 @@
  "Clay strips": "Dải đất sét",
  "Delete Edge Loop": "Xóa vòng cạnh",
  "Keep hard edges (degrees)": "Giữ cạnh sắc (độ)",
- "Local symmetry": "Đối xứng cục bộ"
+ "Local symmetry": "Đối xứng cục bộ",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Đưa một cuộc trò chuyện từ tab Claude Code vào khung chat này: các tin nhắn của nó hiện ở đây và tin nhắn tiếp theo của bạn sẽ tiếp tục nó.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Tiếp tục từ Claude Code",
+ "Continue Here": "Tiếp tục tại đây",
+ "Conversation": "Cuộc trò chuyện",
+ "this chat": "khung chat này",
+ "Untitled": "Không có tiêu đề"
 }

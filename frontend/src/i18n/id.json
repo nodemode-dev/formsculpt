@@ -1375,5 +1375,12 @@
  "Clay strips": "Strip tanah liat",
  "Delete Edge Loop": "Hapus loop tepi",
  "Keep hard edges (degrees)": "Pertahankan tepi tajam (derajat)",
- "Local symmetry": "Simetri lokal"
+ "Local symmetry": "Simetri lokal",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Membawa percakapan dari tab Claude Code ke obrolan ini: pesannya tampil di sini dan pesan Anda berikutnya melanjutkannya.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Lanjutkan dari Claude Code",
+ "Continue Here": "Lanjutkan di Sini",
+ "Conversation": "Percakapan",
+ "this chat": "obrolan ini",
+ "Untitled": "Tanpa judul"
 }

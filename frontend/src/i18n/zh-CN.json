@@ -1375,5 +1375,12 @@
  "Clay strips": "黏土条",
  "Delete Edge Loop": "删除边循环",
  "Keep hard edges (degrees)": "保留硬边（度）",
- "Local symmetry": "局部对称"
+ "Local symmetry": "局部对称",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "将 Claude Code 标签页中的对话带入此聊天：其消息显示在这里，你的下一条消息将继续该对话。",
+ "Claude": "Claude",
+ "Continue from Claude Code": "从 Claude Code 继续",
+ "Continue Here": "在此继续",
+ "Conversation": "对话",
+ "this chat": "此聊天",
+ "Untitled": "无标题"
 }

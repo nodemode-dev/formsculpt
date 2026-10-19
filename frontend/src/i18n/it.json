@@ -1375,5 +1375,12 @@
  "Clay strips": "Strisce di argilla",
  "Delete Edge Loop": "Elimina loop di spigoli",
  "Keep hard edges (degrees)": "Mantieni spigoli vivi (gradi)",
- "Local symmetry": "Simmetria locale"
+ "Local symmetry": "Simmetria locale",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Porta in questa chat una conversazione da una scheda Claude Code: i suoi messaggi compaiono qui e il tuo prossimo messaggio la continua.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Continua da Claude Code",
+ "Continue Here": "Continua qui",
+ "Conversation": "Conversazione",
+ "this chat": "questa chat",
+ "Untitled": "Senza titolo"
 }

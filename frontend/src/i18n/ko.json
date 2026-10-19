@@ -1375,5 +1375,12 @@
  "Clay strips": "클레이 스트립",
  "Delete Edge Loop": "에지 루프 삭제",
  "Keep hard edges (degrees)": "날카로운 에지 유지(도)",
- "Local symmetry": "로컬 대칭"
+ "Local symmetry": "로컬 대칭",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Claude Code 탭의 대화를 이 채팅으로 가져옵니다. 메시지가 여기에 표시되고 다음 메시지로 대화를 이어 갑니다.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Claude Code에서 이어 하기",
+ "Continue Here": "여기서 이어 하기",
+ "Conversation": "대화",
+ "this chat": "이 채팅",
+ "Untitled": "제목 없음"
 }

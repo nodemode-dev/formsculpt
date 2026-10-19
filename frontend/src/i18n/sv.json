@@ -1375,5 +1375,12 @@
  "Clay strips": "Lerremsor",
  "Delete Edge Loop": "Ta bort kantslinga",
  "Keep hard edges (degrees)": "Behåll skarpa kanter (grader)",
- "Local symmetry": "Lokal symmetri"
+ "Local symmetry": "Lokal symmetri",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Tar in en konversation från en Claude Code-flik i den här chatten: dess meddelanden visas här och ditt nästa meddelande fortsätter den.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Fortsätt från Claude Code",
+ "Continue Here": "Fortsätt här",
+ "Conversation": "Konversation",
+ "this chat": "den här chatten",
+ "Untitled": "Namnlös"
 }

@@ -1375,5 +1375,12 @@
  "Clay strips": "Kil şeritleri",
  "Delete Edge Loop": "Kenar döngüsünü sil",
  "Keep hard edges (degrees)": "Keskin kenarları koru (derece)",
- "Local symmetry": "Yerel simetri"
+ "Local symmetry": "Yerel simetri",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Bir Claude Code sekmesindeki konuşmayı bu sohbete getirir: mesajları burada görünür ve bir sonraki mesajınız onu sürdürür.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Claude Code'dan devam et",
+ "Continue Here": "Burada devam et",
+ "Conversation": "Konuşma",
+ "this chat": "bu sohbet",
+ "Untitled": "Adsız"
 }

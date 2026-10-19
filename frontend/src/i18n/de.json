@@ -1375,5 +1375,12 @@
  "Clay strips": "Tonstreifen",
  "Delete Edge Loop": "Kantenschleife löschen",
  "Keep hard edges (degrees)": "Harte Kanten erhalten (Grad)",
- "Local symmetry": "Lokale Symmetrie"
+ "Local symmetry": "Lokale Symmetrie",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Übernimmt eine Unterhaltung aus einem Claude-Code-Tab in diesen Chat: ihre Nachrichten erscheinen hier, und deine nächste Nachricht setzt sie fort.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Aus Claude Code fortsetzen",
+ "Continue Here": "Hier fortsetzen",
+ "Conversation": "Unterhaltung",
+ "this chat": "dieser Chat",
+ "Untitled": "Ohne Titel"
 }

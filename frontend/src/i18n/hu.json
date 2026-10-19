@@ -1375,5 +1375,12 @@
  "Clay strips": "Agyagcsíkok",
  "Delete Edge Loop": "Élhurok törlése",
  "Keep hard edges (degrees)": "Éles élek megtartása (fok)",
- "Local symmetry": "Helyi szimmetria"
+ "Local symmetry": "Helyi szimmetria",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Áthoz egy Claude Code lapon folytatott beszélgetést ebbe a csevegésbe: az üzenetei itt jelennek meg, és a következő üzeneted folytatja.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Folytatás a Claude Code-ból",
+ "Continue Here": "Folytatás itt",
+ "Conversation": "Beszélgetés",
+ "this chat": "ez a csevegés",
+ "Untitled": "Névtelen"
 }

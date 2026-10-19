@@ -1375,5 +1375,12 @@
  "Clay strips": "Tiras de argila",
  "Delete Edge Loop": "Excluir loop de arestas",
  "Keep hard edges (degrees)": "Manter arestas vivas (graus)",
- "Local symmetry": "Simetria local"
+ "Local symmetry": "Simetria local",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Traz para este chat uma conversa de uma aba do Claude Code: as mensagens aparecem aqui e sua próxima mensagem a continua.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Continuar do Claude Code",
+ "Continue Here": "Continuar aqui",
+ "Conversation": "Conversa",
+ "this chat": "este chat",
+ "Untitled": "Sem título"
 }

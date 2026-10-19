@@ -1375,5 +1375,12 @@
  "Clay strips": "แถบดินเหนียว",
  "Delete Edge Loop": "ลบลูปขอบ",
  "Keep hard edges (degrees)": "คงขอบคม (องศา)",
- "Local symmetry": "สมมาตรเฉพาะที่"
+ "Local symmetry": "สมมาตรเฉพาะที่",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "นำบทสนทนาจากแท็บ Claude Code มาไว้ในแชตนี้ ข้อความจะแสดงที่นี่ และข้อความถัดไปของคุณจะต่อบทสนทนานั้น",
+ "Claude": "Claude",
+ "Continue from Claude Code": "ต่อจาก Claude Code",
+ "Continue Here": "ต่อที่นี่",
+ "Conversation": "บทสนทนา",
+ "this chat": "แชตนี้",
+ "Untitled": "ไม่มีชื่อ"
 }

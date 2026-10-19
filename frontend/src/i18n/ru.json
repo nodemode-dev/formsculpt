@@ -1375,5 +1375,12 @@
  "Clay strips": "Глиняные полосы",
  "Delete Edge Loop": "Удалить петлю рёбер",
  "Keep hard edges (degrees)": "Сохранять острые рёбра (градусы)",
- "Local symmetry": "Локальная симметрия"
+ "Local symmetry": "Локальная симметрия",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Переносит в этот чат беседу из вкладки Claude Code: её сообщения показываются здесь, а ваше следующее сообщение продолжает её.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Продолжить из Claude Code",
+ "Continue Here": "Продолжить здесь",
+ "Conversation": "Беседа",
+ "this chat": "этот чат",
+ "Untitled": "Без названия"
 }

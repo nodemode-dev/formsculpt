@@ -1375,5 +1375,12 @@
  "Clay strips": "クレイストリップ",
  "Delete Edge Loop": "エッジループを削除",
  "Keep hard edges (degrees)": "鋭いエッジを保持（度）",
- "Local symmetry": "ローカル対称"
+ "Local symmetry": "ローカル対称",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Claude Codeタブの会話をこのチャットに取り込みます。そのメッセージがここに表示され、次のメッセージで会話を続けます。",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Claude Codeから続ける",
+ "Continue Here": "ここで続ける",
+ "Conversation": "会話",
+ "this chat": "このチャット",
+ "Untitled": "無題"
 }

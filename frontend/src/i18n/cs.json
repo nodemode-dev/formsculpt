@@ -1375,5 +1375,12 @@
  "Clay strips": "Hliněné pásy",
  "Delete Edge Loop": "Smazat smyčku hran",
  "Keep hard edges (degrees)": "Zachovat ostré hrany (stupně)",
- "Local symmetry": "Místní symetrie"
+ "Local symmetry": "Místní symetrie",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Přenese do tohoto chatu konverzaci z karty Claude Code: její zprávy se zobrazí zde a vaše další zpráva v ní pokračuje.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Pokračovat z Claude Code",
+ "Continue Here": "Pokračovat zde",
+ "Conversation": "Konverzace",
+ "this chat": "tento chat",
+ "Untitled": "Bez názvu"
 }

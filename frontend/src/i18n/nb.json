@@ -1375,5 +1375,12 @@
  "Clay strips": "Leirestriper",
  "Delete Edge Loop": "Slett kantløkke",
  "Keep hard edges (degrees)": "Behold skarpe kanter (grader)",
- "Local symmetry": "Lokal symmetri"
+ "Local symmetry": "Lokal symmetri",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Henter en samtale fra en Claude Code-fane inn i denne chatten: meldingene vises her, og den neste meldingen din fortsetter den.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Fortsett fra Claude Code",
+ "Continue Here": "Fortsett her",
+ "Conversation": "Samtale",
+ "this chat": "denne chatten",
+ "Untitled": "Uten tittel"
 }

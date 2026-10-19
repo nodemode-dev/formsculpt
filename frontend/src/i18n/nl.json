@@ -1375,5 +1375,12 @@
  "Clay strips": "Kleistroken",
  "Delete Edge Loop": "Randlus verwijderen",
  "Keep hard edges (degrees)": "Harde randen behouden (graden)",
- "Local symmetry": "Lokale symmetrie"
+ "Local symmetry": "Lokale symmetrie",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Neemt een gesprek uit een Claude Code-tab over in deze chat: de berichten verschijnen hier en je volgende bericht zet het voort.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Verdergaan vanuit Claude Code",
+ "Continue Here": "Hier verdergaan",
+ "Conversation": "Gesprek",
+ "this chat": "deze chat",
+ "Untitled": "Zonder titel"
 }

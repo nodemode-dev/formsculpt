@@ -1375,5 +1375,12 @@
  "Clay strips": "Paski gliny",
  "Delete Edge Loop": "Usuń pętlę krawędzi",
  "Keep hard edges (degrees)": "Zachowaj ostre krawędzie (stopnie)",
- "Local symmetry": "Symetria lokalna"
+ "Local symmetry": "Symetria lokalna",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Przenosi do tego czatu rozmowę z karty Claude Code: jej wiadomości pojawiają się tutaj, a następna wiadomość ją kontynuuje.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Kontynuuj z Claude Code",
+ "Continue Here": "Kontynuuj tutaj",
+ "Conversation": "Rozmowa",
+ "this chat": "ten czat",
+ "Untitled": "Bez tytułu"
 }

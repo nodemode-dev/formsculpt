@@ -1375,5 +1375,12 @@
  "Clay strips": "Savinauhat",
  "Delete Edge Loop": "Poista reunasilmukka",
  "Keep hard edges (degrees)": "Säilytä terävät reunat (astetta)",
- "Local symmetry": "Paikallinen symmetria"
+ "Local symmetry": "Paikallinen symmetria",
+ "Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.": "Tuo Claude Code -välilehden keskustelun tähän chattiin: sen viestit näkyvät täällä, ja seuraava viestisi jatkaa sitä.",
+ "Claude": "Claude",
+ "Continue from Claude Code": "Jatka Claude Codesta",
+ "Continue Here": "Jatka tässä",
+ "Conversation": "Keskustelu",
+ "this chat": "tämä chat",
+ "Untitled": "Nimetön"
 }
