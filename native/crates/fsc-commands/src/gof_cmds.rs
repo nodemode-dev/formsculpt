@@ -54,8 +54,13 @@ pub(crate) fn gof_send(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     let dir = folder(args)?;
     std::fs::create_dir_all(&dir).map_err(|e| io(format!("could not make {}: {e}", dir.display())))?;
     let object = s.scene.get(id).expect("checked");
+    // FormSurface skips a mesh without UVs (its loader needs them to paint), so a GoF send for it needs them too.
+    if app == "formsurface" && (object.mesh.uvs.is_empty() || object.mesh.uvs.len() != object.mesh.indices.len()) {
+        return Err(CommandError::new("no_uvs", "FormSurface paints on UVs and skips a mesh without them; run uv_unwrap first"));
+    }
     let name = object.name.clone();
-    let stem: String = name.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
+    // The same stem the Substance package and substance_sync use, so maps exported back under it are found.
+    let stem: String = name.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
     let file = if kind == "package" { format!("{stem}_substance") } else { format!("{stem}.{kind}") };
     let path = dir.join(&file);
     let path_text = path.to_string_lossy().to_string();

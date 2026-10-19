@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.0.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.1.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -1739,7 +1739,7 @@ Bring back every bridged file another app has saved since it was sent or last sy
 
 ## gof_send
 
-GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own). The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.
+GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. FormSurface needs UVs (no_uvs without them; run uv_unwrap), and its maps come back with substance_sync on its export folder (the window's From FormSurface does this). Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own). The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.
 
 - `folder`: string; The GoF folder; FORMSCULPTOR_GOF when set, otherwise Formsculptor/GoF in the home folder.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
