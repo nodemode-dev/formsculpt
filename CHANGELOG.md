@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.6.0 · 2026-10-19
+
+### Added
+
+- Move, turn and scale a group with the gizmo, as Nomad Sculpt does: click a group's row in Objects to select it, and the gizmo (and the typed transform) works on everything under it, about its centre, as one undo step. Click the selected group again to fold or unfold it; click an object to go back to it.
+
+### Changed
+
+- While dragging the gizmo on an object, the objects hanging under it now preview the move too (they already moved when you let go).
+
 ## 1.5.0 · 2026-10-19
 
 ### Added
