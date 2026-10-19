@@ -1358,5 +1358,11 @@
  "From FormSurface": "Из FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Пока нечего возвращать: экспортируйте карты в FormSurface по шаблону Blender",
  "Paint brought back from FormSurface": "Раскраска возвращена из FormSurface",
- "Paint from FormSurface": "Раскраска из FormSurface"
+ "Paint from FormSurface": "Раскраска из FormSurface",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Скопируйте его Content/Python в проект Unreal и перезапустите редактор; то, что вы отправите в Unreal через GoF, будет импортировано там",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Скопируйте его папку Editor в проект Unity; то, что вы отправите в Unity через GoF, будет импортировано там",
+ "Get GoF for Unity": "Получить GoF для Unity",
+ "Get GoF for Unreal": "Получить GoF для Unreal",
+ "GoF for Unity": "GoF для Unity",
+ "GoF for Unreal": "GoF для Unreal"
 }

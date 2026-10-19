@@ -1358,5 +1358,11 @@
  "From FormSurface": "FormSurface から",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "まだ戻すものがありません。FormSurface で Blender テンプレートを使ってマップを書き出してください",
  "Paint brought back from FormSurface": "FormSurface からペイントを戻しました",
- "Paint from FormSurface": "FormSurface からペイント"
+ "Paint from FormSurface": "FormSurface からペイント",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Content/Python を Unreal プロジェクトにコピーしてエディターを再起動すると、GoF で Unreal に送ったものがそこに読み込まれます",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Editor フォルダーを Unity プロジェクトにコピーすると、GoF で Unity に送ったものがそこに読み込まれます",
+ "Get GoF for Unity": "Unity 用 GoF を入手",
+ "Get GoF for Unreal": "Unreal 用 GoF を入手",
+ "GoF for Unity": "Unity 用 GoF",
+ "GoF for Unreal": "Unreal 用 GoF"
 }

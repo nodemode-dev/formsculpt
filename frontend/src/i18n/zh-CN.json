@@ -1358,5 +1358,11 @@
  "From FormSurface": "从 FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "暂无可取回的内容：请在 FormSurface 中用 Blender 模板导出贴图",
  "Paint brought back from FormSurface": "已从 FormSurface 取回绘制",
- "Paint from FormSurface": "来自 FormSurface 的绘制"
+ "Paint from FormSurface": "来自 FormSurface 的绘制",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "将其 Content/Python 复制到 Unreal 项目并重启编辑器；通过 GoF 发送到 Unreal 的内容会在那里导入",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "将其 Editor 文件夹复制到 Unity 项目；通过 GoF 发送到 Unity 的内容会在那里导入",
+ "Get GoF for Unity": "获取 Unity 版 GoF",
+ "Get GoF for Unreal": "获取 Unreal 版 GoF",
+ "GoF for Unity": "Unity 版 GoF",
+ "GoF for Unreal": "Unreal 版 GoF"
 }

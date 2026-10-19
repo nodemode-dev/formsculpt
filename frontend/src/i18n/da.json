@@ -1358,5 +1358,11 @@
  "From FormSurface": "Fra FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Intet at hente endnu: eksportér maps i FormSurface med Blender-skabelonen",
  "Paint brought back from FormSurface": "Maling hentet tilbage fra FormSurface",
- "Paint from FormSurface": "Maling fra FormSurface"
+ "Paint from FormSurface": "Maling fra FormSurface",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Kopiér dens Content/Python ind i Unreal-projektet og genstart editoren; det du sender til Unreal med GoF importeres der",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Kopiér dens Editor-mappe ind i Unity-projektet; det du sender til Unity med GoF importeres der",
+ "Get GoF for Unity": "Hent GoF til Unity",
+ "Get GoF for Unreal": "Hent GoF til Unreal",
+ "GoF for Unity": "GoF til Unity",
+ "GoF for Unreal": "GoF til Unreal"
 }

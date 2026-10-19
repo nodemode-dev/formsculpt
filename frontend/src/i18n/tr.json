@@ -1358,5 +1358,11 @@
  "From FormSurface": "FormSurface'ten",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Henüz getirilecek bir şey yok: FormSurface'te haritaları Blender şablonuyla dışa aktarın",
  "Paint brought back from FormSurface": "Boya FormSurface'ten geri getirildi",
- "Paint from FormSurface": "FormSurface'ten boya"
+ "Paint from FormSurface": "FormSurface'ten boya",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Content/Python klasörünü Unreal projesine kopyalayıp düzenleyiciyi yeniden başlatın; GoF ile Unreal'a gönderdikleriniz orada içe aktarılır",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Editor klasörünü Unity projesine kopyalayın; GoF ile Unity'ye gönderdikleriniz orada içe aktarılır",
+ "Get GoF for Unity": "Unity için GoF'u al",
+ "Get GoF for Unreal": "Unreal için GoF'u al",
+ "GoF for Unity": "Unity için GoF",
+ "GoF for Unreal": "Unreal için GoF"
 }

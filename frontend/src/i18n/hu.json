@@ -1358,5 +1358,11 @@
  "From FormSurface": "FormSurface-ből",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Még nincs mit visszahozni: a FormSurface-ben exportáld a térképeket a Blender sablonnal",
  "Paint brought back from FormSurface": "Festés visszahozva a FormSurface-ből",
- "Paint from FormSurface": "Festés a FormSurface-ből"
+ "Paint from FormSurface": "Festés a FormSurface-ből",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Másold a Content/Python mappáját az Unreal projektbe, és indítsd újra a szerkesztőt; amit GoF-fel az Unrealnek küldesz, ott importálódik",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Másold az Editor mappáját a Unity projektbe; amit GoF-fel a Unitynek küldesz, ott importálódik",
+ "Get GoF for Unity": "GoF letöltése Unityhez",
+ "Get GoF for Unreal": "GoF letöltése Unrealhez",
+ "GoF for Unity": "GoF Unityhez",
+ "GoF for Unreal": "GoF Unrealhez"
 }

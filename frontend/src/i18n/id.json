@@ -1358,5 +1358,11 @@
  "From FormSurface": "Dari FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Belum ada yang dibawa kembali: di FormSurface, ekspor map dengan template Blender",
  "Paint brought back from FormSurface": "Cat dibawa kembali dari FormSurface",
- "Paint from FormSurface": "Cat dari FormSurface"
+ "Paint from FormSurface": "Cat dari FormSurface",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Salin Content/Python-nya ke proyek Unreal dan mulai ulang editor; yang Anda kirim ke Unreal dengan GoF diimpor di sana",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Salin folder Editor-nya ke proyek Unity; yang Anda kirim ke Unity dengan GoF diimpor di sana",
+ "Get GoF for Unity": "Ambil GoF untuk Unity",
+ "Get GoF for Unreal": "Ambil GoF untuk Unreal",
+ "GoF for Unity": "GoF untuk Unity",
+ "GoF for Unreal": "GoF untuk Unreal"
 }

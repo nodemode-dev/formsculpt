@@ -1358,5 +1358,11 @@
  "From FormSurface": "FormSurface에서",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "아직 가져올 것이 없습니다. FormSurface에서 Blender 템플릿으로 맵을 내보내세요",
  "Paint brought back from FormSurface": "FormSurface에서 페인트를 가져왔습니다",
- "Paint from FormSurface": "FormSurface에서 페인트"
+ "Paint from FormSurface": "FormSurface에서 페인트",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Content/Python을 Unreal 프로젝트에 복사하고 에디터를 다시 시작하세요. GoF로 Unreal에 보낸 것이 그곳에 가져와집니다",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Editor 폴더를 Unity 프로젝트에 복사하세요. GoF로 Unity에 보낸 것이 그곳에 가져와집니다",
+ "Get GoF for Unity": "Unity용 GoF 받기",
+ "Get GoF for Unreal": "Unreal용 GoF 받기",
+ "GoF for Unity": "Unity용 GoF",
+ "GoF for Unreal": "Unreal용 GoF"
 }

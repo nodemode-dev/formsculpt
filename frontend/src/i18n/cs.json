@@ -1358,5 +1358,11 @@
  "From FormSurface": "Z FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Zatím není co přenést: ve FormSurface exportujte mapy se šablonou Blender",
  "Paint brought back from FormSurface": "Barva přenesena zpět z FormSurface",
- "Paint from FormSurface": "Barva z FormSurface"
+ "Paint from FormSurface": "Barva z FormSurface",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "Zkopírujte jeho Content/Python do projektu Unreal a restartujte editor; co pošlete do Unreal přes GoF, se tam importuje",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "Zkopírujte jeho složku Editor do projektu Unity; co pošlete do Unity přes GoF, se tam importuje",
+ "Get GoF for Unity": "Získat GoF pro Unity",
+ "Get GoF for Unreal": "Získat GoF pro Unreal",
+ "GoF for Unity": "GoF pro Unity",
+ "GoF for Unreal": "GoF pro Unreal"
 }

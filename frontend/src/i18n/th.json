@@ -1358,5 +1358,11 @@
  "From FormSurface": "จาก FormSurface",
  "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "ยังไม่มีอะไรให้ดึงกลับ ใน FormSurface ให้ส่งออกแมปด้วยเทมเพลต Blender",
  "Paint brought back from FormSurface": "ดึงสีกลับจาก FormSurface แล้ว",
- "Paint from FormSurface": "สีจาก FormSurface"
+ "Paint from FormSurface": "สีจาก FormSurface",
+ "Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there": "คัดลอก Content/Python ไปยังโปรเจกต์ Unreal แล้วรีสตาร์ตเอดิเตอร์ สิ่งที่ส่งไป Unreal ด้วย GoF จะถูกนำเข้าที่นั่น",
+ "Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there": "คัดลอกโฟลเดอร์ Editor ไปยังโปรเจกต์ Unity สิ่งที่ส่งไป Unity ด้วย GoF จะถูกนำเข้าที่นั่น",
+ "Get GoF for Unity": "รับ GoF สำหรับ Unity",
+ "Get GoF for Unreal": "รับ GoF สำหรับ Unreal",
+ "GoF for Unity": "GoF สำหรับ Unity",
+ "GoF for Unreal": "GoF สำหรับ Unreal"
 }
