@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.2.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.3.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
