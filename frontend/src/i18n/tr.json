@@ -1340,5 +1340,17 @@
  "Tool intensity": "Araç yoğunluğu",
  "Tool radius": "Araç yarıçapı",
  "One tap mask shortcuts": "Tek dokunuşla maske kısayolları",
- "One tap hide shortcuts": "Tek dokunuşla gizleme kısayolları"
+ "One tap hide shortcuts": "Tek dokunuşla gizleme kısayolları",
+ "Any app (OBJ)": "Herhangi bir uygulama (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF hedefi",
+ "Send with GoF": "GoF ile gönder",
+ "Sent to FormSurface and loaded there": "FormSurface'e gönderildi ve orada yüklendi",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "FormSurface'e gönderildi; yüklemek için orada Agent link'i açın veya meshes klasöründen açın",
+ "Sent to {path}; FormSurface: {reason}": "{path} konumuna gönderildi; FormSurface: {reason}",
+ "Sent with GoF to {path}": "GoF ile {path} konumuna gönderildi",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

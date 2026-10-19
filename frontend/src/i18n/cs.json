@@ -1340,5 +1340,17 @@
  "Tool intensity": "Intenzita nástroje",
  "Tool radius": "Poloměr nástroje",
  "One tap mask shortcuts": "Zkratky masky jedním klepnutím",
- "One tap hide shortcuts": "Zkratky skrytí jedním klepnutím"
+ "One tap hide shortcuts": "Zkratky skrytí jedním klepnutím",
+ "Any app (OBJ)": "Jakákoli aplikace (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "Cíl GoF",
+ "Send with GoF": "Odeslat přes GoF",
+ "Sent to FormSurface and loaded there": "Odesláno do FormSurface a tam načteno",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Odesláno do FormSurface; zapněte tam Agent link pro načtení, nebo jej otevřete ze složky meshes",
+ "Sent to {path}; FormSurface: {reason}": "Odesláno do {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Odesláno přes GoF do {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

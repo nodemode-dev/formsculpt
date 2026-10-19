@@ -1340,5 +1340,17 @@
  "Tool intensity": "Intensitas alat",
  "Tool radius": "Radius alat",
  "One tap mask shortcuts": "Pintasan masker sekali ketuk",
- "One tap hide shortcuts": "Pintasan sembunyikan sekali ketuk"
+ "One tap hide shortcuts": "Pintasan sembunyikan sekali ketuk",
+ "Any app (OBJ)": "Aplikasi apa pun (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "Tujuan GoF",
+ "Send with GoF": "Kirim dengan GoF",
+ "Sent to FormSurface and loaded there": "Dikirim ke FormSurface dan dimuat di sana",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Dikirim ke FormSurface; nyalakan Agent link di sana untuk memuatnya, atau buka dari folder meshes-nya",
+ "Sent to {path}; FormSurface: {reason}": "Dikirim ke {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Dikirim dengan GoF ke {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

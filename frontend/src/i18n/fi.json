@@ -1340,5 +1340,17 @@
  "Tool intensity": "Työkalun voimakkuus",
  "Tool radius": "Työkalun säde",
  "One tap mask shortcuts": "Maskin pikanapautukset",
- "One tap hide shortcuts": "Piilotuksen pikanapautukset"
+ "One tap hide shortcuts": "Piilotuksen pikanapautukset",
+ "Any app (OBJ)": "Mikä tahansa sovellus (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF-kohde",
+ "Send with GoF": "Lähetä GoF:lla",
+ "Sent to FormSurface and loaded there": "Lähetetty FormSurfaceen ja ladattu siellä",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Lähetetty FormSurfaceen; ota siellä Agent link käyttöön ladataksesi sen, tai avaa se sen meshes-kansiosta",
+ "Sent to {path}; FormSurface: {reason}": "Lähetetty kohteeseen {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Lähetetty GoF:lla kohteeseen {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

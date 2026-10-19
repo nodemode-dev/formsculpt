@@ -1340,5 +1340,17 @@
  "Tool intensity": "Intensidad de la herramienta",
  "Tool radius": "Radio de la herramienta",
  "One tap mask shortcuts": "Atajos de máscara con un toque",
- "One tap hide shortcuts": "Atajos de ocultar con un toque"
+ "One tap hide shortcuts": "Atajos de ocultar con un toque",
+ "Any app (OBJ)": "Cualquier aplicación (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "Destino GoF",
+ "Send with GoF": "Enviar con GoF",
+ "Sent to FormSurface and loaded there": "Enviado a FormSurface y cargado allí",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Enviado a FormSurface; activa Agent link allí para cargarlo, o ábrelo desde su carpeta meshes",
+ "Sent to {path}; FormSurface: {reason}": "Enviado a {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Enviado con GoF a {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

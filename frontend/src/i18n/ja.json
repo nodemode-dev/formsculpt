@@ -1340,5 +1340,17 @@
  "Tool intensity": "ツールの強度",
  "Tool radius": "ツールの半径",
  "One tap mask shortcuts": "ワンタップのマスクショートカット",
- "One tap hide shortcuts": "ワンタップの非表示ショートカット"
+ "One tap hide shortcuts": "ワンタップの非表示ショートカット",
+ "Any app (OBJ)": "任意のアプリ (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF の送り先",
+ "Send with GoF": "GoF で送る",
+ "Sent to FormSurface and loaded there": "FormSurface に送信し、読み込みました",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "FormSurface に送信しました。読み込むには FormSurface で Agent link をオンにするか、meshes フォルダーから開いてください",
+ "Sent to {path}; FormSurface: {reason}": "{path} に送信しました。FormSurface: {reason}",
+ "Sent with GoF to {path}": "GoF で {path} に送信しました",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

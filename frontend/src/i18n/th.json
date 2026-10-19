@@ -1340,5 +1340,17 @@
  "Tool intensity": "ความแรงของเครื่องมือ",
  "Tool radius": "รัศมีเครื่องมือ",
  "One tap mask shortcuts": "ทางลัดมาสก์แบบแตะครั้งเดียว",
- "One tap hide shortcuts": "ทางลัดซ่อนแบบแตะครั้งเดียว"
+ "One tap hide shortcuts": "ทางลัดซ่อนแบบแตะครั้งเดียว",
+ "Any app (OBJ)": "แอปใดก็ได้ (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "ปลายทาง GoF",
+ "Send with GoF": "ส่งด้วย GoF",
+ "Sent to FormSurface and loaded there": "ส่งไปยัง FormSurface และโหลดที่นั่นแล้ว",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "ส่งไปยัง FormSurface แล้ว เปิด Agent link ที่นั่นเพื่อโหลด หรือเปิดจากโฟลเดอร์ meshes",
+ "Sent to {path}; FormSurface: {reason}": "ส่งไปที่ {path} แล้ว FormSurface: {reason}",
+ "Sent with GoF to {path}": "ส่งด้วย GoF ไปที่ {path} แล้ว",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

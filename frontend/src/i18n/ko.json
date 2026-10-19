@@ -1340,5 +1340,17 @@
  "Tool intensity": "도구 강도",
  "Tool radius": "도구 반경",
  "One tap mask shortcuts": "한 번 탭 마스크 단축키",
- "One tap hide shortcuts": "한 번 탭 숨기기 단축키"
+ "One tap hide shortcuts": "한 번 탭 숨기기 단축키",
+ "Any app (OBJ)": "모든 앱 (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF 대상",
+ "Send with GoF": "GoF로 보내기",
+ "Sent to FormSurface and loaded there": "FormSurface로 보내 불러왔습니다",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "FormSurface로 보냈습니다. 불러오려면 그곳에서 Agent link를 켜거나 meshes 폴더에서 여세요",
+ "Sent to {path}; FormSurface: {reason}": "{path}(으)로 보냈습니다. FormSurface: {reason}",
+ "Sent with GoF to {path}": "GoF로 {path}에 보냈습니다",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

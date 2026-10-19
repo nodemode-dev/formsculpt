@@ -1340,5 +1340,17 @@
  "Tool intensity": "Інтенсивність інструмента",
  "Tool radius": "Радіус інструмента",
  "One tap mask shortcuts": "Дії з маскою одним дотиком",
- "One tap hide shortcuts": "Приховування одним дотиком"
+ "One tap hide shortcuts": "Приховування одним дотиком",
+ "Any app (OBJ)": "Будь-який застосунок (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "Отримувач GoF",
+ "Send with GoF": "Надіслати через GoF",
+ "Sent to FormSurface and loaded there": "Надіслано у FormSurface і завантажено там",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Надіслано у FormSurface; увімкніть там Agent link, щоб завантажити, або відкрийте з папки meshes",
+ "Sent to {path}; FormSurface: {reason}": "Надіслано до {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Надіслано через GoF до {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

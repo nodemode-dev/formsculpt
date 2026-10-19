@@ -1340,5 +1340,17 @@
  "Tool intensity": "Værktøjsintensitet",
  "Tool radius": "Værktøjsradius",
  "One tap mask shortcuts": "Maskegenveje med ét tryk",
- "One tap hide shortcuts": "Skjul-genveje med ét tryk"
+ "One tap hide shortcuts": "Skjul-genveje med ét tryk",
+ "Any app (OBJ)": "Enhver app (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF-mål",
+ "Send with GoF": "Send med GoF",
+ "Sent to FormSurface and loaded there": "Sendt til FormSurface og indlæst der",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Sendt til FormSurface; slå Agent link til der for at indlæse den, eller åbn den fra dens meshes-mappe",
+ "Sent to {path}; FormSurface: {reason}": "Sendt til {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Sendt med GoF til {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

@@ -1340,5 +1340,17 @@
  "Tool intensity": "工具强度",
  "Tool radius": "工具半径",
  "One tap mask shortcuts": "单击遮罩快捷操作",
- "One tap hide shortcuts": "单击隐藏快捷操作"
+ "One tap hide shortcuts": "单击隐藏快捷操作",
+ "Any app (OBJ)": "任意应用 (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF 目标",
+ "Send with GoF": "通过 GoF 发送",
+ "Sent to FormSurface and loaded there": "已发送到 FormSurface 并在其中加载",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "已发送到 FormSurface；在其中打开 Agent link 以加载，或从其 meshes 文件夹打开",
+ "Sent to {path}; FormSurface: {reason}": "已发送到 {path}；FormSurface：{reason}",
+ "Sent with GoF to {path}": "已通过 GoF 发送到 {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

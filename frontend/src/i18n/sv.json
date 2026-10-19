@@ -1340,5 +1340,17 @@
  "Tool intensity": "Verktygsintensitet",
  "Tool radius": "Verktygsradie",
  "One tap mask shortcuts": "Maskgenvägar med ett tryck",
- "One tap hide shortcuts": "Döljgenvägar med ett tryck"
+ "One tap hide shortcuts": "Döljgenvägar med ett tryck",
+ "Any app (OBJ)": "Vilken app som helst (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF-mål",
+ "Send with GoF": "Skicka med GoF",
+ "Sent to FormSurface and loaded there": "Skickat till FormSurface och inläst där",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Skickat till FormSurface; slå på Agent link där för att läsa in den, eller öppna den från dess meshes-mapp",
+ "Sent to {path}; FormSurface: {reason}": "Skickat till {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Skickat med GoF till {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

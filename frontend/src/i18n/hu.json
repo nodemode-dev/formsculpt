@@ -1340,5 +1340,17 @@
  "Tool intensity": "Eszköz intenzitása",
  "Tool radius": "Eszköz sugara",
  "One tap mask shortcuts": "Egyérintéses maszkparancsok",
- "One tap hide shortcuts": "Egyérintéses elrejtési parancsok"
+ "One tap hide shortcuts": "Egyérintéses elrejtési parancsok",
+ "Any app (OBJ)": "Bármely alkalmazás (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF-cél",
+ "Send with GoF": "Küldés GoF-fel",
+ "Sent to FormSurface and loaded there": "Elküldve a FormSurface-nek és ott betöltve",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Elküldve a FormSurface-nek; kapcsold be ott az Agent linket a betöltéshez, vagy nyisd meg a meshes mappájából",
+ "Sent to {path}; FormSurface: {reason}": "Elküldve ide: {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Elküldve GoF-fel ide: {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

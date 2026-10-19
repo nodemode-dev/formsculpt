@@ -1340,5 +1340,17 @@
  "Tool intensity": "Gereedschapsintensiteit",
  "Tool radius": "Gereedschapsstraal",
  "One tap mask shortcuts": "Maskersnelkoppelingen met één tik",
- "One tap hide shortcuts": "Verbergsnelkoppelingen met één tik"
+ "One tap hide shortcuts": "Verbergsnelkoppelingen met één tik",
+ "Any app (OBJ)": "Elke app (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "GoF-doel",
+ "Send with GoF": "Verzenden met GoF",
+ "Sent to FormSurface and loaded there": "Naar FormSurface verzonden en daar geladen",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Naar FormSurface verzonden; zet daar Agent link aan om het te laden, of open het vanuit de meshes-map",
+ "Sent to {path}; FormSurface: {reason}": "Verzonden naar {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Met GoF verzonden naar {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }

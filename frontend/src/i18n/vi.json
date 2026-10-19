@@ -1340,5 +1340,17 @@
  "Tool intensity": "Cường độ công cụ",
  "Tool radius": "Bán kính công cụ",
  "One tap mask shortcuts": "Phím tắt mặt nạ một chạm",
- "One tap hide shortcuts": "Phím tắt ẩn một chạm"
+ "One tap hide shortcuts": "Phím tắt ẩn một chạm",
+ "Any app (OBJ)": "Ứng dụng bất kỳ (OBJ)",
+ "Blender": "Blender",
+ "FormSurface": "FormSurface",
+ "GoF target": "Đích GoF",
+ "Send with GoF": "Gửi bằng GoF",
+ "Sent to FormSurface and loaded there": "Đã gửi tới FormSurface và tải ở đó",
+ "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder": "Đã gửi tới FormSurface; bật Agent link ở đó để tải, hoặc mở từ thư mục meshes",
+ "Sent to {path}; FormSurface: {reason}": "Đã gửi tới {path}; FormSurface: {reason}",
+ "Sent with GoF to {path}": "Đã gửi bằng GoF tới {path}",
+ "Substance 3D Painter": "Substance 3D Painter",
+ "Unity": "Unity",
+ "Unreal Engine": "Unreal Engine"
 }
