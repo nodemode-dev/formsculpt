@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 0.99.0 · 2026-10-19
+
+### Added
+
+- GoF, formsculptor's own hand-off to other apps. File's GoF target and Send with GoF (also in the File menu), and the `gof_send` tool for agents: the object goes into one GoF folder (Formsculptor/GoF in the home folder, or `FORMSCULPTOR_GOF`) as GLB for Blender, Unreal Engine and FormSurface, FBX for Unity, a Substance 3D Painter package, or OBJ for any other app, listed in the folder's `gof.json` manifest. When the other app saves over the file, the edit comes back into the same object.
+- FormSurface gets the file straight into its meshes folder, and loaded in its editor when Agent link is on there. `GET /api/gof` shows the folder, the manifest and whether FormSurface is running.
+- 1354 interface strings in every language.
+
+### Notes
+
+- Add-ons that pick GoF files up by themselves in Unreal Engine and Unity are not built yet; for now open the file from the GoF folder there. The Blender live link from 0.91.0 still works beside GoF.
+
 ## 0.98.0 · 2026-10-19
 
 ### Added
