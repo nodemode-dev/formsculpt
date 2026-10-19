@@ -81,6 +81,24 @@ pub fn boolean_payload(s: &Session, a: u32, b: u32, op: &str) -> Result<Vec<u8>,
     Ok(out)
 }
 
+/// The solid a triplanar's three masks make now, as an FSCM payload for the window to draw beside the planes while
+/// they are masked (Nomad's Triplanar shows its shape as it is painted); the scene is unchanged. `resolution` is the
+/// voxel count along the longest side (16 to 256; the window asks for a coarse one so it keeps up).
+pub fn triplanar_payload(s: &Session, id: u32, resolution: u32) -> Result<Vec<u8>, CommandError> {
+    let object = s.scene.get(id).ok_or_else(|| not_found(id))?;
+    if !object.primitive.as_ref().is_some_and(|(a, _)| a.contains("\"triplanar\"")) || fsc_core::triplanar::divisions(&object.mesh).is_none() {
+        return Err(CommandError::new("not_triplanar", format!("object {id} is not a triplanar's three planes")));
+    }
+    let mesh = fsc_topo::triplanar_solid(&object.mesh, &object.mask, 0.04, resolution.clamp(16, 256)).map_err(|e| CommandError::new("build_failed", e))?;
+    let indices = mesh.indices_bytes();
+    let mut out = header(mesh.vertex_count(), indices.len(), object.revision, FLAG_MASK);
+    out.extend_from_slice(&mesh.positions_bytes());
+    out.extend_from_slice(&mesh.normals_bytes());
+    out.extend_from_slice(&indices);
+    out.extend(std::iter::repeat_n(0u8, mesh.vertex_count() * 4));
+    Ok(out)
+}
+
 /// Starts a live stroke on an object with brush settings as the window sends them (sculpt_stroke's brush keys).
 /// Dynamic topology is off on objects with levels or sculpt layers, which need a fixed vertex order.
 pub fn stroke_begin(s: &mut Session, id: u32, settings: &Value) -> Result<(), CommandError> {

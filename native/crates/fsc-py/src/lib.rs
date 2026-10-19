@@ -115,6 +115,13 @@ impl Engine {
         Ok(PyBytes::new(py, &bytes))
     }
 
+    /// A triplanar's solid as its masks stand, as an FSCM payload (fsc_commands::live::triplanar_payload).
+    fn triplanar_preview<'py>(&self, py: Python<'py>, id: u32, resolution: u32) -> PyResult<Bound<'py, PyBytes>> {
+        let session = self.session.lock().map_err(|_| PyValueError::new_err("engine session poisoned"))?;
+        let bytes = fsc_commands::live::triplanar_payload(&session, id, resolution).map_err(|e| if e.code == "not_found" { PyKeyError::new_err(e.message) } else { PyValueError::new_err(e.message) })?;
+        Ok(PyBytes::new(py, &bytes))
+    }
+
     // Live strokes go through fsc_commands::live, which the browser build (fsc-wasm) shares.
     fn stroke_begin(&self, id: u32, settings: &str) -> PyResult<()> {
         let parsed: Value = serde_json::from_str(settings).map_err(|e| PyValueError::new_err(format!("settings are not JSON: {e}")))?;

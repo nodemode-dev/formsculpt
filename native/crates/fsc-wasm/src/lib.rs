@@ -276,6 +276,21 @@ pub extern "C" fn fsc_boolean_preview(a: u32, b: u32, op: u32) -> i32 {
     }
 }
 
+/// A triplanar's solid as its masks stand, as FSCM (0), or -1 with the error JSON.
+#[no_mangle]
+pub extern "C" fn fsc_triplanar_preview(id: u32, resolution: u32) -> i32 {
+    match SESSION.with(|s| fsc_commands::live::triplanar_payload(&s.borrow(), id, resolution)) {
+        Ok(bytes) => {
+            put(bytes);
+            0
+        }
+        Err(e) => {
+            put_json(json!(e));
+            -1
+        }
+    }
+}
+
 /// An object's baked maps as one zip (0), or -1 with the error JSON.
 #[no_mangle]
 pub extern "C" fn fsc_maps(id: u32) -> i32 {
