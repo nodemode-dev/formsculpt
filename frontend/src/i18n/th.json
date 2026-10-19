@@ -1371,5 +1371,7 @@
  "Smooth shading": "การแรเงาแบบเรียบ",
  "Instance": "อินสแตนซ์",
  "Un-instance": "ยกเลิกอินสแตนซ์",
- "Sync Instances": "ซิงค์อินสแตนซ์"
+ "Sync Instances": "ซิงค์อินสแตนซ์",
+ "Clay strips": "แถบดินเหนียว",
+ "Delete Edge Loop": "ลบลูปขอบ"
 }

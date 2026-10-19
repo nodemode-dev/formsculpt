@@ -1371,5 +1371,7 @@
  "Smooth shading": "Hladké stínování",
  "Instance": "Instance",
  "Un-instance": "Zrušit instanci",
- "Sync Instances": "Synchronizovat instance"
+ "Sync Instances": "Synchronizovat instance",
+ "Clay strips": "Hliněné pásy",
+ "Delete Edge Loop": "Smazat smyčku hran"
 }

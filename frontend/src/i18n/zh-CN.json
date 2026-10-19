@@ -1371,5 +1371,7 @@
  "Smooth shading": "平滑着色",
  "Instance": "实例",
  "Un-instance": "取消实例",
- "Sync Instances": "同步实例"
+ "Sync Instances": "同步实例",
+ "Clay strips": "黏土条",
+ "Delete Edge Loop": "删除边循环"
 }

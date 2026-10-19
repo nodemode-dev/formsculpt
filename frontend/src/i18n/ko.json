@@ -1371,5 +1371,7 @@
  "Smooth shading": "부드러운 셰이딩",
  "Instance": "인스턴스",
  "Un-instance": "인스턴스 해제",
- "Sync Instances": "인스턴스 동기화"
+ "Sync Instances": "인스턴스 동기화",
+ "Clay strips": "클레이 스트립",
+ "Delete Edge Loop": "에지 루프 삭제"
 }

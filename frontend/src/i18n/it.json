@@ -1371,5 +1371,7 @@
  "Smooth shading": "Ombreggiatura uniforme",
  "Instance": "Istanza",
  "Un-instance": "Rimuovi istanza",
- "Sync Instances": "Sincronizza istanze"
+ "Sync Instances": "Sincronizza istanze",
+ "Clay strips": "Strisce di argilla",
+ "Delete Edge Loop": "Elimina loop di spigoli"
 }

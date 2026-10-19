@@ -1371,5 +1371,7 @@
  "Smooth shading": "Gładkie cieniowanie",
  "Instance": "Instancja",
  "Un-instance": "Usuń instancję",
- "Sync Instances": "Synchronizuj instancje"
+ "Sync Instances": "Synchronizuj instancje",
+ "Clay strips": "Paski gliny",
+ "Delete Edge Loop": "Usuń pętlę krawędzi"
 }

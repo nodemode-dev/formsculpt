@@ -1371,5 +1371,7 @@
  "Smooth shading": "Pehmeä varjostus",
  "Instance": "Instanssi",
  "Un-instance": "Poista instanssi",
- "Sync Instances": "Synkronoi instanssit"
+ "Sync Instances": "Synkronoi instanssit",
+ "Clay strips": "Savinauhat",
+ "Delete Edge Loop": "Poista reunasilmukka"
 }

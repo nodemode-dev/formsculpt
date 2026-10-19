@@ -1371,5 +1371,7 @@
  "Smooth shading": "Myk skyggelegging",
  "Instance": "Instans",
  "Un-instance": "Fjern instans",
- "Sync Instances": "Synkroniser instanser"
+ "Sync Instances": "Synkroniser instanser",
+ "Clay strips": "Leirestriper",
+ "Delete Edge Loop": "Slett kantløkke"
 }

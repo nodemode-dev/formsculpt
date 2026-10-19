@@ -1371,5 +1371,7 @@
  "Smooth shading": "Ombrage lisse",
  "Instance": "Instance",
  "Un-instance": "Désinstancier",
- "Sync Instances": "Synchroniser les instances"
+ "Sync Instances": "Synchroniser les instances",
+ "Clay strips": "Bandes d'argile",
+ "Delete Edge Loop": "Supprimer la boucle d'arêtes"
 }

@@ -1371,5 +1371,7 @@
  "Smooth shading": "Згладжене затінення",
  "Instance": "Екземпляр",
  "Un-instance": "Скасувати екземпляр",
- "Sync Instances": "Синхронізувати екземпляри"
+ "Sync Instances": "Синхронізувати екземпляри",
+ "Clay strips": "Глиняні смуги",
+ "Delete Edge Loop": "Видалити петлю ребер"
 }

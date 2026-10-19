@@ -1371,5 +1371,7 @@
  "Smooth shading": "Sima árnyalás",
  "Instance": "Példány",
  "Un-instance": "Példány feloldása",
- "Sync Instances": "Példányok szinkronizálása"
+ "Sync Instances": "Példányok szinkronizálása",
+ "Clay strips": "Agyagcsíkok",
+ "Delete Edge Loop": "Élhurok törlése"
 }

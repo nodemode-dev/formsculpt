@@ -1371,5 +1371,7 @@
  "Smooth shading": "Vloeiende belichting",
  "Instance": "Instantie",
  "Un-instance": "Instantie opheffen",
- "Sync Instances": "Instanties synchroniseren"
+ "Sync Instances": "Instanties synchroniseren",
+ "Clay strips": "Kleistroken",
+ "Delete Edge Loop": "Randlus verwijderen"
 }

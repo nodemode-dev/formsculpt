@@ -1371,5 +1371,7 @@
  "Smooth shading": "Yumuşak gölgelendirme",
  "Instance": "Örnek",
  "Un-instance": "Örneği kaldır",
- "Sync Instances": "Örnekleri eşitle"
+ "Sync Instances": "Örnekleri eşitle",
+ "Clay strips": "Kil şeritleri",
+ "Delete Edge Loop": "Kenar döngüsünü sil"
 }

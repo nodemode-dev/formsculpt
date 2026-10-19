@@ -1371,5 +1371,7 @@
  "Smooth shading": "Weiche Schattierung",
  "Instance": "Instanz",
  "Un-instance": "Instanz auflösen",
- "Sync Instances": "Instanzen synchronisieren"
+ "Sync Instances": "Instanzen synchronisieren",
+ "Clay strips": "Tonstreifen",
+ "Delete Edge Loop": "Kantenschleife löschen"
 }

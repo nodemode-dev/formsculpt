@@ -1371,5 +1371,7 @@
  "Smooth shading": "Sombreado suave",
  "Instance": "Instancia",
  "Un-instance": "Desinstanciar",
- "Sync Instances": "Sincronizar instancias"
+ "Sync Instances": "Sincronizar instancias",
+ "Clay strips": "Tiras de arcilla",
+ "Delete Edge Loop": "Eliminar bucle de aristas"
 }

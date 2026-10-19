@@ -1371,5 +1371,7 @@
  "Smooth shading": "Mjuk skuggning",
  "Instance": "Instans",
  "Un-instance": "Ta bort instans",
- "Sync Instances": "Synkronisera instanser"
+ "Sync Instances": "Synkronisera instanser",
+ "Clay strips": "Lerremsor",
+ "Delete Edge Loop": "Ta bort kantslinga"
 }
