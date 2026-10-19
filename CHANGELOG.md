@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.3.0 · 2026-10-19
+
+### Added
+
+- GoF receivers for Unreal Engine and Unity, from File > GoF for Unreal and GoF for Unity. Unreal: a Python script for the project's Content/Python that imports what you send to Unreal into /Game/GoF and re-imports it when you send again. Unity: an editor script that brings what you send to Unity into Assets/GoF, with Import from GoF, Watch GoF and Set GoF Folder under Tools > formsculptor.
+- 1366 interface strings in every language.
+
+### Notes
+
+- Neither receiver has been run inside Unreal or Unity yet: both are written against those apps' own API references and their logic was run here against stand-ins. Edits made in Unreal or Unity do not come back to formsculptor yet.
+
 ## 1.2.0 · 2026-10-19
 
 ### Changed
