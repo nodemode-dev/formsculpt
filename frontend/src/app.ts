@@ -1,7 +1,7 @@
 import { VERSION } from './version';
 import { ICONS } from './ui/icons';
 import { el, saveBlob, setAttr, setText } from './ui/dom';
-import { browserEngine, dispatch, fetchBooleanPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, lightboxOpen, lightboxPreview, lightboxProjects, lightboxSave, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
+import { browserEngine, dispatch, fetchBooleanPreview, fetchTriplanarPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, lightboxOpen, lightboxPreview, lightboxProjects, lightboxSave, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
 import { WasmEngine } from './engine/wasm';
 import { dataUrl, HostLink } from './host';
 import { inDesktop, saveNative } from './ui/desktop';
@@ -478,6 +478,8 @@ function hexToLinear(hex: string): [number, number, number] {
 
 /** Control points per axis of the window's lattice tool. */
 const LATTICE_DIV = 3;
+/** The renderer id the live triplanar solid is drawn under (no object has it; Live boolean's result is 0). */
+const TRIPLANAR_PREVIEW = -1;
 
 /** Named falloffs as the engine computes them, to draw a preset in the curve editor. */
 const FALLOFFS: Record<string, (t: number) => number> = {
@@ -3018,7 +3020,7 @@ class SceneView {
     // Stroke filters; live strokes take the view direction from each sample's ray, so only the switch is sent.
     if (s.frontFacing.checked) out.front_facing = true;
     if (s.connectedOnly.checked) out.connected_only = true;
-    if (s.sameGroup.checked) out.protect_group = true;
+    if (s.sameGroup.checked || this.onTriplanar()) out.protect_group = true;
     const sharp = Math.max(0, Math.min(180, Number(s.keepSharp.value) || 0));
     if (sharp > 0) out.keep_sharp = sharp;
     if (!s.accumulate.checked) out.accumulate = false;
@@ -5813,6 +5815,7 @@ class SceneView {
     }
     const keep = new Set(next.objects.filter((o) => o.visible && !replaced.includes(o.id)).map((o) => o.id));
     if (this.live && (await this.updateLive(next))) keep.add(0);
+    if (await this.updateTriplanar(next)) keep.add(TRIPLANAR_PREVIEW);
     for (const id of this.viewport.renderer.ids()) if (!keep.has(id)) this.viewport.removeMesh(id);
     this.viewport.setActive(next.active);
     this.patchList(next);
@@ -6629,6 +6632,38 @@ class SceneView {
     this.liveKey = key;
     this.viewport.setMesh(result);
     return true;
+  }
+
+  /** What the triplanar preview was last asked for, `id:revision` ('' for none), and whether that gave a solid. */
+  private triplanarKey = '';
+  private triplanarShown = false;
+
+  /** Live Triplanar: while a triplanar's planes are active and shown, the solid their masks make is drawn with them
+   * and redrawn after every change (each mask stroke), as Nomad's Triplanar shows its shape while it is painted.
+   * A coarse grid keeps it quick; Validate builds the full one. True while the preview is drawn. */
+  private async updateTriplanar(next: SceneSummary): Promise<boolean> {
+    const o = next.objects.find((x) => x.id === next.active && x.visible && x.triplanar === true);
+    if (!o) {
+      this.triplanarKey = '';
+      return false;
+    }
+    const key = `${o.id}:${o.revision}`;
+    if (key === this.triplanarKey) return this.triplanarShown;
+    this.triplanarKey = key;
+    const result = await fetchTriplanarPreview(o.id, 64, TRIPLANAR_PREVIEW);
+    // A plane with nothing masked has no solid yet: nothing is drawn until the masks change again.
+    this.triplanarShown = typeof result !== 'string';
+    if (typeof result === 'string') return false;
+    this.viewport.setMesh(result);
+    // See-through, so the masks painted on the planes inside it stay in view.
+    this.viewport.renderer.setMaterial(TRIPLANAR_PREVIEW, { subsurface: 0, subsurfaceColor: [0, 0, 0], subsurfaceRadius: 0, transmission: 0, ior: 1.45, blend: 'dithered', opacity: 0.45 });
+    return true;
+  }
+
+  /** Strokes on a triplanar stay on the plane they start on, so masking one plane near where they cross does not
+   * spill onto the others (Nomad's manual: "there is no option to 'lock' the painting on a single plane"). */
+  private onTriplanar(): boolean {
+    return this.scene.objects.some((o) => o.id === this.scene.active && o.triplanar === true);
   }
 
   /** The island chosen in the UV view (null: none), and what the picture last showed, `id:revision:island`. */

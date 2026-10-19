@@ -25,6 +25,7 @@ interface Exports {
   fsc_export(name: number, nameLen: number, ids: number, idsLen: number): number;
   fsc_maps(id: number): number;
   fsc_boolean_preview(a: number, b: number, op: number): number;
+  fsc_triplanar_preview?(id: number, resolution: number): number;
 }
 
 export interface WasmReply {
@@ -187,6 +188,14 @@ export class WasmEngine {
   booleanPreview(a: number, b: number, op: string): ArrayBuffer | string {
     const code = ['union', 'difference', 'intersection'].indexOf(op);
     return this.with([], () => (this.x.fsc_boolean_preview(a, b, code) === 0 ? this.out().buffer : (this.failed().error?.message ?? 'boolean failed')));
+  }
+
+  /** A triplanar's solid as its masks stand, as an FSCM payload, or the refusal's message (an older engine build
+   * without the export says so). */
+  triplanarPreview(id: number, resolution: number): ArrayBuffer | string {
+    const run = this.x.fsc_triplanar_preview;
+    if (!run) return 'this engine build has no triplanar preview';
+    return this.with([], () => (run(id, resolution) === 0 ? this.out().buffer : (this.failed().error?.message ?? 'triplanar preview failed')));
   }
 
   /** An object's baked maps as a zip, or the error's message. */

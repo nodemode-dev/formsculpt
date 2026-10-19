@@ -334,6 +334,29 @@ export async function fetchBooleanPreview(a: number, b: number, op: string): Pro
   }
 }
 
+/** The solid a triplanar's masks make now (drawn as renderer id `as`), or the refusal's message. */
+export async function fetchTriplanarPreview(id: number, resolution: number, as: number): Promise<MeshBuffers | string> {
+  if (local) {
+    const result = local.triplanarPreview(id, resolution);
+    return typeof result === 'string' ? result : (parseMesh(as, result) ?? 'the preview could not be read');
+  }
+  try {
+    const response = await fetch(`/api/engine/triplanar_preview?id=${id}&resolution=${resolution}`, { cache: 'no-store' });
+    if (response.status === 204) return response.headers.get('X-Formsculptor-Refused') ?? 'no solid yet';
+    if (!response.ok) {
+      const text = await response.text();
+      try {
+        return String((JSON.parse(text) as { detail?: unknown }).detail ?? text);
+      } catch {
+        return text || response.statusText;
+      }
+    }
+    return parseMesh(as, await response.arrayBuffer()) ?? 'the preview could not be read';
+  } catch (err) {
+    return String(err);
+  }
+}
+
 /** The engine's catalogue of commands (for keys and menus), or null when it cannot be reached. */
 export async function fetchCatalogue<T>(): Promise<T | null> {
   if (local) return local.catalogue() as T;
