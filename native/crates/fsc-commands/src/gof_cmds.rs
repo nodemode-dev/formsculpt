@@ -64,16 +64,26 @@ pub(crate) fn gof_send(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     let file = if kind == "package" { format!("{stem}_substance") } else { format!("{stem}.{kind}") };
     let path = dir.join(&file);
     let path_text = path.to_string_lossy().to_string();
+    // Units: a scene unit is a metre, as glTF reads one, unless the scene has a real size (mm_per_unit). GLB and OBJ
+    // are written in metres (glTF's unit); FBX in centimetres, the unit its UnitScaleFactor 1 declares, which Unity
+    // converts to its metre and Unreal uses as its own. The bridge reads an edit back at the inverse.
+    let metres = s.scene.mm_per_unit.map(|mm| mm / 1000.0).unwrap_or(1.0);
+    let (scale, units) = match kind {
+        "fbx" => (metres * 100.0, "cm"),
+        "package" => (1.0, "scene"),
+        _ => (metres, "m"),
+    };
     let written = if kind == "package" {
         crate::sim_cmds::substance_send(s, &json!({"id": id, "folder": path_text}))?
     } else {
-        crate::file_cmds::bridge_send(s, &json!({"id": id, "path": path_text}))?
+        json!({"bytes": crate::file_cmds::bridge_write(s, id, &path_text, scale, false)?})
     };
     let object = s.scene.get(id).expect("checked");
     let sent = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     let entry = json!({
         "id": id, "name": name, "file": file, "format": kind, "target": app, "revision": object.revision,
-        "vertices": object.mesh.vertex_count(), "triangles": object.mesh.indices.len() / 3, "sent": sent, "returns": kind != "package"
+        "vertices": object.mesh.vertex_count(), "triangles": object.mesh.indices.len() / 3, "sent": sent, "returns": kind != "package",
+        "units": units, "scale": scale
     });
     // gof.json: the objects in the folder, newest last, one entry per file.
     let manifest_path = dir.join("gof.json");

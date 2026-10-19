@@ -98,8 +98,9 @@ pub struct Session {
     pub alphas: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Alpha>>,
     /// Vector displacement maps captured by name with vdm_capture (the built-in ones are generated on demand).
     pub vdms: std::collections::HashMap<String, std::sync::Arc<fsc_sculpt::Vdm>>,
-    /// Objects sent out through bridge_send: the object, the file, and the file's modification time when last seen.
-    pub bridges: Vec<(fsc_core::ObjectId, String, std::time::SystemTime)>,
+    /// Objects sent out through bridge_send or gof_send: the object, the file, the file's modification time when last
+    /// seen, and the scale the file was written at (an edit read back is divided by it).
+    pub bridges: Vec<(fsc_core::ObjectId, String, std::time::SystemTime, f32)>,
     /// The channel last copied with channel_copy.
     pub(crate) clipboard: Option<selection_cmds::Clip>,
     /// The images held on the Spotlight with their placement over the view; not in the undo history or projects.
@@ -1951,7 +1952,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "gof_send",
         group: Group::File,
         label: "Send with GoF",
-        description: "GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. FormSurface needs UVs (no_uvs without them; run uv_unwrap), and its maps come back with substance_sync on its export folder (the window's From FormSurface does this). Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own). The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.",
+        description: "GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. FormSurface needs UVs (no_uvs without them; run uv_unwrap), and its maps come back with substance_sync on its export folder (the window's From FormSurface does this). Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own), and an object sent to several apps returns from each. Units: one scene unit is a metre, or the real size when the scene has one (set_real_size); GLB and OBJ are written in metres (glTF's unit), FBX in centimetres (its declared unit, which Unity converts to metres and Unreal uses as is); the entry records units and scale, and edits are read back at the inverse. The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.",
         keys: &[],
         hints: WRITE,
         schema: gof_cmds::gof_send_schema,

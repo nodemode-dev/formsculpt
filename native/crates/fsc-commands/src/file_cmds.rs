@@ -284,12 +284,21 @@ pub(crate) fn bridge_send(s: &mut Session, args: &Value) -> Result<Value, Comman
     if matches!(format, Format::Gltf) {
         return Err(bad("use .glb for the bridge; a .gltf is two files"));
     }
-    let bytes = export_data(s, &path, &[id])?;
-    std::fs::write(&path, &bytes).map_err(|e| io(format!("could not write {path}: {e}")))?;
-    let seen = modified(&path).ok_or_else(|| io(format!("could not read back {path}")))?;
-    s.bridges.retain(|(i, p, _)| *i != id && *p != path);
-    s.bridges.push((id, path.clone(), seen));
-    Ok(json!({"id": id, "path": path, "bytes": bytes.len(), "bridges": s.bridges.len()}))
+    let bytes = bridge_write(s, id, &path, 1.0, true)?;
+    Ok(json!({"id": id, "path": path, "bytes": bytes, "bridges": s.bridges.len()}))
+}
+
+/// Writes object id to path at scale and opens a bridge on it. exclusive closes the object's other bridges, as
+/// bridge_send does (one file per object); GoF keeps them, so every app an object was sent to can send it back.
+/// Returns the bytes written.
+pub(crate) fn bridge_write(s: &mut Session, id: ObjectId, path: &str, scale: f32, exclusive: bool) -> Result<usize, CommandError> {
+    let ex = Exchange { scale, ..Exchange::default() };
+    let bytes = export_data_with(s, path, &[id], &ex)?;
+    std::fs::write(path, &bytes).map_err(|e| io(format!("could not write {path}: {e}")))?;
+    let seen = modified(path).ok_or_else(|| io(format!("could not read back {path}")))?;
+    s.bridges.retain(|(i, p, _, _)| p != path && !(exclusive && *i == id));
+    s.bridges.push((id, path.to_string(), seen, scale));
+    Ok(bytes.len())
 }
 
 /// Bridge back: every bridged file changed since it was sent or last synced replaces its object's mesh (same object,
@@ -298,10 +307,10 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
     let mut updated = Vec::new();
     let mut problems = Vec::new();
     let mut keep = Vec::new();
-    for (id, path, seen) in std::mem::take(&mut s.bridges) {
+    for (id, path, seen, scale) in std::mem::take(&mut s.bridges) {
         let (Some(now), true) = (modified(&path), s.scene.get(id).is_some()) else { continue };
         if now <= seen {
-            keep.push((id, path, seen));
+            keep.push((id, path, seen, scale));
             continue;
         }
         let read = std::fs::read(&path).map_err(|e| e.to_string()).and_then(|bytes| {
@@ -311,7 +320,13 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
         match read {
             Ok(meshes) if !meshes.is_empty() => {
                 let parts: Vec<&fsc_core::Mesh> = meshes.iter().map(|(_, m)| m).collect();
-                let mesh = if parts.len() == 1 { parts[0].clone() } else { fsc_topo::merge(&parts) };
+                let mut mesh = if parts.len() == 1 { parts[0].clone() } else { fsc_topo::merge(&parts) };
+                // Written at a scale (GoF's units), so read back at its inverse; normals do not change.
+                if (scale - 1.0).abs() > f32::EPSILON {
+                    for p in &mut mesh.positions {
+                        *p = [p[0] / scale, p[1] / scale, p[2] / scale];
+                    }
+                }
                 let object = s.scene.get_mut(id).expect("checked");
                 let mask = vec![0.0; mesh.vertex_count()];
                 let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
@@ -324,10 +339,10 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
             Err(e) => problems.push(json!({"path": path, "message": e})),
         }
         let seen = if updated.last().map(|o| o["id"] == id).unwrap_or(false) { now } else { seen };
-        keep.push((id, path, seen));
+        keep.push((id, path, seen, scale));
     }
     s.bridges = keep;
-    Ok(json!({"updated": updated, "problems": problems, "bridges": s.bridges.iter().map(|(id, path, _)| json!({"id": id, "path": path})).collect::<Vec<_>>()}))
+    Ok(json!({"updated": updated, "problems": problems, "bridges": s.bridges.iter().map(|(id, path, _, scale)| json!({"id": id, "path": path, "scale": scale})).collect::<Vec<_>>()}))
 }
 
 pub(crate) fn export(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
