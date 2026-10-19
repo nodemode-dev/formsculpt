@@ -6116,8 +6116,9 @@ class SceneView {
     }
     const { path, entry } = sent.result;
     if (target === 'formsurface') {
-      const reply = await postBody<{ loaded: boolean }>('/api/gof/formsurface', { file: entry.file });
+      const reply = await postBody<{ loaded: boolean; running: boolean }>('/api/gof/formsurface', { file: entry.file });
       if (!reply.ok) this.note(t('Sent to {path}; FormSurface: {reason}').replace('{path}', path).replace('{reason}', reply.error.message));
+      else if (!reply.result.running) this.note(t('Sent with GoF; FormSurface is not running, so the file waits in the GoF folder'));
       else this.note(reply.result.loaded ? t('Sent to FormSurface and loaded there') : t('Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder'));
     } else {
       this.note(t('Sent with GoF to {path}').replace('{path}', path));
