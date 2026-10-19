@@ -15,6 +15,8 @@ pyinstaller --noconfirm --clean --onefile --name formsculptor-engine \
   --distpath dist-engine --workpath build/pyinstaller --specpath build/pyinstaller \
   --add-data "$FSC_ROOT/frontend/dist${sep}frontend_dist" \
   --add-data "$FSC_ROOT/integrations/blender/formsculptor_link${sep}integrations/blender/formsculptor_link" \
+  --add-data "$FSC_ROOT/integrations/unreal${sep}integrations/unreal" \
+  --add-data "$FSC_ROOT/integrations/unity${sep}integrations/unity" \
   --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine \
   --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat \
   $([ "$(fs_os)" = windows ] && echo --hidden-import winpty || echo --hidden-import ptyprocess) \

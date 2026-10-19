@@ -27,6 +27,14 @@ def blender_addon_dir() -> Path | None:
     return path if (path / "blender_manifest.toml").is_file() else None
 
 
+def gof_receiver_dir(app: str) -> Path | None:
+    """A GoF receiver's folder (unreal or unity), found as the Blender add-on is."""
+    configured = os.environ.get("FSC_INTEGRATIONS")
+    root = Path(configured) if configured else REPO / "integrations"
+    path = root / app
+    return path if (path / "README.md").is_file() else None
+
+
 def engine_port() -> int:
     raw = os.environ.get("FSC_PORT", "").strip()
     return int(raw) if raw.isdigit() and int(raw) > 0 else BACKEND_PORT
