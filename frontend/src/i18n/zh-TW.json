@@ -1368,5 +1368,8 @@
  "Auto": "自動",
  "Object smooth shading": "物件平滑著色",
  "On": "開",
- "Smooth shading": "平滑著色"
+ "Smooth shading": "平滑著色",
+ "Instance": "實例",
+ "Un-instance": "取消實例",
+ "Sync Instances": "同步實例"
 }

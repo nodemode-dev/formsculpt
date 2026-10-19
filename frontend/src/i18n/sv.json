@@ -1368,5 +1368,8 @@
  "Auto": "Auto",
  "Object smooth shading": "Objektets mjuka skuggning",
  "On": "På",
- "Smooth shading": "Mjuk skuggning"
+ "Smooth shading": "Mjuk skuggning",
+ "Instance": "Instans",
+ "Un-instance": "Ta bort instans",
+ "Sync Instances": "Synkronisera instanser"
 }

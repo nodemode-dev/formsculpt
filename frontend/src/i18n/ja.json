@@ -1368,5 +1368,8 @@
  "Auto": "自動",
  "Object smooth shading": "オブジェクトのスムーズシェーディング",
  "On": "オン",
- "Smooth shading": "スムーズシェーディング"
+ "Smooth shading": "スムーズシェーディング",
+ "Instance": "インスタンス",
+ "Un-instance": "インスタンス解除",
+ "Sync Instances": "インスタンスを同期"
 }

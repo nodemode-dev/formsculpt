@@ -1368,5 +1368,8 @@
  "Auto": "Automatycznie",
  "Object smooth shading": "Gładkie cieniowanie obiektu",
  "On": "Włączone",
- "Smooth shading": "Gładkie cieniowanie"
+ "Smooth shading": "Gładkie cieniowanie",
+ "Instance": "Instancja",
+ "Un-instance": "Usuń instancję",
+ "Sync Instances": "Synchronizuj instancje"
 }

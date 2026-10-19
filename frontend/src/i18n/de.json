@@ -1368,5 +1368,8 @@
  "Auto": "Automatisch",
  "Object smooth shading": "Weiche Schattierung des Objekts",
  "On": "Ein",
- "Smooth shading": "Weiche Schattierung"
+ "Smooth shading": "Weiche Schattierung",
+ "Instance": "Instanz",
+ "Un-instance": "Instanz auflösen",
+ "Sync Instances": "Instanzen synchronisieren"
 }

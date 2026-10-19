@@ -1368,5 +1368,8 @@
  "Auto": "Automaattinen",
  "Object smooth shading": "Kohteen pehmeä varjostus",
  "On": "Päällä",
- "Smooth shading": "Pehmeä varjostus"
+ "Smooth shading": "Pehmeä varjostus",
+ "Instance": "Instanssi",
+ "Un-instance": "Poista instanssi",
+ "Sync Instances": "Synkronoi instanssit"
 }

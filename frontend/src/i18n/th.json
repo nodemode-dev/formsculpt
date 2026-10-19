@@ -1368,5 +1368,8 @@
  "Auto": "อัตโนมัติ",
  "Object smooth shading": "การแรเงาแบบเรียบของวัตถุ",
  "On": "เปิด",
- "Smooth shading": "การแรเงาแบบเรียบ"
+ "Smooth shading": "การแรเงาแบบเรียบ",
+ "Instance": "อินสแตนซ์",
+ "Un-instance": "ยกเลิกอินสแตนซ์",
+ "Sync Instances": "ซิงค์อินสแตนซ์"
 }

@@ -1368,5 +1368,8 @@
  "Auto": "Otomatis",
  "Object smooth shading": "Bayangan halus objek",
  "On": "Aktif",
- "Smooth shading": "Bayangan halus"
+ "Smooth shading": "Bayangan halus",
+ "Instance": "Instans",
+ "Un-instance": "Lepas instans",
+ "Sync Instances": "Sinkronkan instans"
 }

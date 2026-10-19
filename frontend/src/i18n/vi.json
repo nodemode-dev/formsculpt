@@ -1368,5 +1368,8 @@
  "Auto": "Tự động",
  "Object smooth shading": "Đổ bóng mượt của đối tượng",
  "On": "Bật",
- "Smooth shading": "Đổ bóng mượt"
+ "Smooth shading": "Đổ bóng mượt",
+ "Instance": "Phiên bản",
+ "Un-instance": "Bỏ phiên bản",
+ "Sync Instances": "Đồng bộ phiên bản"
 }

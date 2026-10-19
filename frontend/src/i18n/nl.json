@@ -1368,5 +1368,8 @@
  "Auto": "Automatisch",
  "Object smooth shading": "Vloeiende belichting van object",
  "On": "Aan",
- "Smooth shading": "Vloeiende belichting"
+ "Smooth shading": "Vloeiende belichting",
+ "Instance": "Instantie",
+ "Un-instance": "Instantie opheffen",
+ "Sync Instances": "Instanties synchroniseren"
 }

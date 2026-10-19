@@ -1368,5 +1368,8 @@
  "Auto": "Automatico",
  "Object smooth shading": "Ombreggiatura uniforme dell'oggetto",
  "On": "Attivo",
- "Smooth shading": "Ombreggiatura uniforme"
+ "Smooth shading": "Ombreggiatura uniforme",
+ "Instance": "Istanza",
+ "Un-instance": "Rimuovi istanza",
+ "Sync Instances": "Sincronizza istanze"
 }

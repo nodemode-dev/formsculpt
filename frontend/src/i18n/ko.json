@@ -1368,5 +1368,8 @@
  "Auto": "자동",
  "Object smooth shading": "오브젝트 부드러운 셰이딩",
  "On": "켬",
- "Smooth shading": "부드러운 셰이딩"
+ "Smooth shading": "부드러운 셰이딩",
+ "Instance": "인스턴스",
+ "Un-instance": "인스턴스 해제",
+ "Sync Instances": "인스턴스 동기화"
 }

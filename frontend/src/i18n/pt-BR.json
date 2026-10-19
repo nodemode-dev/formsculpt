@@ -1368,5 +1368,8 @@
  "Auto": "Automático",
  "Object smooth shading": "Sombreamento suave do objeto",
  "On": "Ligado",
- "Smooth shading": "Sombreamento suave"
+ "Smooth shading": "Sombreamento suave",
+ "Instance": "Instância",
+ "Un-instance": "Desfazer instância",
+ "Sync Instances": "Sincronizar instâncias"
 }

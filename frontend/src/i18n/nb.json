@@ -1368,5 +1368,8 @@
  "Auto": "Auto",
  "Object smooth shading": "Objektets myke skyggelegging",
  "On": "På",
- "Smooth shading": "Myk skyggelegging"
+ "Smooth shading": "Myk skyggelegging",
+ "Instance": "Instans",
+ "Un-instance": "Fjern instans",
+ "Sync Instances": "Synkroniser instanser"
 }

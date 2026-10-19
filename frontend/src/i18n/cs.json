@@ -1368,5 +1368,8 @@
  "Auto": "Automaticky",
  "Object smooth shading": "Hladké stínování objektu",
  "On": "Zapnuto",
- "Smooth shading": "Hladké stínování"
+ "Smooth shading": "Hladké stínování",
+ "Instance": "Instance",
+ "Un-instance": "Zrušit instanci",
+ "Sync Instances": "Synchronizovat instance"
 }

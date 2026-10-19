@@ -1368,5 +1368,8 @@
  "Auto": "Automatikus",
  "Object smooth shading": "Objektum sima árnyalása",
  "On": "Be",
- "Smooth shading": "Sima árnyalás"
+ "Smooth shading": "Sima árnyalás",
+ "Instance": "Példány",
+ "Un-instance": "Példány feloldása",
+ "Sync Instances": "Példányok szinkronizálása"
 }

@@ -1368,5 +1368,8 @@
  "Auto": "Auto",
  "Object smooth shading": "Ombrage lisse de l'objet",
  "On": "Activé",
- "Smooth shading": "Ombrage lisse"
+ "Smooth shading": "Ombrage lisse",
+ "Instance": "Instance",
+ "Un-instance": "Désinstancier",
+ "Sync Instances": "Synchroniser les instances"
 }

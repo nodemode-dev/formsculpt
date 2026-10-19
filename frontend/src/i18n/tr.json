@@ -1368,5 +1368,8 @@
  "Auto": "Otomatik",
  "Object smooth shading": "Nesnenin yumuşak gölgelendirmesi",
  "On": "Açık",
- "Smooth shading": "Yumuşak gölgelendirme"
+ "Smooth shading": "Yumuşak gölgelendirme",
+ "Instance": "Örnek",
+ "Un-instance": "Örneği kaldır",
+ "Sync Instances": "Örnekleri eşitle"
 }
