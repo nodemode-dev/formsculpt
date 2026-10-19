@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.3.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.4.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -56,6 +56,7 @@ Render the scene to a PNG and return it, so you can see the model: drawn on the 
 - `saved`: string; Look from a saved view's direction (save_view, list_views); overrides view.
 - `shading`: string (clay | wax | pearl | bronze | gray | pbr | groups); default "clay"; The window's matcaps, or pbr for painted roughness and metalness under three lights.
 - `smooth`: integer; default 0; range 0 to 3; Dynamic subdivision: draw each object Loop-subdivided this many levels (the window's Smooth preview); the meshes are not changed.
+- `smooth_shading`: boolean; default true; Shade smooth (normals blended across faces) or, when false, faceted, so the topology shows; an object's own smooth_shading (set_material) wins over this unless it is auto.
 - `sun`: boolean; default true; Path render: keep the window's key light.
 - `temperature`: number; default 0; range -1 to 1; Path render grade: white balance, negative cooler, positive warmer.
 - `tone`: string (reinhard | aces | none | agx | neutral); default "reinhard"; Path render: how light is brought to the screen. reinhard is soft; aces filmic and contrasty; agx keeps hot colours from skewing, fading them toward white as film does; neutral keeps base colours almost exact and only compresses highlights; none clips.
@@ -225,6 +226,7 @@ Set how light passes into and through an object in lit shading: subsurface scatt
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `ior`: number; range 1 to 2.5; Index of refraction: water 1.33, glass 1.5, diamond 2.4.
 - `opacity`: number; range 0 to 1; Dithered: the share of the surface drawn. Additive: how much light it adds. Opaque ignores it.
+- `smooth_shading`: string (auto | on | off); on shades smooth (normals blended across faces), off faceted (each face shaded on its own, so the topology shows: a flat icosahedron, hard-surface pieces), auto follows the view's Smooth shading setting (get_view's smooth_shading).
 - `subsurface`: number; range 0 to 1; How much light enters and comes back out tinted: skin 0.3 to 0.6, wax and jade 0.8.
 - `subsurface_color`: array of number; The tint light picks up inside, linear RGB (skin is a warm red).
 - `subsurface_radius`: number; range -inf to 1000; How far light travels inside, in world units; thin parts such as ears glow when lit from behind.

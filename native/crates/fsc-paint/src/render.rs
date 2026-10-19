@@ -202,6 +202,9 @@ fn shade(cam: &Camera, s: &Sample, objects: &[RenderObject], shading_in: Shading
         }
         mask += o.mask.get(v).copied().unwrap_or(0.0) * w;
     }
+    if o.material.smooth == Some(false) {
+        n = face_normal(o.mesh, t[0], t[1], t[2]);
+    }
     let mut n = cam.to_view(n.normalize_or(-cam.fwd));
     let v = cam.to_view((cam.eye - p).normalize_or(-cam.fwd));
     if n.dot(v) < 0.0 {
@@ -381,11 +384,18 @@ fn cosine_dir(n: Vec3, rng: &mut Rng) -> Vec3 {
     (t * (r * phi.cos()) + b * (r * phi.sin()) + n * (1.0 - u).max(0.0).sqrt()).normalize()
 }
 
+/// A triangle's own normal, for faceted shading (the material's smooth shading off): every point of the face shades
+/// alike, so the topology shows.
+fn face_normal(mesh: &Mesh, a: u32, b: u32, c: u32) -> Vec3 {
+    let p = |i: u32| Vec3::from(mesh.positions[i as usize]);
+    (p(b) - p(a)).cross(p(c) - p(a)).normalize_or_zero()
+}
+
 /// The surface at a hit: position, shading normal, and paint (colour, roughness, metalness, opacity, emissive).
 fn surface(o: &RenderObject, h: &fsc_core::Hit) -> (Vec3, Vec3, [f32; fsc_core::PAINT_LEN]) {
     let [a, b, c] = o.mesh.triangle(h.triangle as usize);
     let w = [1.0 - h.u - h.v, h.u, h.v];
-    let n: Vec3 = [a, b, c].iter().zip(w).map(|(&v, w)| Vec3::from(o.mesh.normals[v as usize]) * w).sum();
+    let n: Vec3 = if o.material.smooth == Some(false) { face_normal(o.mesh, a, b, c) } else { [a, b, c].iter().zip(w).map(|(&v, w)| Vec3::from(o.mesh.normals[v as usize]) * w).sum() };
     let paint = if o.mesh.has_paint() {
         std::array::from_fn(|k| o.mesh.paint[a as usize][k] * w[0] + o.mesh.paint[b as usize][k] * w[1] + o.mesh.paint[c as usize][k] * w[2])
     } else {

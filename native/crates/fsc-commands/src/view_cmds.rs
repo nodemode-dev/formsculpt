@@ -38,6 +38,7 @@ pub(crate) fn view_schema() -> Value {
             "pitch": {"type": "number", "minimum": -90, "maximum": 90, "description": "Degrees above the horizon; overrides view."},
             "width": {"type": "integer", "minimum": 64, "maximum": 4096, "default": 640, "description": "Up to 4096, so 4K (3840 by 2160) renders; a path render that large takes minutes."},
             "height": {"type": "integer", "minimum": 64, "maximum": 4096, "default": 640},
+            "smooth_shading": {"type": "boolean", "default": true, "description": "Shade smooth (normals blended across faces) or, when false, faceted, so the topology shows; an object's own smooth_shading (set_material) wins over this unless it is auto."},
             "shading": {"type": "string", "enum": Shading::NAMES, "default": "clay", "description": "The window's matcaps, or pbr for painted roughness and metalness under three lights."},
             "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Only these objects; every visible object when omitted."},
             "frame": {"type": "string", "enum": ["all", "active"], "default": "all", "description": "Fit the camera to all drawn objects or to the active one (others still drawn)."},
@@ -491,10 +492,13 @@ fn render_pixels(s: &mut Session, args: &Value) -> Result<(Vec<[u8; 4]>, Value),
     } else {
         Vec::new()
     };
+    // Smooth shading: an object's own setting, or the view's (smooth_shading, on unless false) where it says auto.
+    let view_smooth = args.get("smooth_shading").and_then(Value::as_bool).unwrap_or(true);
+    let resolved = |m: fsc_core::Material| fsc_core::Material { smooth: Some(m.smooth.unwrap_or(view_smooth)), ..m };
     let objects: Vec<RenderObject> = if smooth > 0 {
-        drawn.iter().zip(&smoothed).map(|(o, (m, mask))| RenderObject { mesh: m, mask, active: Some(o.id) == active, material: o.material }).collect()
+        drawn.iter().zip(&smoothed).map(|(o, (m, mask))| RenderObject { mesh: m, mask, active: Some(o.id) == active, material: resolved(o.material) }).collect()
     } else {
-        drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active, material: o.material }).collect()
+        drawn.iter().map(|o| RenderObject { mesh: &o.mesh, mask: &o.mask, active: Some(o.id) == active, material: resolved(o.material) }).collect()
     };
     let view = View { yaw: yaw.to_radians(), pitch: pitch.to_radians(), width, height, shading, background, frame, supersample: if width.max(height) <= 1024 { 2 } else { 1 } };
     let out = match args.get("render").and_then(Value::as_str).unwrap_or("preview") {

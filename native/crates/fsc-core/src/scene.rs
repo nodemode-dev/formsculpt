@@ -75,11 +75,35 @@ pub struct Material {
     pub blend: MaterialBlend,
     /// 0 to 1: for Dithered, the share of the surface drawn; for Additive, how much light it adds. Opaque ignores it.
     pub opacity: f32,
+    /// Smooth (normals interpolated) or faceted (each face shaded on its own) shading; None follows the view's
+    /// setting, as Nomad's per-material Smooth Shading Auto does.
+    pub smooth: Option<bool>,
 }
 
 impl Default for Material {
     fn default() -> Material {
-        Material { subsurface: 0.0, subsurface_color: [1.0, 0.35, 0.25], subsurface_radius: 0.2, transmission: 0.0, ior: 1.45, blend: MaterialBlend::Opaque, opacity: 1.0 }
+        Material { subsurface: 0.0, subsurface_color: [1.0, 0.35, 0.25], subsurface_radius: 0.2, transmission: 0.0, ior: 1.45, blend: MaterialBlend::Opaque, opacity: 1.0, smooth: None }
+    }
+}
+
+impl Material {
+    /// The smooth shading setting's name: auto, on or off.
+    pub fn smooth_name(&self) -> &'static str {
+        match self.smooth {
+            None => "auto",
+            Some(true) => "on",
+            Some(false) => "off",
+        }
+    }
+
+    /// Parses auto, on or off.
+    pub fn parse_smooth(name: &str) -> Option<Option<bool>> {
+        match name {
+            "auto" => Some(None),
+            "on" => Some(Some(true)),
+            "off" => Some(Some(false)),
+            _ => None,
+        }
     }
 }
 
