@@ -455,6 +455,28 @@ pub(crate) fn edge_loop(s: &mut Session, args: &Value) -> Result<Value, CommandE
     Ok(json!({"object": after, "quads_split": split}))
 }
 
+pub(crate) fn delete_loop_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted."},
+            "point": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on or near an edge of the loop to delete (from pick); the loop runs on from it through each vertex."}
+        },
+        "required": ["point"],
+        "additionalProperties": false
+    })
+}
+
+/// Deletes the edge loop through the edge nearest a point, joining the quads on either side. One undo step.
+pub(crate) fn delete_loop(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    crate::multires_cmds::guard(s, id, "Deleting an edge loop")?;
+    let point = vec3(args, "point")?.ok_or_else(|| bad("point is required"))?;
+    let (mesh, edges) = fsc_topo::delete_edge_loop(&s.scene.get(id).expect("checked").mesh, point).map_err(|e| CommandError::new("cannot_delete_loop", e))?;
+    let after = replace_topology(s, id, "Delete Edge Loop", mesh);
+    Ok(json!({"object": after, "loop_edges": edges}))
+}
+
 pub(crate) fn bridge_schema() -> Value {
     json!({
         "type": "object",

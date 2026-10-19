@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.11.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.12.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -10,7 +10,7 @@ Generated from the engine's command registry (formsculptor 1.11.0) by `./formscu
 - Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `triplanar_solid`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `instance_object`, `uninstance_object`, `sync_instance_children`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
-- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
+- Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
 - Sculpting: `sculpt_stroke`, `alpha_load`, `vdm_stamp`, `vdm_capture`
 - Files: `send_to_substance`, `substance_sync`, `save_project`, `open_project`, `import_mesh`, `export_mesh`, `bridge_send`, `bridge_sync`, `gof_send`, `link_pull`, `link_push`, `print_check`, `set_real_size`
 - Masking: `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `mask_cavity`, `mask_by_color`, `mask_grow`, `mask_topology`, `mask_shape`, `mask_by_group`, `extract_mask`, `extrude_mask`, `inset_mask`
@@ -489,7 +489,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `alpha_tile`: integer; default 1; range 1 to 16; The alpha repeats this many times across the dab in each direction.
 - `alpha_up`: array of number; The world direction the alpha's top faces (project it onto the surface); +y when omitted. The window sends the view's up.
 - `area_sample`: number; default 1; range 0.1 to 2; The radius, as a share of the brush radius, over which each dab takes its area normal and plane (draw, clay, flatten, planar, trim, polish and the other brushes that read them). A small share follows fine detail, a large one a broad average.
-- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise | smudge | elastic | polish | layer | nudge | stamp | layer_reset); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none.
+- `brush`: string (draw | clay | inflate | pinch | crease | flatten | smooth | grab | mask | paint | relax | planar | trim | snake_hook | noise | smudge | elastic | polish | layer | nudge | stamp | layer_reset | clay_strips); default "draw"; paint colours the surface instead of moving it, using color, roughness and metalness. relax evens the triangles without shrinking the form (smooth also wears it down); planar flattens to the plane under the first dab of the stroke; trim cuts down only what stands above each dab's plane (invert fills hollows instead); snake_hook pulls the area under the first point along the path, so give points that leave the surface (add dyntopo to keep detail along the pull); noise roughens along the normal with value noise of noise_scale; elastic drags like grab but with a smooth Kelvinlet falloff that reaches about 3 radii (ignores falloff); polish cuts what sticks out of the plane under each dab and smooths without rounding creases sharper than 40 degrees (invert fills hollows only); layer builds a raised layer capped at height per vertex over the stroke (invert recesses it); nudge slides the surface along the stroke without changing its height; stamp places one draw dab at the first point and ignores the rest; layer_reset scales down the active sculpt layer under the brush (strength 1 erases it) and reports no_active_layer when there is none; clay_strips builds like clay but over a square footprint turned along the stroke, so it lays flat-edged strips (Blender's Clay Strips).
 - `color`: ['string', 'array']; Paint brush: #rrggbb or [r, g, b] from 0 to 1.
 - `connected_only`: boolean; default false; Only vertices joined by mesh edges to the vertex nearest the dab centre, without leaving the brush sphere, are affected, so a brush on one finger does not touch the next.
 - `depth`: number; default 0; range 0 to 10000; World units; 0 is off. Vertices more than this far below the dab's area plane (along minus the area normal) are untouched, easing over the last 20%, so a brush does not reach through a thin part. The plane is taken from the vertices under the dab whose normals agree with the nearest one's (so the far side of a thin part does not tilt it).
@@ -833,6 +833,13 @@ Insert an edge loop into a quad mesh: the ring of quads crossing the edge neares
 
 - `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
 - `point`: array of number; required; A point on or near the edge the new loop crosses (from pick); the loop runs across it, around the ring of quads.
+
+## delete_edge_loop
+
+Delete (dissolve) an edge loop of a quad mesh, the inverse of insert_edge_loop: from the edge nearest point the loop runs on through each vertex to where it closes or meets an open border, its vertices go and the quads on either side join. Refuses with cannot_delete_loop when a loop vertex is a pole (other than four edges inside, three on a border) or the loop runs along a border. Needs quads. One undo step.
+
+- `id`: integer; range 1 to inf; A quad mesh (quad_remesh, a retopology object or a quad import); the active object when omitted.
+- `point`: array of number; required; A point on or near an edge of the loop to delete (from pick); the loop runs on from it through each vertex.
 
 ## delete_faces
 
@@ -1511,8 +1518,9 @@ Join several objects into the first one's mesh (the parts stay separate shells; 
 
 ## split_parts
 
-Split an object into one object per connected part of its mesh.
+Split an object into one object per connected part of its mesh, or with by groups one object per face group (ZBrush's Groups Split). One undo step.
 
+- `by`: string (parts | groups); default "parts"; parts: one object per connected part of the mesh. groups: one object per face group (ZBrush's Groups Split), each keeping its group, paint and UVs.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## array_object

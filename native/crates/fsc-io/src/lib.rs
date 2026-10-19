@@ -50,7 +50,7 @@ pub fn import(format: Format, bytes: &[u8]) -> Result<Vec<Named>, String> {
 /// Imports a file whose glTF buffers may live in files beside it, read through `resolve`.
 pub fn import_with(format: Format, bytes: &[u8], resolve: gltf::Resolve) -> Result<Vec<Named>, String> {
     let meshes = match format {
-        Format::Obj => formats::read_obj(bytes)?,
+        Format::Obj => formats::read_obj_with(bytes, resolve)?,
         Format::Stl => formats::read_stl(bytes)?,
         Format::Ply => formats::read_ply(bytes)?,
         Format::Glb | Format::Gltf => gltf::read_gltf_with(bytes, resolve)?,

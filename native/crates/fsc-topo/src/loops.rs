@@ -92,6 +92,111 @@ pub fn insert_edge_loop(mesh: &Mesh, near: Vec3) -> Result<(Mesh, usize), String
     Ok((quads_to_mesh(mesh, positions, paint, &out), ring.len()))
 }
 
+/// Deletes (dissolves) the edge loop through the quad edge nearest `near`, the inverse of `insert_edge_loop`: from that
+/// edge the loop runs on through each vertex by the edge that shares no quad with the one it came in by, until it closes
+/// or ends on an open border. Every loop vertex must have one edge off the loop to each side (four edges inside the
+/// mesh, three on a border); each pair of quads on either side of a loop edge becomes one quad, and the loop's vertices
+/// go. Returns the new mesh and how many loop edges went.
+pub fn delete_edge_loop(mesh: &Mesh, near: Vec3) -> Result<(Mesh, usize), String> {
+    let quads = mesh.quad_faces().ok_or("deleting an edge loop needs a quad mesh; run quad_remesh first")?;
+    let key = |a: u32, b: u32| (a.min(b), a.max(b));
+    let mut edge_quads: HashMap<(u32, u32), Vec<usize>> = HashMap::new();
+    let mut vertex_edges: HashMap<u32, Vec<u32>> = HashMap::new();
+    for (q, f) in quads.iter().enumerate() {
+        for k in 0..4 {
+            let (a, b) = (f[k], f[(k + 1) % 4]);
+            let list = edge_quads.entry(key(a, b)).or_default();
+            if list.is_empty() {
+                vertex_edges.entry(a).or_default().push(b);
+                vertex_edges.entry(b).or_default().push(a);
+            }
+            list.push(q);
+        }
+    }
+    let (sa, sb) = edge_quads
+        .keys()
+        .copied()
+        .min_by(|x, y| segment_distance(near, mesh.position(x.0), mesh.position(x.1)).total_cmp(&segment_distance(near, mesh.position(y.0), mesh.position(y.1))))
+        .ok_or("the mesh has no faces")?;
+    // The next loop edge out of `at`, having come in from `from`: the one edge at `at` sharing no quad with (from, at).
+    let onward = |from: u32, at: u32| -> Option<u32> {
+        let came = &edge_quads[&key(from, at)];
+        let edges = vertex_edges.get(&at)?;
+        if edges.len() != 4 {
+            return None;
+        }
+        let mut found = edges.iter().copied().filter(|&n| n != from && !edge_quads[&key(at, n)].iter().any(|q| came.contains(q)));
+        let n = found.next()?;
+        found.next().is_none().then_some(n)
+    };
+    // Walk both ways from the start edge.
+    let mut forward = vec![sa, sb];
+    let mut closed = false;
+    while let Some(n) = onward(forward[forward.len() - 2], forward[forward.len() - 1]) {
+        if n == forward[0] {
+            closed = true;
+            break;
+        }
+        if forward.contains(&n) {
+            return Err("the loop runs into itself; pick another edge".into());
+        }
+        forward.push(n);
+    }
+    let mut chain = forward;
+    if !closed {
+        let mut back = vec![sb, sa];
+        while let Some(n) = onward(back[back.len() - 2], back[back.len() - 1]) {
+            if chain.contains(&n) {
+                return Err("the loop runs into itself; pick another edge".into());
+            }
+            back.push(n);
+        }
+        let mut head: Vec<u32> = back.into_iter().skip(2).collect();
+        head.reverse();
+        head.extend(chain);
+        chain = head;
+    }
+    let edges: Vec<(u32, u32)> = if closed { (0..chain.len()).map(|i| (chain[i], chain[(i + 1) % chain.len()])).collect() } else { chain.windows(2).map(|w| (w[0], w[1])).collect() };
+    let on_loop: std::collections::HashSet<u32> = chain.iter().copied().collect();
+    let mut gone = vec![false; quads.len()];
+    let mut merged: Vec<[u32; 4]> = Vec::new();
+    for &(a, b) in &edges {
+        let pair = &edge_quads[&key(a, b)];
+        if pair.len() != 2 {
+            return Err("the loop runs along an open border; only loops with quads on both sides can be deleted".into());
+        }
+        // Each quad turned so it starts with the loop edge in its own direction: [p0, p1, p2, p3] and [p1, p0, q2, q3].
+        let turned = |q: usize| -> Option<[u32; 4]> {
+            let f = quads[q];
+            (0..4).find(|&k| on_loop.contains(&f[k]) && on_loop.contains(&f[(k + 1) % 4]) && key(f[k], f[(k + 1) % 4]) == key(a, b)).map(|k| [f[k], f[(k + 1) % 4], f[(k + 2) % 4], f[(k + 3) % 4]])
+        };
+        let (Some(p), Some(q)) = (turned(pair[0]), turned(pair[1])) else { return Err("the loop's quads could not be read".into()) };
+        if on_loop.contains(&p[2]) || on_loop.contains(&p[3]) || on_loop.contains(&q[2]) || on_loop.contains(&q[3]) {
+            return Err("the loop is too tight (a quad has three corners on it); pick another edge".into());
+        }
+        gone[pair[0]] = true;
+        gone[pair[1]] = true;
+        merged.push([p[2], p[3], q[2], q[3]]);
+    }
+    // Keep every vertex but the loop's, renumbered.
+    let mut remap = vec![u32::MAX; mesh.vertex_count()];
+    let (mut positions, mut paint) = (Vec::new(), Vec::new());
+    for v in 0..mesh.vertex_count() as u32 {
+        if !on_loop.contains(&v) {
+            remap[v as usize] = positions.len() as u32;
+            positions.push(mesh.positions[v as usize]);
+            if mesh.has_paint() {
+                paint.push(mesh.paint[v as usize]);
+            }
+        }
+    }
+    let out: Vec<[u32; 4]> = quads.iter().enumerate().filter(|(q, _)| !gone[*q]).map(|(_, f)| *f).chain(merged).map(|f| f.map(|v| remap[v as usize])).collect();
+    if out.iter().flatten().any(|&v| v == u32::MAX) {
+        return Err("a quad off the loop used a loop vertex; pick another edge".into());
+    }
+    Ok((quads_to_mesh(mesh, positions, paint, &out), edges.len()))
+}
+
 /// The open borders of a mesh as closed vertex loops, each in the direction its faces run along it.
 pub fn border_loops(mesh: &Mesh) -> Vec<Vec<u32>> {
     let mut directed: HashMap<(u32, u32), ()> = HashMap::new();

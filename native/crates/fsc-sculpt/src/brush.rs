@@ -30,12 +30,14 @@ pub enum BrushKind {
     Stamp,
     /// Scales down the active sculpt layer's contribution under the brush.
     LayerReset,
+    /// Clay over a square footprint turned along the stroke, so it lays flat-edged strips.
+    ClayStrips,
 }
 
 impl BrushKind {
-    pub const NAMES: [&'static str; 22] = [
+    pub const NAMES: [&'static str; 23] = [
         "draw", "clay", "inflate", "pinch", "crease", "flatten", "smooth", "grab", "mask", "paint", "relax", "planar", "trim", "snake_hook", "noise", "smudge", "elastic", "polish", "layer", "nudge", "stamp",
-        "layer_reset",
+        "layer_reset", "clay_strips",
     ];
 
     pub fn moves_vertices(&self) -> bool {
@@ -71,6 +73,7 @@ impl BrushKind {
             "nudge" => BrushKind::Nudge,
             "stamp" => BrushKind::Stamp,
             "layer_reset" => BrushKind::LayerReset,
+            "clay_strips" => BrushKind::ClayStrips,
             _ => return None,
         })
     }

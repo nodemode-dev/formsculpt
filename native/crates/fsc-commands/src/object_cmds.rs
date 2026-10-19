@@ -397,21 +397,56 @@ pub(crate) fn split_shape_schema() -> Value {
     schema
 }
 
+pub(crate) fn split_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
+            "by": {"type": "string", "enum": ["parts", "groups"], "default": "parts", "description": "parts: one object per connected part of the mesh. groups: one object per face group (ZBrush's Groups Split), each keeping its group, paint and UVs."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
 pub(crate) fn split(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     guard(s, id, "Split")?;
+    let by = args.get("by").and_then(Value::as_str).unwrap_or("parts");
+    if by != "parts" && by != "groups" {
+        return Err(bad("by is parts or groups"));
+    }
     let object = s.scene.get(id).expect("checked");
-    let mut parts = fsc_topo::split_parts(&object.mesh);
+    let mut parts = if by == "groups" {
+        if !object.mesh.has_groups() {
+            return Err(CommandError::new("no_groups", format!("object {id} has no face groups to split by")));
+        }
+        let mut ids: Vec<u32> = object.mesh.groups.clone();
+        ids.sort_unstable();
+        ids.dedup();
+        ids.iter().map(|&g| faces_to_mesh(&object.mesh, &object.mesh.groups.iter().map(|&x| x == g).collect::<Vec<_>>(), true).0).collect()
+    } else {
+        fsc_topo::split_parts(&object.mesh)
+    };
+    if by == "groups" {
+        // faces_to_mesh already carried paint per vertex; nothing to transfer.
+        return finish_split(s, id, parts, "Groups Split");
+    }
     if object.mesh.has_paint() {
         for part in parts.iter_mut() {
             fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], part);
         }
     }
+    finish_split(s, id, parts, "Split Parts")
+}
+
+/// Replaces an object by the pieces split from it, in its place in the list, as one scene step.
+fn finish_split(s: &mut Session, id: ObjectId, parts: Vec<Mesh>, label: &str) -> Result<Value, CommandError> {
     if parts.len() < 2 {
         return Ok(json!({"id": id, "parts": 1}));
     }
-    let base = object.name.clone();
-    snapshot(s, "Split Parts");
+    let base = s.scene.get(id).expect("checked").name.clone();
+    snapshot(s, label);
     let at = s.scene.index_of(id).expect("checked");
     let removed = s.scene.remove(id).expect("checked");
     let mut ids = Vec::new();

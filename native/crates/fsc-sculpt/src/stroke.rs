@@ -770,6 +770,18 @@ impl Stroke {
         // in proportion, so a stroke pinches the same however finely it is sampled (spacing compensation, when on,
         // already scales the whole dab).
         let pull = if s.spacing_compensation { 1.0 } else { (s.spacing / 0.15).clamp(0.05, 1.0) };
+        if s.kind == BrushKind::ClayStrips {
+            // A square footprint in the surface's plane, one side along the stroke: each vertex is weighed by the larger
+            // of its two distances along the square's axes instead of its distance from the centre. Corners beyond the
+            // gathered sphere are left out, so the square's corners come out slightly rounded.
+            let x_axis = along.unwrap_or_else(|| area_n.any_orthonormal_vector());
+            let y_axis = area_n.cross(x_axis);
+            for (k, &v) in found.iter().enumerate() {
+                let d = object.mesh.position(v) - center;
+                let reach = d.dot(x_axis).abs().max(d.dot(y_axis).abs()) / r;
+                weights[k] = s.falloff.weight(reach);
+            }
+        }
         if let Some(alpha) = &self.alpha {
             let m = self.transforms[copy];
             let up_ref = match (s.roll, prev) {
@@ -953,7 +965,7 @@ impl Stroke {
                         p + entry.1 * (step * sign)
                     }
                     BrushKind::Inflate => p + vn * (w * r * 0.06 * sign),
-                    BrushKind::Clay => {
+                    BrushKind::Clay | BrushKind::ClayStrips => {
                         let plane = area_c + area_n * (r * 0.08 * sign);
                         let d = (p - plane).dot(area_n) * sign;
                         if d < 0.0 {

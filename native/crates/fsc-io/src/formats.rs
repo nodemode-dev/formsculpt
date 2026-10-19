@@ -10,15 +10,49 @@ fn num(tok: Option<&str>, what: &str) -> Result<f32, String> {
     tok.and_then(|t| t.parse::<f32>().ok()).ok_or_else(|| format!("a {what} line has a bad number"))
 }
 
-pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
+/// The diffuse colours (Kd r g b) of the materials in an MTL file, by name.
+fn mtl_colors(text: &str) -> std::collections::HashMap<String, [f32; 3]> {
+    let mut out = std::collections::HashMap::new();
+    let mut current: Option<String> = None;
+    for line in text.lines() {
+        let mut it = line.split_whitespace();
+        match it.next() {
+            Some("newmtl") => current = Some(it.collect::<Vec<_>>().join(" ")),
+            Some("Kd") => {
+                let rgb: Vec<f32> = it.filter_map(|t| t.parse::<f32>().ok()).collect();
+                if let (Some(name), true) = (&current, rgb.len() >= 3) {
+                    out.insert(name.clone(), [rgb[0].clamp(0.0, 1.0), rgb[1].clamp(0.0, 1.0), rgb[2].clamp(0.0, 1.0)]);
+                }
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Reads an OBJ, and the MTL files its mtllib lines name through `resolve` (files beside it): when the vertices carry no
+/// colour of their own, each vertex takes the diffuse colour (Kd) of the material its faces use (usemtl), so a model
+/// coloured by materials keeps its colours as paint. A vertex shared by faces of two materials takes the later one's.
+pub fn read_obj_with(bytes: &[u8], resolve: crate::gltf::Resolve) -> Result<Vec<Named>, String> {
     let text = String::from_utf8_lossy(bytes);
     let mut positions: Vec<[f32; 3]> = Vec::new();
     let mut colors: Vec<[f32; 3]> = Vec::new();
     let mut colored = true;
     let mut parts: Vec<(String, Vec<u32>)> = vec![("Imported".into(), Vec::new())];
+    let mut materials: std::collections::HashMap<String, [f32; 3]> = std::collections::HashMap::new();
+    let mut using: Option<[f32; 3]> = None;
+    let mut by_material: Vec<(u32, [f32; 3])> = Vec::new();
     for line in text.lines() {
         let mut it = line.split_whitespace();
         match it.next() {
+            Some("mtllib") => {
+                for name in line.trim_start()[6..].split_whitespace() {
+                    if let Ok(found) = resolve(name) {
+                        materials.extend(mtl_colors(&String::from_utf8_lossy(&found)));
+                    }
+                }
+            }
+            Some("usemtl") => using = materials.get(&it.collect::<Vec<_>>().join(" ")).copied(),
             Some("v") => {
                 positions.push([num(it.next(), "v")?, num(it.next(), "v")?, num(it.next(), "v")?]);
                 let rgb: Vec<f32> = it.filter_map(|t| t.parse::<f32>().ok()).collect();
@@ -46,6 +80,9 @@ pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
                     }
                     poly.push(idx as u32);
                 }
+                if let Some(c) = using {
+                    by_material.extend(poly.iter().map(|&v| (v, c)));
+                }
                 let face = &mut parts.last_mut().expect("one part").1;
                 for k in 1..poly.len().saturating_sub(1) {
                     face.extend_from_slice(&[poly[0], poly[k], poly[k + 1]]);
@@ -56,6 +93,15 @@ pub fn read_obj(bytes: &[u8]) -> Result<Vec<Named>, String> {
     }
     if !colored {
         colors.clear();
+    }
+    // Material colours, where the vertices had none of their own; vertices of faces with no coloured material keep the
+    // default paint colour.
+    if colors.is_empty() && !by_material.is_empty() {
+        let d = fsc_core::DEFAULT_PAINT;
+        colors = vec![[d[0], d[1], d[2]]; positions.len()];
+        for (v, c) in by_material {
+            colors[v as usize] = c;
+        }
     }
     let out: Vec<Named> = parts.into_iter().filter(|p| !p.1.is_empty()).map(|(n, f)| (n, compacted(&positions, &colors, &f))).collect();
     if out.is_empty() {
