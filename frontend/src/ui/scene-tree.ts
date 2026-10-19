@@ -75,22 +75,41 @@ const HOLD_MS = 420;
 const SLOP = 6;
 
 /**
- * Lets rows (li[data-id]) of `list` be dragged onto each other. `drop` gets the dragged id and the new parent (null:
- * the top). Presses on buttons inside a row are left alone. The click a drag ends with is swallowed.
+ * Where a row dropped beside `target` goes among its new siblings, as set_parent's `before`: the sibling it now sits
+ * just before, or null for last. Siblings are the rows with the same parent and kind, in list order; groups are
+ * always listed before objects, so beside a row of the other kind an object goes first among the objects and a group
+ * last among the groups.
  */
-export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: number | null) => void): void {
+export function siblingBefore(list: HTMLElement, dragged: HTMLElement, target: HTMLElement, above: boolean): number | null {
+  const kind = dragged.dataset.kind ?? 'object';
+  const siblings = [...list.querySelectorAll<HTMLElement>('li[data-id]')].filter((r) => r !== dragged && (r.dataset.kind ?? 'object') === kind && (r.dataset.parent ?? '') === (target.dataset.parent ?? ''));
+  if ((target.dataset.kind ?? 'object') !== kind) return kind === 'object' && siblings.length ? Number(siblings[0].dataset.id) : null;
+  const at = siblings.indexOf(target);
+  const next = above ? siblings[at] : siblings[at + 1];
+  return next ? Number(next.dataset.id) : null;
+}
+
+/**
+ * Lets rows (li[data-id]) of `list` be dragged onto each other. `drop` gets the dragged id, the new parent (null: the
+ * top) and, when the row was dropped beside another, the sibling it now sits before (null: last; undefined: the order
+ * is left alone). Presses on buttons inside a row are left alone. The click a drag ends with is swallowed.
+ */
+export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: number | null, before?: number | null) => void): void {
   let press: { id: number; row: HTMLElement; x: number; y: number; pointer: number; touch: boolean; timer: number } | null = null;
   let dragging = false;
   let over: HTMLElement | null = null;
   // Over a row's middle half the drop hangs the dragged row inside it; over its top or bottom quarter, beside it
   // (under the same parent), which is how a row comes back out to the top in a list with no empty space.
   let into = true;
-  const mark = (row: HTMLElement | null, inside = true): void => {
-    if (over === row && into === inside) return;
+  // Beside: above the row (its top quarter) or below it (its bottom quarter), which sets the order among siblings.
+  let above = true;
+  const mark = (row: HTMLElement | null, inside = true, top = true): void => {
+    if (over === row && into === inside && above === top) return;
     over?.removeAttribute('data-drop');
     over = row;
     into = inside;
-    over?.setAttribute('data-drop', inside ? 'into' : 'beside');
+    above = top;
+    over?.setAttribute('data-drop', inside ? 'into' : top ? 'above' : 'below');
   };
   const start = (): void => {
     if (!press) return;
@@ -130,7 +149,7 @@ export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: numbe
     }
     const box = row.getBoundingClientRect();
     const y = (e.clientY - box.top) / Math.max(1, box.height);
-    mark(row, y > 0.25 && y < 0.75);
+    mark(row, y > 0.25 && y < 0.75, y <= 0.5);
   });
   // While dragging on a touch screen the list must not scroll.
   list.addEventListener('touchmove', (e) => { if (dragging) e.preventDefault(); }, { passive: false });
@@ -142,13 +161,14 @@ export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: numbe
       // list's empty space: the top; outside the list: nothing changes.
       const inside = list.contains(document.elementFromPoint(e.clientX, e.clientY));
       const parent: number | null | undefined = over ? (into ? Number(over.dataset.id) : over.dataset.parent ? Number(over.dataset.parent) : null) : inside ? null : undefined;
+      const before = over && !into ? siblingBefore(list, press.row, over, above) : undefined;
       // Swallow the click this release may make, so the row is not also selected; a release over another element
       // makes none, so the swallower goes after this turn rather than waiting for the next real click.
       const swallow = (c: Event): void => c.stopPropagation();
       list.addEventListener('click', swallow, { capture: true });
       window.setTimeout(() => list.removeEventListener('click', swallow, { capture: true }), 0);
       end();
-      if (parent !== undefined) drop(id, parent);
+      if (parent !== undefined) drop(id, parent, before);
       return;
     }
     end();

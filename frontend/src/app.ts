@@ -1785,7 +1785,7 @@ class SceneView {
       const defaults: Record<string, [string, string]> = { grid: ['4', '4'], strip: ['4', '4'], head: ['10', '2'], sphere: ['8', '2'] };
       [shell.patchColumns.value, shell.patchRows.value] = defaults[kind] ?? ['12', '3'];
     });
-    wireTreeDrag(shell.objectList, (id, parent) => void this.run('set_parent', { ids: [id], parent }));
+    wireTreeDrag(shell.objectList, (id, parent, before) => void this.run('set_parent', before === undefined ? { ids: [id], parent } : { ids: [id], parent, before }));
     shell.objectList.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest('li');
       if (!row?.dataset.id) return;

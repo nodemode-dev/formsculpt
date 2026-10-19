@@ -158,7 +158,7 @@ export class SceneDock {
     const group = labelled('group_node', 'Group', 'tb-dock-act');
     group.addEventListener('click', () => void this.hooks.run('add_group', this.scene.active ? { children: [this.scene.active] } : {}));
     objectActions.insertBefore(group, objectActions.lastElementChild);
-    wireTreeDrag(this.objectList, (id, parent) => void this.hooks.run('set_parent', { ids: [id], parent }));
+    wireTreeDrag(this.objectList, (id, parent, before) => void this.hooks.run('set_parent', before === undefined ? { ids: [id], parent } : { ids: [id], parent, before }));
     setText(this.emptyObjects, t('The scene is empty: add a sphere to start sculpting'));
     objects.append(this.objectList, this.emptyObjects, objectActions);
     this.objectList.setAttribute('aria-label', t('Objects'));
