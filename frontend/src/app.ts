@@ -94,6 +94,8 @@ interface Shell {
   focalShift: HTMLInputElement;
   invert: HTMLInputElement;
   symX: HTMLInputElement;
+  /** Mirror about the object's own centre, not the world origin (Nomad's Local symmetry). */
+  symLocal: HTMLInputElement;
   radial: HTMLInputElement;
   dyntopo: HTMLInputElement;
   dyntopoMode: HTMLSelectElement;
@@ -156,6 +158,7 @@ interface Shell {
   tablet: TabletLayout;
   zbrush: ZBrushLayout;
   thicken: HTMLInputElement;
+  voxelSharp: HTMLInputElement;
   toolSwap: HTMLInputElement;
   toolbars: Toolbars;
   gizmoPivot: HTMLSelectElement;
@@ -864,7 +867,8 @@ function buildShell(root: HTMLElement): Shell {
   const focalShift = input('range', { min: '-100', max: '100', value: '0', 'aria-label': 'Focal shift' });
   const invert = input('checkbox', { 'aria-label': 'Invert' });
   const symX = input('checkbox', { 'aria-label': 'Mirror X' });
-  const radial = input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
+  const symLocal = input('checkbox', { 'aria-label': 'Local symmetry' });
+  const radial =input('number', { min: '1', max: '150', value: '1', 'aria-label': 'Radial' });
   const dyntopo = input('checkbox', { 'aria-label': 'Dynamic topology' });
   const dyntopoMode = choices('Dyntopo mode', [['speed', 'Speed'], ['balanced', 'Balanced'], ['quality', 'Quality']]);
   dyntopoMode.value = 'balanced';
@@ -913,7 +917,7 @@ function buildShell(root: HTMLElement): Shell {
   pressureStrength.checked = true;
   const pressureSize = input('checkbox', { 'aria-label': 'Pressure sets size' });
   const fields = el('div', 'fields');
-  fields.append(field('Radius', radius), field('Strength', strength), field('Paint strength', paintStrength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Dyntopo mode', dyntopoMode), field('Dyntopo method', dyntopoMethod), field('Protect masked', dyntopoProtect), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Alpha stretch', alphaStretch), field('Alpha rotation', alphaRotation), field('Alpha tiles', alphaTile), field('Alpha mid %', alphaMid), field('Invert alpha', alphaInvert), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Focal shift', focalShift), field('Layer height %', layerHeight), field('Spacing %', spacing), field('Even deposit', evenDeposit), field('Brush offset %', brushOffset), field('Stroke jitter %', strokeJitter), field('Snap radius', snapRadius), field('Constant 3D radius', constantRadius), field('Shared radius', sharedRadius), field('Front faces only', frontFacing), field('Connected only', connectedOnly), field('Same group only', sameGroup), field('Keep sharp edges', keepSharp), field('Accumulate', accumulate), field('Area sample %', areaSample), field('Depth mask', depthMask));
+  fields.append(field('Radius', radius), field('Strength', strength), field('Paint strength', paintStrength), field('Lazy mouse', lazy), field('Invert (Ctrl)', invert), field('Mirror X', symX), field('Local symmetry', symLocal), field('Radial', radial), field('Dyntopo', dyntopo), field('Detail size', detail), field('Detail mode', detailMode), field('Dyntopo mode', dyntopoMode), field('Dyntopo method', dyntopoMethod), field('Protect masked', dyntopoProtect), field('Alpha', alpha), field('Alpha angle', alphaAngle), field('Alpha stretch', alphaStretch), field('Alpha rotation', alphaRotation), field('Alpha tiles', alphaTile), field('Alpha mid %', alphaMid), field('Invert alpha', alphaInvert), field('Stroke', strokeMode), field('Pressure curve', pressureGamma), field('Pressure strength', pressureStrength), field('Pressure size', pressureSize), field('Falloff', falloff), field('Focal shift', focalShift), field('Layer height %', layerHeight), field('Spacing %', spacing), field('Even deposit', evenDeposit), field('Brush offset %', brushOffset), field('Stroke jitter %', strokeJitter), field('Snap radius', snapRadius), field('Constant 3D radius', constantRadius), field('Shared radius', sharedRadius), field('Front faces only', frontFacing), field('Connected only', connectedOnly), field('Same group only', sameGroup), field('Keep sharp edges', keepSharp), field('Accumulate', accumulate), field('Area sample %', areaSample), field('Depth mask', depthMask));
   panel.append(fields);
   const presetFields = el('div', 'fields');
   const toolPreset = choices('Tool preset', [['', 'None']]);
@@ -1258,7 +1262,9 @@ function buildShell(root: HTMLElement): Shell {
   const zmodelAmount = input('range', { min: '5', max: '95', value: '25', 'aria-label': 'ZModeler amount' });
   // Thin parts survive the voxel remesh at this share of half a voxel's thickening (0 leaves the surface as it is).
   const thicken = input('range', { min: '0', max: '100', value: '0', 'aria-label': 'Thicken thin parts' });
-  topoFields.append(field('Voxel resolution', resolution), field('Thicken thin parts %', thicken), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
+  // Hard edges and corners the voxel remesh keeps, in degrees of turn between faces (0 rounds them as before).
+  const voxelSharp = input('number', { min: '0', max: '180', step: '5', value: '0', 'aria-label': 'Keep hard edges (degrees)' });
+  topoFields.append(field('Voxel resolution', resolution), field('Thicken thin parts %', thicken), field('Keep hard edges (degrees)', voxelSharp), field('Target quads', quadTarget), field('ZModeler action', zmodelAction), field('Loop position %', zmodelAt), field('Amount %', zmodelAmount), field('Auto-crease', zmodelCrease));
   // The Retopo patch tool's patch: which one, how large against the sculpt, and its two counts.
   const patchKind = choices('Retopo patch', [['grid', 'Grid'], ['strip', 'Strip'], ['eye_loop', 'Eye loop'], ['mouth_loop', 'Mouth loop'], ['disc', 'Disc'], ['head', 'Head (whole object)'], ['sphere', 'Sphere (whole object)'], ['skeleton', 'Skeleton (whole object)']]);
   const patchSize = input('range', { min: '1', max: '40', value: '6', 'aria-label': 'Patch size' });
@@ -1753,7 +1759,7 @@ function buildShell(root: HTMLElement): Shell {
   primApply.dataset.cmd = 'add.apply_primitive';
   clearRail.dataset.cmd = 'view.clear_rail';
   layout.attachRail(rail, (text) => setText(message, text));
-  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, oneTapHide, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, gofTarget, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, objectSmooth, smoothShading, materialOpacity, zbrush };
+  return { engineDot, engineText, engineVersion, canvas, addButtons, objectList, statVerts, statTris, statLevel, statRenderer, statFrame, message, brushButtons, radius, strength, paintStrength, sculptStrength, focalShift, invert, symX, symLocal, radial, actionButtons, dyntopo, dyntopoMode, dyntopoMethod, dyntopoProtect, detail, detailMode, topoButtons, resolution, quadTarget, decimatePaint, decimateGroups, decimateUvs, fieldHardAngle, fieldDensity, remeshGuide, fingerSmooths, oneTapMask, oneTapHide, threeVertical, threeHorizontal, wireframe, xray, wireScope, dimOthers, statsOverlay, statsReadout, flyBadge, tablet, thicken, voxelSharp, toolSwap, toolbars, gizmoPivot, gizmoMode, gizmoPin, pivotView, moveFields, turnFields, scaleFields, applyTransform, resetTransform, pickPivot, angleSnap, moveSnap, zmodelAction, zmodelAt, zmodelCrease, zmodelAmount, zmodelHover, zmodelCreases, retopoWire, patchKind, patchSize, patchColumns, patchRows, paintColor, paintRough, paintMetal, paintOpacityCh, paintEmissive, paintMaterial, paintTexture, materialPreset, shading, paintButtons, bakeSize, fileButtons, fileInput, exportFormat, fileScale, fileUp, exportTriangles, importMerge, gofTarget, realSize, realAxis, renderSize, nodemode, objectButtons, deformAxis, deformAngle, layerSelect, layerStrength, layerShape, layerPaint, layerMask, layerOffset, layerMaskedOnly, layerExtractMode, layerButtons, skeleton, lathe, tubeRadius, buildButtons, tubeLine, lazy, fov, viewButtons, historyList, historyMemory, historyReplay, replayRate, cameraPerStep, maxSteps, maxMemory, showGroups, uvChecker, trackball, insertKind, insertSize, arrayCount, layerHeight, spacing, evenDeposit, brushOffset, strokeJitter, snapRadius, constantRadius, sharedRadius, frontFacing, connectedOnly, sameGroup, keepSharp, accumulate, areaSample, depthMask, alphaStretch, alphaRotation, alphaTile, alphaMid, alphaInvert, toolPreset, presetButtons, brushRing, selectShape, selectAction, selectFlip, pathWidth, extractMode, arrayScaleEnd, arrayJitter, arraySeed, repeatStep, repeatResult, scatterCount, repeatList, reference, referenceInput, referenceOpacity, folderName, alpha, alphaAngle, strokeMode, alphaInput, alphaLoad, matcapInput, shadeActive, smoothPick, uvSeams, uvView, uvImage, uvEmpty, uvButtons, uvTile, uvPathLine, uvPinMarks, uvTileGrid, uvAllTiles, layout, panelLeft, uiSize, themePick, translucent, menubar, falloff, falloffCurve, falloffLine, falloffDots, pressureGamma, pressureStrength, pressureSize, curveButtons, curveInterp, curveClosed, curveRound, radiusMode, radiusEnd, pointRadius, pointTwist, curveOffset, curveGrid, curveChain, setPick, curveIntensity, curveLive, snakeTaper, tubeProfile, profileEditor, profileLine, profileDots, profileButtons, tubeCap, tubeHole, tubeSpiral, pathButtons, backdropMode, backdropTop, backdropBottom, backdropMid, backdropVignette, floorGrid, curveLine, curveHandles, paintLayer, paintBlend, paintOpacity, paintVisible, paintLayerButtons, envSelect, envRotate, exposure, fixedLights, tone, toneContrast, toneSaturation, toneTemperature, envBackground, envBlur, envInput, envLoad, postSsao, postSsr, postGi, postGiStrength, postBloom, postDof, postVignette, postGrain, gizmoAxes, gizmoUniform, latticeLines, latticePoints, primSize, primDetail, primHeight, primApply, noisePattern, noiseSize, noiseHeight, noiseOctaves, noiseGain, noiseStretch, keyAzimuth, keyElevation, keyIntensity, keyColor, keyFollows, lightKelvin, lightKind, lightDistance, lightCone, lightSoftness, shadows, groundShadow, lightPick, lightAdd, lightRemove, projectOpacity, projectInput, spotlightMode, spotlightApply, spotlightDepth, spotlightOpacity, spotlightFlip, spotlightInput, referencePlace, pluginPick, pluginParams, subsurface, transmission, pluginButtons, arrayLinked, vdmPick, textInput, fuseBlend, liveBoolean, materialType, objectSmooth, smoothShading, materialOpacity, zbrush };
 }
 
 class SceneView {
@@ -2036,6 +2042,8 @@ class SceneView {
           args.resolution = Math.max(8, Math.min(320, Number(shell.resolution.value) || 128));
           const thick = Number(shell.thicken.value) || 0;
           if (thick > 0) args.thicken = Math.min(100, thick);
+          const sharp = Number(shell.voxelSharp.value) || 0;
+          if (sharp > 0) args.keep_sharp = Math.min(180, sharp);
         }
         if (b.dataset.action === 'quad_remesh') args.faces = Math.max(100, Math.min(400000, Number(shell.quadTarget.value) || 4000));
         if (b.dataset.action === 'field_remesh') {
@@ -4130,7 +4138,7 @@ class SceneView {
   }
 
   /** The brush fields a tool preset keeps, by their shell names. */
-  private static readonly PRESET_FIELDS = ['radius', 'strength', 'lazy', 'invert', 'symX', 'radial', 'alpha', 'alphaAngle', 'alphaStretch', 'alphaRotation', 'alphaTile', 'alphaMid', 'alphaInvert', 'strokeMode', 'pressureGamma', 'pressureStrength', 'pressureSize', 'falloff', 'layerHeight', 'spacing', 'evenDeposit', 'brushOffset', 'strokeJitter', 'snapRadius', 'frontFacing', 'connectedOnly', 'sameGroup', 'keepSharp', 'accumulate', 'areaSample', 'depthMask'] as const;
+  private static readonly PRESET_FIELDS = ['radius', 'strength', 'lazy', 'invert', 'symX', 'symLocal', 'radial', 'alpha', 'alphaAngle', 'alphaStretch', 'alphaRotation', 'alphaTile', 'alphaMid', 'alphaInvert', 'strokeMode', 'pressureGamma', 'pressureStrength', 'pressureSize', 'falloff', 'layerHeight', 'spacing', 'evenDeposit', 'brushOffset', 'strokeJitter', 'snapRadius', 'frontFacing', 'connectedOnly', 'sameGroup', 'keepSharp', 'accumulate', 'areaSample', 'depthMask'] as const;
 
   private savedPresets(): Record<string, { brush: string; values: Record<string, string | boolean> }> {
     try {
@@ -4786,6 +4794,7 @@ class SceneView {
       { id: 'toolbar.delete', label: 'Delete Toolbar', run: () => s.toolbars.target && s.toolbars.remove(s.toolbars.target.toolbar), enabled: () => s.toolbars.target !== null },
       { id: 'view.backdrop_gradient', label: 'Gradient Background', run: () => { s.backdropMode.value = s.backdropMode.value === 'gradient' ? 'color' : 'gradient'; s.backdropMode.dispatchEvent(new Event('change', { bubbles: true })); }, checked: () => s.backdropMode.value === 'gradient' },
       { id: 'sculpt.mirror_x', label: 'Mirror X', run: () => toggle(s.symX), checked: () => s.symX.checked },
+      { id: 'sculpt.symmetry_local', label: 'Local symmetry', run: () => toggle(s.symLocal), checked: () => s.symLocal.checked },
       { id: 'sculpt.invert', label: 'Invert Brush', run: () => toggle(s.invert), checked: () => s.invert.checked },
       { id: 'sculpt.dyntopo', label: 'Dynamic Topology', run: () => toggle(s.dyntopo), checked: () => s.dyntopo.checked, enabled: () => !s.dyntopo.disabled },
       { id: 'view.panel_left', label: 'Panel on the Left', run: () => toggle(s.panelLeft), checked: () => s.layout.panelLeft },
@@ -5508,7 +5517,7 @@ class SceneView {
       options: this.strokeOptions(),
       worldRadius: s.constantRadius.checked ? this.worldRadius : null,
       lazy: Number(s.lazy.value) / 100,
-      symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)) },
+      symmetry: { x: s.symX.checked, y: false, z: false, radial: Math.max(1, Math.min(150, Number(s.radial.value) || 1)), ...(s.symLocal.checked ? { local: true } : {}) },
       dyntopo: s.dyntopo.checked ? Number(s.detail.value) / 100 : null,
       dyntopoSize: s.dyntopo.checked && s.detailMode.value === 'constant' ? this.constantSize(Number(s.detail.value) / 100) : null,
       dyntopoScreenPx: s.dyntopo.checked && s.detailMode.value === 'screen' ? Number(s.detail.value) * 0.2 : null,

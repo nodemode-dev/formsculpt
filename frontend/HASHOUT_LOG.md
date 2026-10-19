@@ -952,3 +952,10 @@ A first try filled outside samples with the frame's average colour at an average
 - logged: v1.12.0 · 2026-10-19
 The engine's Clay Strips brush (native side log, 1.12.0) after Clay in the tool lists and the Tool menu, with an icon of flat strips in the tablet layout's set. Delete Edge Loop reaches the command palette from the catalogue as every engine command does. 2 strings in 23 tables (1375).
 Checked in a fresh profile under 4x CPU throttling (claystrips.mjs, panel layout): the Clay strips button was shown and pressed, a mouse stroke across a sphere changed it (revision 1 to 2), Delete Edge Loop is in the catalogue the palette reads; CLS 0, no errors.
+
+### Local symmetry and Keep hard edges
+- refers-to: src/app.ts :: Shell (symLocal, voxelSharp), the brush fields (Local symmetry after Mirror X), the topology fields (Keep hard edges (degrees) after Thicken thin parts), brushState's symmetry (local), the remesh_voxel call (keep_sharp), the command sculpt.symmetry_local, PRESET_FIELDS (symLocal); src/i18n/*.json
+- kind: rationale
+- logged: v1.13.0 · 2026-10-19
+The window side of the engine's local symmetry and keep-sharp remesh (native side log, 1.13.0). Local symmetry is a checkbox after Mirror X and a palette toggle, kept in tool presets; the brush settings send symmetry.local only when it is on, so live strokes and sculpt_stroke alike mirror about the object's centre. Keep hard edges (degrees) sits with Voxel resolution and Thicken thin parts; 0 sends nothing. 2 strings in 23 tables (1377).
+Checked in a fresh profile under 4x CPU throttling (symlocal.mjs, panel layout): a sphere moved to x 3 (made before the page loads), front view, F to frame, Draw, Mirror X and Local symmetry ticked by clicks; a mouse stroke on its right moved 52 points right of x 3 (mean 3.265) and 52 left of it (mean 2.735); a cube remeshed from the Voxel button with Keep hard edges 30 kept its corners (0.0000); CLS 0, no errors.
