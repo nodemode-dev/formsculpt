@@ -72,11 +72,12 @@ void main() {
   const int N = 16;
   const float TURNS = 7.0;
   vec3 e = vec3(0.0);
+  float outside = 0.0;
   for (int i = 0; i < N; i++) {
     float k = (float(i) + 0.5) / float(N);
     float a = 6.2831853 * k * TURNS + phi;
     vec2 uv = vUv + vec2(cos(a), sin(a)) * rad * k;
-    if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) continue;
+    if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) { outside += 1.0; continue; }
     if (texture(uDepth, uv).r >= 1.0) continue;
     vec3 y = viewPos(uv);
     vec3 v = y - p;
@@ -89,6 +90,13 @@ void main() {
     float fall = 1.0 - smoothstep(reach, reach * 1.5, len);
     e += pow(texture(uColor, uv).rgb, vec3(2.2)) * cx * fall;
   }
+  // Samples that fall outside the frame have nothing to read, so near the frame's edges the bounce faded to a fifth of
+  // the middle's. Mara et al. fill what the screen cannot see from other lighting, weighted by the missing share; with
+  // no such solution here, the pixel's own samples inside the frame stand in for the ones outside (the sum is taken
+  // over the samples that could be read, as their estimate normalises by the samples it has), so the edge of the
+  // frame no longer darkens the bounce. Too few inside to trust, and nothing is filled.
+  float inside = float(N) - outside;
+  if (outside > 0.0 && inside >= 4.0) e *= float(N) / inside;
   outColor = vec4(e * 2.0 / float(N), 1.0);
 }`;
 
