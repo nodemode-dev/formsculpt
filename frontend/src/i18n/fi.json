@@ -1352,5 +1352,6 @@
  "Sent with GoF to {path}": "Lähetetty GoF:lla kohteeseen {path}",
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
- "Unreal Engine": "Unreal Engine"
+ "Unreal Engine": "Unreal Engine",
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Lähetetty GoF:lla; FormSurface ei ole käynnissä, joten tiedosto odottaa GoF-kansiossa"
 }

@@ -1352,5 +1352,6 @@
  "Sent with GoF to {path}": "Mit GoF gesendet an {path}",
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
- "Unreal Engine": "Unreal Engine"
+ "Unreal Engine": "Unreal Engine",
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Mit GoF gesendet; FormSurface läuft nicht, die Datei wartet im GoF-Ordner"
 }

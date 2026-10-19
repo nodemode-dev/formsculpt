@@ -1067,6 +1067,7 @@
  "Sent to FormSurface; turn on Agent link there to load it, or open it from its meshes folder",
  "Sent to {path}; FormSurface: {reason}",
  "Sent with GoF to {path}",
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder",
  "Separate copies",
  "Service",
  "Set",

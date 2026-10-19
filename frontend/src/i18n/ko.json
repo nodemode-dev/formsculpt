@@ -1352,5 +1352,6 @@
  "Sent with GoF to {path}": "GoF로 {path}에 보냈습니다",
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
- "Unreal Engine": "Unreal Engine"
+ "Unreal Engine": "Unreal Engine",
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "GoF로 보냈습니다. FormSurface가 실행 중이 아니어서 파일은 GoF 폴더에서 대기합니다"
 }

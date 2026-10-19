@@ -1352,5 +1352,6 @@
  "Sent with GoF to {path}": "已通过 GoF 发送到 {path}",
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
- "Unreal Engine": "Unreal Engine"
+ "Unreal Engine": "Unreal Engine",
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "已通过 GoF 发送；FormSurface 未运行，文件在 GoF 文件夹中等待"
 }
