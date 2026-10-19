@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.2.0 · 2026-10-19
+
+### Changed
+
+- GoF files carry real units: one scene unit is a metre (as glTF reads it), or the real size when one is set (File, Set real size). GLB and OBJ are written in metres and FBX in centimetres, so an object arrives at the same size in Blender, Unity and Unreal Engine; gof.json records the units and scale, and edits come back at the right size. Before, an FBX for Unity arrived a hundred times too small.
+- An object sent with GoF to several apps now comes back from any of them, not only the last one sent.
+
 ## 1.1.0 · 2026-10-19
 
 ### Added
