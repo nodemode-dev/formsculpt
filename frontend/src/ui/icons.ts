@@ -34,6 +34,10 @@ const GLYPHS: Record<string, string> = {
   terminal: '<rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M7 9.5l3 2.5-3 2.5M12.5 15h4.5"/>',
 };
 
+export function glyphBody(name: string): string | undefined {
+  return GLYPHS[name];
+}
+
 export function icon(name: string, size = 16): string {
   const body = GLYPHS[name] ?? '';
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;

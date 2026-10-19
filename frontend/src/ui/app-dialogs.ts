@@ -191,3 +191,51 @@ export class PromptDialog extends Dialog {
     this.close();
   }
 }
+
+export class ChoiceDialog extends Dialog {
+  private readonly lead = fromHtml<HTMLElement>('<p class="fs-note"></p>');
+  private readonly pick = fromHtml<HTMLSelectElement>('<select class="fs-input" data-no-i18n></select>');
+  private readonly ok: HTMLButtonElement;
+  private done: ((value: string | null) => void) | null = null;
+
+  constructor() {
+    super('', 460);
+    this.body.append(this.lead, this.pick);
+    this.button('Cancel', 'ghost', () => this.finish(null));
+    this.ok = this.button('OK', 'primary', () => this.finish(this.pick.value || null));
+    this.pick.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.finish(this.pick.value || null);
+      }
+    });
+    this.onClose = () => this.finish(null);
+  }
+
+  ask(title: string, lead: string, label: string, options: ReadonlyArray<readonly [string, string]>, chosen: string, okLabel: string): Promise<string | null> {
+    this.setTitle(title);
+    setText(this.lead, t(lead));
+    this.pick.setAttribute('aria-label', t(label));
+    this.pick.replaceChildren(
+      ...options.map(([value, text]) => {
+        const o = fromHtml<HTMLOptionElement>('<option></option>');
+        o.value = value;
+        o.textContent = text;
+        return o;
+      }),
+    );
+    this.pick.value = chosen;
+    setText(this.ok, t(okLabel));
+    return new Promise((resolve) => {
+      this.done = resolve;
+      this.open(this.pick);
+    });
+  }
+
+  private finish(value: string | null): void {
+    const fn = this.done;
+    this.done = null;
+    fn?.(value);
+    this.close();
+  }
+}

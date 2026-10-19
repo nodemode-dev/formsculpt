@@ -19,7 +19,7 @@ State at 0.10.0: `frontend/src/app.ts` builds the right panel in this order: Fil
 2. Vite: port 5196, server.host false, strictPort, COOP/COEP headers (WASM threads), `/api` proxy to 127.0.0.1:8196.
 3. `frontend/src/engine/` is the worker client and never touches the DOM. The shell talks to the engine only through it.
 4. Colours come from `frontend/src/styles/tokens.css` (accent #f97316). Every z-index is a `var(--z-*)` token from its scale.
-5. Icons: inline currentColor SVG in `frontend/src/ui/icons.ts`. No icon library, no emoji.
+5. Icons: inline currentColor SVG in `frontend/src/ui/icons.ts`. No icon library, no emoji, and never the three-star sparkle for anything AI: Claude Code is the robot head (`agent`), Chat the speech bubble (`agentChat`). The tablet layout's own set falls back to these through `glyphBody`, so the panel, tablet and ZBrush layouts draw the same shapes.
 6. Update the DOM surgically; no wholesale re-render, no flash or flicker.
 7. Menus, palette entries and shortcuts derive from the catalogue (`sub-skills/command-registry/SUB-SKILL.md`).
 8. No em dash in markdown or UI copy; near-zero comments; rationale into `frontend/HASHOUT_LOG.md`.

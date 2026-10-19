@@ -95,7 +95,7 @@ const WINDOW: MenuItem[] = [
   'view.terminal', 'view.newTerminal', 'agent.claude', 'agent.chat',
 ];
 
-const HELP: MenuItem[] = ['app.shortcuts', 'app.palette', '-', 'app.about'];
+const HELP: MenuItem[] = ['app.shortcuts', 'app.palette', '-', 'agent.chat', 'agent.claude', '-', 'app.about'];
 
 export const VIEWPORT_MENU: MenuItem[] = [
   'history.undo', 'history.redo', '-', 'view.frame', 'view.set_pivot', '-',

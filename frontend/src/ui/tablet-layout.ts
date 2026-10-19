@@ -14,6 +14,7 @@
 
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
+import { glyphBody } from './icons';
 import { familyOf } from './tool-family';
 
 const STORE = 'formsculptor.tablet';
@@ -209,7 +210,7 @@ export function glyph(name: string): SVGSVGElement {
   svg.setAttribute('stroke-width', '2');
   svg.setAttribute('stroke-linecap', 'round');
   svg.setAttribute('stroke-linejoin', 'round');
-  svg.innerHTML = GLYPHS[name] ?? GLYPHS.tool;
+  svg.innerHTML = GLYPHS[name] ?? glyphBody(name) ?? GLYPHS.tool;
   return svg;
 }
 
@@ -422,6 +423,8 @@ export class TabletLayout {
     worded('dyntopo', 'Dyntopo', 'Dynamic Topology', 'sculpt.dyntopo');
     // Words wrapped in t() here so the string extractor sees them (the helper's own t() then leaves them as they are).
     worded('stroke', t('Invert'), 'Invert Brush', 'sculpt.invert');
+    worded('agent', t('Claude'), 'Claude Code', 'agent.claude');
+    worded('agentChat', t('Chat'), 'Chat with Claude', 'agent.chat');
     worded('search', t('Search'), t('Command palette'), 'app.palette');
     worded('interface', t('Layout'), t('Panel layout'), 'view.tablet_layout');
     const grid = labelled('palette', t('All tools'), 'tb-icon tb-worded tb-grid-toggle');

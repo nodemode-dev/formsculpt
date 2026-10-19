@@ -1,6 +1,8 @@
 import type { Api } from '../io/api';
 import { events, type EngineEvent } from '../io/events';
+import { ChoiceDialog } from './app-dialogs';
 import { fromHtml as el, q, setClass, setHidden, setText } from './dom';
+import { language, t } from './i18n';
 import { icon as glyph } from './icons';
 import { MarkdownStream } from './markdown';
 
@@ -31,6 +33,7 @@ export class ChatPane {
   private md: MarkdownStream | null = null;
   private usage: Usage = { input: 0, output: 0, costUsd: 0, context: 0, window: 0, model: '' };
   private readonly chips = new Map<string, HTMLElement>();
+  private readonly picker = new ChoiceDialog();
   private busy = false;
   private loaded = false;
 
@@ -169,9 +172,12 @@ export class ChatPane {
   private async adopt(): Promise<void> {
     try {
       const r = await this.api.cmd<{ sessions: Array<{ id: string; title: string; modified: number; current: boolean }> }>('chat.sessions');
-      const pick = r.sessions.find((s) => !s.current);
-      if (!pick) { this.onFail(new Error('No other Claude Code conversation in formsculptor yet: open one with the Claude Code button first')); return; }
-      await this.api.cmd('chat.adopt', { session: pick.id });
+      const first = r.sessions.find((s) => !s.current);
+      if (!first) { this.onFail(new Error('No other Claude Code conversation in formsculptor yet: open one with the Claude Code button first')); return; }
+      const when = (s: number): string => new Date(s * 1000).toLocaleString(language(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const options = r.sessions.map((s): [string, string] => [s.id, `${when(s.modified)} · ${s.title || t('Untitled')}${s.current ? ` (${t('this chat')})` : ''}`]);
+      const id = await this.picker.ask(t('Continue from Claude Code'), t('Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.'), t('Conversation'), options, first.id, t('Continue Here'));
+      if (id) await this.api.cmd('chat.adopt', { session: id });
     } catch (err) { this.onFail(err); }
   }
 

@@ -212,8 +212,17 @@ export class ZBrushLayout {
     });
     this.titleNote.setAttribute('role', 'status');
     this.titleNote.setAttribute('aria-live', 'polite');
+    const agents = el('span', 'zb-title-tools');
+    for (const [g, id, label] of [['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
+      const b = el('button', 'zb-title-tool');
+      b.type = 'button';
+      b.dataset.cmd = id;
+      b.setAttribute('aria-label', t(label));
+      b.append(glyph(g));
+      agents.append(b);
+    }
     const presets = el('span', 'zb-title-right');
-    presets.append(this.layoutPick, makeDefault);
+    presets.append(agents, this.layoutPick, makeDefault);
     this.title.append(name, this.titleStats, this.titleNote, presets);
 
     // The palette menu bar: each palette shows in the right tray.

@@ -69,7 +69,7 @@ These come from the dev-rules operating mode and apply to every sub-skill.
 1. SEDO: surgical hand edits only. No scripts, patches, sed, git apply or codemods to change source.
 2. Zero DOM flash, flicker or re-render. Verify with a throttled check (see verification).
 3. Every z-index is a `var(--z-*)` token from `frontend/src/styles/tokens.css`.
-4. No icon libraries. Icons are inline currentColor SVG in `frontend/src/ui/icons.ts`.
+4. No icon libraries. Icons are inline currentColor SVG in `frontend/src/ui/icons.ts`. The three-star sparkle is banned app wide (as in formlit): Claude Code and the Ask line use the robot head (`agent`), Chat the speech bubble (`agentChat`), and every layout shows both.
 5. No emoji. No em dash in markdown (use the interpunct).
 6. Near-zero comments. Rationale goes to `frontend/HASHOUT_LOG.md`, `backend/HASHOUT_LOG.md` or `native/HASHOUT_LOG.md`.
 7. Versions v*.*.* are bumped together at every site: frontend/package.json and lock, `frontend/src/version.ts`, `backend/app/__init__.py`, `native/Cargo.toml` workspace.package, `src-tauri/Cargo.toml` and `tauri.conf.json`, README badge, CHANGELOG.

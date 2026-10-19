@@ -74,6 +74,12 @@
 .zb-title-right { display: flex; align-items: center; gap: 6px; }
 .zb-layout-pick, .zb-title-btn { height: 20px; padding: 0 8px; border: 1px solid #3a3a3a; border-radius: 3px; background: var(--zb-bar); color: var(--zb-text); font: 500 11px/1 var(--font-sans); cursor: pointer; }
 .zb-title-btn[aria-pressed="true"] { border-color: var(--zb-on); color: var(--zb-on); }
+.zb-title-tools { display: flex; align-items: center; gap: 2px; margin-right: 6px; }
+.zb-title-tool { display: grid; place-items: center; width: 24px; height: 20px; padding: 0; border: 1px solid transparent; border-radius: 3px; background: none; color: var(--zb-text); cursor: pointer; }
+.zb-title-tool svg { width: 15px; height: 15px; }
+.zb-title-tool:hover { border-color: #3a3a3a; background: var(--zb-bar); }
+.zb-title-tool[aria-pressed="true"] { color: var(--zb-on); }
+.zb-title-tool:disabled { opacity: 0.4; cursor: default; }
 
 /* Palette menu bar. */
 .zb-menu { grid-area: zbmenu; display: flex; align-items: stretch; gap: 1px; padding: 0 6px; background: var(--zb-bar); border-bottom: 1px solid var(--zb-line); overflow-x: auto; scrollbar-width: none; }
