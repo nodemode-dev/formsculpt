@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.1.0 · 2026-10-19
+
+### Added
+
+- From FormSurface in File: after painting in FormSurface and exporting with its Blender template, the colour, roughness and metalness come back into the object's paint here.
+- 1360 interface strings in every language.
+
+### Changed
+
+- Send with GoF for FormSurface needs UVs (FormSurface skips a mesh without them); run UV unwrap first.
+- GoF file names keep letters and digits only, as the Substance package does, so maps exported back are found.
+
 ## 1.0.0 · 2026-10-19
 
 ### Added
