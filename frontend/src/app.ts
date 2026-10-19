@@ -1792,16 +1792,19 @@ class SceneView {
       const id = Number(row.dataset.id);
       const act = (e.target as HTMLElement).closest<HTMLElement>('[data-row-act]')?.dataset.rowAct;
       if (row.dataset.kind === 'group') {
+        // The row selects the group (the gizmo then moves it whole); once selected, a click folds or unfolds it.
         if (act === 'visible') {
           const shown = objectsUnder(treeOrder(this.scene), id).some((o) => o.visible);
           void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
         } else if (act === 'delete') void this.run('delete_group', { id });
+        else if (this.selectedGroup() !== id) this.selectGroup(id);
         else {
           if (!this.collapsedGroups.delete(id)) this.collapsedGroups.add(id);
           this.patchList(this.scene);
         }
         return;
       }
+      if (!act && this.selectedGroup() !== null) this.selectGroup(null);
       if (act === 'visible') {
         const shown = this.scene.objects.find((o) => o.id === id)?.visible ?? true;
         void this.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
@@ -1968,8 +1971,8 @@ class SceneView {
       this.drawTools();
     });
     this.viewport.grabsModified = (x, y) => {
-      const o = this.activeObject();
-      if (this.brush !== 'gizmo' || !o) return false;
+      const o = this.brush === 'gizmo' ? this.gizmoSubject()?.subject : undefined;
+      if (!o) return false;
       const { center, len } = this.gizmoFrame(o);
       return Gizmo.hit([x, y], center, len, this.projector(), this.shell.gizmoMode.value as GizmoMode) !== null;
     };
@@ -1978,7 +1981,7 @@ class SceneView {
       scheduleChrome();
     });
     shell.gizmoPin.addEventListener('change', () => {
-      const o = this.activeObject();
+      const o = this.gizmoSubject()?.subject;
       this.pinGizmo(shell.gizmoPin.checked && o ? this.gizmoFrame(o).center : null);
     });
     shell.resetTransform.addEventListener('click', () => {
@@ -2612,6 +2615,8 @@ class SceneView {
       run: (name, args) => this.run(name, args),
       isLocked: (id) => this.locked.has(id),
       toggleLock: (id) => this.toggleLock(id),
+      selectedGroup: () => this.selectedGroup(),
+      selectGroup: (id) => this.selectGroup(id),
       recallView: (name) => void this.recallView(name),
       saveView: () => void this.saveViewAs(),
       deleteView: (name) => void this.run('delete_view', { name }),
@@ -2859,6 +2864,8 @@ class SceneView {
 
   async selectObject(id: number): Promise<void> {
     if (!this.scene.objects.some((o) => o.id === id)) return;
+    // Choosing an object (a click in the view, an outline row) hands the gizmo back from a selected group to it.
+    this.selectGroup(null);
     await this.run('select_object', { id });
   }
 
@@ -3571,6 +3578,41 @@ class SceneView {
     return this.scene.objects.find((o) => o.id === this.scene.active && o.visible);
   }
 
+  /** The group chosen in an object list, which the gizmo moves whole (Nomad's scene: "many objects can be placed
+   *  under a group, and then the group moved, rotated, scaled with the gizmo tool"); null when an object is. */
+  private groupPick: number | null = null;
+
+  selectedGroup(): number | null {
+    const id = this.groupPick;
+    return id !== null && (this.scene.groups ?? []).some((g) => g.id === id) ? id : null;
+  }
+
+  selectGroup(id: number | null): void {
+    if (this.groupPick === id) return;
+    this.groupPick = id;
+    this.patchList(this.scene);
+    this.dock?.update(this.scene);
+    this.drawTools();
+  }
+
+  /** What the gizmo works on: the selected group, standing in as one object whose bounds hold everything under it,
+   *  or the active object. `members` are the objects that move, for the live preview: a group's objects, or the
+   *  object and the objects hanging below it (the engine moves those whole too). */
+  private gizmoSubject(): { subject: ObjectSummary; members: number[] } | undefined {
+    const nodes = treeOrder(this.scene);
+    const group = this.selectedGroup();
+    if (group !== null) {
+      const under = objectsUnder(nodes, group).filter((o) => o.visible);
+      if (!under.length) return undefined;
+      const min: Vec3 = [0, 1, 2].map((k) => Math.min(...under.map((o) => o.bounds.min[k]))) as Vec3;
+      const max: Vec3 = [0, 1, 2].map((k) => Math.max(...under.map((o) => o.bounds.max[k]))) as Vec3;
+      return { subject: { ...under[0], id: group, bounds: { min, max } }, members: under.map((o) => o.id) };
+    }
+    const o = this.activeObject();
+    if (!o) return undefined;
+    return { subject: o, members: [o.id, ...objectsUnder(nodes, o.id).map((c) => c.id)] };
+  }
+
   /** The gizmo's centre, the point it turns and scales about (the bounds centre, the world origin or a picked point,
    * from Gizmo pivot), and its arrow length. */
   private gizmoFrame(o: ObjectSummary): { center: Vec3; len: number; pivot: boolean } {
@@ -3606,7 +3648,7 @@ class SceneView {
 
   /** Applies the typed move, turn and scale to the active object about the gizmo's pivot, as one step. */
   private async applyTypedTransform(): Promise<void> {
-    const o = this.activeObject();
+    const o = this.gizmoSubject()?.subject;
     if (!o) {
       this.note(t('Choose an object first'));
       return;
@@ -3623,7 +3665,7 @@ class SceneView {
       return;
     }
     const frame = this.gizmoFrame(o);
-    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate, rotate, scale: scaleBy, ...(frame.pivot ? { pivot: frame.center } : {}) });
+    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate, rotate, scale: scaleBy, ...(frame.pivot || this.selectedGroup() !== null ? { pivot: frame.center } : {}) });
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
   }
@@ -3671,7 +3713,8 @@ class SceneView {
 
   /** Presses and drags with the Transform and Lattice tools. */
   private handleTool(shape: NonNullable<SceneView['shape']>, p: [number, number], mods: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): void {
-    const o = this.activeObject();
+    const pick = shape.kind === 'gizmo' ? this.gizmoSubject() : undefined;
+    const o = shape.kind === 'gizmo' ? pick?.subject : this.activeObject();
     if (!o) {
       shape.miss = true;
       return;
@@ -3722,7 +3765,7 @@ class SceneView {
       const moveStep = Number(this.shell.moveSnap.value) || (mods.shiftKey ? 0.1 : 0);
       if (angleStep > 0) drag.degrees = Math.round(drag.degrees / angleStep) * angleStep;
       if (moveStep > 0) drag.translate = drag.translate.map((v) => Math.round(v / moveStep) * moveStep) as Vec3;
-      if (!drag.pivotOnly) this.viewport.renderer.setPreview(o.id, Gizmo.matrix(drag, center));
+      if (!drag.pivotOnly) for (const m of pick?.members ?? [o.id]) this.viewport.renderer.setPreview(m, Gizmo.matrix(drag, center));
       this.note(this.dragReadout(drag));
       this.drawTools();
       this.viewport.invalidate();
@@ -3758,8 +3801,13 @@ class SceneView {
   private async gizmoEnd(): Promise<void> {
     const drag = this.gizmoDrag;
     this.gizmoDrag = null;
-    const o = this.activeObject();
-    if (!drag || !o) return;
+    const pick = this.gizmoSubject();
+    if (!drag || !pick) return;
+    const o = pick.subject;
+    const clearPreview = (): void => {
+      for (const m of pick.members) this.viewport.renderer.setPreview(m, null);
+      this.viewport.invalidate();
+    };
     if (drag.pivotOnly) {
       // The gizmo was moved, not the object: it stays pinned where it was let go.
       this.pinGizmo(add(this.gizmoFrame(o).center, drag.translate));
@@ -3768,20 +3816,18 @@ class SceneView {
     }
     const moved = Math.hypot(...drag.translate) > 1e-7 || Math.abs(drag.degrees) > 1e-4 || drag.scale.some((s) => Math.abs(s - 1) > 1e-5);
     if (!moved) {
-      this.viewport.renderer.setPreview(o.id, null);
-      this.viewport.invalidate();
+      clearPreview();
       return;
     }
     const rotate: Vec3 = [0, 0, 0];
     if (drag.handle.kind === 'rotate') rotate[drag.handle.axis] = drag.degrees;
-    // The engine turns and scales about the bounds centre unless given the gizmo's own pivot.
+    // The engine turns and scales about the bounds centre unless given the gizmo's own pivot. A group always sends
+    // the centre the gizmo showed: the engine's group centre counts hidden objects too, which the gizmo leaves out.
     const frame = this.gizmoFrame(o);
-    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate: drag.translate, rotate, scale: drag.scale, ...(frame.pivot ? { pivot: frame.center } : {}) });
-    if (!reply.ok) {
-      // The preview goes on failure; on success it stays until the new geometry replaces it, so nothing jumps.
-      this.viewport.renderer.setPreview(o.id, null);
-      this.viewport.invalidate();
-    }
+    const group = this.selectedGroup() !== null;
+    const reply = await dispatch<unknown>('transform_object', { id: o.id, translate: drag.translate, rotate, scale: drag.scale, ...(frame.pivot || group ? { pivot: frame.center } : {}) });
+    // The preview goes on failure; on success it stays until the new geometry replaces it, so nothing jumps.
+    if (!reply.ok) clearPreview();
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
   }
@@ -3811,8 +3857,9 @@ class SceneView {
     const s = this.shell;
     const o = this.activeObject();
     const project = this.projector();
-    if (this.brush === 'gizmo' && o) {
-      const { center, len } = this.gizmoFrame(o);
+    const pick = this.brush === 'gizmo' ? this.gizmoSubject() : undefined;
+    if (pick) {
+      const { center, len } = this.gizmoFrame(pick.subject);
       const t = this.gizmoDrag?.translate ?? [0, 0, 0];
       const { axes, uniform } = Gizmo.paths(add(center, t), len, project, s.gizmoMode.value as GizmoMode);
       s.gizmoAxes.forEach((p, i) => p.setAttribute('d', axes[i]));
@@ -6466,13 +6513,14 @@ class SceneView {
         setText(row.children[0], n.group.name);
         setText(row.children[1], String(n.group.objects));
         setAttr(row, 'aria-expanded', this.collapsedGroups.has(n.id) ? 'false' : 'true');
+        setAttr(row, 'aria-current', this.selectedGroup() === n.id ? 'true' : 'false');
         setAttr(row.children[2], 'aria-pressed', shown ? 'true' : 'false');
         return;
       }
       const o = n.object as ObjectSummary;
       setText(row.children[0], o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(row.children[1], `${o.triangles.toLocaleString('en-US')} tris`);
-      setAttr(row, 'aria-current', o.id === next.active ? 'true' : 'false');
+      setAttr(row, 'aria-current', o.id === next.active && this.selectedGroup() === null ? 'true' : 'false');
       setAttr(row.children[2], 'aria-pressed', o.visible ? 'true' : 'false');
       setAttr(row.children[3], 'aria-pressed', this.locked.has(o.id) ? 'true' : 'false');
     });

@@ -16,6 +16,9 @@ export interface DockHooks {
   run: (name: string, args: Record<string, unknown>) => Promise<void>;
   isLocked: (id: number) => boolean;
   toggleLock: (id: number) => void;
+  /** The group selected in a list (the gizmo moves it), or null; selecting one, or null to go back to the object. */
+  selectedGroup: () => number | null;
+  selectGroup: (id: number | null) => void;
   /** Moves the view to a saved view; saves the current view under a new name; deletes one. */
   recallView: (name: string) => void;
   saveView: () => void;
@@ -169,18 +172,21 @@ export class SceneDock {
       if (!row || !id) return;
       const act = target.closest<HTMLElement>('[data-act]')?.dataset.act;
       if (row.dataset.kind === 'group') {
-        // A group row: its eye hides or shows everything under it, its cross deletes it (the children move up), and
-        // the row itself folds or unfolds.
+        // A group row: its eye hides or shows everything under it, its cross deletes it (the children move up); the
+        // row selects the group (as Nomad's scene list does, so the gizmo moves it whole), and once selected, folds or
+        // unfolds.
         if (act === 'visible') {
           const shown = objectsUnder(treeOrder(this.scene), id).some((o) => o.visible);
           void this.hooks.run('set_visibility', { action: shown ? 'hide' : 'show', ids: [id] });
         } else if (act === 'delete') void this.hooks.run('delete_group', { id });
+        else if (this.hooks.selectedGroup() !== id) this.hooks.selectGroup(id);
         else {
           if (!this.collapsed.delete(id)) this.collapsed.add(id);
           this.patchObjects();
         }
         return;
       }
+      if (!act && this.hooks.selectedGroup() !== null) this.hooks.selectGroup(null);
       if (act === 'visible') {
         const o = this.scene.objects.find((x) => x.id === id);
         void this.hooks.run('set_visibility', { action: o?.visible ? 'hide' : 'show', ids: [id] });
@@ -363,6 +369,7 @@ export class SceneDock {
         setText(r.name, g.name);
         setText(r.count, String(g.objects));
         setAttr(r.row, 'aria-expanded', this.collapsed.has(g.id) ? 'false' : 'true');
+        setAttr(r.row, 'aria-current', this.hooks.selectedGroup() === g.id ? 'true' : 'false');
         setAttr(r.row, 'data-hidden', shown || g.objects === 0 ? 'false' : 'true');
         setAttr(r.eye, 'aria-pressed', shown ? 'true' : 'false');
         return;
@@ -370,7 +377,7 @@ export class SceneDock {
       const o = n.object as ObjectSummary;
       setText(r.name, o.folder ? `${o.folder} / ${o.name}` : o.name);
       setText(r.count, count(o.vertices));
-      setAttr(r.row, 'aria-current', o.id === this.scene.active ? 'true' : 'false');
+      setAttr(r.row, 'aria-current', o.id === this.scene.active && this.hooks.selectedGroup() === null ? 'true' : 'false');
       setAttr(r.row, 'data-hidden', o.visible ? 'false' : 'true');
       setAttr(r.eye, 'aria-pressed', o.visible ? 'true' : 'false');
       setAttr(r.lock, 'aria-pressed', this.hooks.isLocked(o.id) ? 'true' : 'false');
