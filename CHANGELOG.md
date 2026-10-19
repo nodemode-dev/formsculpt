@@ -2,6 +2,16 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.12.0 · 2026-10-19
+
+### Added
+
+- Clay strips brush: builds like Clay but over a square footprint turned along the stroke, so it lays flat-edged strips.
+- Delete Edge Loop for quad meshes, the opposite of Insert Edge Loop: the loop's points go and the quads on either side join. In the command palette; agents use `delete_edge_loop`.
+- Split by face group: `split_parts` with `by` groups makes one object per face group.
+- OBJ import reads the file's materials (the .mtl beside it) and keeps their colours as paint.
+- 1375 interface strings in every language.
+
 ## 1.11.0 · 2026-10-19
 
 ### Fixed
