@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.11.0 · 2026-10-19
+
+### Fixed
+
+- Bounce light no longer fades toward the edges of the view: what the bounce cannot see beyond the frame is no longer counted as darkness.
+
 ## 1.10.0 · 2026-10-19
 
 ### Changed
