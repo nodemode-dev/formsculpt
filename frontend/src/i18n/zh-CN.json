@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "获取 Unity 版 GoF",
  "Get GoF for Unreal": "获取 Unreal 版 GoF",
  "GoF for Unity": "Unity 版 GoF",
- "GoF for Unreal": "Unreal 版 GoF"
+ "GoF for Unreal": "Unreal 版 GoF",
+ "Auto": "自动",
+ "Object smooth shading": "对象平滑着色",
+ "On": "开",
+ "Smooth shading": "平滑着色"
 }

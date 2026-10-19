@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "GoF voor Unity ophalen",
  "Get GoF for Unreal": "GoF voor Unreal ophalen",
  "GoF for Unity": "GoF voor Unity",
- "GoF for Unreal": "GoF voor Unreal"
+ "GoF for Unreal": "GoF voor Unreal",
+ "Auto": "Automatisch",
+ "Object smooth shading": "Vloeiende belichting van object",
+ "On": "Aan",
+ "Smooth shading": "Vloeiende belichting"
 }

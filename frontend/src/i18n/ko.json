@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Unity용 GoF 받기",
  "Get GoF for Unreal": "Unreal용 GoF 받기",
  "GoF for Unity": "Unity용 GoF",
- "GoF for Unreal": "Unreal용 GoF"
+ "GoF for Unreal": "Unreal용 GoF",
+ "Auto": "자동",
+ "Object smooth shading": "오브젝트 부드러운 셰이딩",
+ "On": "켬",
+ "Smooth shading": "부드러운 셰이딩"
 }

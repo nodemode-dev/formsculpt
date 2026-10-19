@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Obtener GoF para Unity",
  "Get GoF for Unreal": "Obtener GoF para Unreal",
  "GoF for Unity": "GoF para Unity",
- "GoF for Unreal": "GoF para Unreal"
+ "GoF for Unreal": "GoF para Unreal",
+ "Auto": "Automático",
+ "Object smooth shading": "Sombreado suave del objeto",
+ "On": "Activado",
+ "Smooth shading": "Sombreado suave"
 }

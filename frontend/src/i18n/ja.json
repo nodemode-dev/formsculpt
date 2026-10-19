@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Unity 用 GoF を入手",
  "Get GoF for Unreal": "Unreal 用 GoF を入手",
  "GoF for Unity": "Unity 用 GoF",
- "GoF for Unreal": "Unreal 用 GoF"
+ "GoF for Unreal": "Unreal 用 GoF",
+ "Auto": "自動",
+ "Object smooth shading": "オブジェクトのスムーズシェーディング",
+ "On": "オン",
+ "Smooth shading": "スムーズシェーディング"
 }

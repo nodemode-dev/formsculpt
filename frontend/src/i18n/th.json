@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "รับ GoF สำหรับ Unity",
  "Get GoF for Unreal": "รับ GoF สำหรับ Unreal",
  "GoF for Unity": "GoF สำหรับ Unity",
- "GoF for Unreal": "GoF สำหรับ Unreal"
+ "GoF for Unreal": "GoF สำหรับ Unreal",
+ "Auto": "อัตโนมัติ",
+ "Object smooth shading": "การแรเงาแบบเรียบของวัตถุ",
+ "On": "เปิด",
+ "Smooth shading": "การแรเงาแบบเรียบ"
 }

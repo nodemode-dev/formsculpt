@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Unity için GoF'u al",
  "Get GoF for Unreal": "Unreal için GoF'u al",
  "GoF for Unity": "Unity için GoF",
- "GoF for Unreal": "Unreal için GoF"
+ "GoF for Unreal": "Unreal için GoF",
+ "Auto": "Otomatik",
+ "Object smooth shading": "Nesnenin yumuşak gölgelendirmesi",
+ "On": "Açık",
+ "Smooth shading": "Yumuşak gölgelendirme"
 }

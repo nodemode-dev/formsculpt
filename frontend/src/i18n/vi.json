@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Lấy GoF cho Unity",
  "Get GoF for Unreal": "Lấy GoF cho Unreal",
  "GoF for Unity": "GoF cho Unity",
- "GoF for Unreal": "GoF cho Unreal"
+ "GoF for Unreal": "GoF cho Unreal",
+ "Auto": "Tự động",
+ "Object smooth shading": "Đổ bóng mượt của đối tượng",
+ "On": "Bật",
+ "Smooth shading": "Đổ bóng mượt"
 }

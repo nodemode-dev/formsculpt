@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Отримати GoF для Unity",
  "Get GoF for Unreal": "Отримати GoF для Unreal",
  "GoF for Unity": "GoF для Unity",
- "GoF for Unreal": "GoF для Unreal"
+ "GoF for Unreal": "GoF для Unreal",
+ "Auto": "Авто",
+ "Object smooth shading": "Згладжене затінення об'єкта",
+ "On": "Увімк.",
+ "Smooth shading": "Згладжене затінення"
 }

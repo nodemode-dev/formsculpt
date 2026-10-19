@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "GoF letöltése Unityhez",
  "Get GoF for Unreal": "GoF letöltése Unrealhez",
  "GoF for Unity": "GoF Unityhez",
- "GoF for Unreal": "GoF Unrealhez"
+ "GoF for Unreal": "GoF Unrealhez",
+ "Auto": "Automatikus",
+ "Object smooth shading": "Objektum sima árnyalása",
+ "On": "Be",
+ "Smooth shading": "Sima árnyalás"
 }

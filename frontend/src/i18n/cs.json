@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Získat GoF pro Unity",
  "Get GoF for Unreal": "Získat GoF pro Unreal",
  "GoF for Unity": "GoF pro Unity",
- "GoF for Unreal": "GoF pro Unreal"
+ "GoF for Unreal": "GoF pro Unreal",
+ "Auto": "Automaticky",
+ "Object smooth shading": "Hladké stínování objektu",
+ "On": "Zapnuto",
+ "Smooth shading": "Hladké stínování"
 }

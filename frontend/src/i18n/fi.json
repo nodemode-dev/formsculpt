@@ -1364,5 +1364,9 @@
  "Get GoF for Unity": "Hae GoF Unitylle",
  "Get GoF for Unreal": "Hae GoF Unrealille",
  "GoF for Unity": "GoF Unitylle",
- "GoF for Unreal": "GoF Unrealille"
+ "GoF for Unreal": "GoF Unrealille",
+ "Auto": "Automaattinen",
+ "Object smooth shading": "Kohteen pehmeä varjostus",
+ "On": "Päällä",
+ "Smooth shading": "Pehmeä varjostus"
 }
