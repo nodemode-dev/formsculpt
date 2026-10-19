@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.0.0 · 2026-10-19
+
+### Added
+
+- GoF in Blender: the formsculptor add-on's tab has Import from GoF, Watch GoF and Send back to GoF. What formsculptor sends to Blender with GoF comes in through Blender's own glTF importer (a re-send updates the same object), and an edit sent back returns to the same object in formsculptor. The add-on finds the GoF folder by asking formsculptor, or takes one in its preferences. Get the updated add-on from File > Blender add-on.
+- 1355 interface strings in every language.
+
+### Fixed
+
+- Send with GoF for FormSurface while FormSurface is closed no longer shows as an error: the file waits in the GoF folder and the note says so.
+
+### Notes
+
+- formsculptor 1.0.0. Receivers for Unreal Engine and Unity, and FormSurface's painted maps coming back, are next.
+
 ## 0.99.0 · 2026-10-19
 
 ### Added
