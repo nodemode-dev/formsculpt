@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.8.0 · 2026-10-19
+
+### Fixed
+
+- The head primitive's neck ends in an even, smooth rim: the points below the jaw are spread evenly over the neck, so the streaks and lumps where it ends are gone. The face, and the Feminine layer's blend, are unchanged.
+
 ## 1.7.0 · 2026-10-19
 
 ### Added
