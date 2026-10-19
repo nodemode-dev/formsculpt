@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "GoF ile gönderildi; FormSurface çalışmıyor, dosya GoF klasöründe bekliyor"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "GoF ile gönderildi; FormSurface çalışmıyor, dosya GoF klasöründe bekliyor",
+ "FormSurface is not running; start it to bring its maps back": "FormSurface çalışmıyor; haritalarını geri getirmek için başlatın",
+ "From FormSurface": "FormSurface'ten",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Henüz getirilecek bir şey yok: FormSurface'te haritaları Blender şablonuyla dışa aktarın",
+ "Paint brought back from FormSurface": "Boya FormSurface'ten geri getirildi",
+ "Paint from FormSurface": "FormSurface'ten boya"
 }

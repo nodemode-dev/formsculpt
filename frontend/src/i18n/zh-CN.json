@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "已通过 GoF 发送；FormSurface 未运行，文件在 GoF 文件夹中等待"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "已通过 GoF 发送；FormSurface 未运行，文件在 GoF 文件夹中等待",
+ "FormSurface is not running; start it to bring its maps back": "FormSurface 未运行；启动它以取回贴图",
+ "From FormSurface": "从 FormSurface",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "暂无可取回的内容：请在 FormSurface 中用 Blender 模板导出贴图",
+ "Paint brought back from FormSurface": "已从 FormSurface 取回绘制",
+ "Paint from FormSurface": "来自 FormSurface 的绘制"
 }

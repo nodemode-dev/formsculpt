@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "GoF で送信しました。FormSurface が起動していないため、ファイルは GoF フォルダーで待機します"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "GoF で送信しました。FormSurface が起動していないため、ファイルは GoF フォルダーで待機します",
+ "FormSurface is not running; start it to bring its maps back": "FormSurface が起動していません。マップを戻すには起動してください",
+ "From FormSurface": "FormSurface から",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "まだ戻すものがありません。FormSurface で Blender テンプレートを使ってマップを書き出してください",
+ "Paint brought back from FormSurface": "FormSurface からペイントを戻しました",
+ "Paint from FormSurface": "FormSurface からペイント"
 }

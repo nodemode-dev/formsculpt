@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "ส่งด้วย GoF แล้ว FormSurface ไม่ได้เปิดอยู่ ไฟล์จึงรออยู่ในโฟลเดอร์ GoF"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "ส่งด้วย GoF แล้ว FormSurface ไม่ได้เปิดอยู่ ไฟล์จึงรออยู่ในโฟลเดอร์ GoF",
+ "FormSurface is not running; start it to bring its maps back": "FormSurface ไม่ได้เปิดอยู่ เปิดเพื่อดึงแมปกลับมา",
+ "From FormSurface": "จาก FormSurface",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "ยังไม่มีอะไรให้ดึงกลับ ใน FormSurface ให้ส่งออกแมปด้วยเทมเพลต Blender",
+ "Paint brought back from FormSurface": "ดึงสีกลับจาก FormSurface แล้ว",
+ "Paint from FormSurface": "สีจาก FormSurface"
 }

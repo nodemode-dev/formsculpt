@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Inviato con GoF; FormSurface non è in esecuzione, quindi il file attende nella cartella GoF"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Inviato con GoF; FormSurface non è in esecuzione, quindi il file attende nella cartella GoF",
+ "FormSurface is not running; start it to bring its maps back": "FormSurface non è in esecuzione; avvialo per riportare le sue mappe",
+ "From FormSurface": "Da FormSurface",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Ancora niente da riportare: in FormSurface esporta le mappe con il modello Blender",
+ "Paint brought back from FormSurface": "Pittura riportata da FormSurface",
+ "Paint from FormSurface": "Pittura da FormSurface"
 }

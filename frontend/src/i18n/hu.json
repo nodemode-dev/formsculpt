@@ -1353,5 +1353,10 @@
  "Substance 3D Painter": "Substance 3D Painter",
  "Unity": "Unity",
  "Unreal Engine": "Unreal Engine",
- "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Elküldve GoF-fel; a FormSurface nem fut, így a fájl a GoF mappában vár"
+ "Sent with GoF; FormSurface is not running, so the file waits in the GoF folder": "Elküldve GoF-fel; a FormSurface nem fut, így a fájl a GoF mappában vár",
+ "FormSurface is not running; start it to bring its maps back": "A FormSurface nem fut; indítsd el a térképei visszahozásához",
+ "From FormSurface": "FormSurface-ből",
+ "Nothing to bring back yet: in FormSurface, export the maps with the Blender template": "Még nincs mit visszahozni: a FormSurface-ben exportáld a térképeket a Blender sablonnal",
+ "Paint brought back from FormSurface": "Festés visszahozva a FormSurface-ből",
+ "Paint from FormSurface": "Festés a FormSurface-ből"
 }
