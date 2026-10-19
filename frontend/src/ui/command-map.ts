@@ -21,6 +21,7 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     nodemode: c('file.send_nodemode', 'Send to NodeMode'),
     blender: c('file.blender_addon', 'Get Blender Add-on'),
     gof: n('file.gof', 'Send with GoF'),
+    gof_back: n('file.gof_back', 'Paint from FormSurface'),
   },
   add: {
     sphere: c('add.sphere', 'Add Sphere', { icon: 'cube' }),

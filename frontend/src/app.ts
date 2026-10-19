@@ -529,6 +529,7 @@ const FILE_ACTIONS: [string, string][] = [
   ['nodemode', 'Send to NodeMode'],
   ['blender', 'Blender add-on'],
   ['gof', 'Send with GoF'],
+  ['gof_back', 'From FormSurface'],
 ];
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
@@ -5950,6 +5951,8 @@ class SceneView {
       }
     } else if (action === 'gof' && id !== null) {
       await this.gofOut(id);
+    } else if (action === 'gof_back' && id !== null) {
+      await this.gofBack(id);
     } else if (id === null) {
       this.note('Select an object first');
     } else if (action === 'repair') {
@@ -6125,6 +6128,18 @@ class SceneView {
     }
     if (!entry.returns || this.bridgeTimer) return;
     this.bridgeTimer = window.setInterval(() => void this.bridgeSync(), 3000);
+  }
+
+  /** FormSurface's painted maps for the object (exported there with its Blender template) back into its paint. */
+  private async gofBack(id: number): Promise<void> {
+    const reply = await postBody<{ running: boolean; painted: boolean }>('/api/gof/formsurface/back', { id });
+    if (!reply.ok) this.note(reply.error.message);
+    else if (!reply.result.running) this.note(t('FormSurface is not running; start it to bring its maps back'));
+    else if (!reply.result.painted) this.note(t('Nothing to bring back yet: in FormSurface, export the maps with the Blender template'));
+    else {
+      this.note(t('Paint brought back from FormSurface'));
+      await this.refresh();
+    }
   }
 
   /** Writes a Substance 3D Painter package for the object to ~/.formsculptor/substance and says where. */
