@@ -98,6 +98,14 @@ def boolean_preview(a: int, b: int, op: str) -> bytes:
         return _engine.boolean_preview(a, b, op)
 
 
+def triplanar_preview(object_id: int, resolution: int) -> bytes:
+    """The solid a triplanar's masks make now as an FSCM payload, the scene unchanged; KeyError for a missing object,
+    ValueError for a refusal (not a triplanar, a plane with nothing masked)."""
+    _require()
+    with _lock:
+        return _engine.triplanar_preview(object_id, resolution)
+
+
 def stroke_begin(object_id: int, settings: dict) -> None:
     if _engine is None:
         raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")

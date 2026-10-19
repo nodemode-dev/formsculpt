@@ -60,6 +60,21 @@ def boolean_preview(a: int, b: int, op: str = Query("union", pattern="^(union|di
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
 
 
+@router.get("/triplanar_preview")
+def triplanar_preview(id: int, resolution: int = Query(64, ge=16, le=256)) -> Response:
+    """Live Triplanar: the solid the three planes' masks make now, for the window to draw while they are masked."""
+    _guard()
+    try:
+        payload = engine.triplanar_preview(id, resolution)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc).strip("'\""))
+    except ValueError as exc:
+        # No solid yet (a plane with nothing masked) is an ordinary state while masking, not a failed request: the
+        # window draws nothing and the reason rides in a header, so the console stays clean.
+        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculptor-Refused": str(exc)[:200]})
+    return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
+
+
 MAX_UPLOAD = 1 << 30
 
 
