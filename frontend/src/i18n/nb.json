@@ -1373,5 +1373,7 @@
  "Un-instance": "Fjern instans",
  "Sync Instances": "Synkroniser instanser",
  "Clay strips": "Leirestriper",
- "Delete Edge Loop": "Slett kantløkke"
+ "Delete Edge Loop": "Slett kantløkke",
+ "Keep hard edges (degrees)": "Behold skarpe kanter (grader)",
+ "Local symmetry": "Lokal symmetri"
 }

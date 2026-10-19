@@ -1373,5 +1373,7 @@
  "Un-instance": "Instantie opheffen",
  "Sync Instances": "Instanties synchroniseren",
  "Clay strips": "Kleistroken",
- "Delete Edge Loop": "Randlus verwijderen"
+ "Delete Edge Loop": "Randlus verwijderen",
+ "Keep hard edges (degrees)": "Harde randen behouden (graden)",
+ "Local symmetry": "Lokale symmetrie"
 }

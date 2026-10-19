@@ -1373,5 +1373,7 @@
  "Un-instance": "Usuń instancję",
  "Sync Instances": "Synchronizuj instancje",
  "Clay strips": "Paski gliny",
- "Delete Edge Loop": "Usuń pętlę krawędzi"
+ "Delete Edge Loop": "Usuń pętlę krawędzi",
+ "Keep hard edges (degrees)": "Zachowaj ostre krawędzie (stopnie)",
+ "Local symmetry": "Symetria lokalna"
 }

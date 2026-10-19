@@ -1373,5 +1373,7 @@
  "Un-instance": "Zrušit instanci",
  "Sync Instances": "Synchronizovat instance",
  "Clay strips": "Hliněné pásy",
- "Delete Edge Loop": "Smazat smyčku hran"
+ "Delete Edge Loop": "Smazat smyčku hran",
+ "Keep hard edges (degrees)": "Zachovat ostré hrany (stupně)",
+ "Local symmetry": "Místní symetrie"
 }

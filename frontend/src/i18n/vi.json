@@ -1373,5 +1373,7 @@
  "Un-instance": "Bỏ phiên bản",
  "Sync Instances": "Đồng bộ phiên bản",
  "Clay strips": "Dải đất sét",
- "Delete Edge Loop": "Xóa vòng cạnh"
+ "Delete Edge Loop": "Xóa vòng cạnh",
+ "Keep hard edges (degrees)": "Giữ cạnh sắc (độ)",
+ "Local symmetry": "Đối xứng cục bộ"
 }

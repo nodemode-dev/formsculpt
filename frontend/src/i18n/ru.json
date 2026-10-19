@@ -1373,5 +1373,7 @@
  "Un-instance": "Отменить экземпляр",
  "Sync Instances": "Синхронизировать экземпляры",
  "Clay strips": "Глиняные полосы",
- "Delete Edge Loop": "Удалить петлю рёбер"
+ "Delete Edge Loop": "Удалить петлю рёбер",
+ "Keep hard edges (degrees)": "Сохранять острые рёбра (градусы)",
+ "Local symmetry": "Локальная симметрия"
 }

@@ -1373,5 +1373,7 @@
  "Un-instance": "Poista instanssi",
  "Sync Instances": "Synkronoi instanssit",
  "Clay strips": "Savinauhat",
- "Delete Edge Loop": "Poista reunasilmukka"
+ "Delete Edge Loop": "Poista reunasilmukka",
+ "Keep hard edges (degrees)": "Säilytä terävät reunat (astetta)",
+ "Local symmetry": "Paikallinen symmetria"
 }

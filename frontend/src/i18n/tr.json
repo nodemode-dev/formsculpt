@@ -1373,5 +1373,7 @@
  "Un-instance": "Örneği kaldır",
  "Sync Instances": "Örnekleri eşitle",
  "Clay strips": "Kil şeritleri",
- "Delete Edge Loop": "Kenar döngüsünü sil"
+ "Delete Edge Loop": "Kenar döngüsünü sil",
+ "Keep hard edges (degrees)": "Keskin kenarları koru (derece)",
+ "Local symmetry": "Yerel simetri"
 }

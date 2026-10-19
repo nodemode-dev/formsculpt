@@ -1373,5 +1373,7 @@
  "Un-instance": "ยกเลิกอินสแตนซ์",
  "Sync Instances": "ซิงค์อินสแตนซ์",
  "Clay strips": "แถบดินเหนียว",
- "Delete Edge Loop": "ลบลูปขอบ"
+ "Delete Edge Loop": "ลบลูปขอบ",
+ "Keep hard edges (degrees)": "คงขอบคม (องศา)",
+ "Local symmetry": "สมมาตรเฉพาะที่"
 }

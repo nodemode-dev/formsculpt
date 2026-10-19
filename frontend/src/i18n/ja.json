@@ -1373,5 +1373,7 @@
  "Un-instance": "インスタンス解除",
  "Sync Instances": "インスタンスを同期",
  "Clay strips": "クレイストリップ",
- "Delete Edge Loop": "エッジループを削除"
+ "Delete Edge Loop": "エッジループを削除",
+ "Keep hard edges (degrees)": "鋭いエッジを保持（度）",
+ "Local symmetry": "ローカル対称"
 }

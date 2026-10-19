@@ -1373,5 +1373,7 @@
  "Un-instance": "Instanz auflösen",
  "Sync Instances": "Instanzen synchronisieren",
  "Clay strips": "Tonstreifen",
- "Delete Edge Loop": "Kantenschleife löschen"
+ "Delete Edge Loop": "Kantenschleife löschen",
+ "Keep hard edges (degrees)": "Harte Kanten erhalten (Grad)",
+ "Local symmetry": "Lokale Symmetrie"
 }

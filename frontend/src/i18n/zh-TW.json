@@ -1373,5 +1373,7 @@
  "Un-instance": "取消實例",
  "Sync Instances": "同步實例",
  "Clay strips": "黏土條",
- "Delete Edge Loop": "刪除邊循環"
+ "Delete Edge Loop": "刪除邊循環",
+ "Keep hard edges (degrees)": "保留硬邊（度）",
+ "Local symmetry": "局部對稱"
 }

@@ -1373,5 +1373,7 @@
  "Un-instance": "Desinstanciar",
  "Sync Instances": "Sincronizar instancias",
  "Clay strips": "Tiras de arcilla",
- "Delete Edge Loop": "Eliminar bucle de aristas"
+ "Delete Edge Loop": "Eliminar bucle de aristas",
+ "Keep hard edges (degrees)": "Conservar aristas duras (grados)",
+ "Local symmetry": "Simetría local"
 }

@@ -1373,5 +1373,7 @@
  "Un-instance": "Désinstancier",
  "Sync Instances": "Synchroniser les instances",
  "Clay strips": "Bandes d'argile",
- "Delete Edge Loop": "Supprimer la boucle d'arêtes"
+ "Delete Edge Loop": "Supprimer la boucle d'arêtes",
+ "Keep hard edges (degrees)": "Conserver les arêtes vives (degrés)",
+ "Local symmetry": "Symétrie locale"
 }

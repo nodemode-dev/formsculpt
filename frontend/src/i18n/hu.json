@@ -1373,5 +1373,7 @@
  "Un-instance": "Példány feloldása",
  "Sync Instances": "Példányok szinkronizálása",
  "Clay strips": "Agyagcsíkok",
- "Delete Edge Loop": "Élhurok törlése"
+ "Delete Edge Loop": "Élhurok törlése",
+ "Keep hard edges (degrees)": "Éles élek megtartása (fok)",
+ "Local symmetry": "Helyi szimmetria"
 }

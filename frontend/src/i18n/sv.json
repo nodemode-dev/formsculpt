@@ -1373,5 +1373,7 @@
  "Un-instance": "Ta bort instans",
  "Sync Instances": "Synkronisera instanser",
  "Clay strips": "Lerremsor",
- "Delete Edge Loop": "Ta bort kantslinga"
+ "Delete Edge Loop": "Ta bort kantslinga",
+ "Keep hard edges (degrees)": "Behåll skarpa kanter (grader)",
+ "Local symmetry": "Lokal symmetri"
 }

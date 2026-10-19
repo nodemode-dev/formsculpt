@@ -1373,5 +1373,7 @@
  "Un-instance": "Скасувати екземпляр",
  "Sync Instances": "Синхронізувати екземпляри",
  "Clay strips": "Глиняні смуги",
- "Delete Edge Loop": "Видалити петлю ребер"
+ "Delete Edge Loop": "Видалити петлю ребер",
+ "Keep hard edges (degrees)": "Зберігати гострі ребра (градуси)",
+ "Local symmetry": "Локальна симетрія"
 }

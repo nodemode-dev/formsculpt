@@ -1373,5 +1373,7 @@
  "Un-instance": "인스턴스 해제",
  "Sync Instances": "인스턴스 동기화",
  "Clay strips": "클레이 스트립",
- "Delete Edge Loop": "에지 루프 삭제"
+ "Delete Edge Loop": "에지 루프 삭제",
+ "Keep hard edges (degrees)": "날카로운 에지 유지(도)",
+ "Local symmetry": "로컬 대칭"
 }

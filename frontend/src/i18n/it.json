@@ -1373,5 +1373,7 @@
  "Un-instance": "Rimuovi istanza",
  "Sync Instances": "Sincronizza istanze",
  "Clay strips": "Strisce di argilla",
- "Delete Edge Loop": "Elimina loop di spigoli"
+ "Delete Edge Loop": "Elimina loop di spigoli",
+ "Keep hard edges (degrees)": "Mantieni spigoli vivi (gradi)",
+ "Local symmetry": "Simmetria locale"
 }
