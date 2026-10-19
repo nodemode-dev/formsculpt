@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.10.0 · 2026-10-19
+
+### Changed
+
+- Path renders have cleaner outlines where one surface passes in front of another: samples spread evenly across each pixel, and the denoiser treats the two surfaces of an outline pixel separately. With Path Render's 64 denoised samples the error on outlines drops by about a quarter; the rest of the image is unchanged.
+
 ## 1.9.0 · 2026-10-19
 
 ### Added
