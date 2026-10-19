@@ -22,6 +22,8 @@ export const PANEL_CMDS: Record<string, Record<string, PanelCmd>> = {
     blender: c('file.blender_addon', 'Get Blender Add-on'),
     gof: n('file.gof', 'Send with GoF'),
     gof_back: n('file.gof_back', 'Paint from FormSurface'),
+    gof_unreal: c('file.gof_unreal', 'Get GoF for Unreal'),
+    gof_unity: c('file.gof_unity', 'Get GoF for Unity'),
   },
   add: {
     sphere: c('add.sphere', 'Add Sphere', { icon: 'cube' }),

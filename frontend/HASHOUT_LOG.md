@@ -896,3 +896,10 @@ Revised at v1.0.0 · 2026-10-19: gofOut reads the route's new running flag (back
 - logged: v1.1.0 · 2026-10-19
 File gains From FormSurface (Paint from FormSurface in the menu and palette): it asks the service to bring FormSurface's exported maps for the active object into its paint (backend side log, 1.1.0) and says what happened: paint brought back (the view refreshed), nothing exported yet (export with the Blender template in FormSurface), or FormSurface not running. 5 strings in 23 tables (1360).
 Checked in a fresh profile under 4x CPU throttling with FormSurface 0.56.1's service running (fsback.mjs): a box-projected plane named Window plane; before any export the note said to export with the Blender template; with an orange Window_plane_BaseColor.png where FormSurface writes it, the note said the paint came back; CLS 0, no errors, the viewport started. A first run read only .message and saw no note; the check reads the page's text as gof.mjs does.
+
+### GoF for Unreal and GoF for Unity
+- refers-to: src/app.ts :: FILE_ACTIONS (gof_unreal, gof_unity), fileAction (their downloads); src/ui/command-map.ts :: PANEL_CMDS.file (Get GoF for Unreal, Get GoF for Unity); src/ui/menus.ts :: the File menu; src/i18n/*.json
+- kind: rationale
+- logged: v1.3.0 · 2026-10-19
+File gains GoF for Unreal and GoF for Unity, beside Blender add-on: each downloads its receiver's zip from the service (backend side log, 1.3.0) and says where it goes (Content/Python into the Unreal project then a restart; the Editor folder into the Unity project). 6 strings in 23 tables (1366).
+Checked in a fresh profile under 4x CPU throttling (gofrecv.mjs): GoF for Unreal saved formsculptor_gof_unreal-1.2.0.zip (3068 bytes) and GoF for Unity formsculptor_gof_unity-1.2.0.zip (2766 bytes), each with its note; CLS 0, no errors, the viewport started.

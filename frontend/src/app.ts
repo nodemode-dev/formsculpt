@@ -530,6 +530,8 @@ const FILE_ACTIONS: [string, string][] = [
   ['blender', 'Blender add-on'],
   ['gof', 'Send with GoF'],
   ['gof_back', 'From FormSurface'],
+  ['gof_unreal', 'GoF for Unreal'],
+  ['gof_unity', 'GoF for Unity'],
 ];
 
 const NODEMODE_KEY = 'formsculptor.nodemode';
@@ -5948,6 +5950,15 @@ class SceneView {
       // The live link's other half: Blender installs the zip, then its sidebar's formsculptor tab sends and receives.
       if (await this.download('/api/integrations/blender', `formsculptor_link-${VERSION}.zip`)) {
         this.note(t('In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there'));
+      }
+    } else if (action === 'gof_unreal') {
+      // GoF's receivers: Unreal's Python script and Unity's editor script, each with a README of its steps.
+      if (await this.download('/api/integrations/unreal', `formsculptor_gof_unreal-${VERSION}.zip`)) {
+        this.note(t('Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there'));
+      }
+    } else if (action === 'gof_unity') {
+      if (await this.download('/api/integrations/unity', `formsculptor_gof_unity-${VERSION}.zip`)) {
+        this.note(t('Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there'));
       }
     } else if (action === 'gof' && id !== null) {
       await this.gofOut(id);

@@ -25,7 +25,7 @@ const FILE: MenuItem[] = [
   'scene.new', 'file.open', 'file.save', '-',
   { label: 'Export As', items: EXPORTS }, 'file.export', '-',
   'file.print_check', 'file.repair', 'file.recover', '-',
-  'file.send_nodemode', 'file.bridge_send', 'file.blender_addon', 'file.gof', 'file.gof_back', 'file.substance', 'file.substance_sync',
+  'file.send_nodemode', 'file.bridge_send', 'file.blender_addon', 'file.gof', 'file.gof_back', 'file.gof_unreal', 'file.gof_unity', 'file.substance', 'file.substance_sync',
 ];
 
 const EDIT: MenuItem[] = [
