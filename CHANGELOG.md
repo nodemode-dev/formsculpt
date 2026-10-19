@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.9.0 · 2026-10-19
+
+### Added
+
+- Live Triplanar: while you mask a triplanar's planes, the solid they make is drawn with them, see-through, and follows every stroke, fill and undo. Validate still builds the finished, finer solid.
+- A stroke on a triplanar stays on the plane it starts on, so masking near where the planes cross no longer spills onto the other planes.
+
 ## 1.8.0 · 2026-10-19
 
 ### Fixed
