@@ -1,6 +1,6 @@
 ---
 name: formsculptor-harness
-description: "Guides work on formsculptor, the Form-family 3D sculpting app by nodemode-ai: Rust engine, WASM and PyO3 bindings, MCP tools, Tauri desktop. Use whenever a task touches sculpting, brushes, dyntopo or fsc-topo holes, voxel remesh, multires, masks, layers, the viewport dirty range upload, the command registry, command palette, MCP catalogue, .fsc or glTF import, the Tauri sidecar, doctor and bench runs, version bump to v0.x, or any file under native/, frontend/src, backend/app, src-tauri or setup/. Enforces project laws (SEDO, zero DOM flicker, z-index tokens). Not for formvis."
+description: "Guides work on formsculptor, the Form-family 3D sculpting app by nodemode-ai: Rust engine, WASM and PyO3 bindings, MCP tools, Tauri desktop. Use whenever a task touches sculpting, brushes, dyntopo or fsc-topo holes, voxel remesh, multires, masks, layers, the viewport dirty range upload, the command registry, command palette, MCP catalogue, .fsc or glTF import, the Tauri sidecar, doctor and bench runs, version bumps (1.x from 1.0.0), GoF and the integrations, or any file under native/, frontend/src, backend/app, src-tauri or setup/. Enforces project laws (SEDO, zero DOM flicker, z-index tokens). Not for formvis."
 license: Apache-2.0
 metadata:
   nodemode.author: nodemode-ai
