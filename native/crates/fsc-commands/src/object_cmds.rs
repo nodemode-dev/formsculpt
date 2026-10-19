@@ -1,7 +1,7 @@
 use fsc_core::{Mesh, Object, ObjectId};
 use fsc_sculpt::VertexEdit;
 use fsc_topo::{BooleanOp, Deformer};
-use glam::Vec3;
+use glam::{Mat4, Vec3};
 use serde_json::{json, Value};
 
 use crate::history::Edit;
@@ -124,6 +124,9 @@ pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandE
     let r = glam::Quat::from_euler(glam::EulerRot::XYZ, rotate_deg.x.to_radians(), rotate_deg.y.to_radians(), rotate_deg.z.to_radians());
     let mut edits = Vec::new();
     let (mut moved, mut reply) = (0u64, Value::Null);
+    // The objects moved whole (no mask holding part of them), which is a change of place rather than of shape: an
+    // instance moved so keeps its link, as Nomad's instances share modelling changes and not where they sit.
+    let mut whole = std::collections::HashSet::new();
     for &m in &movers {
         let object = s.scene.get(m).expect("listed");
         // The deformer turns and scales about the bounds centre C; about a pivot P instead is the same change plus a
@@ -133,7 +136,11 @@ pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandE
         // The object asked for keeps its mask (topology masking); what hangs under it moves whole, and so does a
         // triplanar, whose mask is the shape it describes rather than a part to hold still.
         let triplanar = object.primitive.as_ref().is_some_and(|(a, _)| a.contains("\"triplanar\"")) && fsc_core::triplanar::divisions(&object.mesh).is_some();
-        let positions = if m == id && !triplanar { fsc_topo::deform(&object.mesh, &object.mask, d) } else { fsc_topo::deform(&object.mesh, &vec![0.0; object.mask.len()], d) };
+        let held = m == id && !triplanar;
+        if !held || object.mask.iter().all(|&w| w <= 0.0) {
+            whole.insert(m);
+        }
+        let positions = if held { fsc_topo::deform(&object.mesh, &object.mask, d) } else { fsc_topo::deform(&object.mesh, &vec![0.0; object.mask.len()], d) };
         let (r, edit) = move_positions(s, m, "Transform", positions);
         moved += r["vertices_moved"].as_u64().unwrap_or(0);
         if m == id || reply.is_null() {
@@ -141,11 +148,39 @@ pub(crate) fn transform(s: &mut Session, args: &Value) -> Result<Value, CommandE
         }
         edits.extend(edit);
     }
-    match edits.len() {
-        0 => {}
-        1 => s.history.push(edits.pop().expect("one")),
-        _ => s.history.push(Edit::Many { label: "Transform".into(), edits }),
+    // Linked copies keep their links through a move: a copy moved whole takes the move into its matrix, and a source
+    // moved whole has its copies' matrices take the move back out, so they stay where they are.
+    let world = Mat4::from_translation(centre + translate) * Mat4::from_quat(r) * Mat4::from_scale(scale) * Mat4::from_translation(-centre);
+    let mut links = Vec::new();
+    let copies: Vec<(ObjectId, fsc_core::Instance)> = s.scene.objects.iter().filter_map(|o| o.instance.clone().map(|i| (o.id, i))).collect();
+    for (cid, link) in copies {
+        let (copy_moved, source_moved) = (whole.contains(&cid), whole.contains(&link.source));
+        if !(copy_moved || source_moved) || (movers.contains(&cid) && !copy_moved) {
+            continue;
+        }
+        let mut matrix = Mat4::from_cols_array(&link.matrix);
+        if copy_moved {
+            matrix = world * matrix;
+        }
+        let mut source_revision = link.source_revision;
+        if source_moved && world.determinant().abs() > 1e-12 {
+            matrix *= world.inverse();
+            source_revision = s.scene.get(link.source).map_or(source_revision, |o| o.revision);
+        }
+        let copy = s.scene.get_mut(cid).expect("listed");
+        let old = copy.instance.replace(fsc_core::Instance { matrix: matrix.to_cols_array(), source_revision, own_revision: copy.revision, ..link });
+        links.push((cid, old));
     }
+    let kept = links.len();
+    let step = match edits.len() {
+        0 => None,
+        1 => edits.pop(),
+        _ => Some(Edit::Many { label: "Transform".into(), edits }),
+    };
+    if let Some(step) = step {
+        s.history.push(if links.is_empty() { step } else { Edit::Linked { inner: Box::new(step), links } });
+    }
+    reply["instances_kept"] = json!(kept);
     reply["vertices_moved"] = json!(moved);
     reply["objects_moved"] = json!(movers.len());
     if group.is_some() {
@@ -299,7 +334,18 @@ pub(crate) fn rename(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let object = s.scene.get_mut(id).expect("checked");
     let old = std::mem::replace(&mut object.name, name.to_string());
     object.revision += 1;
-    s.history.push(Edit::Rename { object: id, name: old });
+    // A name is not a change of shape: an instance stays linked, and its undo and redo keep it so (the link swaps
+    // back as it is, taking the new revision).
+    let revision = object.revision;
+    let link = object.instance.as_mut().map(|i| {
+        i.own_revision = revision;
+        i.clone()
+    });
+    let step = Edit::Rename { object: id, name: old };
+    s.history.push(match link {
+        Some(l) => Edit::Linked { inner: Box::new(step), links: vec![(id, Some(l))] },
+        None => step,
+    });
     Ok(summary(s.scene.get(id).expect("checked")))
 }
 

@@ -1,4 +1,4 @@
-use fsc_core::{Mesh, Primitive};
+use fsc_core::{Mesh, ObjectId, Primitive};
 use glam::{Mat4, Quat, Vec3};
 use serde_json::{json, Value};
 
@@ -43,7 +43,8 @@ pub(crate) fn transformed(mesh: &Mesh, m: Mat4) -> Mesh {
 }
 
 /// Linked copies follow their original: after any change to the original they are rebuilt from it under their own
-/// transform. A copy changed directly (a stroke on it, a transform) leaves the link, keeping its own shape.
+/// transform. A copy changed directly (a stroke on it, a masked transform) leaves the link, keeping its own shape; a
+/// whole move of a copy or its original is taken into the link's matrix by transform_object, so it stays linked.
 pub fn sync_instances(s: &mut Session) {
     let links: Vec<(u32, fsc_core::Instance)> = s.scene.objects.iter().filter_map(|o| o.instance.clone().map(|i| (o.id, i))).collect();
     for (id, link) in links {
@@ -65,6 +66,133 @@ pub fn sync_instances(s: &mut Session) {
         copy.replace_mesh(mesh, mask);
         copy.instance = Some(fsc_core::Instance { source_revision, own_revision: copy.revision, ..link });
     }
+}
+
+fn id_schema(what: &str) -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer", "minimum": 1, "description": format!("Object id; the active object when omitted. {what}")},
+            "offset": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Only for instance_object: move the new instance by this much; default none."}
+        },
+        "required": [],
+        "additionalProperties": false
+    })
+}
+
+pub(crate) fn instance_schema() -> Value {
+    id_schema("The object to make an instance of; an instance of an instance links to the same original.")
+}
+
+/// Nomad's Instance: a copy that follows the original's shape (sculpt, paint, remesh) and keeps a place of its own.
+/// One undo step.
+pub(crate) fn instance_object(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let offset = vec3(args, "offset")?.unwrap_or(Vec3::ZERO);
+    let o = s.scene.get(id).expect("checked");
+    // An instance of a linked copy links to its original, so every instance of a shape has one source.
+    let (source, base) = match &o.instance {
+        Some(i) => (i.source, Mat4::from_cols_array(&i.matrix)),
+        None => (id, Mat4::IDENTITY),
+    };
+    let matrix = Mat4::from_translation(offset) * base;
+    let src = s.scene.get(source).ok_or_else(|| CommandError::new("not_found", format!("the original {source} is gone")))?;
+    let (mesh, name, material, parent, source_revision) = (transformed(&src.mesh, matrix), o.name.clone(), o.material.clone(), o.parent, src.revision);
+    s.history.push(Edit::Scene { label: "Instance".into(), objects: s.scene.objects.clone(), active: s.scene.active });
+    let new_id = add_object(s, &name, mesh, false);
+    let copy = s.scene.get_mut(new_id).expect("just added");
+    copy.material = material;
+    copy.parent = parent;
+    copy.instance = Some(fsc_core::Instance { source, matrix: matrix.to_cols_array(), source_revision, own_revision: copy.revision });
+    s.scene.active = Some(new_id);
+    Ok(json!({"object": summary(s.scene.get(new_id).expect("added")), "instance_of": source}))
+}
+
+pub(crate) fn uninstance_schema() -> Value {
+    id_schema("The linked copy to make a unique shape.")
+}
+
+/// Nomad's Un-instance: the copy keeps its shape and no longer follows the original. One undo step.
+pub(crate) fn uninstance_object(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    if s.scene.get(id).expect("checked").instance.is_none() {
+        return Err(CommandError::new("not_instance", format!("object {id} is not an instance")));
+    }
+    s.history.push(Edit::Scene { label: "Un-instance".into(), objects: s.scene.objects.clone(), active: s.scene.active });
+    s.scene.get_mut(id).expect("checked").instance = None;
+    Ok(json!({"object": summary(s.scene.get(id).expect("checked"))}))
+}
+
+pub(crate) fn sync_children_schema() -> Value {
+    id_schema("Any instance of the shape (or its original): its children are the hierarchy every other instance gets.")
+}
+
+/// Nomad's Sync: "If instances have children, ensure all instances share the same child hierarchy". The chosen
+/// instance's objects below it are the pattern; every other instance of the same original gets a linked copy of each
+/// one it lacks, placed as the pattern's sits on the chosen one and hung in the same shape of tree. Children an
+/// instance already has stay; a counterpart is one already linked to the pattern child. One undo step.
+pub(crate) fn sync_instance_children(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
+    let id = target(s, args)?;
+    let chosen = s.scene.get(id).expect("checked");
+    let source = chosen.instance.as_ref().map_or(id, |i| i.source);
+    let place = |o: &fsc_core::Object| o.instance.as_ref().map_or(Mat4::IDENTITY, |i| Mat4::from_cols_array(&i.matrix));
+    let chosen_inv = place(chosen).inverse();
+    let members: Vec<(ObjectId, Mat4)> = s
+        .scene
+        .objects
+        .iter()
+        .filter(|o| o.id != id && (o.id == source || o.instance.as_ref().is_some_and(|i| i.source == source)))
+        .map(|o| (o.id, place(o) * chosen_inv))
+        .collect();
+    if members.is_empty() {
+        return Err(CommandError::new("no_instances", format!("object {id} has no other instances to sync")));
+    }
+    // The pattern in tree order, so a child's parent is always made before it.
+    let pattern: Vec<ObjectId> = s.scene.descendants(id).into_iter().filter(|c| s.scene.get(*c).is_some()).collect();
+    if pattern.is_empty() {
+        return Err(CommandError::new("no_children", format!("object {id} has no children to share")));
+    }
+    // Recorded only when something is added, so a second Sync is not an empty step.
+    let (before, active) = (s.scene.objects.clone(), s.scene.active);
+    let mut added = Vec::new();
+    for (member, relative) in members {
+        let mut counterpart: std::collections::HashMap<ObjectId, ObjectId> = std::collections::HashMap::from([(id, member)]);
+        // What this member already has, by the original each child is (itself, or the one it is linked to).
+        for c in s.scene.descendants(member) {
+            if let Some(o) = s.scene.get(c) {
+                counterpart.entry(o.instance.as_ref().map_or(c, |i| i.source)).or_insert(c);
+            }
+        }
+        for &child in &pattern {
+            let c = s.scene.get(child).expect("listed");
+            // A pattern child that is itself an instance links its counterpart to the same original.
+            let (link_source, base) = match &c.instance {
+                Some(i) => (i.source, Mat4::from_cols_array(&i.matrix)),
+                None => (child, Mat4::IDENTITY),
+            };
+            if let Some(&have) = counterpart.get(&link_source) {
+                counterpart.insert(child, have);
+                continue;
+            }
+            let Some(original) = s.scene.get(link_source) else { continue };
+            let matrix = relative * base;
+            let (mesh, name, material, source_revision) = (transformed(&original.mesh, matrix), c.name.clone(), c.material.clone(), original.revision);
+            // Its parent's counterpart under this member, or the member for a child hung on a group in between.
+            let parent = s.scene.parent_of(child).and_then(|p| counterpart.get(&p).copied()).unwrap_or(member);
+            let new_id = add_object(s, &name, mesh, false);
+            let copy = s.scene.get_mut(new_id).expect("just added");
+            copy.material = material;
+            copy.parent = Some(parent);
+            copy.instance = Some(fsc_core::Instance { source: link_source, matrix: matrix.to_cols_array(), source_revision, own_revision: copy.revision });
+            counterpart.insert(child, new_id);
+            counterpart.insert(link_source, new_id);
+            added.push(new_id);
+        }
+    }
+    if !added.is_empty() {
+        s.history.push(Edit::Scene { label: "Sync Instances".into(), objects: before, active });
+    }
+    Ok(json!({"pattern": id, "children": pattern.len(), "added": added}))
 }
 
 /// Adds an object; with `record` it is its own undo step (an array records one scene step for all its copies).
@@ -146,7 +274,7 @@ pub(crate) fn array_schema() -> Value {
             "interp": {"type": "string", "enum": ["catmull_rom", "bspline", "linear"], "default": "catmull_rom", "description": "Curve: how the path runs between points."},
             "closed": {"type": "boolean", "default": false, "description": "Curve: loop the path back to its first point."},
             "align": {"type": "boolean", "default": true, "description": "Curve: turn each copy so the original's +x follows the path."},
-            "linked": {"type": "boolean", "default": false, "description": "Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it."},
+            "linked": {"type": "boolean", "default": false, "description": "Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Moving a copy or the original whole keeps the link; changing a copy's shape directly unlinks it."},
             "offset": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Linear: the step from one copy to the next, in world units; one bounds width along x when omitted."},
             "axis": {"type": "string", "enum": ["x", "y", "z"], "default": "y", "description": "Radial: the axis the copies turn around (through center)."},
             "center": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Radial: the point the axis passes through; the world origin when omitted."},

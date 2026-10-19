@@ -1,13 +1,13 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.6.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.7.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
 - Engine: `get_engine_info`
 - Scene: `get_scene`, `new_scene`, `edit_primitive`, `add_group`, `set_parent`, `delete_group`
 - Viewing: `get_view`, `record_turntable`, `record_animation`, `record_history`, `save_view`, `list_views`, `delete_view`, `pick`
-- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `triplanar_solid`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
+- Objects: `set_visibility`, `set_folder`, `arrange_objects`, `add_primitive`, `skeleton_mesh`, `shadow_box`, `triplanar_solid`, `edit_build`, `text_mesh`, `extrude_shape`, `curve_tube`, `sample_curve`, `curve_ik`, `curve_from_border`, `curve_bridge`, `lathe`, `select_object`, `delete_object`, `cloth_drape`, `pose`, `grow_fibers`, `pose_joint`, `groom_fibers`, `duplicate_object`, `rename_object`, `transform_object`, `deform_object`, `warp_along_curve`, `lattice_deform`, `merge_objects`, `split_parts`, `array_object`, `instance_object`, `uninstance_object`, `sync_instance_children`, `repeat_object`, `scatter_on_surface`, `insert_mesh`, `insert_along`, `boolean`, `selection_set_save`, `selection_set_restore`, `selection_set_delete`, `selection_set_list`, `channel_copy`, `channel_paste`, `channel_clear`
 - History: `get_history`, `history_go_to`, `set_history_limits`, `set_history_camera`, `undo`, `redo`
 - Painting: `set_material`, `paint_fill`, `texture_create`, `texture_clear`, `get_texture`, `pick_paint`, `spotlight_add`, `spotlight_set`, `spotlight_list`, `spotlight_image`, `spotlight_remove`, `spotlight_apply`, `paint_project`, `paint_layer_add`, `paint_layer_set`, `paint_layer_select`, `paint_layer_delete`, `paint_layer_merge`, `paint_layer_flatten`, `paint_clear`, `uv_unwrap`, `uv_move_point`, `get_uv_layout`, `uv_pick`, `get_uvs`, `uv_path`, `uv_transform`, `uv_relax`, `uv_straighten`, `uv_pack`, `uv_density`, `uv_equalize`, `uv_sew`, `uv_cut`, `uv_tiles`, `uv_to_tile`, `uv_pack_udim`, `bake_maps`
 - Topology: `bevel_edges`, `cut_shape`, `retopo_face`, `retopo_patch`, `get_wire`, `insert_edge_loop`, `delete_faces`, `bridge`, `poly_pick`, `get_creases`, `zmodel_edge`, `zmodel_face`, `zmodel_point`, `clip_plane`, `bevel_edge`, `split_shape`, `subdivide`, `remesh_voxel`, `decimate`, `fill_holes`, `mesh_check`, `quad_remesh`, `field_remesh`, `project_detail`, `multires_divide`, `multires_set_level`, `multires_delete_higher`, `multires_delete_lower`, `multires_reconstruct`, `repair_mesh`
@@ -1528,13 +1528,34 @@ Repeat an object in a line (offset per copy) or around an axis (radial, evenly o
 - `id`: integer; range 1 to inf; The object to repeat; the active object when omitted.
 - `interp`: string (catmull_rom | bspline | linear); default "catmull_rom"; Curve: how the path runs between points.
 - `jitter`: object; Deterministic random variation per copy (the original is untouched); the same seed gives the same result. Not allowed with mirror.; fields position, rotation, scale, seed
-- `linked`: boolean; default false; Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Changing a copy directly unlinks it.
+- `linked`: boolean; default false; Linked copies (instances) follow the original: sculpt, paint or remesh it and every copy updates after the change. Moving a copy or the original whole keeps the link; changing a copy's shape directly unlinks it.
 - `merge`: boolean; default false; Join the copies with the original into one object instead of adding separate objects.
 - `mode`: string (linear | radial | mirror | curve); default "linear"; linear and radial repeat count copies; mirror adds one copy reflected across the plane square to axis through center; curve places count copies evenly along points.
 - `offset`: array of number; Linear: the step from one copy to the next, in world units; one bounds width along x when omitted.
 - `points`: array of value; Curve: the path, as [x, y, z] points or objects {p, sharp, round} (corners and fillets as in sample_curve); each copy's bounds centre sits on it.
 - `scale_end`: number; default 1; range 0.01 to 100; Uniform scale of the last copy; copies in between ramp linearly. Not allowed with mirror.
 - `scale_start`: number; default 1; range 0.01 to 100; Uniform scale of the first copy in the ramp (about the original's bounds centre). Not allowed with mirror.
+
+## instance_object
+
+Duplicate an object as an instance (Nomad Sculpt's Instance): modelling changes to the original (sculpt, paint, remesh, divide) are made to every instance, while each keeps its own place, so moving, turning or scaling one leaves the others. Optionally moved by an offset. Editing an instance itself makes it a unique shape. Made active. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted. The object to make an instance of; an instance of an instance links to the same original.
+- `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
+
+## uninstance_object
+
+Make an instance a unique shape (Nomad Sculpt's Un-instance): it keeps its mesh and no longer follows the original. Refuses with not_instance for an object that is not one. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted. The linked copy to make a unique shape.
+- `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
+
+## sync_instance_children
+
+Give every instance of a shape the same children (Nomad Sculpt's Sync): the objects under the chosen instance are the pattern, and each other instance of the same original (the original included) gets a linked copy of each pattern child it lacks, placed as the pattern sits on the chosen one and hung in the same tree. Children an instance already has, or a copy linked to the same original, stay. Refuses with no_instances or no_children. Returns added. One undo step.
+
+- `id`: integer; range 1 to inf; Object id; the active object when omitted. Any instance of the shape (or its original): its children are the hierarchy every other instance gets.
+- `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
 
 ## repeat_object
 

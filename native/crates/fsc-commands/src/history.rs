@@ -51,6 +51,9 @@ pub enum Edit {
     Material { object: ObjectId, material: fsc_core::Material },
     /// Several channels (groups, mask, paint, sculpt layers, UVs) swapped as one step: selection set restores, pastes, clears.
     Channels { label: String, object: ObjectId, state: fsc_core::ChannelState },
+    /// A step that also changed instance links (a transform keeping linked copies linked): the inner step applies,
+    /// then the other links swap back, each restored link taking the object's revision so the move does not unlink it.
+    Linked { inner: Box<Edit>, links: Vec<(ObjectId, Option<fsc_core::Instance>)> },
 }
 
 impl Edit {
@@ -68,6 +71,7 @@ impl Edit {
             | Edit::Hierarchy { label, .. }
             | Edit::Many { label, .. }
             | Edit::Channels { label, .. } => label.clone(),
+            Edit::Linked { inner, .. } => inner.label(),
             Edit::Rename { .. } => "Rename".into(),
             Edit::Material { .. } => "Material".into(),
             Edit::Divide { .. } => "Divide".into(),
@@ -101,6 +105,7 @@ impl Edit {
             Edit::Channels { state, .. } => weigh::channels(state),
             Edit::Hierarchy { state, .. } => state.parents.len() * std::mem::size_of::<(ObjectId, Option<ObjectId>)>() + state.groups.iter().map(|g| std::mem::size_of::<fsc_core::Group>() + g.name.len()).sum::<usize>(),
             Edit::Many { edits, .. } => edits.iter().map(Edit::bytes).sum(),
+            Edit::Linked { inner, links } => inner.bytes() + links.len() * std::mem::size_of::<(ObjectId, Option<fsc_core::Instance>)>(),
         }
     }
 
@@ -231,6 +236,18 @@ impl Edit {
             }
             Edit::Hierarchy { state, .. } => {
                 *state = scene.swap_hierarchy(std::mem::take(state));
+            }
+            Edit::Linked { inner, links } => {
+                inner.apply(scene, forward)?;
+                for (id, link) in links.iter_mut() {
+                    if let Some(o) = scene.get_mut(*id) {
+                        std::mem::swap(&mut o.instance, link);
+                        let revision = o.revision;
+                        if let Some(i) = &mut o.instance {
+                            i.own_revision = revision;
+                        }
+                    }
+                }
             }
             Edit::Many { edits, .. } => {
                 if forward {
