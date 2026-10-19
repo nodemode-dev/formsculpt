@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "formsculptor_link"
-version = "1.11.0"
+version = "1.12.0"
 name = "formsculptor Live Link"
 tagline = "Keep meshes in step with a running formsculptor both ways"
 maintainer = "nodemode-ai"
