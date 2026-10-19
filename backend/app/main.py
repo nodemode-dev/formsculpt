@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core import config, quiet_log
 from app.core.isolation import CrossOriginIsolation
-from app.routers import commands, engine, events, lightbox, mcp, nodemode, plugins, system, terminal_socket
+from app.routers import commands, engine, events, gof, lightbox, mcp, nodemode, plugins, system, terminal_socket
 from app.services import autosave, claude_code, cmd_chat, cmd_terminal, terminal
 from app.services import events as bus
 
@@ -38,6 +38,7 @@ app.include_router(plugins.router, prefix="/api")
 app.include_router(commands.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(lightbox.router, prefix="/api")
+app.include_router(gof.router, prefix="/api")
 app.include_router(terminal_socket.router)
 
 dist = config.dist_dir()
