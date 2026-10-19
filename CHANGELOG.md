@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.4.0 · 2026-10-19
+
+### Added
+
+- Smooth shading, as Nomad Sculpt has it: Smooth shading in the View section shades every object smooth or, off, faceted, so the topology shows; Object smooth shading (Auto, On, Off) beside Material type overrides it for one object. A new flat icosahedron starts faceted. Agents use `set_material` `smooth_shading`, and `get_view` `smooth_shading` for the view's setting.
+- 1370 interface strings in every language.
+
+### Fixed
+
+- The flat icosahedron no longer looks like a rounded ball: its 20 faces shade flat.
+
 ## 1.3.0 · 2026-10-19
 
 ### Added
