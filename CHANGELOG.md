@@ -2,6 +2,17 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.7.0 · 2026-10-19
+
+### Added
+
+- Instances, as Nomad Sculpt has them: Instance, Un-instance and Sync Instances in the object row's menu and the Object menu. An instance follows its original's shape (sculpt, paint, remesh, divide) and keeps its own place. Sync Instances gives every instance the children of the one you chose, as linked copies placed the same way. Agents use `instance_object`, `uninstance_object` and `sync_instance_children`.
+- 1373 interface strings in every language.
+
+### Fixed
+
+- Moving, turning or scaling a linked copy (from an array, a repeater or Instance) no longer unlinks it, and moving the original no longer drags its copies along; undo and redo keep the link. Renaming an instance no longer unlinks it.
+
 ## 1.6.0 · 2026-10-19
 
 ### Added
