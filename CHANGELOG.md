@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.14.0 · 2026-10-19
+
+### Added
+
+- Claude Code and Chat in every layout, as formlit has them: the tablet layout's top right bar and the ZBrush layout's title bar now carry the robot head (Claude Code) and the speech bubble (Chat), and the ZBrush title bar the Terminal too. Help lists both.
+- Chat's From Claude Code... asks which conversation to continue: each one by date and first message, this chat marked, the newest other one chosen.
+- 1384 interface strings in every language.
+
+### Changed
+
+- The three-star sparkle is banned app wide. formsculptor never drew one; the rule now stands in its contributor notes so none is added.
+
 ## 1.13.0 · 2026-10-19
 
 ### Added
