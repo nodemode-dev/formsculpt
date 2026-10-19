@@ -1,6 +1,6 @@
 # formsculptor tools
 
-Generated from the engine's command registry (formsculptor 1.4.0) by `./formsculptor agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculptor 1.5.0) by `./formsculptor agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -460,8 +460,9 @@ Note: in the window: Ctrl+G.
 
 ## set_parent
 
-Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. A parent that is one of them or below one is refused. Saved in projects. One undo step.
+Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. With before, also set their order among their new siblings (just before that sibling, or last with null), which is the order the scene tree lists them in; parent can be their current one to reorder only. A parent that is one of them or below one is refused. Saved in projects. One undo step.
 
+- `before`: ['integer', 'null']; range 1 to inf; Order among their new siblings: put them, in the order given, just before this sibling (an object for objects, a group for groups, under the same parent); null or omitted puts them last. The scene tree lists a node's groups, then its objects, each in this order.
 - `ids`: array of integer; required; Objects or groups to move in the hierarchy.
 - `parent`: ['integer', 'null']; required; range 1 to inf; The object or group they hang under from now on (moving it moves them); null puts them at the top.
 

@@ -555,7 +555,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "set_parent",
         group: Group::Scene,
         label: "Set Parent",
-        description: "Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. A parent that is one of them or below one is refused. Saved in projects. One undo step.",
+        description: "Hang objects or groups under another object or group (moving or hiding the parent then carries them), or at the top with parent null. With before, also set their order among their new siblings (just before that sibling, or last with null), which is the order the scene tree lists them in; parent can be their current one to reorder only. A parent that is one of them or below one is refused. Saved in projects. One undo step.",
         keys: &[],
         hints: WRITE,
         schema: hierarchy_cmds::set_parent_schema,

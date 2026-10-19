@@ -374,14 +374,51 @@ impl Scene {
         Ok(())
     }
 
+    /// Moves `id` in its own list (objects or groups, which is the order the scene tree shows siblings in) to just
+    /// before `before`, or to the end with None. `before` must be the same kind (object or group) as `id` and hang
+    /// under the same parent.
+    pub fn move_before(&mut self, id: ObjectId, before: Option<ObjectId>) -> Result<(), String> {
+        if before == Some(id) {
+            return Ok(());
+        }
+        let object = self.get(id).is_some();
+        if !object && self.group(id).is_none() {
+            return Err(format!("no object or group {id}"));
+        }
+        if let Some(b) = before {
+            if self.get(b).is_some() != object || !self.exists(b) {
+                return Err(format!("{b} is not {} beside {id}; objects are ordered among objects and groups among groups", if object { "an object" } else { "a group" }));
+            }
+            if self.parent_of(b) != self.parent_of(id) {
+                return Err(format!("{b} does not hang under the same parent as {id}"));
+            }
+        }
+        if object {
+            let from = self.index_of(id).expect("checked");
+            let moved = self.objects.remove(from);
+            let to = before.and_then(|b| self.index_of(b)).unwrap_or(self.objects.len());
+            self.objects.insert(to, moved);
+        } else {
+            let from = self.groups.iter().position(|g| g.id == id).expect("checked");
+            let moved = self.groups.remove(from);
+            let to = before.and_then(|b| self.groups.iter().position(|g| g.id == b)).unwrap_or(self.groups.len());
+            self.groups.insert(to, moved);
+        }
+        Ok(())
+    }
+
     /// The hierarchy as it stands, for an undo step.
     pub fn hierarchy(&self) -> Hierarchy {
         Hierarchy { parents: self.objects.iter().map(|o| (o.id, o.parent)).collect(), groups: self.groups.clone() }
     }
 
-    /// Puts a hierarchy back and returns the one it replaced (objects made or removed since keep theirs).
+    /// Puts a hierarchy back and returns the one it replaced (objects made or removed since keep theirs). The objects
+    /// also go back to the order the hierarchy lists them in (move_before's undo); any not listed keep their place
+    /// after them.
     pub fn swap_hierarchy(&mut self, h: Hierarchy) -> Hierarchy {
         let old = self.hierarchy();
+        let rank: std::collections::HashMap<ObjectId, usize> = h.parents.iter().enumerate().map(|(k, (id, _))| (*id, k)).collect();
+        self.objects.sort_by_key(|o| rank.get(&o.id).copied().unwrap_or(usize::MAX));
         for (id, parent) in h.parents {
             if let Some(o) = self.get_mut(id) {
                 if o.parent != parent {

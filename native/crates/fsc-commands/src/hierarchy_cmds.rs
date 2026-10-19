@@ -72,7 +72,8 @@ pub(crate) fn set_parent_schema() -> Value {
         "type": "object",
         "properties": {
             "ids": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 1, "maxItems": 4096, "description": "Objects or groups to move in the hierarchy."},
-            "parent": {"type": ["integer", "null"], "minimum": 1, "description": "The object or group they hang under from now on (moving it moves them); null puts them at the top."}
+            "parent": {"type": ["integer", "null"], "minimum": 1, "description": "The object or group they hang under from now on (moving it moves them); null puts them at the top."},
+            "before": {"type": ["integer", "null"], "minimum": 1, "description": "Order among their new siblings: put them, in the order given, just before this sibling (an object for objects, a group for groups, under the same parent); null or omitted puts them last. The scene tree lists a node's groups, then its objects, each in this order."}
         },
         "required": ["ids", "parent"],
         "additionalProperties": false
@@ -90,14 +91,26 @@ pub(crate) fn set_parent(s: &mut Session, args: &Value) -> Result<Value, Command
         Some(v) => Some(node(s, v, "parent")?),
         None => return Err(bad("parent is required (null for the top)")),
     };
+    let sibling = match args.get("before") {
+        None | Some(Value::Null) => None,
+        Some(v) => Some(node(s, v, "before")?),
+    };
+    // Given (a sibling, or null for last), the order changes; omitted, only the parent does, as before 1.5.0.
+    let ordered = args.get("before").is_some();
     let before = s.scene.hierarchy();
     for &id in &ids {
-        if let Err(e) = s.scene.set_parent(id, parent) {
+        // Placed in the order given, each just before the sibling (or last), so a group of rows keeps its order.
+        let placed = s.scene.set_parent(id, parent).and_then(|_| if ordered { s.scene.move_before(id, sibling) } else { Ok(()) });
+        if let Err(e) = placed {
             s.scene.swap_hierarchy(before);
             return Err(bad(e));
         }
     }
-    s.history.push(Edit::Hierarchy { label: if parent.is_some() { "Set Parent".into() } else { "Clear Parent".into() }, state: before });
+    if s.scene.hierarchy() == before {
+        return Ok(json!({"moved": [], "parent": parent, "groups": groups_report(s)}));
+    }
+    let label = if ordered { "Reorder" } else if parent.is_some() { "Set Parent" } else { "Clear Parent" };
+    s.history.push(Edit::Hierarchy { label: label.into(), state: before });
     Ok(json!({"moved": ids, "parent": parent, "groups": groups_report(s)}))
 }
 
