@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.14.2 · 2026-10-21
+
+### Changed
+
+- The app icon, cleaned up and updated by the owner, at every size: the desktop icons (macOS, Windows, Linux), the favicon and the splash.
+
 ## 1.14.1 · 2026-10-20
 
 ### Changed
