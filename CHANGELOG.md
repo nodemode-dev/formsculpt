@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.14.1 · 2026-10-20
+
+### Changed
+
+- A new app icon: the owner's low-poly planar bust in the Form family colours on the dark tile, in place of the orange line head. The desktop icons (macOS, Windows, Linux), the favicon and the splash all use it.
+
 ## 1.14.0 · 2026-10-19
 
 ### Added
