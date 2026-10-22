@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.17.1 · 2026-10-22
+
+### Changed
+
+- Releases are built by formcompiler (`nodemode-ai/formcompiler`) and published on its release page as `formsculptor-vX.Y.Z`. This repo's own GitHub Actions now only run the checks, on main, on pull requests and on `compile_vX.Y.Z` branches. A release starts when a `compile_vX.Y.Z` branch is pushed (steps in `.docs/BRANCHING.md`). The updater looks for new versions in formcompiler's `formsculptor-updates` feed. No change to the app itself.
+
 ## 1.14.2 · 2026-10-21
 
 ### Changed
