@@ -13,13 +13,16 @@
         "title": "formsculptor",
         "url": "splash.html",
         "width": 360,
-        "height": 180,
+        "height": 200,
         "resizable": false,
         "decorations": false,
         "center": true,
-        "backgroundColor": "#111111"
+        "transparent": true,
+        "shadow": false,
+        "visible": false
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:*; worker-src 'self' blob:"
     }
