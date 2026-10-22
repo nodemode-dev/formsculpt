@@ -31,6 +31,8 @@ body.panels-translucent #app.tablet :is(.tb-bar, .tb-tools, .tb-left, .tb-card, 
 body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1c1c1c; --tb-sunk: #000000; --tb-text: #ffffff; --tb-dim: #d0d0d0; --tb-line: rgb(255 255 255 / 0.55); }
 #app.tablet :is(.appbar, .status, .rail) { display: none; }
 #app.tablet .panel { display: none; }
+.has-overlay-titlebar #app.tablet { grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) 0; }
+.has-overlay-titlebar #app.tablet .mac-drag { display: block; grid-area: bar; background: #000; }
 #app.tablet .stage { background: #000; }
 #app:not(.tablet) :is(.tb-bar, .tb-stats, .tb-views, .tb-cube, .tb-tools, .tb-left, .tb-pill, .tb-card, .tb-float, .tb-sheet-head) { display: none; }
 

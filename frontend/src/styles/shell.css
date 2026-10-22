@@ -7,6 +7,10 @@ button { font: inherit; color: inherit; }
 #app.is-dock-open { --dock-h: min(var(--dock-open-h, 280px), 70vh); }
 
 .appbar { grid-area: bar; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-3); padding-inline: var(--space-3); background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+.mac-drag { display: none; }
+:root.has-overlay-titlebar { --bar-h: 38px; --traffic-w: 78px; }
+.has-overlay-titlebar .appbar { padding-left: var(--traffic-w); }
+.has-overlay-titlebar :is(.brand, .zb-title-name) > * { pointer-events: none; }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; letter-spacing: -0.01em; }
 .brand img { display: block; flex: none; }
 .brand .ver { font: 11px/1 var(--font-mono); color: var(--text-muted); }

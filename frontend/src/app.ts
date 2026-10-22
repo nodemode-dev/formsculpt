@@ -1663,6 +1663,11 @@ function buildShell(root: HTMLElement): Shell {
   status.append(state);
 
   root.append(bar, rail, stage, panel, status);
+  if (document.documentElement.classList.contains('has-overlay-titlebar')) {
+    const drag = el('div', 'mac-drag');
+    root.append(drag);
+    for (const n of [drag, bar, brand, menubar, ...bar.querySelectorAll('.spacer, .appbar-tools')]) n.setAttribute('data-tauri-drag-region', '');
+  }
   // Folds, panel side and size are layout only, so the window keeps them here rather than in the engine.
   const layout = new PanelLayout(root, panel);
   layout.apply();

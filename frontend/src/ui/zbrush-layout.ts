@@ -224,6 +224,9 @@ export class ZBrushLayout {
     const presets = el('span', 'zb-title-right');
     presets.append(agents, this.layoutPick, makeDefault);
     this.title.append(name, this.titleStats, this.titleNote, presets);
+    if (document.documentElement.classList.contains('has-overlay-titlebar')) {
+      for (const n of [this.title, name, this.titleStats, this.titleNote, presets, agents]) n.setAttribute('data-tauri-drag-region', '');
+    }
 
     // The palette menu bar: each palette shows in the right tray.
     for (const [p] of PALETTES) {

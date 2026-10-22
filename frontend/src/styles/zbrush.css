@@ -40,6 +40,9 @@
 }
 #app.zb.zb-tray-closed { --zb-tray-w: 0px; }
 #app.zb :is(.appbar, .rail, .status) { display: none; }
+.has-overlay-titlebar #app.zb { grid-template-rows: var(--bar-h) 28px 64px minmax(0, 1fr) var(--dock-h, 0px) 0; }
+.has-overlay-titlebar .zb-title { padding-left: var(--traffic-w); }
+.has-overlay-titlebar .zb-pop { top: 136px; }
 #app:not(.zb) :is(.zb-title, .zb-menu, .zb-top, .zb-left, .zb-right, .zb-divider, .zb-pop, .zb-quick, .zb-lightbox) { display: none; }
 
 /* LightBox: over the bottom of the canvas (the same grid cell, so opening it moves nothing), tabs over a strip. */

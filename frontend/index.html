@@ -13,6 +13,9 @@
     body.app-ready #app { visibility: visible; }
   </style>
   <script>
+    if (/Mac/.test(navigator.platform) && '__TAURI_INTERNALS__' in window) document.documentElement.classList.add('has-overlay-titlebar');
+  </script>
+  <script>
 (function () {
   var KEY = 'nodemode_ui_settings';
   var accent = '#f97316';
