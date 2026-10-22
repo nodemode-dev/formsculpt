@@ -25,6 +25,22 @@ export function setAttr(node: Element, name: string, value: string): void {
   if (node.getAttribute(name) !== value) node.setAttribute(name, value);
 }
 
+export function revealApp(): void {
+  if (document.body.classList.contains('app-ready')) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.body.classList.add('app-ready');
+    if ('__TAURI_INTERNALS__' in window) {
+      requestAnimationFrame(() => {
+        try {
+          void Promise.resolve((window as any).__TAURI_INTERNALS__?.invoke?.('app_ready')).catch(() => undefined);
+        } catch {
+          return;
+        }
+      });
+    }
+  }));
+}
+
 export const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 export function fromHtml<T extends HTMLElement = HTMLElement>(markup: string): T {

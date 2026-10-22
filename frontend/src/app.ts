@@ -1,6 +1,5 @@
 import { VERSION } from './version';
-import { ICONS } from './ui/icons';
-import { el, saveBlob, setAttr, setText } from './ui/dom';
+import { el, revealApp, saveBlob, setAttr, setText } from './ui/dom';
 import { browserEngine, dispatch, fetchBooleanPreview, fetchTriplanarPreview, fetchCatalogue, fetchFile, fetchMesh, fetchVersion, lightboxOpen, lightboxPreview, lightboxProjects, lightboxSave, postBody, postJson, uploadFile, useBrowserEngine, type ObjectSummary, type SceneSummary } from './engine/service';
 import { WasmEngine } from './engine/wasm';
 import { dataUrl, HostLink } from './host';
@@ -669,7 +668,7 @@ const PRIMITIVES: [string, string][] = [
 function buildShell(root: HTMLElement): Shell {
   const bar = el('header', 'appbar');
   const brand = el('div', 'brand');
-  brand.innerHTML = ICONS.mark;
+  brand.innerHTML = '<img src="/formsculptor-logo.png" width="18" height="18" alt="" draggable="false">';
   brand.append(el('span', '', 'formsculptor'), el('span', 'ver', `v${VERSION}`));
   const menubar = el('div', 'fs-menubar');
   bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
@@ -7111,7 +7110,10 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
 export function start(root: HTMLElement): void {
   const shell = buildShell(root);
   wireChrome(root, shell);
-  document.body.classList.add('app-ready');
+  void Promise.race([
+    (document.fonts?.ready ?? Promise.resolve()).catch(() => undefined),
+    new Promise((resolve) => setTimeout(resolve, 2500)),
+  ]).then(revealApp);
   void boot(shell);
 }
 
