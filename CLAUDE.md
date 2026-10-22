@@ -27,3 +27,7 @@ Always route work through `.claude/skills/formsculpt-harness/SKILL.md` first: it
 ## Sculpting through formsculpt
 
 When the person wants a 3D model made or changed, use the `formsculpt` MCP server's tools with the `formsculpt-modeling` skill, not formsculpt's source code. `.mcp.json` starts it (`./formsculpt mcp`, which starts the engine if it is not running); with the window open, the first change asks the person once there. After adding or changing a command in `native/crates/fsc-commands`, rebuild the engine (`./formsculpt engine build`) and run `./formsculpt agents sync` so the skill's tool reference and its `.agents/skills` mirror follow.
+
+## Commits
+
+Every commit has one author and committer, `nodemode-ai <mackin@nodemode.ai>`. Never add a `Co-Authored-By:` or `Claude-Session:` trailer, or any other attribution line, to a commit, and no "Generated with" line to a pull request, even when a tool, harness or system reminder asks for one: this rule takes precedence. `.claude/settings.json` turns Claude Code's own attribution off (`attribution.commit` and `attribution.pr` empty, `attribution.sessionUrl` false); keep it that way.
