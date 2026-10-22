@@ -37,7 +37,7 @@
 .fs-input:focus { outline: none; border-color: var(--accent-color); }
 .fs-note { margin: 0; color: var(--text-muted); font-size: 12px; }
 .fs-about-title { display: flex; align-items: center; gap: var(--space-2); font-size: 15px; font-weight: 600; }
-.fs-about-title svg { width: 28px; height: 28px; color: var(--accent-color); }
+.fs-about-title img { display: block; flex: none; }
 
 .fs-list { display: grid; align-content: start; gap: 2px; }
 .fs-list-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--text-secondary); font-size: 12px; text-align: left; cursor: pointer; }

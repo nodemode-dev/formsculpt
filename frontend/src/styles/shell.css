@@ -8,7 +8,7 @@ button { font: inherit; color: inherit; }
 
 .appbar { grid-area: bar; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-3); padding-inline: var(--space-3); background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; letter-spacing: -0.01em; }
-.brand svg { width: var(--icon-size); height: var(--icon-size); color: var(--accent-color); flex: none; }
+.brand img { display: block; flex: none; }
 .brand .ver { font: 11px/1 var(--font-mono); color: var(--text-muted); }
 .appbar .spacer { flex: 1; }
 .appbar .fs-menubar { flex: none; overflow: visible; }

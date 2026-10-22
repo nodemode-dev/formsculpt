@@ -1,5 +1,4 @@
 import { VERSION } from '../version';
-import { ICONS } from './icons';
 import { comboOf, formatKeys, type Commands } from './commands';
 import { Dialog } from './dialog';
 import { fromHtml, patchList, q, setDisabled, setText } from './dom';
@@ -145,7 +144,7 @@ export class ShortcutsDialog extends Dialog {
 export class AboutDialog extends Dialog {
   constructor() {
     super('About formsculptor', 420);
-    this.body.appendChild(fromHtml(`<div class="fs-about-title">${ICONS.mark}<span>formsculptor ${VERSION}</span></div>`));
+    this.body.appendChild(fromHtml(`<div class="fs-about-title"><img src="/formsculptor-logo.png" width="28" height="28" alt="" draggable="false"><span>formsculptor ${VERSION}</span></div>`));
     this.body.appendChild(fromHtml(`<p class="fs-note">${t('3D sculpting and modeling in the NodeMode design system.')}</p>`));
     this.body.appendChild(fromHtml(`<p class="fs-note">${t('Apache License 2.0. Copyright 2026 nodemode-ai.')}</p>`));
     this.button('Close', 'primary', () => this.close());
