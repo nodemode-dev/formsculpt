@@ -1,6 +1,6 @@
 # Third-party notices
 
-formsculptor is licensed under the Apache License 2.0 (see `LICENSE`). Copyright 2026 nodemode-ai.
+formsculpt is licensed under the Apache License 2.0 (see `LICENSE`). Copyright 2026 nodemode-ai.
 
 ## Included in this repository
 

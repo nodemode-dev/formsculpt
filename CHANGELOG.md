@@ -6,7 +6,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Changed
 
-- Releases are built by formcompiler (`nodemode-ai/formcompiler`) and published on its release page as `formsculptor-vX.Y.Z`. This repo's own GitHub Actions now only run the checks, on main, on pull requests and on `compile_vX.Y.Z` branches. A release starts when a `compile_vX.Y.Z` branch is pushed (steps in `.docs/BRANCHING.md`). The updater looks for new versions in formcompiler's `formsculptor-updates` feed. No change to the app itself.
+- Releases are built by formcompiler (`nodemode-ai/formcompiler`) and published on its release page as `formsculpt-vX.Y.Z`. This repo's own GitHub Actions now only run the checks, on main, on pull requests and on `compile_vX.Y.Z` branches. A release starts when a `compile_vX.Y.Z` branch is pushed (steps in `.docs/BRANCHING.md`). The updater looks for new versions in formcompiler's `formsculpt-updates` feed. No change to the app itself.
 
 ## 1.14.2 · 2026-10-21
 
@@ -30,7 +30,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Changed
 
-- The three-star sparkle is banned app wide. formsculptor never drew one; the rule now stands in its contributor notes so none is added.
+- The three-star sparkle is banned app wide. formsculpt never drew one; the rule now stands in its contributor notes so none is added.
 
 ## 1.13.0 · 2026-10-19
 
@@ -117,12 +117,12 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Added
 
-- GoF receivers for Unreal Engine and Unity, from File > GoF for Unreal and GoF for Unity. Unreal: a Python script for the project's Content/Python that imports what you send to Unreal into /Game/GoF and re-imports it when you send again. Unity: an editor script that brings what you send to Unity into Assets/GoF, with Import from GoF, Watch GoF and Set GoF Folder under Tools > formsculptor.
+- GoF receivers for Unreal Engine and Unity, from File > GoF for Unreal and GoF for Unity. Unreal: a Python script for the project's Content/Python that imports what you send to Unreal into /Game/GoF and re-imports it when you send again. Unity: an editor script that brings what you send to Unity into Assets/GoF, with Import from GoF, Watch GoF and Set GoF Folder under Tools > formsculpt.
 - 1366 interface strings in every language.
 
 ### Notes
 
-- Neither receiver has been run inside Unreal or Unity yet: both are written against those apps' own API references and their logic was run here against stand-ins. Edits made in Unreal or Unity do not come back to formsculptor yet.
+- Neither receiver has been run inside Unreal or Unity yet: both are written against those apps' own API references and their logic was run here against stand-ins. Edits made in Unreal or Unity do not come back to formsculpt yet.
 
 ## 1.2.0 · 2026-10-19
 
@@ -147,7 +147,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Added
 
-- GoF in Blender: the formsculptor add-on's tab has Import from GoF, Watch GoF and Send back to GoF. What formsculptor sends to Blender with GoF comes in through Blender's own glTF importer (a re-send updates the same object), and an edit sent back returns to the same object in formsculptor. The add-on finds the GoF folder by asking formsculptor, or takes one in its preferences. Get the updated add-on from File > Blender add-on.
+- GoF in Blender: the formsculpt add-on's tab has Import from GoF, Watch GoF and Send back to GoF. What formsculpt sends to Blender with GoF comes in through Blender's own glTF importer (a re-send updates the same object), and an edit sent back returns to the same object in formsculpt. The add-on finds the GoF folder by asking formsculpt, or takes one in its preferences. Get the updated add-on from File > Blender add-on.
 - 1355 interface strings in every language.
 
 ### Fixed
@@ -156,13 +156,13 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Notes
 
-- formsculptor 1.0.0. Receivers for Unreal Engine and Unity, and FormSurface's painted maps coming back, are next.
+- formsculpt 1.0.0. Receivers for Unreal Engine and Unity, and FormSurface's painted maps coming back, are next.
 
 ## 0.99.0 · 2026-10-19
 
 ### Added
 
-- GoF, formsculptor's own hand-off to other apps. File's GoF target and Send with GoF (also in the File menu), and the `gof_send` tool for agents: the object goes into one GoF folder (Formsculptor/GoF in the home folder, or `FORMSCULPTOR_GOF`) as GLB for Blender, Unreal Engine and FormSurface, FBX for Unity, a Substance 3D Painter package, or OBJ for any other app, listed in the folder's `gof.json` manifest. When the other app saves over the file, the edit comes back into the same object.
+- GoF, formsculpt's own hand-off to other apps. File's GoF target and Send with GoF (also in the File menu), and the `gof_send` tool for agents: the object goes into one GoF folder (Formsculpt/GoF in the home folder, or `FORMSCULPT_GOF`) as GLB for Blender, Unreal Engine and FormSurface, FBX for Unity, a Substance 3D Painter package, or OBJ for any other app, listed in the folder's `gof.json` manifest. When the other app saves over the file, the edit comes back into the same object.
 - FormSurface gets the file straight into its meshes folder, and loaded in its editor when Agent link is on there. `GET /api/gof` shows the folder, the manifest and whether FormSurface is running.
 - 1354 interface strings in every language.
 
@@ -219,7 +219,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 ### Added
 
 - LightBox in the ZBrush layout, as ZBrush has it: press comma (or the LightBox button on the top shelf) and a strip of thumbnails opens over the bottom of the canvas. Click a thumbnail to select it, double-click (or press Enter) to load it; Escape closes it.
-  - Projects: type a name and Save to LightBox to keep the scene with a picture of it; double-click one to open it. They are kept in your formsculptor folder, under LightBox/Project.
+  - Projects: type a name and Save to LightBox to keep the scene with a picture of it; double-click one to open it. They are kept in your formsculpt folder, under LightBox/Project.
   - Tool (every primitive, each with its own drawing), Brush, Stroke, Alpha and Material.
 - 1330 interface strings in every language.
 
@@ -262,10 +262,10 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Added
 
-- A live two-way link with Blender. File > Blender add-on saves a Blender extension; install it in Blender (Preferences, Extensions, Install from Disk) and the sidebar's formsculptor tab can:
-  - Send to formsculptor (the selected meshes) and Get from formsculptor (the active object), linking each.
+- A live two-way link with Blender. File > Blender add-on saves a Blender extension; install it in Blender (Preferences, Extensions, Install from Disk) and the sidebar's formsculpt tab can:
+  - Send to formsculpt (the selected meshes) and Get from formsculpt (the active object), linking each.
   - Live: keep linked objects in step on a timer. Edit or move the object in Blender and it changes here; sculpt it here and it changes in Blender. Undo here comes back too.
-  - When only the shape changes, only positions travel, so Blender keeps its quads and UVs and formsculptor keeps its paint, mask and face groups.
+  - When only the shape changes, only positions travel, so Blender keeps its quads and UVs and formsculpt keeps its paint, mask and face groups.
 - For agents and other apps: `link_pull` (an object's mesh as base64 arrays with its revision, or just "unchanged") and `link_push` (write one back, or make a new object).
 - 1310 interface strings in every language.
 
@@ -399,12 +399,12 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
   - K opens the search.
   - On a touch screen, a two-finger tap undoes and a three-finger tap redoes.
 - The window opens directly in the chosen layout, without redrawing after the first frame.
-- Thumbnails are drawn by formsculptor itself: alpha thumbnails come from the same code as the engine's alphas, and material spheres use the viewport's matcap shading (lit materials are marked as an approximation).
+- Thumbnails are drawn by formsculpt itself: alpha thumbnails come from the same code as the engine's alphas, and material spheres use the viewport's matcap shading (lit materials are marked as an approximation).
 - 1267 interface strings in every language.
 
 ### Notes
 
-- Still left out because formsculptor has no counterpart yet, or the behaviour could not be confirmed from two sources: LightBox, Focal Shift, RGB Intensity, the F5 texture pop-up, Nomad's gesture options (the finger that always smooths, the one-tap mask shortcuts, the three-finger radius and intensity drag) and dragging the navigation cube.
+- Still left out because formsculpt has no counterpart yet, or the behaviour could not be confirmed from two sources: LightBox, Focal Shift, RGB Intensity, the F5 texture pop-up, Nomad's gesture options (the finger that always smooths, the one-tap mask shortcuts, the three-finger radius and intensity drag) and dragging the navigation cube.
 
 ## 0.82.0 · 2026-10-18
 
@@ -421,7 +421,7 @@ Versions follow `v*.*.*` with dots. Dates are UTC.
 
 ### Notes
 
-- Left out because formsculptor has no counterpart yet: LightBox, Projection Master, Quicksketch, Focal Shift, RGB Intensity, M, BPR, the 2.5D canvas buttons, docking several palettes, and building a custom UI.
+- Left out because formsculpt has no counterpart yet: LightBox, Projection Master, Quicksketch, Focal Shift, RGB Intensity, M, BPR, the 2.5D canvas buttons, docking several palettes, and building a custom UI.
 
 ## 0.81.0 · 2026-10-17
 
@@ -916,7 +916,7 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 - `curve_ik`: drag one control point of a curve and the rest follow as a chain of fixed-length segments (FABRIK), with the first, last, both or neither end pinned; read-only, returns the new points, whether the target was reached and the segment lengths.
 - Curves in the window: a radius and a twist per handle (Point radius %, Point twist), Radius along path (Uniform, Start to end with End radius %, Per point) for tubes, Surface offset and Grid snap when placing handles, and Drag as chain (through `curve_ik`).
 - A Selection Sets section in the panel: the active object's sets in a list, with Save, Restore and Delete.
-- `./formsculptor doctor` checks that every translation table covers the interface strings.
+- `./formsculpt doctor` checks that every translation table covers the interface strings.
 - 126 engine commands; 720 interface strings in every language.
 
 ## 0.33.0 · 2026-10-16
@@ -937,11 +937,11 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 
 ### Added
 
-- Claude in the window: a terminal dock under the viewport (`Mod+J`) with real shells, a Claude Code tab (`Shift+Mod+J`) that runs your own Claude Code connected to formsculptor's MCP tools with no permission prompt, and a Chat tab (`Alt+Mod+J`) where Claude answers in Markdown and sculpts through the same tools, showing each tool call and the views it looked at. Service: `/api/commands/{id}` (window-only commands), `/api/events` (SSE), `WS /api/terminal/{id}`.
-- `./build_app` and `build_app.bat`: one command builds the installable desktop app (tools checked, engine, Python module, window, frozen sidecar, Tauri bundle; a disk image and install on macOS, a deb on Linux, msi and nsis on Windows); `./formsculptor app` runs it.
+- Claude in the window: a terminal dock under the viewport (`Mod+J`) with real shells, a Claude Code tab (`Shift+Mod+J`) that runs your own Claude Code connected to formsculpt's MCP tools with no permission prompt, and a Chat tab (`Alt+Mod+J`) where Claude answers in Markdown and sculpts through the same tools, showing each tool call and the views it looked at. Service: `/api/commands/{id}` (window-only commands), `/api/events` (SSE), `WS /api/terminal/{id}`.
+- `./build_app` and `build_app.bat`: one command builds the installable desktop app (tools checked, engine, Python module, window, frozen sidecar, Tauri bundle; a disk image and install on macOS, a deb on Linux, msi and nsis on Windows); `./formsculpt app` runs it.
 - Commands in the window: every panel button and engine command is a command with label, keys, enabled and checked state; a menu bar (File, Edit, Add, Sculpt, Mask, Topology, Object, Paint, View, Window, Help), right-click menus on the viewport and panel buttons, a `Mod+K` palette and a `Mod+/` shortcut editor with conflict handling.
 - Curves: a shared curve model in the engine with smooth or sharp points, fillet rounding of a corner by a radius, Catmull-Rom, B-spline or straight interpolation and closed loops. `sample_curve`; `warp_along_curve` (bend an object along a path); `curve_tube` gains profiles (circle, square, triangle, star, flat or your own outline), round or flat caps, hollow pipes, twist, spirals and start-to-end radius; `lathe` profiles take rounded corners; `edit_build` sets one point's sharp, round, radius or twist. Window: Alt-click a curve handle for a corner, Corner round, Path shape, Closed path, Tube from curve and the tube settings.
-- 26 interface languages, English by default (View > Language), switched live; `./formsculptor i18n extract|check`. German seeded; the other tables followed in 0.33.0.
+- 26 interface languages, English by default (View > Language), switched live; `./formsculpt i18n extract|check`. German seeded; the other tables followed in 0.33.0.
 - 118 engine commands.
 
 ### Changed
@@ -1001,9 +1001,9 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 
 ### Added
 
-- The browser engine: the whole engine (all 102 commands, live strokes, files) built to WebAssembly as `fsc-wasm` (`./formsculptor engine wasm`, 2.4 MB). The window uses it when no engine service answers, or at `?engine=wasm`, and then needs no service at all; agents, plugins, autosave, the bridge and NodeMode still need the service.
+- The browser engine: the whole engine (all 102 commands, live strokes, files) built to WebAssembly as `fsc-wasm` (`./formsculpt engine wasm`, 2.4 MB). The window uses it when no engine service answers, or at `?engine=wasm`, and then needs no service at all; agents, plugins, autosave, the bridge and NodeMode still need the service.
 - USD as text: `.usda` export (a Mesh prim per object with colour, opacity and UVs) and import, checked against Pixar's own library.
-- Tests: the browser engine in Node (`frontend/e2e/wasm_smoke.mjs`, run by `./formsculptor test engine`), its C surface natively, USD (engine 33 and the browser engine's 12 checks, service 16). CI builds the browser engine.
+- Tests: the browser engine in Node (`frontend/e2e/wasm_smoke.mjs`, run by `./formsculpt test engine`), its C surface natively, USD (engine 33 and the browser engine's 12 checks, service 16). CI builds the browser engine.
 
 ### Changed
 
@@ -1061,7 +1061,7 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 
 ### Added
 
-- Tests, now that the build is stable: 21 engine tests through the command registry (`native/crates/fsc-commands/tests`), 10 service tests on the FastAPI app (`backend/tests`), and a window smoke test (`frontend/e2e/smoke.py`). `./formsculptor test [all|engine|service|e2e]` runs them; CI runs the engine and service suites.
+- Tests, now that the build is stable: 21 engine tests through the command registry (`native/crates/fsc-commands/tests`), 10 service tests on the FastAPI app (`backend/tests`), and a window smoke test (`frontend/e2e/smoke.py`). `./formsculpt test [all|engine|service|e2e]` runs them; CI runs the engine and service suites.
 - Linux desktop bundles (AppImage, deb, rpm) rebuilt at this version and launched on their own bundled engine.
 
 ### Fixed
@@ -1104,8 +1104,8 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 
 - `paint_project`: paint an image onto the surface from a view (only what that view sees, fading at grazing angles) or tiled triplanar, into the active paint layer (84 commands in all). Window: Project image and Tile image with Image opacity.
 - Reference images on a plane in the scene (front, side or top) as well as over the view.
-- Python scripting: `./formsculptor script FILE [JSON]` runs a script with `fsc.call(command, **args)` on the running engine or its own.
-- Plugins: Python files in `plugins/` or `~/.formsculptor/plugins` with a `run(fsc, args)`, listed and run from the window's Plugins section (`/api/plugins`); two examples, a rock and a display pedestal.
+- Python scripting: `./formsculpt script FILE [JSON]` runs a script with `fsc.call(command, **args)` on the running engine or its own.
+- Plugins: Python files in `plugins/` or `~/.formsculpt/plugins` with a `run(fsc, args)`, listed and run from the window's Plugins section (`/api/plugins`); two examples, a rock and a display pedestal.
 
 ## 0.17.0 · 2026-10-11
 
@@ -1302,16 +1302,16 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 - Undo and redo for strokes, mask changes, adding and deleting objects and new scenes.
 - Commands `sculpt_stroke`, `mask_invert`, `mask_clear`, `mask_blur`, `mask_sharpen`, `undo`, `redo` (13 in all).
 - Live strokes from the viewport over `/api/engine/stroke` with partial buffer uploads; masks shown in the viewport; the Brush and Edit panels and the undo keys.
-- The MCP server at `/mcp` over the engine's catalogue, the `sculpt_strategy` prompt, the consent dialog, live window refresh after an agent's change, `./formsculptor mcp`, `./formsculptor agents sync|install`, `.mcp.json`, `.codex/config.toml`, `.cursor/mcp.json` and the `formsculptor-modeling` skill.
+- The MCP server at `/mcp` over the engine's catalogue, the `sculpt_strategy` prompt, the consent dialog, live window refresh after an agent's change, `./formsculpt mcp`, `./formsculpt agents sync|install`, `.mcp.json`, `.codex/config.toml`, `.cursor/mcp.json` and the `formsculpt-modeling` skill.
 
 ## 0.2.0 · 2026-10-11
 
 ### Added
 
 - The mesh core in `fsc-core`: contiguous mesh buffers with area-weighted normals, seven primitives (icosphere, uv sphere, welded cube, cylinder, cone, torus, plane), a binned-SAH triangle BVH with raycasts and brush-radius vertex queries, and a revisioned scene.
-- `./formsculptor bench`, timing mesh build, normals, the BVH, raycasts and radius queries into `bench-results/`.
+- `./formsculpt bench`, timing mesh build, normals, the BVH, raycasts and radius queries into `bench-results/`.
 - Five registry commands: `get_scene`, `new_scene`, `add_primitive`, `select_object`, `delete_object`; commands now run against an engine session.
-- The `fsc_engine` PyO3 module (`native/crates/fsc-py`), built by maturin into the backend; `./formsculptor engine build` and `install` build it.
+- The `fsc_engine` PyO3 module (`native/crates/fsc-py`), built by maturin into the backend; `./formsculpt engine build` and `install` build it.
 - Engine routes: `/api/engine/catalogue`, `/api/engine/dispatch` and `/api/engine/mesh/{id}` (binary); capabilities report the engine module.
 - The WebGL2 viewport: clay matcap shading, ground grid, orbit, pan, zoom, snap views, orthographic toggle, frame; the panel adds primitives and lists the scene.
 
@@ -1323,10 +1323,10 @@ Fixes found while Claude Code drove the window over MCP to rebuild the snake hea
 
 ### Added
 
-- The scaffold: the `./formsculptor` dispatcher with one script per command in `setup/`, and Windows twins for install and boot.
+- The scaffold: the `./formsculpt` dispatcher with one script per command in `setup/`, and Windows twins for install and boot.
 - The Rust engine workspace in `native/` with six crates, and `fsc-commands`, the single command registry, with its first command (`system.info`, MCP name `get_engine_info`) and the `fsc-catalogue` exporter.
 - The FastAPI engine service on 127.0.0.1:8196 with health, version and capabilities, cross-origin isolation headers, and the built frontend served from `/`.
 - The frontend shell on Vite (port 5196, loopback only): tokens, the stacking scale, inline icons, theme applied before first paint, a live service status.
 - The Tauri 2 desktop shell in formvis's shape, with a content security policy and the `.fsc` file association.
 - CI for the frontend build, the engine check, the backend self-check and probe, and the script and text hygiene scans; the desktop release workflow; the wiki workflow.
-- The `formsculptor-harness` project skill pack.
+- The `formsculpt-harness` project skill pack.

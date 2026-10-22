@@ -1,4 +1,4 @@
-# formsculptor
+# formsculpt
 
 The Form family's 3D sculpting and modeling app. Start with [Getting Started](Getting-Started), then [Architecture](Architecture).
 
