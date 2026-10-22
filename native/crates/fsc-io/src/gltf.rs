@@ -260,7 +260,7 @@ fn document(objects: &[GltfObject]) -> (Value, Vec<u8>) {
     }
     pad(&mut bin, 0);
     let mut doc = json!({
-        "asset": {"version": "2.0", "generator": format!("formsculptor {}", fsc_core::engine_version())},
+        "asset": {"version": "2.0", "generator": format!("formsculpt {}", fsc_core::engine_version())},
         "scene": 0,
         "scenes": [{"nodes": (0..objects.len()).collect::<Vec<_>>()}],
         "nodes": nodes,

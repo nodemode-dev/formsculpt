@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""./formsculptor script FILE [JSON]: runs a Python script against formsculptor.
+"""./formsculpt script FILE [JSON]: runs a Python script against formsculpt.
 
 The script sees `fsc` (fsc.call(name, **args) runs any registry command by its MCP name) and `args` (the JSON given
-after the file, or {}). With the engine running (the window or ./formsculptor backend), the script drives that engine
+after the file, or {}). With the engine running (the window or ./formsculpt backend), the script drives that engine
 and the window updates as it goes; otherwise it runs an engine in this process, and `fsc.call("save_project", ...)`
 or an export keeps the result.
 """
@@ -44,12 +44,12 @@ def main() -> int:
         return 0 if len(sys.argv) >= 2 else 2
     path = os.path.join(os.environ.get("FSC_CWD", os.getcwd()), sys.argv[1])
     if not os.path.isfile(path):
-        print(f"[formsculptor script] no such file: {path}", file=sys.stderr)
+        print(f"[formsculpt script] no such file: {path}", file=sys.stderr)
         return 2
     try:
         args = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
     except json.JSONDecodeError as err:
-        print(f"[formsculptor script] the arguments are not JSON: {err}", file=sys.stderr)
+        print(f"[formsculpt script] the arguments are not JSON: {err}", file=sys.stderr)
         return 2
     if engine_running():
         fsc = Fsc(http_dispatch)
@@ -58,23 +58,23 @@ def main() -> int:
         try:
             import fsc_engine
         except ImportError:
-            print("[formsculptor script] no engine is running and the engine module is not built (./formsculptor engine build)", file=sys.stderr)
+            print("[formsculpt script] no engine is running and the engine module is not built (./formsculpt engine build)", file=sys.stderr)
             return 1
         engine = fsc_engine.Engine()
         fsc = Fsc(lambda name, a: json.loads(engine.dispatch(name, json.dumps(a))))
         where = "an engine in this process"
-    print(f"[formsculptor script] {os.path.basename(path)} on {where}", file=sys.stderr)
+    print(f"[formsculpt script] {os.path.basename(path)} on {where}", file=sys.stderr)
     try:
         ran = run_file(path, fsc, args)
     except ScriptError as err:
-        print(f"[formsculptor script] {err}", file=sys.stderr)
+        print(f"[formsculpt script] {err}", file=sys.stderr)
         return 1
     except Exception as err:  # the script's own error, reported briefly with where it happened
         tb = err.__traceback__
         while tb and tb.tb_next:
             tb = tb.tb_next
         where = f" (line {tb.tb_lineno} of {os.path.basename(tb.tb_frame.f_code.co_filename)})" if tb else ""
-        print(f"[formsculptor script] {type(err).__name__}: {err}{where}", file=sys.stderr)
+        print(f"[formsculpt script] {type(err).__name__}: {err}{where}", file=sys.stderr)
         return 1
     sys.stdout.write(ran["output"])
     if ran["result"] is not None:

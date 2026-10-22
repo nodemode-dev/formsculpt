@@ -1,8 +1,8 @@
 """Window smoke test: drives the running window in Chromium under 4x CPU throttling and checks that the main flows work
 with no unexpected layout shift and no console errors.
 
-Needs the service and the dev server running (./formsculptor boot) and Python Playwright with Chromium.
-Run: ./formsculptor test e2e   (or python3 frontend/e2e/smoke.py [window url] [service url])
+Needs the service and the dev server running (./formsculpt boot) and Python Playwright with Chromium.
+Run: ./formsculpt test e2e   (or python3 frontend/e2e/smoke.py [window url] [service url])
 """
 
 import json
@@ -44,7 +44,7 @@ def main() -> int:
         page.add_init_script("window.__cls=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true});")
         # The smoke test drives the panel layout's controls; the tablet layout is the default since 0.75.1, so the
         # panel layout is chosen the way a person's choice is kept.
-        page.add_init_script("try{localStorage.setItem('formsculptor.tablet.default','1');localStorage.setItem('formsculptor.tablet','off')}catch(e){}")
+        page.add_init_script("try{localStorage.setItem('formsculpt.tablet.default','1');localStorage.setItem('formsculpt.tablet','off')}catch(e){}")
         page.goto(WINDOW)
         page.wait_for_timeout(3000)
         panel = page.locator(".panel")

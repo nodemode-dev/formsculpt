@@ -9,12 +9,12 @@ if command -v node >/dev/null 2>&1 && node -e 'const [m,n]=process.versions.node
 if command -v npm >/dev/null 2>&1; then ok "npm"; else bad "npm" "install npm"; fi
 if py="$(fs_python)"; then ok "python $("$py" -V 2>&1 | awk '{print $2}')"; else bad "python" "Python 3.12+ is required"; fi
 if command -v cargo >/dev/null 2>&1; then ok "rust $(rustc --version | awk '{print $2}')"; else bad "rust" "the engine needs https://rustup.rs"; fi
-if [ -f "$FSC_ROOT/backend/venv/bin/activate" ] || [ -f "$FSC_ROOT/backend/venv/Scripts/activate" ]; then ok "backend venv"; else warn "backend venv" "run ./formsculptor install"; fi
-if [ -d "$FSC_ROOT/frontend/node_modules" ]; then ok "frontend node_modules"; else warn "frontend deps" "run ./formsculptor install"; fi
+if [ -f "$FSC_ROOT/backend/venv/bin/activate" ] || [ -f "$FSC_ROOT/backend/venv/Scripts/activate" ]; then ok "backend venv"; else warn "backend venv" "run ./formsculpt install"; fi
+if [ -d "$FSC_ROOT/frontend/node_modules" ]; then ok "frontend node_modules"; else warn "frontend deps" "run ./formsculpt install"; fi
 if [ "$(fs_os)" = linux ]; then
-  if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then ok "webkit2gtk-4.1 for desktop builds"; else warn "webkit2gtk-4.1" "desktop builds need ./formsculptor install-desktop's apt list"; fi
+  if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then ok "webkit2gtk-4.1 for desktop builds"; else warn "webkit2gtk-4.1" "desktop builds need ./formsculpt install-desktop's apt list"; fi
 fi
-if [ -n "${py:-}" ] && (cd "$FSC_ROOT" && "$py" -I setup/i18n.py check >/dev/null 2>&1); then ok "interface translations complete"; else warn "interface translations" "run ./formsculptor i18n check; every table should cover strings.json"; fi
+if [ -n "${py:-}" ] && (cd "$FSC_ROOT" && "$py" -I setup/i18n.py check >/dev/null 2>&1); then ok "interface translations complete"; else warn "interface translations" "run ./formsculpt i18n check; every table should cover strings.json"; fi
 for port in 5196 "${FSC_PORT:-8196}"; do
   if (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; then warn "port $port" "already in use"; else ok "port $port free"; fi
 done

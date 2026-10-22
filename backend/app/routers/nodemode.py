@@ -1,6 +1,6 @@
-"""Send to NodeMode from a standalone formsculptor. Embedded in NodeMode, the page hands the model to its host page
+"""Send to NodeMode from a standalone formsculpt. Embedded in NodeMode, the page hands the model to its host page
 (frontend/src/host.ts); standalone, the engine sends it: the scene as GLB and a rendered preview PNG are uploaded
-through NodeMode's POST /api/upload, then one POST /api/formsculptor/receive tells NodeMode what arrived so it can
+through NodeMode's POST /api/upload, then one POST /api/formsculpt/receive tells NodeMode what arrived so it can
 place the model on its canvas. A NodeMode without that receiver still gets the uploads, and the reply says so. The
 protocol follows formvis's /api/nodemode routes."""
 
@@ -20,7 +20,7 @@ WHERE = "the File section's NodeMode address"
 
 class Send(BaseModel):
     target: str = Field(max_length=300)
-    title: str = Field("formsculptor", max_length=120)
+    title: str = Field("formsculpt", max_length=120)
     shading: str = Field("clay", max_length=20)
 
 
@@ -30,7 +30,7 @@ def _base(target: str) -> str:
 
 @router.get("/status")
 def status(target: str) -> dict:
-    """Whether NodeMode answers at `target`, and whether it has formsculptor's receiver."""
+    """Whether NodeMode answers at `target`, and whether it has formsculpt's receiver."""
     base = _base(target)
     try:
         with outbound.request(base + "/", timeout=3):
@@ -40,7 +40,7 @@ def status(target: str) -> dict:
     except (urllib.error.URLError, OSError) as exc:
         return {"running": False, "receiver": False, "detail": str(outbound.unreachable("NodeMode", base, WHERE, exc).detail)}
     try:
-        with outbound.request(base + "/api/formsculptor/receive", timeout=3):
+        with outbound.request(base + "/api/formsculpt/receive", timeout=3):
             receiver = True
     except urllib.error.HTTPError as exc:
         receiver = exc.code == 405  # there, for POST only
@@ -73,7 +73,7 @@ async def send(body: Send) -> dict:
         png, facts = await run_in_threadpool(engine.view_png, {"width": 768, "height": 768, "shading": body.shading, "background": "transparent"})
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    stem = "".join(c if c.isalnum() or c in "-_ " else "_" for c in body.title)[:80].strip() or "formsculptor"
+    stem = "".join(c if c.isalnum() or c in "-_ " else "_" for c in body.title)[:80].strip() or "formsculpt"
     try:
         model_url = _upload(base, f"{stem}.glb", glb, "model/gltf-binary")
         preview_url = _upload(base, f"{stem}.png", png, "image/png")
@@ -85,9 +85,9 @@ async def send(body: Send) -> dict:
         {"url": model_url, "filename": f"{stem}.glb", "fileType": "model", "mime": "model/gltf-binary", "bytes": len(glb)},
         {"url": preview_url, "filename": f"{stem}.png", "fileType": "image", "kind": "preview", "width": facts["width"], "height": facts["height"], "previewOf": 0},
     ]
-    announce = json.dumps({"source": "formsculptor", "title": body.title, "files": files}).encode()
+    announce = json.dumps({"source": "formsculpt", "title": body.title, "files": files}).encode()
     try:
-        with outbound.request(base + "/api/formsculptor/receive", announce, {"Content-Type": "application/json"}, "POST"):
+        with outbound.request(base + "/api/formsculpt/receive", announce, {"Content-Type": "application/json"}, "POST"):
             placed = True
     except urllib.error.HTTPError as exc:
         if exc.code not in (404, 405):
@@ -96,4 +96,4 @@ async def send(body: Send) -> dict:
     except (urllib.error.URLError, OSError) as exc:
         raise outbound.unreachable("NodeMode", base, WHERE, exc)
     return {"placed": placed, "files": files,
-            **({} if placed else {"detail": "Uploaded to NodeMode, but this NodeMode cannot place a model on its canvas yet: it needs formsculptor's receiver. The GLB and preview are in NodeMode's uploads."})}
+            **({} if placed else {"detail": "Uploaded to NodeMode, but this NodeMode cannot place a model on its canvas yet: it needs formsculpt's receiver. The GLB and preview are in NodeMode's uploads."})}

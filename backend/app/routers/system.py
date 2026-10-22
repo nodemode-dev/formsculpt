@@ -23,13 +23,13 @@ def blender_addon() -> Response:
         for path in sorted(folder.rglob("*")):
             if path.is_file() and "__pycache__" not in path.parts:
                 archive.write(path, path.relative_to(folder).as_posix())
-    name = f"formsculptor_link-{config.VERSION}.zip"
+    name = f"formsculpt_link-{config.VERSION}.zip"
     return Response(buffer.getvalue(), media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/integrations/{app}")
 def gof_receiver(app: str) -> Response:
-    """A GoF receiver as a zip: unreal (Content/Python for the project) or unity (Editor/FormsculptorGoF.cs)."""
+    """A GoF receiver as a zip: unreal (Content/Python for the project) or unity (Editor/FormsculptGoF.cs)."""
     if app not in ("unreal", "unity"):
         raise HTTPException(status_code=404, detail="the receivers are unreal and unity")
     folder = config.gof_receiver_dir(app)
@@ -40,7 +40,7 @@ def gof_receiver(app: str) -> Response:
         for path in sorted(folder.rglob("*")):
             if path.is_file() and "__pycache__" not in path.parts:
                 archive.write(path, path.relative_to(folder).as_posix())
-    name = f"formsculptor_gof_{app}-{config.VERSION}.zip"
+    name = f"formsculpt_gof_{app}-{config.VERSION}.zip"
     return Response(buffer.getvalue(), media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 

@@ -46,7 +46,7 @@ fn catalogue_lists_every_command() {
     let cat = catalogue();
     let listed = cat["commands"].as_array().expect("commands").len();
     assert_eq!(listed, COMMANDS.len());
-    assert_eq!(cat["engine"], "formsculptor");
+    assert_eq!(cat["engine"], "formsculpt");
 }
 
 #[test]

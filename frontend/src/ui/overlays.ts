@@ -4,7 +4,7 @@
 import { el, setText } from './dom';
 import { t } from './i18n';
 
-export const OVERLAYS_STORE = 'formsculptor.overlays';
+export const OVERLAYS_STORE = 'formsculpt.overlays';
 
 export type WireScope = 'all' | 'active';
 

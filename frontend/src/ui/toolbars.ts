@@ -8,7 +8,7 @@
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
 
-export const TOOLBARS_STORE = 'formsculptor.toolbars';
+export const TOOLBARS_STORE = 'formsculpt.toolbars';
 
 export interface ToolbarDef {
   id: string;

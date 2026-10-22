@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -e
 cd "$(dirname "$0")"
-command -v npm >/dev/null 2>&1 || { echo "[formsculptor] npm is required (Node 20.19 or newer)" >&2; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "[formsculpt] npm is required (Node 20.19 or newer)" >&2; exit 1; }
 npm install

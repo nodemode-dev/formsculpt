@@ -17,7 +17,7 @@ def selfcheck() -> int:
             info[name] = f"missing: {exc}"
     from app import __version__
 
-    info["formsculptor"] = __version__
+    info["formsculpt"] = __version__
     try:
         import fsc_engine
 

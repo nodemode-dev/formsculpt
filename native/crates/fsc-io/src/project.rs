@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
 
-const FORMAT: &str = "formsculptor-project";
+const FORMAT: &str = "formsculpt-project";
 
 struct Writer {
     zip: zip::ZipWriter<Cursor<Vec<u8>>>,
@@ -265,14 +265,14 @@ fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> 
 }
 
 pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
-    let zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a formsculptor project (not a zip): {e}"))?;
+    let zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a formsculpt project (not a zip): {e}"))?;
     let mut r = Reader { zip };
     let manifest: Value = serde_json::from_slice(&r.raw(&json!("manifest.json"))?).map_err(|e| format!("the manifest is broken: {e}"))?;
     if manifest["format"] != FORMAT {
-        return Err("not a formsculptor project (wrong manifest format)".into());
+        return Err("not a formsculpt project (wrong manifest format)".into());
     }
     if manifest["version"].as_u64() != Some(1) {
-        return Err("this project was saved by a newer formsculptor".into());
+        return Err("this project was saved by a newer formsculpt".into());
     }
     let mut scene = Scene::default();
     for e in manifest["objects"].as_array().cloned().unwrap_or_default() {

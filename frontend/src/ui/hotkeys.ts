@@ -1,6 +1,6 @@
 /**
  * The engine's command catalogue as the window reads it, and the bridge from the old key form's actions
- * ('formsculptor.keys') to command ids, used once when those overrides move to the shortcut preferences.
+ * ('formsculpt.keys') to command ids, used once when those overrides move to the shortcut preferences.
  */
 
 export interface CatalogueCommand {

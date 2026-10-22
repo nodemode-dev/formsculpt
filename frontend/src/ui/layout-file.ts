@@ -6,11 +6,11 @@
 
 import { parseToolbars, TOOLBARS_STORE } from './toolbars';
 
-const FORMAT = 'formsculptor-layout';
-export const TOOL_SWAP_STORE = 'formsculptor.toolswap';
+const FORMAT = 'formsculpt-layout';
+export const TOOL_SWAP_STORE = 'formsculpt.toolswap';
 
 /** The browser storage keys a layout file carries. */
-export const LAYOUT_KEYS = ['formsculptor.layout', 'formsculptor.tablet', TOOLBARS_STORE, 'formsculptor.prefs', TOOL_SWAP_STORE, 'formsculptor.bindings', 'formsculptor.theme', 'formsculptor.overlays'] as const;
+export const LAYOUT_KEYS = ['formsculpt.layout', 'formsculpt.tablet', TOOLBARS_STORE, 'formsculpt.prefs', TOOL_SWAP_STORE, 'formsculpt.bindings', 'formsculpt.theme', 'formsculpt.overlays'] as const;
 
 /** The layout as kept in this browser, as the text of a layout file. */
 export function exportLayout(version: string): string {
@@ -36,13 +36,13 @@ export function importLayout(text: string): { written: string[] } | { error: str
     return { error: 'not a layout file (it is not JSON)' };
   }
   const d = doc as { format?: unknown; entries?: unknown };
-  if (!d || typeof d !== 'object' || d.format !== FORMAT || !d.entries || typeof d.entries !== 'object') return { error: 'not a formsculptor layout file' };
+  if (!d || typeof d !== 'object' || d.format !== FORMAT || !d.entries || typeof d.entries !== 'object') return { error: 'not a formsculpt layout file' };
   const entries = d.entries as Record<string, unknown>;
   const accepted: [string, string][] = [];
   for (const key of LAYOUT_KEYS) {
     const v = entries[key];
     if (typeof v !== 'string') continue;
-    if (key === 'formsculptor.tablet' || key === TOOL_SWAP_STORE) {
+    if (key === 'formsculpt.tablet' || key === TOOL_SWAP_STORE) {
       if (v !== 'on' && v !== 'off') return { error: `${key} must be on or off` };
     } else {
       try {

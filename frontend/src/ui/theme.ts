@@ -6,7 +6,7 @@
 
 import { applyFamilyColours, familyBackground } from './family-themes';
 
-export const THEME_STORE = 'formsculptor.theme';
+export const THEME_STORE = 'formsculpt.theme';
 const NODEMODE_STORE = 'nodemode_ui_settings';
 
 export type ThemeName = 'nodemode' | 'family' | 'dark' | 'light' | 'contrast';

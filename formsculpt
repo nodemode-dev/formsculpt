@@ -2,10 +2,10 @@
 set -e
 cd "$(dirname "$0")"
 usage() {
-  printf 'formsculptor %s · 3D sculpting and modeling\n' "$(sed -n "s/^export const VERSION = '\(.*\)';$/\1/p" frontend/src/version.ts 2>/dev/null)"
+  printf 'formsculpt %s · 3D sculpting and modeling\n' "$(sed -n "s/^export const VERSION = '\(.*\)';$/\1/p" frontend/src/version.ts 2>/dev/null)"
   cat << 'EOF'
 
-usage: ./formsculptor [command] [options]
+usage: ./formsculpt [command] [options]
 
   (none) | boot       boot backend (8196) and frontend (5196) together
   install             install the engine toolchain check, backend and frontend
@@ -23,10 +23,10 @@ usage: ./formsculptor [command] [options]
   doctor              check the toolchain, installs and ports
   test [all|engine|service|e2e]  run the engine and service tests (all), one suite, or the window smoke test (e2e, needs boot)
   bench [level]       time mesh build, normals, BVH, raycasts and brush-radius queries (icosphere level, default 8)
-  mcp                 formsculptor over MCP's stdio transport (starts the engine if it is not running)
+  mcp                 formsculpt over MCP's stdio transport (starts the engine if it is not running)
   script FILE [JSON]  run a Python script with fsc.call(command, **args), on the running engine or its own
   i18n extract|check  collect the English interface strings, or report each language table's coverage
-  agents sync|install refresh the modeling skill's tool reference (sync), or register formsculptor with Claude Code, Codex and Cursor (install)
+  agents sync|install refresh the modeling skill's tool reference (sync), or register formsculpt with Claude Code, Codex and Cursor (install)
   clean [--all]       remove build output (--all also venv and node_modules)
   help                this text
 EOF
@@ -74,5 +74,5 @@ case "$cmd" in
   i18n) exec python3 -I setup/i18n.py "$@" ;;
   clean) exec setup/clean "$@" ;;
   help|-h|--help) usage ;;
-  *) printf '[formsculptor] unknown command: %s\n\n' "$cmd"; usage; exit 2 ;;
+  *) printf '[formsculpt] unknown command: %s\n\n' "$cmd"; usage; exit 2 ;;
 esac

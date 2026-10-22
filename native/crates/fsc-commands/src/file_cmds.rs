@@ -51,7 +51,7 @@ pub fn import_data_with(s: &mut Session, file_name: &str, bytes: &[u8], name: Op
 }
 
 fn import_resolved(s: &mut Session, file_name: &str, bytes: &[u8], name: Option<&str>, resolve: fsc_io::Resolve, ex: &Exchange) -> Result<Value, CommandError> {
-    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor reads {}", Format::NAMES.join(", "))))?;
+    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculpt reads {}", Format::NAMES.join(", "))))?;
     let mut meshes = fsc_io::import_with(format, bytes, resolve).map_err(|e| CommandError::new("bad_file", e))?;
     let turned = exchange::turns_in(format);
     for (_, mesh) in meshes.iter_mut() {
@@ -140,7 +140,7 @@ fn objects<'a>(s: &'a Session, ids: &[ObjectId], prepared: &'a Prepared, texture
 
 /// export_data with export options: a scale, a z-up axis for the formats without one of their own, and triangles.
 pub fn export_data_with(s: &Session, file_name: &str, ids: &[ObjectId], ex: &Exchange) -> Result<Vec<u8>, CommandError> {
-    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculptor writes obj, stl, ply, glb, gltf, fbx, usda and 3mf, not {file_name}")))?;
+    let format = Format::parse(file_name).ok_or_else(|| bad(format!("unknown file type; formsculpt writes obj, stl, ply, glb, gltf, fbx, usda and 3mf, not {file_name}")))?;
     if ids.is_empty() {
         return Err(bad("there is nothing to export"));
     }

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app import __version__
 
-APP_NAME = "formsculptor"
+APP_NAME = "formsculpt"
 VERSION = __version__
 FRONTEND_PORT = 5196
 BACKEND_PORT = 8196
@@ -23,7 +23,7 @@ def blender_addon_dir() -> Path | None:
     """The Blender add-on's source folder: beside the frozen engine when FSC_INTEGRATIONS says so, else the repo's."""
     configured = os.environ.get("FSC_INTEGRATIONS")
     root = Path(configured) if configured else REPO / "integrations"
-    path = root / "blender" / "formsculptor_link"
+    path = root / "blender" / "formsculpt_link"
     return path if (path / "blender_manifest.toml").is_file() else None
 
 
@@ -46,7 +46,7 @@ def engine_url() -> str:
 
 def data_dir() -> Path:
     raw = os.environ.get("FSC_DATA_DIR", "").strip()
-    path = Path(raw).expanduser() if raw else Path.home() / "Formsculptor"
+    path = Path(raw).expanduser() if raw else Path.home() / "Formsculpt"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

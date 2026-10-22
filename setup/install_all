@@ -10,4 +10,4 @@ if command -v cargo >/dev/null 2>&1; then
 fi
 fs_say "installing frontend"
 ( cd "$FSC_ROOT/frontend" && ./oc_install )
-fs_say "done. Boot with ./formsculptor"
+fs_say "done. Boot with ./formsculpt"

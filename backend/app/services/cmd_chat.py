@@ -13,7 +13,7 @@ from app.core import config
 from app.services import claude_code, events, terminal
 from app.services.commands import CommandError, command
 
-NOTE = (claude_code.NOTE + " You are answering in formsculptor's Chat tab, which shows Markdown to people who may never have used a terminal: "
+NOTE = (claude_code.NOTE + " You are answering in formsculpt's Chat tab, which shows Markdown to people who may never have used a terminal: "
         "write short paragraphs, use **bold** for tool and setting names and a bulleted list when you changed several things, avoid tables and code blocks, "
         "say what you changed in a sculptor's words, and keep tool calls few by batching strokes and values.")
 MAX_MESSAGES = 200
@@ -80,7 +80,7 @@ def _usage_of(u: dict) -> tuple[int, int]:
 
 def _argv(path: str, text: str, session: str | None) -> list[str]:
     cmd = [path, "-p", text, "--output-format", "stream-json", "--verbose", "--include-partial-messages",
-           "--mcp-config", claude_code.mcp_config(), "--allowedTools", "mcp__formsculptor", "--append-system-prompt", NOTE]
+           "--mcp-config", claude_code.mcp_config(), "--allowedTools", "mcp__formsculpt", "--append-system-prompt", NOTE]
     if session:
         cmd += ["--resume", session]
     return cmd if os.name == "nt" else terminal.login_shell() + ["-c", "exec " + shlex.join(cmd)]
@@ -192,7 +192,7 @@ def state() -> dict:
 
 @command("chat.send", "Ask in Chat", {"text": {"type": "string"}, "context": {"type": "string", "description": "what the window adds for Claude, such as the active object id"},
                                       "note": {"type": "string", "description": "a short label for the context shown under the message"}},
-         description="Sends a message to Claude Code from the Chat tab: it answers through claude -p with formsculptor's tools only, continuing the same conversation. The window only.")
+         description="Sends a message to Claude Code from the Chat tab: it answers through claude -p with formsculpt's tools only, continuing the same conversation. The window only.")
 def send(text: str, context: str = "", note: str = "") -> dict:
     shown = str(text or "").strip()
     if not shown:
@@ -272,7 +272,7 @@ def _transcript(path: Path) -> list[dict]:
 
 
 @command("chat.sessions", "Claude Code Conversations",
-         description="The Claude Code conversations started in formsculptor's agent folder, newest first, so the Chat tab can continue one. The window only.")
+         description="The Claude Code conversations started in formsculpt's agent folder, newest first, so the Chat tab can continue one. The window only.")
 def sessions() -> dict:
     folder = _project_dir(str(claude_code.workdir()))
     items = []
@@ -290,7 +290,7 @@ def adopt(session: str = "") -> dict:
     listed = sessions()["sessions"]
     pick = next((s for s in listed if s["id"] == session), None) if session else next((s for s in listed if not s["current"]), None)
     if pick is None:
-        raise CommandError("No other Claude Code conversation was found in formsculptor's agent folder yet", 404)
+        raise CommandError("No other Claude Code conversation was found in formsculpt's agent folder yet", 404)
     messages = _transcript(_project_dir(str(claude_code.workdir())) / f"{pick['id']}.jsonl")
     with _lock:
         STATE["session"] = pick["id"]

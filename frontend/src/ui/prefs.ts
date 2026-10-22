@@ -1,5 +1,5 @@
-const STORE = 'formsculptor.prefs';
-const LEGACY = 'formsculptor.keys';
+const STORE = 'formsculpt.prefs';
+const LEGACY = 'formsculpt.keys';
 
 export interface Prefs {
   shortcuts: Record<string, string[]>;

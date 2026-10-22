@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark light">
-  <title>formsculptor</title>
+  <title>formsculpt</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="/formsculptor-logo.png" as="image">
+  <link rel="preload" href="/formsculpt-logo.png" as="image">
   <style>
     html, body { background: #0a0a0a; margin: 0; padding: 0; height: 100%; overflow: hidden; }
     #app { visibility: hidden; }
@@ -62,12 +62,12 @@
       if (s.theme && FAMILY[s.theme]) familyTheme = s.theme;
     }
   } catch (e) {}
-  // formsculptor's own theme choice (ui/theme.ts) wins over NodeMode's when it is not "follow NodeMode".
+  // formsculpt's own theme choice (ui/theme.ts) wins over NodeMode's when it is not "follow NodeMode".
   var contrast = false;
   var translucent = false;
   var family = false;
   try {
-    var own = JSON.parse(localStorage.getItem('formsculptor.theme') || 'null');
+    var own = JSON.parse(localStorage.getItem('formsculpt.theme') || 'null');
     if (own && typeof own === 'object') {
       if (own.theme === 'family') { family = true; light = !!FAMILY_LIGHT[familyTheme]; }
       else if (own.theme === 'light') light = true;

@@ -14,10 +14,10 @@ KEEP_ENV = {"CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_U
 CANDIDATES = (".claude/local/claude", ".local/bin/claude", ".npm-global/bin/claude", ".bun/bin/claude", ".volta/bin/claude")
 SYSTEM_PATHS = ("/opt/homebrew/bin/claude", "/usr/local/bin/claude", "/usr/bin/claude")
 INSTALL = "Claude Code is not installed: install it from https://claude.com/claude-code, run claude once in a terminal to sign in, then open it here again"
-NOTE = ("You are Claude Code running in the terminal dock inside formsculptor, the 3D sculpting app open on this computer. "
-        "Sculpt and model with the formsculptor MCP server's tools: start with get_scene for object ids and bounds, look with get_view before and after a change, "
+NOTE = ("You are Claude Code running in the terminal dock inside formsculpt, the 3D sculpting app open on this computer. "
+        "Sculpt and model with the formsculpt MCP server's tools: start with get_scene for object ids and bounds, look with get_view before and after a change, "
         "and read the sculpt_strategy prompt for the order of work. The tools act on the scene open in the window, the person sees every change happen, "
-        "and each change is one undo step. Use the formsculptor-modeling skill when it is available.")
+        "and each change is one undo step. Use the formsculpt-modeling skill when it is available.")
 _cache: dict = {"at": 0.0, "value": None}
 
 
@@ -75,7 +75,7 @@ def info(fresh: bool = False) -> dict:
 
 
 def mcp_config() -> str:
-    return json.dumps({"mcpServers": {"formsculptor": {"type": "http", "url": config.engine_url() + "/mcp", "headers": {agents.INAPP_HEADER: agents.INAPP_TOKEN}}}})
+    return json.dumps({"mcpServers": {"formsculpt": {"type": "http", "url": config.engine_url() + "/mcp", "headers": {agents.INAPP_HEADER: agents.INAPP_TOKEN}}}})
 
 
 def workdir() -> Path:
@@ -89,7 +89,7 @@ def workdir() -> Path:
 
 
 def argv(path: str, prompt: str | None, resume: str | None = None) -> list[str]:
-    cmd = [path, "--mcp-config", mcp_config(), "--allowedTools", "mcp__formsculptor", "--append-system-prompt", NOTE]
+    cmd = [path, "--mcp-config", mcp_config(), "--allowedTools", "mcp__formsculpt", "--append-system-prompt", NOTE]
     if resume:
         cmd += ["--resume", resume]
     if prompt:
@@ -104,14 +104,14 @@ def argv(path: str, prompt: str | None, resume: str | None = None) -> list[str]:
 def status() -> dict:
     tab = next((s.describe() for s in terminal.SESSIONS.values() if s.kind == "claude"), None)
     chosen = _pref("claudeBin")
-    note = f"{chosen} is not a program formsculptor can run, so it uses the one found on this computer" if chosen and not _runnable(chosen) else ""
+    note = f"{chosen} is not a program formsculpt can run, so it uses the one found on this computer" if chosen and not _runnable(chosen) else ""
     return info(fresh=True) | {"folder": str(workdir()), "terminal": tab, "binNote": note, "firstMessage": _pref("claudeFirstMessage")}
 
 
 @command("claudecode.open", "Open Claude Code", {"prompt": {"type": "string", "description": "a first message to start the session with"},
                                                   "cols": {"type": "integer"}, "rows": {"type": "integer"}, "fresh": {"type": "boolean"},
                                                   "resume": {"type": "string", "description": "a Claude Code session id to continue, such as the Chat tab's"}},
-         description="Starts the person's own Claude Code sign-in in a terminal tab of formsculptor's dock, connected to formsculptor's MCP tools without the outside-agent prompt. Reuses the running tab unless fresh is true or resume names a conversation to continue. The window only.")
+         description="Starts the person's own Claude Code sign-in in a terminal tab of formsculpt's dock, connected to formsculpt's MCP tools without the outside-agent prompt. Reuses the running tab unless fresh is true or resume names a conversation to continue. The window only.")
 def open_(prompt: str | None = None, cols: int | None = None, rows: int | None = None, fresh: bool | None = None, resume: str | None = None) -> dict:
     running = next((s for s in terminal.SESSIONS.values() if s.kind == "claude" and s.alive), None)
     if running is not None and not fresh and not resume:

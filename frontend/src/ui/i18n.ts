@@ -5,7 +5,7 @@ export type { Lang } from './i18n/langs';
 type Table = Record<string, string>;
 interface Pattern { re: RegExp; names: string[]; out: string }
 
-const STORE = 'formsculptor.language';
+const STORE = 'formsculpt.language';
 const FILES = import.meta.glob<Table>('../i18n/*.json', { import: 'default' });
 const listeners = new Set<() => void>();
 const tables = new Map<Lang, Table>([['en', {}]]);

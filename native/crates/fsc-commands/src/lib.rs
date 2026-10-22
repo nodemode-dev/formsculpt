@@ -124,7 +124,7 @@ pub(crate) fn no_args() -> Value {
 }
 
 fn engine_info(_: &mut Session, _: &Value) -> Result<Value, CommandError> {
-    Ok(json!({"engine": "formsculptor", "version": fsc_core::engine_version()}))
+    Ok(json!({"engine": "formsculpt", "version": fsc_core::engine_version()}))
 }
 
 pub(crate) const READ: Hints = Hints { read_only_hint: true, destructive_hint: false, idempotent_hint: true, open_world_hint: false };
@@ -1996,7 +1996,7 @@ pub static COMMANDS: &[Command] = &[
         mcp: "gof_send",
         group: Group::File,
         label: "Send with GoF",
-        description: "GoF, formsculptor's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. FormSurface needs UVs (no_uvs without them; run uv_unwrap), and its maps come back with substance_sync on its export folder (the window's From FormSurface does this). Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own), and an object sent to several apps returns from each. Units: one scene unit is a metre, or the real size when the scene has one (set_real_size); GLB and OBJ are written in metres (glTF's unit), FBX in centimetres (its declared unit, which Unity converts to metres and Unreal uses as is); the entry records units and scale, and edits are read back at the inverse. The folder is folder, else FORMSCULPTOR_GOF, else Formsculptor/GoF in the home folder.",
+        description: "GoF, formsculpt's own hand-off: write an object into the GoF folder for an app (target blender, unreal or formsurface as GLB, unity as FBX, substance as a Substance 3D Painter package, any as OBJ) and record it in the folder's gof.json manifest (name, file, format, target, revision, counts, time; with the scene's up axis y and mm_per_unit), so any app or add-on can watch one folder. FormSurface needs UVs (no_uvs without them; run uv_unwrap), and its maps come back with substance_sync on its export folder (the window's From FormSurface does this). Files other than the Substance package are bridges: when the other app saves over the file, bridge_sync brings the edit back into the same object (the window syncs on its own), and an object sent to several apps returns from each. Units: one scene unit is a metre, or the real size when the scene has one (set_real_size); GLB and OBJ are written in metres (glTF's unit), FBX in centimetres (its declared unit, which Unity converts to metres and Unreal uses as is); the entry records units and scale, and edits are read back at the inverse. The folder is folder, else FORMSCULPT_GOF, else Formsculpt/GoF in the home folder.",
         keys: &[],
         hints: WRITE,
         schema: gof_cmds::gof_send_schema,
@@ -2234,5 +2234,5 @@ pub fn catalogue() -> Value {
             })
         })
         .collect();
-    json!({"engine": "formsculptor", "version": fsc_core::engine_version(), "commands": commands})
+    json!({"engine": "formsculpt", "version": fsc_core::engine_version(), "commands": commands})
 }

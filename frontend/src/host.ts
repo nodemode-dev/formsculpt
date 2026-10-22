@@ -30,7 +30,7 @@ export class HostLink {
   }
 
   assign(files: AssignFile[]): void {
-    this.post({ type: `plugin:${this.pluginId ?? 'formsculptor'}:assign`, payload: { files } });
+    this.post({ type: `plugin:${this.pluginId ?? 'formsculpt'}:assign`, payload: { files } });
   }
 
   save(state: unknown): void {

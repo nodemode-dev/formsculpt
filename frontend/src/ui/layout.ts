@@ -4,7 +4,7 @@
  * them for the session only). A fold is the person's own action, so it never counts as an unexpected layout shift.
  */
 
-const STORE = 'formsculptor.layout';
+const STORE = 'formsculpt.layout';
 
 interface LayoutPrefs {
   collapsed: string[];

@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILL = ROOT / ".claude" / "skills" / "formsculptor-modeling"
-MIRROR = ROOT / ".agents" / "skills" / "formsculptor-modeling"
+SKILL = ROOT / ".claude" / "skills" / "formsculpt-modeling"
+MIRROR = ROOT / ".agents" / "skills" / "formsculpt-modeling"
 REFERENCE = SKILL / "references" / "tools.md"
 GROUP_TITLES = {
     "system": "Engine",
@@ -27,7 +27,7 @@ GROUP_TITLES = {
 
 
 def say(text: str) -> None:
-    print(f"[formsculptor] {text}")
+    print(f"[formsculpt] {text}")
 
 
 def catalogue() -> dict:
@@ -63,9 +63,9 @@ def describe(name: str, spec: dict, required: set) -> str:
 
 def render(cat: dict) -> str:
     lines = [
-        "# formsculptor tools",
+        "# formsculpt tools",
         "",
-        f"Generated from the engine's command registry (formsculptor {cat['version']}) by `./formsculptor agents sync`; do not edit by hand.",
+        f"Generated from the engine's command registry (formsculpt {cat['version']}) by `./formsculpt agents sync`; do not edit by hand.",
         "",
         "## Contents",
         "",
@@ -107,7 +107,7 @@ def sync(check: bool) -> int:
     mirrored = (MIRROR / "references" / "tools.md").read_text(encoding="utf-8") if (MIRROR / "references" / "tools.md").exists() else ""
     if check:
         drift = current != text or mirrored != text
-        say("the modeling skill's tool reference has drifted; run ./formsculptor agents sync" if drift else "tool reference up to date")
+        say("the modeling skill's tool reference has drifted; run ./formsculpt agents sync" if drift else "tool reference up to date")
         return 1 if drift else 0
     REFERENCE.parent.mkdir(parents=True, exist_ok=True)
     REFERENCE.write_text(text, encoding="utf-8")
@@ -119,15 +119,15 @@ def sync(check: bool) -> int:
 
 
 def install(dry: bool, targets: list[str]) -> int:
-    command = str(ROOT / "formsculptor")
+    command = str(ROOT / "formsculpt")
     targets = targets or ["claude", "codex", "cursor"]
     if "claude" in targets:
         if shutil.which("claude"):
-            args = ["claude", "mcp", "add", "--scope", "user", "formsculptor", "--", command, "mcp"]
+            args = ["claude", "mcp", "add", "--scope", "user", "formsculpt", "--", command, "mcp"]
             say(("would run: " if dry else "running: ") + " ".join(args))
             if not dry:
                 subprocess.run(args, check=False)
-            skills = Path.home() / ".claude" / "skills" / "formsculptor-modeling"
+            skills = Path.home() / ".claude" / "skills" / "formsculpt-modeling"
             say(("would copy" if dry else "copying") + f" the modeling skill to {skills}")
             if not dry:
                 if skills.exists():
@@ -137,12 +137,12 @@ def install(dry: bool, targets: list[str]) -> int:
             say("Claude Code's claude command was not found; the project's .mcp.json still works inside this folder")
     if "codex" in targets:
         cfg = Path.home() / ".codex" / "config.toml"
-        block = f'\n[mcp_servers.formsculptor]\ncommand = "{command}"\nargs = ["mcp"]\nstartup_timeout_sec = 90\ntool_timeout_sec = 600\n'
+        block = f'\n[mcp_servers.formsculpt]\ncommand = "{command}"\nargs = ["mcp"]\nstartup_timeout_sec = 90\ntool_timeout_sec = 600\n'
         existing = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
-        if "[mcp_servers.formsculptor]" in existing:
-            say(f"{cfg} already has formsculptor")
+        if "[mcp_servers.formsculpt]" in existing:
+            say(f"{cfg} already has formsculpt")
         else:
-            say(("would append" if dry else "appending") + f" formsculptor to {cfg}")
+            say(("would append" if dry else "appending") + f" formsculpt to {cfg}")
             if not dry:
                 cfg.parent.mkdir(parents=True, exist_ok=True)
                 if cfg.exists():
@@ -152,11 +152,11 @@ def install(dry: bool, targets: list[str]) -> int:
         cfg = Path.home() / ".cursor" / "mcp.json"
         data = json.loads(cfg.read_text(encoding="utf-8")) if cfg.exists() else {}
         servers = data.setdefault("mcpServers", {})
-        if servers.get("formsculptor", {}).get("command") == command:
-            say(f"{cfg} already has formsculptor")
+        if servers.get("formsculpt", {}).get("command") == command:
+            say(f"{cfg} already has formsculpt")
         else:
-            servers["formsculptor"] = {"command": command, "args": ["mcp"]}
-            say(("would write" if dry else "writing") + f" formsculptor into {cfg}")
+            servers["formsculpt"] = {"command": command, "args": ["mcp"]}
+            say(("would write" if dry else "writing") + f" formsculpt into {cfg}")
             if not dry:
                 cfg.parent.mkdir(parents=True, exist_ok=True)
                 if cfg.exists():
@@ -167,7 +167,7 @@ def install(dry: bool, targets: list[str]) -> int:
 
 def main(argv: list[str]) -> int:
     if not argv or argv[0] not in ("sync", "install"):
-        print("usage: ./formsculptor agents sync [--check] | install [--dry-run] [claude|codex|cursor ...]")
+        print("usage: ./formsculpt agents sync [--check] | install [--dry-run] [claude|codex|cursor ...]")
         return 2
     if argv[0] == "sync":
         return sync("--check" in argv[1:])

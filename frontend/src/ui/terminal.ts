@@ -5,7 +5,7 @@ import { fromHtml } from './dom';
 import { icon } from './icons';
 import { TerminalDock } from './terminal-dock';
 
-const HEIGHT_KEY = 'formsculptor.dock_h';
+const HEIGHT_KEY = 'formsculpt.dock_h';
 const MIN_H = 140;
 
 export interface DockHost {
@@ -109,12 +109,12 @@ export function registerTerminal(host: DockHost): void {
     },
     {
       id: 'agent.claude', label: 'Claude Code', keys: ['Shift+Mod+J'], group: 'Window', enabled: why,
-      description: 'Starts Claude Code in the terminal dock, connected to formsculptor\'s tools, or brings its running tab forward.',
+      description: 'Starts Claude Code in the terminal dock, connected to formsculpt\'s tools, or brings its running tab forward.',
       run: () => void show((d) => d.claude()),
     },
     {
       id: 'agent.chat', label: 'Chat with Claude', keys: ['Alt+Mod+J'], group: 'Window', enabled: why,
-      description: 'Opens the Chat tab, where Claude answers in plain language and works through formsculptor\'s tools.',
+      description: 'Opens the Chat tab, where Claude answers in plain language and works through formsculpt\'s tools.',
       run: () => void show((d) => d.showChat()),
     },
   );

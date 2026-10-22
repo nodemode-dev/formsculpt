@@ -111,7 +111,7 @@ pub fn read_obj_with(bytes: &[u8], resolve: crate::gltf::Resolve) -> Result<Vec<
 }
 
 pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
-    let mut s = String::from("# formsculptor\n");
+    let mut s = String::from("# formsculpt\n");
     let (mut base, mut uv_base) = (1, 1);
     for (name, mesh) in objects {
         s.push_str(&format!("o {name}\n"));
@@ -184,7 +184,7 @@ pub fn read_stl(bytes: &[u8]) -> Result<Vec<Named>, String> {
 
 pub fn write_stl(mesh: &Mesh) -> Vec<u8> {
     let mut out = vec![0u8; 80];
-    out[..20].copy_from_slice(b"formsculptor binary ");
+    out[..20].copy_from_slice(b"formsculpt binary ");
     out.extend_from_slice(&(mesh.triangle_count() as u32).to_le_bytes());
     for t in 0..mesh.triangle_count() {
         let [a, b, c] = mesh.triangle(t);
@@ -334,7 +334,7 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
 pub fn write_ply(mesh: &Mesh) -> Vec<u8> {
     let rgb = if mesh.has_paint() { "property uchar red\nproperty uchar green\nproperty uchar blue\n" } else { "" };
     let mut out = format!(
-        "ply\nformat binary_little_endian 1.0\ncomment formsculptor\nelement vertex {}\nproperty float x\nproperty float y\nproperty float z\n{rgb}element face {}\nproperty list uchar int vertex_indices\nend_header\n",
+        "ply\nformat binary_little_endian 1.0\ncomment formsculpt\nelement vertex {}\nproperty float x\nproperty float y\nproperty float z\n{rgb}element face {}\nproperty list uchar int vertex_indices\nend_header\n",
         mesh.vertex_count(),
         mesh.triangle_count()
     )

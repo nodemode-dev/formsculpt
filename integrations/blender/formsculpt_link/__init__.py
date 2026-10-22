@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-"""formsculptor Live Link for Blender.
+"""formsculpt Live Link for Blender.
 
-Sends Blender mesh objects to a running formsculptor and keeps both sides in step: an edit in Blender is pushed
-(link_push), a sculpt in formsculptor is pulled back (link_pull), each on a timer while the link is live. Meshes travel
-as base64 little-endian arrays over formsculptor's local dispatch (POST /api/engine/dispatch), in formsculptor's axes
+Sends Blender mesh objects to a running formsculpt and keeps both sides in step: an edit in Blender is pushed
+(link_push), a sculpt in formsculpt is pulled back (link_pull), each on a timer while the link is live. Meshes travel
+as base64 little-endian arrays over formsculpt's local dispatch (POST /api/engine/dispatch), in formsculpt's axes
 (y up); Blender is z up, so x, y, z here is x, z, -y there, the same turn Blender's glTF exporter makes.
 
 When only the positions change on either side, only the positions move: Blender keeps its quads, UVs and modifiers,
-formsculptor keeps its paint, mask and face groups.
+formsculpt keeps its paint, mask and face groups.
 
-GoF, formsculptor's own hand-off, works beside the link: formsculptor's Send with GoF (target Blender) writes a GLB
+GoF, formsculpt's own hand-off, works beside the link: formsculpt's Send with GoF (target Blender) writes a GLB
 into the GoF folder and lists it in gof.json; Import from GoF (or Watch GoF) brings it in through Blender's own glTF
-importer, and Send back to GoF writes the object over that GLB with Blender's glTF exporter, which formsculptor's
+importer, and Send back to GoF writes the object over that GLB with Blender's glTF exporter, which formsculpt's
 bridge sync reads back into the same object.
 """
 
@@ -25,14 +25,14 @@ import urllib.request
 import bpy
 import numpy as np
 
-ID_KEY = "formsculptor_id"
-REV_KEY = "formsculptor_revision"
+ID_KEY = "formsculpt_id"
+REV_KEY = "formsculpt_revision"
 
 # Blender object name -> {"fp": fingerprint of what both sides last agreed on, "tris": triangle indices as bytes}.
 _seen = {}
 _status = {"text": ""}
 
-# Blender (x, y, z) to formsculptor (x, z, -y), and back.
+# Blender (x, y, z) to formsculpt (x, z, -y), and back.
 TO_FSC = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]], dtype=np.float64)
 TO_BLENDER = TO_FSC.T
 
@@ -52,14 +52,14 @@ def _url():
 
 
 def dispatch(name, args, timeout=30.0):
-    """One formsculptor command; returns its result or raises LinkError with the engine's own message."""
+    """One formsculpt command; returns its result or raises LinkError with the engine's own message."""
     body = json.dumps({"name": name, "args": args}).encode("utf-8")
     request = urllib.request.Request(_url() + "/api/engine/dispatch", data=body, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as reply:
             data = json.loads(reply.read().decode("utf-8"))
     except (urllib.error.URLError, OSError) as e:
-        raise LinkError(f"formsculptor is not reachable at {_url()} ({e})") from e
+        raise LinkError(f"formsculpt is not reachable at {_url()} ({e})") from e
     if not data.get("ok", False):
         error = data.get("error") or {}
         raise LinkError(error.get("message") or str(error) or "the command failed")
@@ -67,7 +67,7 @@ def dispatch(name, args, timeout=30.0):
 
 
 def _mesh_arrays(obj):
-    """World positions in formsculptor's axes (f32) and the triangle indices (u32) of a mesh object."""
+    """World positions in formsculpt's axes (f32) and the triangle indices (u32) of a mesh object."""
     mesh = obj.data
     n = len(mesh.vertices)
     co = np.empty(n * 3, dtype=np.float32)
@@ -96,7 +96,7 @@ def _b64(array):
 
 
 def push(obj, force_topology=False):
-    """Send obj; makes the formsculptor object on the first push. Returns the engine reply."""
+    """Send obj; makes the formsculpt object on the first push. Returns the engine reply."""
     positions, tris = _mesh_arrays(obj)
     if len(tris) == 0:
         raise LinkError(f"{obj.name} has no faces to send")
@@ -114,7 +114,7 @@ def push(obj, force_topology=False):
         result = dispatch("link_push", args)
     except LinkError as e:
         if fid is not None and "no object" in str(e):
-            # The formsculptor object is gone; send it again as a new one.
+            # The formsculpt object is gone; send it again as a new one.
             del obj[ID_KEY]
             return push(obj, force_topology=True)
         raise
@@ -125,7 +125,7 @@ def push(obj, force_topology=False):
 
 
 def _write(obj, positions, tris):
-    """Write formsculptor positions (and triangles when they changed) into obj's mesh."""
+    """Write formsculpt positions (and triangles when they changed) into obj's mesh."""
     mesh = obj.data
     m = np.array(obj.matrix_world, dtype=np.float64)
     inverse = np.linalg.inv(m)
@@ -144,7 +144,7 @@ def _write(obj, positions, tris):
 
 
 def pull(obj):
-    """Bring formsculptor's edit of obj back. Returns True when something changed."""
+    """Bring formsculpt's edit of obj back. Returns True when something changed."""
     fid = obj.get(ID_KEY)
     if fid is None:
         return False
@@ -163,7 +163,7 @@ def pull(obj):
 
 
 def fetch(context, fid=None):
-    """Make a Blender object from a formsculptor object (the active one when fid is None) and link it."""
+    """Make a Blender object from a formsculpt object (the active one when fid is None) and link it."""
     args = {} if fid is None else {"id": int(fid)}
     result = dispatch("link_pull", args)
     mesh = bpy.data.meshes.new(result["name"])
@@ -182,7 +182,7 @@ def linked_objects():
 
 
 def sync_once():
-    """One round of the live link: push what changed in Blender, pull what changed in formsculptor."""
+    """One round of the live link: push what changed in Blender, pull what changed in formsculpt."""
     pushed = pulled = 0
     for obj in linked_objects():
         if obj.mode != "OBJECT":
@@ -219,7 +219,7 @@ _gof = {"stamp": None}
 
 
 def gof_folder():
-    """The GoF folder: the preference, else the one formsculptor's service reports, else ~/Formsculptor/GoF."""
+    """The GoF folder: the preference, else the one formsculpt's service reports, else ~/Formsculpt/GoF."""
     prefs = _prefs()
     if prefs is not None and prefs.gof_folder.strip():
         return bpy.path.abspath(prefs.gof_folder.strip())
@@ -230,7 +230,7 @@ def gof_folder():
                 return folder
     except (urllib.error.URLError, OSError, ValueError):
         pass
-    return os.path.join(os.path.expanduser("~"), "Formsculptor", "GoF")
+    return os.path.join(os.path.expanduser("~"), "Formsculpt", "GoF")
 
 
 def gof_entries(folder):
@@ -287,7 +287,7 @@ def gof_check(context, folder=None):
 
 
 def gof_return(context, obj, folder=None):
-    """Write obj over its GoF GLB with Blender's glTF exporter (+Y up, glTF's convention), so formsculptor's bridge
+    """Write obj over its GoF GLB with Blender's glTF exporter (+Y up, glTF's convention), so formsculpt's bridge
     sync brings the edit back into the object it came from."""
     name = obj.get(GOF_FILE)
     if not name:
@@ -346,14 +346,14 @@ def _set_live(self, context):
         bpy.app.timers.unregister(_tick)
 
 
-class FormsculptorPreferences(bpy.types.AddonPreferences):
+class FormsculptPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    url: bpy.props.StringProperty(name="Address", default="http://127.0.0.1:8196", description="Where formsculptor's engine service listens")
+    url: bpy.props.StringProperty(name="Address", default="http://127.0.0.1:8196", description="Where formsculpt's engine service listens")
     interval: bpy.props.FloatProperty(name="Interval", default=0.5, min=0.1, max=10.0, subtype="TIME_ABSOLUTE", unit="TIME_ABSOLUTE", description="Seconds between live updates")
     live: bpy.props.BoolProperty(name="Live", default=False, update=_set_live, description="Keep linked objects in step both ways")
-    gof_folder: bpy.props.StringProperty(name="GoF folder", default="", subtype="DIR_PATH", description="formsculptor's GoF folder; empty asks formsculptor, then uses Formsculptor/GoF in the home folder")
-    gof_watch: bpy.props.BoolProperty(name="Watch GoF", default=False, update=_set_gof_watch, description="Import what formsculptor sends to Blender with GoF as it arrives")
+    gof_folder: bpy.props.StringProperty(name="GoF folder", default="", subtype="DIR_PATH", description="formsculpt's GoF folder; empty asks formsculpt, then uses Formsculpt/GoF in the home folder")
+    gof_watch: bpy.props.BoolProperty(name="Watch GoF", default=False, update=_set_gof_watch, description="Import what formsculpt sends to Blender with GoF as it arrives")
 
     def draw(self, context):
         self.layout.prop(self, "url")
@@ -361,10 +361,10 @@ class FormsculptorPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "gof_folder")
 
 
-class FORMSCULPTOR_OT_send(bpy.types.Operator):
-    bl_idname = "formsculptor.send"
-    bl_label = "Send to formsculptor"
-    bl_description = "Send the selected mesh objects to formsculptor and link them"
+class FORMSCULPT_OT_send(bpy.types.Operator):
+    bl_idname = "formsculpt.send"
+    bl_label = "Send to formsculpt"
+    bl_description = "Send the selected mesh objects to formsculpt and link them"
     bl_options = {"REGISTER"}
 
     @classmethod
@@ -382,14 +382,14 @@ class FORMSCULPTOR_OT_send(bpy.types.Operator):
             except LinkError as e:
                 self.report({"ERROR"}, str(e))
                 return {"CANCELLED"}
-        self.report({"INFO"}, f"Sent {sent} to formsculptor")
+        self.report({"INFO"}, f"Sent {sent} to formsculpt")
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_OT_fetch(bpy.types.Operator):
-    bl_idname = "formsculptor.fetch"
-    bl_label = "Get from formsculptor"
-    bl_description = "Bring formsculptor's active object into Blender and link it"
+class FORMSCULPT_OT_fetch(bpy.types.Operator):
+    bl_idname = "formsculpt.fetch"
+    bl_label = "Get from formsculpt"
+    bl_description = "Bring formsculpt's active object into Blender and link it"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -402,10 +402,10 @@ class FORMSCULPTOR_OT_fetch(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_OT_sync(bpy.types.Operator):
-    bl_idname = "formsculptor.sync"
+class FORMSCULPT_OT_sync(bpy.types.Operator):
+    bl_idname = "formsculpt.sync"
     bl_label = "Sync now"
-    bl_description = "Send Blender's changes and bring formsculptor's back once"
+    bl_description = "Send Blender's changes and bring formsculpt's back once"
 
     def execute(self, context):
         try:
@@ -417,8 +417,8 @@ class FORMSCULPTOR_OT_sync(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_OT_unlink(bpy.types.Operator):
-    bl_idname = "formsculptor.unlink"
+class FORMSCULPT_OT_unlink(bpy.types.Operator):
+    bl_idname = "formsculpt.unlink"
     bl_label = "Unlink"
     bl_description = "Stop keeping the selected objects in step (both copies stay)"
 
@@ -431,10 +431,10 @@ class FORMSCULPTOR_OT_unlink(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_OT_gof_import(bpy.types.Operator):
-    bl_idname = "formsculptor.gof_import"
+class FORMSCULPT_OT_gof_import(bpy.types.Operator):
+    bl_idname = "formsculpt.gof_import"
     bl_label = "Import from GoF"
-    bl_description = "Bring in what formsculptor sent to Blender with GoF (new files, and newer copies of ones already here)"
+    bl_description = "Bring in what formsculpt sent to Blender with GoF (new files, and newer copies of ones already here)"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -447,10 +447,10 @@ class FORMSCULPTOR_OT_gof_import(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_OT_gof_return(bpy.types.Operator):
-    bl_idname = "formsculptor.gof_return"
+class FORMSCULPT_OT_gof_return(bpy.types.Operator):
+    bl_idname = "formsculpt.gof_return"
     bl_label = "Send back to GoF"
-    bl_description = "Write the selected GoF objects over their files, so formsculptor brings the edits back"
+    bl_description = "Write the selected GoF objects over their files, so formsculpt brings the edits back"
 
     @classmethod
     def poll(cls, context):
@@ -470,12 +470,12 @@ class FORMSCULPTOR_OT_gof_return(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class FORMSCULPTOR_PT_link(bpy.types.Panel):
+class FORMSCULPT_PT_link(bpy.types.Panel):
     bl_label = "Live Link"
-    bl_idname = "FORMSCULPTOR_PT_link"
+    bl_idname = "FORMSCULPT_PT_link"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "formsculptor"
+    bl_category = "formsculpt"
 
     def draw(self, context):
         layout = self.layout
@@ -483,10 +483,10 @@ class FORMSCULPTOR_PT_link(bpy.types.Panel):
         if prefs is not None:
             layout.prop(prefs, "live", toggle=True)
         col = layout.column(align=True)
-        col.operator("formsculptor.send", icon="EXPORT")
-        col.operator("formsculptor.fetch", icon="IMPORT")
-        col.operator("formsculptor.sync", icon="FILE_REFRESH")
-        col.operator("formsculptor.unlink", icon="UNLINKED")
+        col.operator("formsculpt.send", icon="EXPORT")
+        col.operator("formsculpt.fetch", icon="IMPORT")
+        col.operator("formsculpt.sync", icon="FILE_REFRESH")
+        col.operator("formsculpt.unlink", icon="UNLINKED")
         linked = linked_objects()
         layout.label(text=f"Linked: {len(linked)}")
         layout.separator()
@@ -494,13 +494,13 @@ class FORMSCULPTOR_PT_link(bpy.types.Panel):
         if prefs is not None:
             layout.prop(prefs, "gof_watch", toggle=True)
         col = layout.column(align=True)
-        col.operator("formsculptor.gof_import", icon="IMPORT")
-        col.operator("formsculptor.gof_return", icon="EXPORT")
+        col.operator("formsculpt.gof_import", icon="IMPORT")
+        col.operator("formsculpt.gof_return", icon="EXPORT")
         if _status["text"]:
             layout.label(text=_status["text"])
 
 
-CLASSES = (FormsculptorPreferences, FORMSCULPTOR_OT_send, FORMSCULPTOR_OT_fetch, FORMSCULPTOR_OT_sync, FORMSCULPTOR_OT_unlink, FORMSCULPTOR_OT_gof_import, FORMSCULPTOR_OT_gof_return, FORMSCULPTOR_PT_link)
+CLASSES = (FormsculptPreferences, FORMSCULPT_OT_send, FORMSCULPT_OT_fetch, FORMSCULPT_OT_sync, FORMSCULPT_OT_unlink, FORMSCULPT_OT_gof_import, FORMSCULPT_OT_gof_return, FORMSCULPT_PT_link)
 
 
 def register():

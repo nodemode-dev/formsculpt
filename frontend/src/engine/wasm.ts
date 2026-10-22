@@ -1,4 +1,4 @@
-// The browser engine: native/crates/fsc-wasm built to /engine/fsc_engine.wasm (./formsculptor engine wasm). The same
+// The browser engine: native/crates/fsc-wasm built to /engine/fsc_engine.wasm (./formsculpt engine wasm). The same
 // command registry, mesh payloads and live strokes as the engine service, run in the page with no service behind it.
 // Its C ABI: input is copied into memory from fsc_alloc and freed after the call; each call leaves its result in one
 // output buffer read through fsc_out_ptr and fsc_out_len. Never touches the DOM.

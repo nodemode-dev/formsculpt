@@ -29,7 +29,7 @@ def available() -> bool:
 
 def catalogue() -> dict:
     if fsc_engine is None:
-        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+        raise EngineUnavailable("the engine module is not built; run ./formsculpt engine build")
     return json.loads(fsc_engine.catalogue())
 
 
@@ -64,7 +64,7 @@ def read_only(name: str) -> bool:
 
 def dispatch(name: str, args: dict | None) -> dict:
     if _engine is None:
-        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+        raise EngineUnavailable("the engine module is not built; run ./formsculpt engine build")
     with _lock:
         reply = json.loads(_engine.dispatch(name, json.dumps(args or {})))
     if reply.get("ok") and not read_only(name):
@@ -74,7 +74,7 @@ def dispatch(name: str, args: dict | None) -> dict:
 
 def mesh_payload(object_id: int, smooth: int = 0) -> bytes:
     if _engine is None:
-        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+        raise EngineUnavailable("the engine module is not built; run ./formsculpt engine build")
     if smooth > 0:
         # Dynamic subdivision for display: no mask, groups or hidden faces, which belong to the sculpted mesh.
         with _lock:
@@ -108,7 +108,7 @@ def triplanar_preview(object_id: int, resolution: int) -> bytes:
 
 def stroke_begin(object_id: int, settings: dict) -> None:
     if _engine is None:
-        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+        raise EngineUnavailable("the engine module is not built; run ./formsculpt engine build")
     with _lock:
         _engine.stroke_begin(object_id, json.dumps(settings))
 
@@ -128,7 +128,7 @@ def stroke_end() -> dict:
 
 def _require() -> None:
     if _engine is None:
-        raise EngineUnavailable("the engine module is not built; run ./formsculptor engine build")
+        raise EngineUnavailable("the engine module is not built; run ./formsculpt engine build")
 
 
 def save_bytes() -> bytes:

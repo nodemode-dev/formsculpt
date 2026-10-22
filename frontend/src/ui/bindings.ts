@@ -10,7 +10,7 @@ import { Dialog } from './dialog';
 import { el, setText } from './dom';
 import { t } from './i18n';
 
-export const BINDINGS_STORE = 'formsculptor.bindings';
+export const BINDINGS_STORE = 'formsculpt.bindings';
 /** A press longer than this is a hold. */
 export const HOLD_MS = 300;
 

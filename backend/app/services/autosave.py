@@ -14,7 +14,7 @@ _saved_at: float | None = None
 
 def folder() -> Path:
     configured = os.environ.get("FSC_AUTOSAVE_DIR")
-    return Path(configured) if configured else Path.home() / ".formsculptor" / "autosave"
+    return Path(configured) if configured else Path.home() / ".formsculpt" / "autosave"
 
 
 def path() -> Path:

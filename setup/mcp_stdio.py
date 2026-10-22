@@ -14,7 +14,7 @@ _started = False
 
 
 def log(text: str) -> None:
-    print(f"[formsculptor mcp] {text}", file=sys.stderr, flush=True)
+    print(f"[formsculpt mcp] {text}", file=sys.stderr, flush=True)
 
 
 def start_engine() -> bool:
@@ -23,10 +23,10 @@ def start_engine() -> bool:
         return False
     _started = True
     command = "serve" if os.path.isfile(os.path.join(ROOT, "frontend", "dist", "index.html")) else "backend"
-    path = os.path.join(tempfile.gettempdir(), "formsculptor-engine.log")
+    path = os.path.join(tempfile.gettempdir(), "formsculpt-engine.log")
     with open(path, "ab") as out:
-        log(f"starting the engine (./formsculptor {command}); its log: {path}")
-        subprocess.Popen([os.path.join(ROOT, "formsculptor"), command], cwd=ROOT, stdin=subprocess.DEVNULL, stdout=out, stderr=out, start_new_session=True)
+        log(f"starting the engine (./formsculpt {command}); its log: {path}")
+        subprocess.Popen([os.path.join(ROOT, "formsculpt"), command], cwd=ROOT, stdin=subprocess.DEVNULL, stdout=out, stderr=out, start_new_session=True)
     probe = URL.rsplit("/mcp", 1)[0] + "/api/version"
     for _ in range(120):
         time.sleep(0.5)
@@ -58,7 +58,7 @@ def forward(line: str) -> str | None:
             return forward(line)
         if not isinstance(msg, dict) or msg.get("id") is None:
             return None
-        return json.dumps({"jsonrpc": "2.0", "id": msg.get("id"), "error": {"code": -32000, "message": "The formsculptor engine is not running and could not be started: run ./formsculptor backend in the formsculptor folder, then retry."}})
+        return json.dumps({"jsonrpc": "2.0", "id": msg.get("id"), "error": {"code": -32000, "message": "The formsculpt engine is not running and could not be started: run ./formsculpt backend in the formsculpt folder, then retry."}})
     if not isinstance(msg, dict) or msg.get("id") is None:
         return None
     return body.strip() or None

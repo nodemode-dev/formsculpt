@@ -17,10 +17,10 @@ import { t } from './i18n';
 import { glyphBody } from './icons';
 import { familyOf } from './tool-family';
 
-const STORE = 'formsculptor.tablet';
-const WIDE_STORE = 'formsculptor.tablet.tools';
+const STORE = 'formsculpt.tablet';
+const WIDE_STORE = 'formsculpt.tablet.tools';
 /** Set once this layout has been opened as the default (0.75.1), so an "off" kept from before then is not obeyed. */
-const DEFAULT_SEEN = 'formsculptor.tablet.default';
+const DEFAULT_SEEN = 'formsculpt.tablet.default';
 const SVG = 'http://www.w3.org/2000/svg';
 
 export type TabletControl = HTMLInputElement | HTMLSelectElement | HTMLButtonElement;

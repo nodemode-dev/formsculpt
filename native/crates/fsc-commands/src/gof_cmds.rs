@@ -1,4 +1,4 @@
-//! GoF, formsculptor's own hand-off to other apps: one folder every app can watch, a file per object in the format
+//! GoF, formsculpt's own hand-off to other apps: one folder every app can watch, a file per object in the format
 //! that app reads best, and a manifest (gof.json) that says what each file is. The file is a bridge, so when the other
 //! app saves over it bridge_sync brings the edit back into the same object.
 
@@ -27,23 +27,23 @@ pub(crate) fn gof_send_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "target": {"type": "string", "enum": TARGETS.iter().map(|(t, _)| *t).collect::<Vec<_>>(), "description": "The app it is for, which picks the file: blender, unreal and formsurface get GLB, unity FBX, substance a Substance 3D Painter package (OBJ meshes, baked maps, a README; needs UVs), any OBJ."},
-            "folder": {"type": "string", "minLength": 1, "description": "The GoF folder; FORMSCULPTOR_GOF when set, otherwise Formsculptor/GoF in the home folder."}
+            "folder": {"type": "string", "minLength": 1, "description": "The GoF folder; FORMSCULPT_GOF when set, otherwise Formsculpt/GoF in the home folder."}
         },
         "required": ["target"],
         "additionalProperties": false
     })
 }
 
-/// The GoF folder: the argument, then FORMSCULPTOR_GOF, then Formsculptor/GoF in the home folder.
+/// The GoF folder: the argument, then FORMSCULPT_GOF, then Formsculpt/GoF in the home folder.
 fn folder(args: &Value) -> Result<PathBuf, CommandError> {
     if let Some(f) = args.get("folder").and_then(Value::as_str).filter(|f| !f.trim().is_empty()) {
         return Ok(PathBuf::from(f));
     }
-    if let Some(f) = std::env::var_os("FORMSCULPTOR_GOF").filter(|f| !f.is_empty()) {
+    if let Some(f) = std::env::var_os("FORMSCULPT_GOF").filter(|f| !f.is_empty()) {
         return Ok(PathBuf::from(f));
     }
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).filter(|h| !h.is_empty()).ok_or_else(|| bad("no home folder: give folder or set FORMSCULPTOR_GOF"))?;
-    Ok(Path::new(&home).join("Formsculptor").join("GoF"))
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).filter(|h| !h.is_empty()).ok_or_else(|| bad("no home folder: give folder or set FORMSCULPT_GOF"))?;
+    Ok(Path::new(&home).join("Formsculpt").join("GoF"))
 }
 
 /// Writes the object for the target into the GoF folder, as a bridge for files, and records it in gof.json.
@@ -95,7 +95,7 @@ pub(crate) fn gof_send(s: &mut Session, args: &Value) -> Result<Value, CommandEr
     objects.retain(|o| o.get("file").and_then(Value::as_str) != Some(file.as_str()));
     objects.push(entry.clone());
     let manifest = json!({
-        "gof": 1, "app": "formsculptor", "version": env!("CARGO_PKG_VERSION"), "up_axis": "y",
+        "gof": 1, "app": "formsculpt", "version": env!("CARGO_PKG_VERSION"), "up_axis": "y",
         "mm_per_unit": s.scene.mm_per_unit, "objects": objects
     });
     let text = serde_json::to_string_pretty(&manifest).map_err(|e| io(e.to_string()))?;

@@ -13,12 +13,12 @@ router = APIRouter()
 VERSIONS = ["2026-07-28", "2025-11-25"]
 CACHE_HINTS = {"ttlMs": 300_000, "cacheScope": "public"}
 INSTRUCTIONS = (
-    "formsculptor is a 3D sculpting app running on this computer; these tools change the scene its engine holds, which the "
-    "formsculptor window shows live when it is open and which works without it. Start with get_scene for object ids, sizes and "
+    "formsculpt is a 3D sculpting app running on this computer; these tools change the scene its engine holds, which the "
+    "formsculpt window shows live when it is open and which works without it. Start with get_scene for object ids, sizes and "
     "bounds. Coordinates are object space; a default sphere has radius 1, so brush radii around 0.05 to 0.3 suit it. Every change "
     "is one undoable step (undo). For the order of work, get the sculpt_strategy prompt."
 )
-STRATEGY = """How to sculpt in formsculptor with these tools.
+STRATEGY = """How to sculpt in formsculpt with these tools.
 
 1. Look first. get_scene lists every object with its id, vertex and triangle counts and bounds; read the bounds before choosing a brush radius (about a tenth of the object's size is a good start).
 2. Start from a primitive. add_primitive with kind sphere (detail 6 or 7 for sculpting, 81,920 or 327,680 triangles), cube, cylinder, cone, torus or plane, and size for its radius or edge.
@@ -28,7 +28,7 @@ STRATEGY = """How to sculpt in formsculptor with these tools.
 6. Use symmetry for anything bilateral: symmetry {x: true} mirrors across the x = 0 plane; radial repeats around the y axis.
 7. Check your work with get_scene (bounds) after each step, and undo a step that went wrong rather than trying to repair it with more strokes.
 """
-PROMPTS = [{"name": "sculpt_strategy", "title": "How to sculpt in formsculptor", "description": "The order of work for formsculptor's tools: looking, primitives, blocking out, refining, masking, symmetry and checking.", "arguments": []}]
+PROMPTS = [{"name": "sculpt_strategy", "title": "How to sculpt in formsculpt", "description": "The order of work for formsculpt's tools: looking, primitives, blocking out, refining, masking, symmetry and checking.", "arguments": []}]
 
 
 def _local_origin(origin: str | None) -> bool:
@@ -96,9 +96,9 @@ async def mcp(request: Request) -> Response:
     meta = params.get("_meta") or {}
     version = meta.get("io.modelcontextprotocol/protocolVersion") or request.headers.get("mcp-protocol-version") or "2025-11-25"
     modern = version == "2026-07-28"
-    server = {"name": "formsculptor", "version": __version__}
+    server = {"name": "formsculpt", "version": __version__}
     if not engine.available() and method in ("tools/list", "tools/call"):
-        out = _err(req_id, -32000, "The formsculptor engine module is not built; run ./formsculptor engine build in the formsculptor folder.")
+        out = _err(req_id, -32000, "The formsculpt engine module is not built; run ./formsculpt engine build in the formsculpt folder.")
     elif version not in VERSIONS and method != "initialize":
         out = _err(req_id, -32602, f"Unsupported protocol version {version}; supported: {', '.join(VERSIONS)}")
     elif method == "server/discover":

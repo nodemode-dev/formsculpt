@@ -12,10 +12,10 @@ if /i "%CMD%"=="build" goto build
 if /i "%CMD%"=="serve" goto serve
 if /i "%CMD%"=="engine" goto engine
 if /i "%CMD%"=="help" goto usage
-echo [formsculptor] unknown command: %CMD%
+echo [formsculpt] unknown command: %CMD%
 goto usage
 :boot
-start "formsculptor backend" cmd /c "cd backend && boot_backend.bat"
+start "formsculpt backend" cmd /c "cd backend && boot_backend.bat"
 cd frontend && call boot_frontend.bat
 goto end
 :install
@@ -38,6 +38,6 @@ goto end
 cd native && cargo build --workspace --release
 goto end
 :usage
-echo usage: formsculptor [boot^|install^|backend^|frontend^|build^|serve^|engine^|help]
+echo usage: formsculpt [boot^|install^|backend^|frontend^|build^|serve^|engine^|help]
 :end
 endlocal

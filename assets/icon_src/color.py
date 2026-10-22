@@ -1,6 +1,6 @@
 import numpy as np
 from PIL import Image, ImageFilter
-cut=Image.open('formsculptor_bust_cutout.png').convert('RGBA')
+cut=Image.open('formsculpt_bust_cutout.png').convert('RGBA')
 bb=cut.getbbox(); cut=cut.crop(bb)
 a=np.asarray(cut).astype(float)/255; A=a[...,3]
 L=0.2126*a[...,0]+0.7152*a[...,1]+0.0722*a[...,2]

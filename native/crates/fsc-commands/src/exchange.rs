@@ -1,5 +1,5 @@
 //! Import and export options: a scale, the other file's up axis, triangulation on the way out and joining the parts
-//! on the way in. formsculptor works y up; a file from a z-up app (Blender is one) is turned on the
+//! on the way in. formsculpt works y up; a file from a z-up app (Blender is one) is turned on the
 //! way in and out, the same turn Blender's glTF exporter makes (x, y, z there is x, z, -y here).
 
 use fsc_core::Mesh;
@@ -69,7 +69,7 @@ pub fn turns(format: Format) -> bool {
     matches!(format, Format::Obj | Format::Stl | Format::Ply | Format::ThreeMf)
 }
 
-/// formsculptor's axes to the file's: scale, then (x, y, z) to (x, -z, y) for a z-up file.
+/// formsculpt's axes to the file's: scale, then (x, y, z) to (x, -z, y) for a z-up file.
 pub fn outward(p: [f32; 3], scale: f32, z_up: bool) -> [f32; 3] {
     let [x, y, z] = [p[0] * scale, p[1] * scale, p[2] * scale];
     if z_up {
@@ -79,7 +79,7 @@ pub fn outward(p: [f32; 3], scale: f32, z_up: bool) -> [f32; 3] {
     }
 }
 
-/// The file's axes to formsculptor's: (x, y, z) to (x, z, -y) for a z-up file, then scale.
+/// The file's axes to formsculpt's: (x, y, z) to (x, z, -y) for a z-up file, then scale.
 pub fn inward(p: [f32; 3], scale: f32, z_up: bool) -> [f32; 3] {
     let [x, y, z] = if z_up { [p[0], p[2], -p[1]] } else { p };
     [x * scale, y * scale, z * scale]

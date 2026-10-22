@@ -1,5 +1,5 @@
 [package]
-name = "formsculptor"
+name = "formsculpt"
 version = "1.17.1"
 description = "3D sculpting and modeling"
 authors = ["nodemode-ai"]

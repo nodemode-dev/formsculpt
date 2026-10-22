@@ -15,7 +15,7 @@ def _session(sid: str) -> terminal.Session:
 
 
 @command("terminal.open", "New Terminal", {"cwd": {"type": "string"}, "cols": {"type": "integer"}, "rows": {"type": "integer"}, "title": {"type": "string"}},
-         description="Starts the person's login shell in a real terminal in formsculptor's terminal dock (default folder: the home folder) and returns its id. The window only; outside agents cannot reach it.")
+         description="Starts the person's login shell in a real terminal in formsculpt's terminal dock (default folder: the home folder) and returns its id. The window only; outside agents cannot reach it.")
 def open_(cwd: str | None = None, cols: int | None = None, rows: int | None = None, title: str | None = None) -> dict:
     try:
         return terminal.open_session(cwd, cols or 100, rows or 30, title).describe()

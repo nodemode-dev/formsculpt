@@ -62,9 +62,9 @@ def main(master, repo):
     mac = Image.open(master).convert("RGBA")
     assert mac.size == (1024, 1024)
     full = full_bleed(mac)
-    shutil.copyfile(master, repo / "assets/formsculptor_icon_macos.png")
-    full.save(repo / "assets/formsculptor_icon.png", optimize=True)
-    full.save(repo / "assets/formsculptor_folder_icon.png", optimize=True)
+    shutil.copyfile(master, repo / "assets/formsculpt_icon_macos.png")
+    full.save(repo / "assets/formsculpt_icon.png", optimize=True)
+    full.save(repo / "assets/formsculpt_folder_icon.png", optimize=True)
     icons = repo / "src-tauri/icons"
     for name, size in PNG_SIZES.items():
         png(full, size, icons / name)

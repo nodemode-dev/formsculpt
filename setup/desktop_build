@@ -4,6 +4,6 @@ source "$(dirname "$0")/lib.sh"
 "$FSC_ROOT/setup/build_frontend"
 "$FSC_ROOT/setup/freeze_backend"
 cd "$FSC_ROOT"
-[ -f src-tauri/icons/icon.icns ] || frontend/node_modules/.bin/tauri icon assets/formsculptor_icon.png
+[ -f src-tauri/icons/icon.icns ] || frontend/node_modules/.bin/tauri icon assets/formsculpt_icon.png
 frontend/node_modules/.bin/tauri build "$@"
 fs_say "bundles are in src-tauri/target/release/bundle"

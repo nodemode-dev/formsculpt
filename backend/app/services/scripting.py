@@ -1,10 +1,10 @@
 """Python scripting and plugins.
 
-A script or plugin drives formsculptor through `fsc`, an object with one method per idea: `fsc.call(name, **args)`
+A script or plugin drives formsculpt through `fsc`, an object with one method per idea: `fsc.call(name, **args)`
 runs any registry command (the same names as the MCP tools) and returns its result, raising ScriptError when the
-command refuses. Plugins are Python files in `plugins/` beside the app or in `~/.formsculptor/plugins` (or the folder
+command refuses. Plugins are Python files in `plugins/` beside the app or in `~/.formsculpt/plugins` (or the folder
 named by FSC_PLUGIN_DIR); the first line of a plugin's docstring is its title, and it defines `run(fsc, args)`.
-Scripts run from the command line (`./formsculptor script file.py`) get the same `fsc`, bound to the running engine
+Scripts run from the command line (`./formsculpt script file.py`) get the same `fsc`, bound to the running engine
 over HTTP or, when none is running, to an engine in the script's own process.
 """
 
@@ -50,7 +50,7 @@ class Fsc:
 def plugin_dirs() -> list[Path]:
     dirs = [ROOT / "plugins"]
     extra = os.environ.get("FSC_PLUGIN_DIR")
-    dirs.append(Path(extra) if extra else Path.home() / ".formsculptor" / "plugins")
+    dirs.append(Path(extra) if extra else Path.home() / ".formsculpt" / "plugins")
     return [d for d in dirs if d.is_dir()]
 
 
@@ -106,6 +106,6 @@ def run_file(path: str | Path, fsc: Fsc, args: dict | None = None) -> dict:
     the result and anything it printed."""
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        module = runpy.run_path(str(path), init_globals={"fsc": fsc, "args": args or {}}, run_name="__formsculptor__")
+        module = runpy.run_path(str(path), init_globals={"fsc": fsc, "args": args or {}}, run_name="__formsculpt__")
         result = module["run"](fsc, args or {}) if callable(module.get("run")) else None
     return {"result": result, "output": out.getvalue()}

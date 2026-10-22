@@ -1,4 +1,4 @@
-"""LightBox's Project shelf: projects kept in the app's folder (FSC_DATA_DIR or ~/Formsculptor, under LightBox/Project),
+"""LightBox's Project shelf: projects kept in the app's folder (FSC_DATA_DIR or ~/Formsculpt, under LightBox/Project),
 each with a small picture rendered when it was saved, listed, saved and opened by name. As ZBrush's LightBox does,
 a project opens with a double click in the window; this router only serves the files."""
 
@@ -35,7 +35,7 @@ def _checked(name: str) -> str:
 
 def _guard() -> None:
     if not engine.available():
-        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculptor engine build")
+        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculpt engine build")
 
 
 @router.get("/lightbox/projects")

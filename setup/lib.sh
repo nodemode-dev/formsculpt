@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 FSC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export FSC_ROOT
-fs_say() { printf '[formsculptor] %s\n' "$*"; }
-fs_die() { printf '[formsculptor] error: %s\n' "$*" >&2; exit 1; }
+fs_say() { printf '[formsculpt] %s\n' "$*"; }
+fs_die() { printf '[formsculpt] error: %s\n' "$*" >&2; exit 1; }
 fs_os() {
   case "$(uname -s 2>/dev/null)" in
     Darwin) echo macos ;;
@@ -25,7 +25,7 @@ fs_venv() {
   local act="$FSC_ROOT/backend/venv/bin/activate"
   # Windows venvs (Git Bash on the CI runner) keep their activate script under Scripts.
   [ -f "$act" ] || act="$FSC_ROOT/backend/venv/Scripts/activate"
-  [ -f "$act" ] || fs_die "backend venv missing, run ./formsculptor install"
+  [ -f "$act" ] || fs_die "backend venv missing, run ./formsculpt install"
   # shellcheck disable=SC1090
   source "$act"
 }
@@ -44,10 +44,10 @@ fs_rust_env() {
 fs_rust_fresh() {
   local target="$FSC_ROOT/src-tauri/target" now
   now="$(rustc -vV 2>/dev/null | tr '\n' ' ')"
-  if [ -d "$target/release" ] && [ "$(cat "$target/.formsculptor-rustc" 2>/dev/null)" != "$now" ]; then
+  if [ -d "$target/release" ] && [ "$(cat "$target/.formsculpt-rustc" 2>/dev/null)" != "$now" ]; then
     fs_say "the Rust compiler differs from the one that built src-tauri/target; cleaning it"
     ( cd "$FSC_ROOT/src-tauri" && cargo clean )
   fi
   mkdir -p "$target"
-  printf '%s' "$now" > "$target/.formsculptor-rustc"
+  printf '%s' "$now" > "$target/.formsculpt-rustc"
 }

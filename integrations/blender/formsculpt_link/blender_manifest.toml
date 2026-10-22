@@ -1,12 +1,12 @@
 schema_version = "1.0.0"
 
-id = "formsculptor_link"
+id = "formsculpt_link"
 version = "1.17.1"
-name = "formsculptor Live Link"
-tagline = "Keep meshes in step with a running formsculptor both ways"
+name = "formsculpt Live Link"
+tagline = "Keep meshes in step with a running formsculpt both ways"
 maintainer = "nodemode-ai"
 type = "add-on"
-website = "https://github.com/nodemode-ai/formsculptor"
+website = "https://github.com/nodemode-ai/formsculpt"
 tags = ["Import-Export", "Sculpt"]
 
 # Tested against Blender 5.2.2 (the bpy module); older releases are not claimed.
@@ -16,4 +16,4 @@ license = ["SPDX:Apache-2.0"]
 copyright = ["2026 nodemode-ai"]
 
 [permissions]
-network = "Talks to formsculptor's engine service on this computer"
+network = "Talks to formsculpt's engine service on this computer"

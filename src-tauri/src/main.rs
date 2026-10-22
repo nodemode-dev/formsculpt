@@ -46,7 +46,7 @@ fn check_for_updates(handle: tauri::AppHandle) {
         let Ok(Some(update)) = updater.check().await else { return };
         let install = handle
             .dialog()
-            .message(format!("formsculptor {} is available. Install it and restart?", update.version))
+            .message(format!("formsculpt {} is available. Install it and restart?", update.version))
             .title("Update available")
             .buttons(MessageDialogButtons::OkCancel)
             .blocking_show();
@@ -64,7 +64,7 @@ async fn save_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> R
     let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
         return Err("expected the file's bytes".into());
     };
-    let raw = request.headers().get("x-file-name").and_then(|v| v.to_str().ok()).unwrap_or("formsculptor");
+    let raw = request.headers().get("x-file-name").and_then(|v| v.to_str().ok()).unwrap_or("formsculpt");
     let name = percent_decode(raw).replace(['/', '\\'], "_");
     let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
     let mut dialog = app.dialog().file().set_file_name(&name);
@@ -117,7 +117,7 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
         })
         .unwrap_or(FALLBACK_LOGICAL);
     let builder = WebviewWindowBuilder::new(handle, "main", WebviewUrl::External(url))
-        .title("formsculptor")
+        .title("formsculpt")
         .visible(reveal::BUILD_VISIBLE)
         .background_color(reveal::BACKGROUND)
         .inner_size(width, height)
@@ -151,12 +151,12 @@ fn main() {
             reveal::round_splash(&handle);
             let (mut rx, child) = app
                 .shell()
-                .sidecar("formsculptor-engine")
+                .sidecar("formsculpt-engine")
                 .expect("sidecar binary is bundled")
                 .env("FSC_PORT", "0")
                 .env("FSC_PARENT_PID", std::process::id().to_string())
                 .spawn()
-                .expect("the formsculptor engine failed to spawn");
+                .expect("the formsculpt engine failed to spawn");
             app.state::<Backend>().0.lock().unwrap().replace(child);
 
             tauri::async_runtime::spawn(async move {
@@ -186,7 +186,7 @@ fn main() {
                         close_splash(&handle);
                         handle
                             .dialog()
-                            .message("The formsculptor engine failed to start. Please relaunch the app.")
+                            .message("The formsculpt engine failed to start. Please relaunch the app.")
                             .blocking_show();
                         kill_backend(&handle);
                         std::process::exit(1);

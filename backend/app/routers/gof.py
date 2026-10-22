@@ -1,4 +1,4 @@
-"""GoF's hop to FormSurface. The engine's gof_send writes the files and gof.json into the GoF folder (FORMSCULPTOR_GOF,
+"""GoF's hop to FormSurface. The engine's gof_send writes the files and gof.json into the GoF folder (FORMSCULPT_GOF,
 set here to GoF under the app's folder when not set, so the engine and this router agree); this router hands a GLB from
 there to a running FormSurface: its service reports its workspace at /api/health, its load_mesh reads the workspace's
 meshes folder, and /api/agent runs load_mesh in the open editor once Agent link is on there."""
@@ -19,7 +19,7 @@ from app.services import engine
 
 router = APIRouter()
 
-os.environ.setdefault("FORMSCULPTOR_GOF", str(config.data_dir() / "GoF"))
+os.environ.setdefault("FORMSCULPT_GOF", str(config.data_dir() / "GoF"))
 
 # FormSurface's own default service address; FORMSURFACE_SERVICE overrides it, as in FormSurface's MCP server.
 _OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -30,7 +30,7 @@ def _service() -> str:
 
 
 def _folder() -> Path:
-    return Path(os.environ["FORMSCULPTOR_GOF"])
+    return Path(os.environ["FORMSCULPT_GOF"])
 
 
 def _call(method: str, path: str, body: dict | None = None, timeout: float = 10) -> dict:
@@ -113,7 +113,7 @@ def _stem(name: str) -> str:
 
 def _back(object_id: int) -> dict:
     if not engine.available():
-        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculptor engine build")
+        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculpt engine build")
     scene = engine.dispatch("get_scene", {})
     found = [o for o in scene.get("result", {}).get("objects", []) if o.get("id") == object_id]
     if not found:

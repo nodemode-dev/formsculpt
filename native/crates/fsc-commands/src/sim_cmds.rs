@@ -627,9 +627,9 @@ pub(crate) fn substance_send(s: &mut Session, args: &Value) -> Result<Value, Com
         }
     }
     let readme = format!(
-        "{stem} for Substance 3D Painter, from formsculptor {}\n\nFile > New: choose {stem}_low.obj as the mesh, Normal map format OpenGL, and add the maps below if any.\n{}Texture Set Settings > Bake Mesh Maps: High Definition Meshes {}.\nExport textures back as PNG, then paint_project or bake again in formsculptor as needed.\n",
+        "{stem} for Substance 3D Painter, from formsculpt {}\n\nFile > New: choose {stem}_low.obj as the mesh, Normal map format OpenGL, and add the maps below if any.\n{}Texture Set Settings > Bake Mesh Maps: High Definition Meshes {}.\nExport textures back as PNG, then paint_project or bake again in formsculpt as needed.\n",
         fsc_core::engine_version(),
-        if maps_written { "Baked maps from formsculptor are beside it (BaseColor, Normal, Height, RoughnessMetal).\n" } else { "" },
+        if maps_written { "Baked maps from formsculpt are beside it (BaseColor, Normal, Height, RoughnessMetal).\n" } else { "" },
         if has_high { format!("= {stem}_high.obj") } else { "= the same file (the object has no subdivision levels)".to_string() }
     );
     write(format!("{stem}_README.txt"), readme.as_bytes())?;

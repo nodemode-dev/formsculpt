@@ -2,7 +2,7 @@
 set -e
 source "$(dirname "$0")/lib.sh"
 fs_venv
-python -c "import PyInstaller" 2>/dev/null || fs_die "PyInstaller missing, run ./formsculptor install-desktop"
+python -c "import PyInstaller" 2>/dev/null || fs_die "PyInstaller missing, run ./formsculpt install-desktop"
 triple="$(fs_target_triple)" || fs_die "rustc not found; install Rust or set FSC_TARGET"
 [ -f "$FSC_ROOT/frontend/dist/index.html" ] || "$FSC_ROOT/setup/build_frontend"
 ( cd "$FSC_ROOT/backend" && python -c "import fsc_engine, app; assert fsc_engine.version() == app.__version__" ) 2>/dev/null || "$FSC_ROOT/setup/engine_build"
@@ -11,18 +11,18 @@ sep=":"
 [ "$(fs_os)" = windows ] && sep=";"
 ext="$(fs_exe)"
 rm -rf build/pyinstaller dist-engine
-pyinstaller --noconfirm --clean --onefile --name formsculptor-engine \
+pyinstaller --noconfirm --clean --onefile --name formsculpt-engine \
   --distpath dist-engine --workpath build/pyinstaller --specpath build/pyinstaller \
   --add-data "$FSC_ROOT/frontend/dist${sep}frontend_dist" \
-  --add-data "$FSC_ROOT/integrations/blender/formsculptor_link${sep}integrations/blender/formsculptor_link" \
+  --add-data "$FSC_ROOT/integrations/blender/formsculpt_link${sep}integrations/blender/formsculpt_link" \
   --add-data "$FSC_ROOT/integrations/unreal${sep}integrations/unreal" \
   --add-data "$FSC_ROOT/integrations/unity${sep}integrations/unity" \
   --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine \
   --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat \
   $([ "$(fs_os)" = windows ] && echo --hidden-import winpty || echo --hidden-import ptyprocess) \
-  "$FSC_ROOT/backend/formsculptor_engine.py"
+  "$FSC_ROOT/backend/formsculpt_engine.py"
 mkdir -p "$FSC_ROOT/src-tauri/binaries"
-out="$FSC_ROOT/src-tauri/binaries/formsculptor-engine-${triple}${ext}"
-cp "dist-engine/formsculptor-engine${ext}" "$out"
+out="$FSC_ROOT/src-tauri/binaries/formsculpt-engine-${triple}${ext}"
+cp "dist-engine/formsculpt-engine${ext}" "$out"
 "$out" --selfcheck
 fs_say "sidecar ready: $out"

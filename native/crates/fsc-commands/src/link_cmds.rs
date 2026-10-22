@@ -59,7 +59,7 @@ pub(crate) fn link_push_schema() -> Value {
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "The object to update; a new object is made when omitted."},
             "name": {"type": "string", "minLength": 1, "maxLength": 120, "description": "Name for a new object (made unique); default Blender."},
-            "positions": {"type": "string", "description": "Base64 little-endian f32 x, y, z per vertex, in formsculptor's axes (y up)."},
+            "positions": {"type": "string", "description": "Base64 little-endian f32 x, y, z per vertex, in formsculpt's axes (y up)."},
             "indices": {"type": "string", "description": "Base64 little-endian u32, three per triangle. May be left out when id is given and only the positions changed."}
         },
         "required": ["positions"],

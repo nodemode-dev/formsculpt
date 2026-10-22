@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "formsculptor",
+  "productName": "formsculpt",
   "version": "1.17.1",
-  "identifier": "ai.nodemode.formsculptor",
+  "identifier": "ai.nodemode.formsculpt",
   "build": {
     "frontendDist": "../frontend/dist"
   },
@@ -10,7 +10,7 @@
     "windows": [
       {
         "label": "splash",
-        "title": "formsculptor",
+        "title": "formsculpt",
         "url": "splash.html",
         "width": 360,
         "height": 200,
@@ -32,9 +32,9 @@
     "targets": "all",
     "category": "GraphicsAndDesign",
     "shortDescription": "3D sculpting and modeling",
-    "longDescription": "formsculptor is a 3D sculpting and modeling application in the NodeMode design system: a Rust sculpting engine, dynamic topology, multiresolution, remeshing, painting and its own .fsc project files.",
+    "longDescription": "formsculpt is a 3D sculpting and modeling application in the NodeMode design system: a Rust sculpting engine, dynamic topology, multiresolution, remeshing, painting and its own .fsc project files.",
     "copyright": "Copyright 2026 nodemode-ai.",
-    "externalBin": ["binaries/formsculptor-engine"],
+    "externalBin": ["binaries/formsculpt-engine"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
     "macOS": {
       "minimumSystemVersion": "12.0",
@@ -42,14 +42,14 @@
       "entitlements": "entitlements.plist"
     },
     "fileAssociations": [
-      { "ext": ["fsc"], "name": "formsculptor Project", "description": "formsculptor sculpting project", "role": "Editor", "mimeType": "application/x-formsculptor" }
+      { "ext": ["fsc"], "name": "formsculpt Project", "description": "formsculpt sculpting project", "role": "Editor", "mimeType": "application/x-formsculpt" }
     ],
     "createUpdaterArtifacts": false
   },
   "plugins": {
     "updater": {
       "pubkey": "",
-      "endpoints": ["https://github.com/nodemode-ai/formcompiler/releases/download/formsculptor-updates/latest.json"]
+      "endpoints": ["https://github.com/nodemode-ai/formcompiler/releases/download/formsculpt-updates/latest.json"]
     }
   }
 }

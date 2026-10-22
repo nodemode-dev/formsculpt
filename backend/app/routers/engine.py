@@ -19,7 +19,7 @@ class Call(BaseModel):
 
 def _guard() -> None:
     if not engine.available():
-        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculptor engine build")
+        raise HTTPException(status_code=503, detail="the engine module is not built; run ./formsculpt engine build")
 
 
 @router.get("/catalogue")
@@ -43,7 +43,7 @@ def mesh(object_id: int, smooth: int = Query(0, ge=0, le=3)) -> Response:
         # The object went between the window listing the scene and asking for its mesh (an agent cleared or
         # replaced the scene, a step was undone): an ordinary race, not a failed request, so the browser logs no
         # error. The window draws nothing for it and the next listing settles the scene.
-        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculptor-Missing": str(object_id)})
+        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculpt-Missing": str(object_id)})
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
 
 
@@ -71,7 +71,7 @@ def triplanar_preview(id: int, resolution: int = Query(64, ge=16, le=256)) -> Re
     except ValueError as exc:
         # No solid yet (a plane with nothing masked) is an ordinary state while masking, not a failed request: the
         # window draws nothing and the reason rides in a header, so the console stays clean.
-        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculptor-Refused": str(exc)[:200]})
+        return Response(status_code=204, headers={"Cache-Control": "no-store", "X-Formsculpt-Refused": str(exc)[:200]})
     return Response(content=payload, media_type="application/octet-stream", headers={"Cache-Control": "no-store"})
 
 
@@ -107,7 +107,7 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc).strip("'\""))
     media = {"glb": "model/gltf-binary", "stl": "model/stl", "obj": "model/obj", "ply": "application/octet-stream", "3mf": "model/3mf", "fbx": "application/octet-stream", "usda": "model/vnd.usda"}[format]
-    return Response(content=data, media_type=media, headers={"Content-Disposition": f'attachment; filename="formsculptor.{format}"', "Cache-Control": "no-store"})
+    return Response(content=data, media_type=media, headers={"Content-Disposition": f'attachment; filename="formsculpt.{format}"', "Cache-Control": "no-store"})
 
 
 @router.get("/view")
@@ -150,10 +150,10 @@ class BridgeOut(BaseModel):
 
 @router.post("/bridge")
 def bridge(body: BridgeOut) -> dict:
-    """Sends an object to a file in the bridge folder (FSC_BRIDGE_DIR, or ~/.formsculptor/bridge) for another app to
+    """Sends an object to a file in the bridge folder (FSC_BRIDGE_DIR, or ~/.formsculpt/bridge) for another app to
     open; bridge_sync brings that app's saves back. Returns the file's path to open there."""
     _guard()
-    folder = os.environ.get("FSC_BRIDGE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculptor", "bridge")
+    folder = os.environ.get("FSC_BRIDGE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculpt", "bridge")
     os.makedirs(folder, exist_ok=True)
     scene = engine.dispatch("get_scene", {})
     found = next((o for o in scene.get("result", {}).get("objects", []) if o["id"] == body.id), None)
@@ -170,10 +170,10 @@ class SubstanceOut(BaseModel):
 
 @router.post("/substance")
 def substance(body: SubstanceOut) -> dict:
-    """Writes a Substance 3D Painter package for an object to FSC_SUBSTANCE_DIR or ~/.formsculptor/substance/<name>
+    """Writes a Substance 3D Painter package for an object to FSC_SUBSTANCE_DIR or ~/.formsculpt/substance/<name>
     (send_to_substance) and returns its folder and files."""
     _guard()
-    root = os.environ.get("FSC_SUBSTANCE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculptor", "substance")
+    root = os.environ.get("FSC_SUBSTANCE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculpt", "substance")
     scene = engine.dispatch("get_scene", {})
     found = next((o for o in scene.get("result", {}).get("objects", []) if o["id"] == body.id), None)
     if found is None:
@@ -187,7 +187,7 @@ def substance_sync(body: SubstanceOut) -> dict:
     """Reads the textures Painter exported back into the object's package folder (substance_sync): BaseColor, and
     Roughness and Metallic when there, onto the vertex paint."""
     _guard()
-    root = os.environ.get("FSC_SUBSTANCE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculptor", "substance")
+    root = os.environ.get("FSC_SUBSTANCE_DIR") or os.path.join(os.path.expanduser("~"), ".formsculpt", "substance")
     scene = engine.dispatch("get_scene", {})
     found = next((o for o in scene.get("result", {}).get("objects", []) if o["id"] == body.id), None)
     if found is None:
@@ -251,7 +251,7 @@ async def maps_file(object_id: int) -> Response:
 async def project_file() -> Response:
     _guard()
     data = await run_in_threadpool(engine.save_bytes)
-    return Response(content=data, media_type="application/x-formsculptor", headers={"Content-Disposition": 'attachment; filename="scene.fsc"', "Cache-Control": "no-store"})
+    return Response(content=data, media_type="application/x-formsculpt", headers={"Content-Disposition": 'attachment; filename="scene.fsc"', "Cache-Control": "no-store"})
 
 
 @router.get("/autosave")
@@ -275,7 +275,7 @@ def _vec(value: Any) -> list[float]:
 async def stroke(socket: WebSocket) -> None:
     await socket.accept()
     if not engine.available():
-        await socket.send_json({"type": "error", "message": "the engine module is not built; run ./formsculptor engine build"})
+        await socket.send_json({"type": "error", "message": "the engine module is not built; run ./formsculpt engine build"})
         await socket.close()
         return
     active = False

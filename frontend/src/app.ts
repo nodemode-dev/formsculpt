@@ -541,10 +541,10 @@ const FILE_ACTIONS: [string, string][] = [
   ['gof_unity', 'GoF for Unity'],
 ];
 
-const NODEMODE_KEY = 'formsculptor.nodemode';
-const BACKDROP_KEY = 'formsculptor.backdrop';
+const NODEMODE_KEY = 'formsculpt.nodemode';
+const BACKDROP_KEY = 'formsculpt.backdrop';
 /** The layout the window opens in when the person set one as the default: zbrush, tablet or panel. */
-const DEFAULT_LAYOUT_KEY = 'formsculptor.layout.default';
+const DEFAULT_LAYOUT_KEY = 'formsculpt.layout.default';
 
 function defaultLayout(): string {
   try {
@@ -561,8 +561,8 @@ function setDefaultLayout(name: string): void {
     // storage blocked; the window keeps opening in the layout last used
   }
 }
-const PROFILES_KEY = 'formsculptor.profiles';
-const PRESETS_KEY = 'formsculptor.toolPresets';
+const PROFILES_KEY = 'formsculpt.profiles';
+const PRESETS_KEY = 'formsculpt.toolPresets';
 
 const OBJECT_ACTIONS: [string, string][] = [
   ['duplicate', 'Duplicate'],
@@ -668,8 +668,8 @@ const PRIMITIVES: [string, string][] = [
 function buildShell(root: HTMLElement): Shell {
   const bar = el('header', 'appbar');
   const brand = el('div', 'brand');
-  brand.innerHTML = '<img src="/formsculptor-logo.png" width="18" height="18" alt="" draggable="false">';
-  brand.append(el('span', '', 'formsculptor'), el('span', 'ver', `v${VERSION}`));
+  brand.innerHTML = '<img src="/formsculpt-logo.png" width="18" height="18" alt="" draggable="false">';
+  brand.append(el('span', '', 'formsculpt'), el('span', 'ver', `v${VERSION}`));
   const menubar = el('div', 'fs-menubar');
   bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
 
@@ -760,10 +760,10 @@ function buildShell(root: HTMLElement): Shell {
   // Import and export options, shared by both ways: the other app's scale and up axis, triangles on the way out and
   // one object from a many-part file on the way in.
   const fileScale = input('number', { min: '0.0001', max: '100000', step: 'any', value: '1', 'aria-label': 'File scale' });
-  const fileUp = choices('File up axis', [['y', 'Y up (formsculptor, glTF)'], ['z', 'Z up (Blender)']]);
+  const fileUp = choices('File up axis', [['y', 'Y up (formsculpt, glTF)'], ['z', 'Z up (Blender)']]);
   const exportTriangles = input('checkbox', { 'aria-label': 'Export triangles' });
   const importMerge = input('checkbox', { 'aria-label': 'Import as one object' });
-  // GoF, formsculptor's own hand-off: the app Send with GoF writes for, into the shared GoF folder.
+  // GoF, formsculpt's own hand-off: the app Send with GoF writes for, into the shared GoF folder.
   const gofTarget = choices('GoF target', [['blender', 'Blender'], ['unreal', 'Unreal Engine'], ['unity', 'Unity'], ['formsurface', 'FormSurface'], ['substance', 'Substance 3D Painter'], ['any', 'Any app (OBJ)']]);
   const fileFields = el('div', 'fields');
   fileFields.append(field('GoF target', gofTarget), field('Export format', exportFormat), field('File scale', fileScale), field('File up axis', fileUp), field('Export triangles', exportTriangles), field('Import as one object', importMerge), field('Real size (mm)', realSize), field('Real size axis', realAxis), field('Render size', renderSize), field('NodeMode address', nodemode));
@@ -2868,8 +2868,8 @@ class SceneView {
   agentContext(): string {
     const active = this.scene.objects.find((o) => o.id === this.scene.active);
     const count = this.scene.objects.length;
-    if (!active) return count ? `formsculptor window: ${count} objects, none active` : 'formsculptor window: empty scene';
-    return `formsculptor window: active object id ${active.id} named ${JSON.stringify(active.name)}, ${count} objects in the scene`;
+    if (!active) return count ? `formsculpt window: ${count} objects, none active` : 'formsculpt window: empty scene';
+    return `formsculpt window: active object id ${active.id} named ${JSON.stringify(active.name)}, ${count} objects in the scene`;
   }
 
   agentNote(): string {
@@ -5059,7 +5059,7 @@ class SceneView {
 
   /** Saves the panel folds, side and size, the rail, the toolbars, the tablet switch and the shortcuts as one file. */
   private exportLayoutFile(): void {
-    saveBlob(new Blob([exportLayout(VERSION)], { type: 'application/json' }), 'formsculptor-layout.json');
+    saveBlob(new Blob([exportLayout(VERSION)], { type: 'application/json' }), 'formsculpt-layout.json');
     this.note(t('Layout exported'));
   }
 
@@ -5101,7 +5101,7 @@ class SceneView {
     applyTheme(theme);
     this.loadOverlayControls();
     try {
-      s.tablet.set(localStorage.getItem('formsculptor.tablet') !== 'off', false);
+      s.tablet.set(localStorage.getItem('formsculpt.tablet') !== 'off', false);
       s.toolSwap.checked = localStorage.getItem(TOOL_SWAP_STORE) === 'on';
     } catch {
       // storage blocked; the switches stay as they are
@@ -6040,7 +6040,7 @@ class SceneView {
       const format = this.shell.exportFormat.value;
       const q = new URLSearchParams({ format, scale: String(this.exchangeScale()), up_axis: this.shell.fileUp.value });
       if (this.shell.exportTriangles.checked) q.set('triangulate', 'true');
-      await this.download(`/api/engine/export?${q}`, `formsculptor.${format}`);
+      await this.download(`/api/engine/export?${q}`, `formsculpt.${format}`);
     } else if (action === 'recover') {
       const reply = await postJson<unknown>('/api/engine/autosave/recover');
       this.note(reply.ok ? 'Recovered the last autosave' : reply.error.message);
@@ -6049,17 +6049,17 @@ class SceneView {
     } else if (action === 'nodemode') {
       await this.sendToNodeMode();
     } else if (action === 'blender') {
-      // The live link's other half: Blender installs the zip, then its sidebar's formsculptor tab sends and receives.
-      if (await this.download('/api/integrations/blender', `formsculptor_link-${VERSION}.zip`)) {
-        this.note(t('In Blender: Preferences, Extensions, Install from Disk, then the formsculptor tab in the sidebar. Linked objects update here as they change there'));
+      // The live link's other half: Blender installs the zip, then its sidebar's formsculpt tab sends and receives.
+      if (await this.download('/api/integrations/blender', `formsculpt_link-${VERSION}.zip`)) {
+        this.note(t('In Blender: Preferences, Extensions, Install from Disk, then the formsculpt tab in the sidebar. Linked objects update here as they change there'));
       }
     } else if (action === 'gof_unreal') {
       // GoF's receivers: Unreal's Python script and Unity's editor script, each with a README of its steps.
-      if (await this.download('/api/integrations/unreal', `formsculptor_gof_unreal-${VERSION}.zip`)) {
+      if (await this.download('/api/integrations/unreal', `formsculpt_gof_unreal-${VERSION}.zip`)) {
         this.note(t('Copy its Content/Python into the Unreal project and restart the editor; what you send to Unreal with GoF is imported there'));
       }
     } else if (action === 'gof_unity') {
-      if (await this.download('/api/integrations/unity', `formsculptor_gof_unity-${VERSION}.zip`)) {
+      if (await this.download('/api/integrations/unity', `formsculpt_gof_unity-${VERSION}.zip`)) {
         this.note(t('Copy its Editor folder into the Unity project; what you send to Unity with GoF is imported there'));
       }
     } else if (action === 'gof' && id !== null) {
@@ -6138,7 +6138,7 @@ class SceneView {
       this.note('The scene is empty; there is nothing to send');
       return;
     }
-    const title = this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? 'formsculptor';
+    const title = this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? 'formsculpt';
     const shading = this.shell.shading.value;
     this.note('Sending to NodeMode');
     if (this.host.embedded) {
@@ -6255,7 +6255,7 @@ class SceneView {
     }
   }
 
-  /** Writes a Substance 3D Painter package for the object to ~/.formsculptor/substance and says where. */
+  /** Writes a Substance 3D Painter package for the object to ~/.formsculpt/substance and says where. */
   private async substanceOut(id: number): Promise<void> {
     const reply = await postBody<{ ok: boolean; result?: { folder: string; files: string[] }; error?: { message: string } }>('/api/engine/substance', { id });
     const body = reply.ok ? reply.result : null;
@@ -6333,7 +6333,7 @@ class SceneView {
     return args;
   }
 
-  /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculptor/plugins), reusing options. */
+  /** Lists the plugins the service finds (plugins/ beside the app and ~/.formsculpt/plugins), reusing options. */
   private async loadPlugins(): Promise<void> {
     let list: PluginInfo[] = [];
     // Plugins are Python files the service runs; the browser engine has none.
@@ -7078,7 +7078,7 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
   commands.add(
     { id: 'app.shortcuts', label: 'Keyboard Shortcuts', keys: ['Mod+/'], icon: 'keyboard', run: () => shortcuts.show() },
     { id: 'app.palette', label: 'Command Palette', keys: ['Mod+K'], icon: 'search', run: () => palette.show() },
-    { id: 'app.about', label: 'About formsculptor', icon: 'info', run: () => about.show() },
+    { id: 'app.about', label: 'About formsculpt', icon: 'info', run: () => about.show() },
     {
       id: 'view.clear_rail',
       label: 'Clear Tool Rail',

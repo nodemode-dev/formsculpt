@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// formsculptor GoF receiver for the Unity Editor.
+// formsculpt GoF receiver for the Unity Editor.
 //
-// Watches formsculptor's GoF folder and brings what formsculptor sends to Unity (Send with GoF, target Unity) into
-// Assets/GoF, re-importing when the same object is sent again. formsculptor writes FBX in centimetres (the unit the
+// Watches formsculpt's GoF folder and brings what formsculpt sends to Unity (Send with GoF, target Unity) into
+// Assets/GoF, re-importing when the same object is sent again. formsculpt writes FBX in centimetres (the unit the
 // file declares), which Unity's FBX importer converts to its metre with Convert Units. Every Unity call here is from
 // Unity's Scripting Reference: InitializeOnLoad, EditorApplication.update and timeSinceStartup, EditorPrefs,
 // JsonUtility.FromJson, Application.dataPath, AssetDatabase.ImportAsset with ImportAssetOptions.ForceUpdate,
 // MenuItem and Menu.SetChecked.
 //
-// Put this file in any Editor folder of the project (Assets/Editor works). Tools > formsculptor has Import from GoF,
+// Put this file in any Editor folder of the project (Assets/Editor works). Tools > formsculpt has Import from GoF,
 // Watch GoF and Set GoF Folder.
 
 using System;
@@ -17,12 +17,12 @@ using UnityEditor;
 using UnityEngine;
 
 [InitializeOnLoad]
-public static class FormsculptorGoF
+public static class FormsculptGoF
 {
-    const string FolderKey = "formsculptor.gof.folder";
-    const string WatchKey = "formsculptor.gof.watch";
-    const string SentKey = "formsculptor.gof.sent.";
-    const string WatchMenu = "Tools/formsculptor/Watch GoF";
+    const string FolderKey = "formsculpt.gof.folder";
+    const string WatchKey = "formsculpt.gof.watch";
+    const string SentKey = "formsculpt.gof.sent.";
+    const string WatchMenu = "Tools/formsculpt/Watch GoF";
 
     // Filled by JsonUtility from gof.json, never assigned in code (CS0649 says so otherwise).
 #pragma warning disable 0649
@@ -45,12 +45,12 @@ public static class FormsculptorGoF
     static double next;
     static DateTime stamp;
 
-    static FormsculptorGoF()
+    static FormsculptGoF()
     {
         EditorApplication.update += Tick;
     }
 
-    /// The GoF folder: the one set here, otherwise Formsculptor/GoF in the home folder (formsculptor's own default).
+    /// The GoF folder: the one set here, otherwise Formsculpt/GoF in the home folder (formsculpt's own default).
     public static string Folder
     {
         get
@@ -58,17 +58,17 @@ public static class FormsculptorGoF
             string set = EditorPrefs.GetString(FolderKey, "");
             if (!string.IsNullOrEmpty(set)) return set;
             string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return Path.Combine(home, "Formsculptor", "GoF");
+            return Path.Combine(home, "Formsculpt", "GoF");
         }
     }
 
     static bool Watching => EditorPrefs.GetBool(WatchKey, true);
 
-    [MenuItem("Tools/formsculptor/Import from GoF")]
+    [MenuItem("Tools/formsculpt/Import from GoF")]
     public static void ImportNow()
     {
         int done = Check();
-        Debug.Log(done > 0 ? $"formsculptor GoF: imported {done}" : "formsculptor GoF: nothing new");
+        Debug.Log(done > 0 ? $"formsculpt GoF: imported {done}" : "formsculpt GoF: nothing new");
     }
 
     [MenuItem(WatchMenu)]
@@ -78,10 +78,10 @@ public static class FormsculptorGoF
         Menu.SetChecked(WatchMenu, Watching);
     }
 
-    [MenuItem("Tools/formsculptor/Set GoF Folder")]
+    [MenuItem("Tools/formsculpt/Set GoF Folder")]
     static void SetFolder()
     {
-        string chosen = EditorUtility.OpenFolderPanel("formsculptor GoF folder", Folder, "");
+        string chosen = EditorUtility.OpenFolderPanel("formsculpt GoF folder", Folder, "");
         if (!string.IsNullOrEmpty(chosen)) EditorPrefs.SetString(FolderKey, chosen);
     }
 
@@ -119,7 +119,7 @@ public static class FormsculptorGoF
             string source = Path.Combine(folder, entry.file);
             if (!File.Exists(source))
             {
-                Debug.LogWarning($"formsculptor GoF: {entry.file} is listed but not in {folder}");
+                Debug.LogWarning($"formsculpt GoF: {entry.file} is listed but not in {folder}");
                 continue;
             }
             Directory.CreateDirectory(into);

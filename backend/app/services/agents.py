@@ -2,7 +2,7 @@ import asyncio
 import secrets
 import time
 
-INAPP_HEADER = "x-formsculptor-inapp"
+INAPP_HEADER = "x-formsculpt-inapp"
 INAPP_TOKEN = secrets.token_urlsafe(24)
 LIVE_SECONDS = 4.0
 DECLINE_SECONDS = 600.0
@@ -51,7 +51,7 @@ def reset() -> None:
 async def permit(tool: str, inapp: bool = False) -> str | None:
     global _pending, _answer
     if time.monotonic() < _declined_until:
-        return "The person declined outside agents in the formsculptor window in the last ten minutes. Ask them to allow agents there, then retry."
+        return "The person declined outside agents in the formsculpt window in the last ten minutes. Ask them to allow agents there, then retry."
     if inapp or _allowed is True or not window_live():
         return None
     if _pending is None:
@@ -61,7 +61,7 @@ async def permit(tool: str, inapp: bool = False) -> str | None:
     try:
         await asyncio.wait_for(event.wait(), ASK_SECONDS)
     except asyncio.TimeoutError:
-        return "Nobody answered the permission prompt in the formsculptor window. Ask the person to allow outside agents there, then retry."
+        return "Nobody answered the permission prompt in the formsculpt window. Ask the person to allow outside agents there, then retry."
     if _allowed:
         return None
-    return "The person declined outside agents in the formsculptor window. Do not retry unless they ask you to."
+    return "The person declined outside agents in the formsculpt window. Do not retry unless they ask you to."

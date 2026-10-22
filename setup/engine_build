@@ -9,9 +9,9 @@ if [ -f "$FSC_ROOT/backend/venv/bin/activate" ] || [ -f "$FSC_ROOT/backend/venv/
   fs_venv
   command -v maturin >/dev/null 2>&1 || pip install maturin
   ( cd "$FSC_ROOT/native/crates/fsc-py" && CARGO_TARGET_DIR="$FSC_ROOT/native/target" maturin develop --release )
-  python -c "import fsc_engine; print('[formsculptor] python engine module', fsc_engine.version())"
+  python -c "import fsc_engine; print('[formsculpt] python engine module', fsc_engine.version())"
 else
-  fs_say "backend venv missing; the python engine module was not built (run ./formsculptor install)"
+  fs_say "backend venv missing; the python engine module was not built (run ./formsculpt install)"
 fi
 if rustup target list --installed 2>/dev/null | grep -q wasm32-unknown-unknown; then
   fs_say "wasm32 target present; the browser engine build arrives with fsc-wasm"

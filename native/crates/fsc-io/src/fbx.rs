@@ -221,7 +221,7 @@ pub fn write_fbx(objects: &[GltfObject]) -> Vec<u8> {
         parent(
             "FBXHeaderExtension",
             vec![],
-            vec![node("FBXHeaderVersion", vec![P::I32(1003)]), node("FBXVersion", vec![P::I32(VERSION as i32)]), node("Creator", vec![s(&format!("formsculptor {}", fsc_core::engine_version()))])],
+            vec![node("FBXHeaderVersion", vec![P::I32(1003)]), node("FBXVersion", vec![P::I32(VERSION as i32)]), node("Creator", vec![s(&format!("formsculpt {}", fsc_core::engine_version()))])],
         ),
         parent(
             "GlobalSettings",

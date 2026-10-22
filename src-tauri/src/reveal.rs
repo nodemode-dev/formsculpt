@@ -44,7 +44,7 @@ fn show_main<R: Runtime>(app: &tauri::AppHandle<R>) {
         std::thread::sleep(wait);
     }
     if let Some(splash) = app.get_webview_window("splash") {
-        let _ = splash.eval("window.formsculptorSplashDone && window.formsculptorSplashDone()");
+        let _ = splash.eval("window.formsculptSplashDone && window.formsculptSplashDone()");
         std::thread::sleep(BAR_FINISH);
     }
     if let Some(main) = app.get_webview_window("main") {

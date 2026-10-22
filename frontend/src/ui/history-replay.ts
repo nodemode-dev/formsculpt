@@ -3,7 +3,7 @@
 
 import type { CameraPose } from '../viewport/camera';
 
-export const HISTORY_STORE = 'formsculptor.history';
+export const HISTORY_STORE = 'formsculpt.history';
 
 export interface HistoryPrefs {
   /** Undo steps the engine keeps (set_history_limits). */

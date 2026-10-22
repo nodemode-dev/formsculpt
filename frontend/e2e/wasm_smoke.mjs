@@ -1,6 +1,6 @@
 // The browser engine outside the browser: loads frontend/public/engine/fsc_engine.wasm in Node with the same imports
-// the page gives it and drives its C ABI the way frontend/src/engine/wasm.ts does. Run by ./formsculptor test engine
-// when the module has been built (./formsculptor engine wasm).
+// the page gives it and drives its C ABI the way frontend/src/engine/wasm.ts does. Run by ./formsculpt test engine
+// when the module has been built (./formsculpt engine wasm).
 import { readFileSync } from 'node:fs';
 
 const path = process.argv[2];

@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-"""formsculptor GoF receiver for the Unreal Editor.
+"""formsculpt GoF receiver for the Unreal Editor.
 
-Watches formsculptor's GoF folder and imports what formsculptor sends to Unreal (Send with GoF, target Unreal Engine)
-into /Game/GoF, replacing the asset when the same object is sent again. formsculptor writes GLB in metres; Unreal's
+Watches formsculpt's GoF folder and imports what formsculpt sends to Unreal (Send with GoF, target Unreal Engine)
+into /Game/GoF, replacing the asset when the same object is sent again. formsculpt writes GLB in metres; Unreal's
 importer brings glTF in at its own centimetres.
 
-Start it from the Python console with `import formsculptor_gof; formsculptor_gof.start()`, or let the init_unreal.py
+Start it from the Python console with `import formsculpt_gof; formsculpt_gof.start()`, or let the init_unreal.py
 beside this file start it when the editor opens. Every Unreal call here is from Epic's Python API reference:
 unreal.register_slate_post_tick_callback, AssetImportTask (filename, destination_path, destination_name,
 replace_existing, automated, save, imported_object_paths), AssetToolsHelpers.get_asset_tools and
@@ -26,9 +26,9 @@ _state = {"handle": None, "elapsed": 0.0, "stamp": None}
 
 
 def gof_folder():
-    """FORMSCULPTOR_GOF when set, otherwise Formsculptor/GoF in the home folder (formsculptor's own default)."""
-    folder = os.environ.get("FORMSCULPTOR_GOF", "").strip()
-    return folder or os.path.join(os.path.expanduser("~"), "Formsculptor", "GoF")
+    """FORMSCULPT_GOF when set, otherwise Formsculpt/GoF in the home folder (formsculpt's own default)."""
+    folder = os.environ.get("FORMSCULPT_GOF", "").strip()
+    return folder or os.path.join(os.path.expanduser("~"), "Formsculpt", "GoF")
 
 
 def _seen_path(folder):
@@ -82,15 +82,15 @@ def check(folder=None):
         if seen.get(entry["file"], -1) >= sent:
             continue
         if not os.path.isfile(os.path.join(folder, entry["file"])):
-            unreal.log_warning(f"formsculptor GoF: {entry['file']} is listed but not in {folder}")
+            unreal.log_warning(f"formsculpt GoF: {entry['file']} is listed but not in {folder}")
             continue
         paths = import_entry(folder, entry)
         if paths:
             seen[entry["file"]] = sent
             done += 1
-            unreal.log(f"formsculptor GoF: imported {entry['file']} as {', '.join(paths)}")
+            unreal.log(f"formsculpt GoF: imported {entry['file']} as {', '.join(paths)}")
         else:
-            unreal.log_warning(f"formsculptor GoF: Unreal imported nothing from {entry['file']}")
+            unreal.log_warning(f"formsculpt GoF: Unreal imported nothing from {entry['file']}")
     if done:
         _save_seen(folder, seen)
     return done
@@ -117,7 +117,7 @@ def start():
     if _state["handle"] is None:
         _state["stamp"] = None
         _state["handle"] = unreal.register_slate_post_tick_callback(_tick)
-        unreal.log(f"formsculptor GoF: watching {gof_folder()}")
+        unreal.log(f"formsculpt GoF: watching {gof_folder()}")
 
 
 def stop():

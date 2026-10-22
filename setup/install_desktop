@@ -5,7 +5,7 @@ fs_venv
 cd "$FSC_ROOT/backend"
 if [ "$(fs_os)" = macos ]; then pip install -r requirements_desktop_macos.txt; else pip install -r requirements_desktop.txt; fi
 if ! command -v cargo >/dev/null 2>&1; then
-  fs_say "Rust is not installed. Install it from https://rustup.rs then rerun ./formsculptor install-desktop"
+  fs_say "Rust is not installed. Install it from https://rustup.rs then rerun ./formsculpt install-desktop"
   exit 1
 fi
 if [ "$(fs_os)" = linux ] && ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then

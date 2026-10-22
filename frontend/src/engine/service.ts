@@ -13,7 +13,7 @@ export function browserEngine(): WasmEngine | null {
   return local;
 }
 
-const NEEDS_SERVICE = 'This needs the engine service (./formsculptor boot); the window is running the browser engine';
+const NEEDS_SERVICE = 'This needs the engine service (./formsculpt boot); the window is running the browser engine';
 
 export interface Version {
   app: string;
@@ -124,7 +124,7 @@ export function parseUpdate(buffer: ArrayBuffer): VertexUpdate | null {
 }
 
 export async function fetchVersion(signal?: AbortSignal): Promise<Version | null> {
-  if (local) return { app: 'formsculptor', version: local.version() };
+  if (local) return { app: 'formsculpt', version: local.version() };
   try {
     const response = await fetch('/api/version', { signal, cache: 'no-store' });
     if (!response.ok) return null;
@@ -184,7 +184,7 @@ function localFile(engine: WasmEngine, path: string): Blob | string {
   const url = new URL(path, location.origin);
   const q = url.searchParams;
   const bytes = (r: Uint8Array | string, type: string): Blob | string => (typeof r === 'string' ? r : new Blob([r as BlobPart], { type }));
-  if (url.pathname === '/api/engine/project') return bytes(engine.save(), 'application/x-formsculptor');
+  if (url.pathname === '/api/engine/project') return bytes(engine.save(), 'application/x-formsculpt');
   if (url.pathname === '/api/engine/export') {
     const ids = q.get('ids');
     const options: Record<string, unknown> = {};
@@ -342,7 +342,7 @@ export async function fetchTriplanarPreview(id: number, resolution: number, as: 
   }
   try {
     const response = await fetch(`/api/engine/triplanar_preview?id=${id}&resolution=${resolution}`, { cache: 'no-store' });
-    if (response.status === 204) return response.headers.get('X-Formsculptor-Refused') ?? 'no solid yet';
+    if (response.status === 204) return response.headers.get('X-Formsculpt-Refused') ?? 'no solid yet';
     if (!response.ok) {
       const text = await response.text();
       try {

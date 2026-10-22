@@ -26,7 +26,7 @@ export interface DockHooks {
 }
 
 type Tab = 'objects' | 'layers' | 'views';
-const TAB_STORE = 'formsculptor.dock';
+const TAB_STORE = 'formsculpt.dock';
 
 const count = (n: number): string => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(n >= 1e5 ? 0 : 1)}k` : String(n));
 

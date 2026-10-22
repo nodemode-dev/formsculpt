@@ -42,7 +42,7 @@ fn list<T>(out: &mut String, items: impl IntoIterator<Item = T>, mut each: impl 
 
 pub fn write_usda(objects: &[GltfObject]) -> Vec<u8> {
     let mut out = String::new();
-    let _ = writeln!(out, "#usda 1.0\n(\n    defaultPrim = \"Scene\"\n    doc = \"formsculptor {}\"\n    metersPerUnit = 1\n    upAxis = \"Y\"\n)\n", fsc_core::engine_version());
+    let _ = writeln!(out, "#usda 1.0\n(\n    defaultPrim = \"Scene\"\n    doc = \"formsculpt {}\"\n    metersPerUnit = 1\n    upAxis = \"Y\"\n)\n", fsc_core::engine_version());
     out.push_str("def Xform \"Scene\"\n{\n");
     let mut taken = Vec::new();
     for o in objects {
@@ -128,12 +128,12 @@ fn numbers(body: &str, name: &str) -> Option<Vec<f64>> {
 
 pub fn read_usda(bytes: &[u8]) -> Result<Vec<Named>, String> {
     if bytes.starts_with(b"PXR-USDC") {
-        return Err("this is binary USD (usdc); formsculptor reads the text form, .usda (usdcat converts one to the other)".into());
+        return Err("this is binary USD (usdc); formsculpt reads the text form, .usda (usdcat converts one to the other)".into());
     }
     if bytes.starts_with(b"PK") {
-        return Err("this is a USDZ package; formsculptor reads .usda".into());
+        return Err("this is a USDZ package; formsculpt reads .usda".into());
     }
-    let text = std::str::from_utf8(bytes).map_err(|_| "the USD file is not text; formsculptor reads .usda".to_string())?;
+    let text = std::str::from_utf8(bytes).map_err(|_| "the USD file is not text; formsculpt reads .usda".to_string())?;
     if !text.trim_start().starts_with("#usda") {
         return Err("the file does not start with #usda".into());
     }

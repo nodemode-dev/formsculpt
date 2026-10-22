@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "formsculptor": {
-      "command": "${workspaceFolder}/formsculptor",
+    "formsculpt": {
+      "command": "${workspaceFolder}/formsculpt",
       "args": ["mcp"]
     }
   }

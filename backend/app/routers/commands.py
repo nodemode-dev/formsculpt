@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app.services.commands import REGISTRY, CommandError, catalogue, dispatch
 
 router = APIRouter(tags=["commands"])
-log = logging.getLogger("formsculptor.commands")
+log = logging.getLogger("formsculpt.commands")
 
 
 @router.get("/commands")

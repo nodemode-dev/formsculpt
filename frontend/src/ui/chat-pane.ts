@@ -44,7 +44,7 @@ export class ChatPane {
 <button type="button" class="cv-btn fl-chat-adopt" title="Bring a conversation you had in a Claude Code tab into this chat">From Claude Code...</button>
 <button type="button" class="cv-btn fl-chat-handoff" title="Continue this conversation in a Claude Code terminal tab">Open in Claude Code</button>
 <button type="button" class="cv-btn fl-chat-new">New Chat</button></div>
-<div class="fl-chat-log" role="log" aria-live="polite"><p class="fl-chat-empty cv-note">Ask Claude about your model in the line below: block out a creature, add detail, retopologize, paint or export. It works through formsculptor's tools, every change shows here and in the viewport, and each one can be undone.</p></div>
+<div class="fl-chat-log" role="log" aria-live="polite"><p class="fl-chat-empty cv-note">Ask Claude about your model in the line below: block out a creature, add detail, retopologize, paint or export. It works through formsculpt's tools, every change shows here and in the viewport, and each one can be undone.</p></div>
 </div>`);
     this.log = q(this.root, '.fl-chat-log');
     this.empty = q(this.root, '.fl-chat-empty');
@@ -173,7 +173,7 @@ export class ChatPane {
     try {
       const r = await this.api.cmd<{ sessions: Array<{ id: string; title: string; modified: number; current: boolean }> }>('chat.sessions');
       const first = r.sessions.find((s) => !s.current);
-      if (!first) { this.onFail(new Error('No other Claude Code conversation in formsculptor yet: open one with the Claude Code button first')); return; }
+      if (!first) { this.onFail(new Error('No other Claude Code conversation in formsculpt yet: open one with the Claude Code button first')); return; }
       const when = (s: number): string => new Date(s * 1000).toLocaleString(language(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const options = r.sessions.map((s): [string, string] => [s.id, `${when(s.modified)} · ${s.title || t('Untitled')}${s.current ? ` (${t('this chat')})` : ''}`]);
       const id = await this.picker.ask(t('Continue from Claude Code'), t('Brings a conversation from a Claude Code tab into this chat: its messages show here and your next message continues it.'), t('Conversation'), options, first.id, t('Continue Here'));

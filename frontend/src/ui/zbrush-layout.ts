@@ -10,7 +10,7 @@
  *
  * As with the tablet layout, nothing here is a feature of its own: buttons run registry commands (data-cmd, so their
  * pressed state follows the command) or write the panel control they stand for, and the palettes are the panel's own
- * sections. The look is formsculptor's, in ZBrush's grey; no ZBrush artwork is used.
+ * sections. The look is formsculpt's, in ZBrush's grey; no ZBrush artwork is used.
  */
 
 import { el, setAttr, setText } from './dom';
@@ -18,10 +18,10 @@ import { t } from './i18n';
 import { alphaPreview, materialPreview, strokePreview } from './previews';
 import { DragValue, glyph, write } from './tablet-layout';
 
-const STORE = 'formsculptor.zbrush';
-const TRAY_STORE = 'formsculptor.zbrush.tray';
+const STORE = 'formsculpt.zbrush';
+const TRAY_STORE = 'formsculpt.zbrush.tray';
 
-/** ZBrush's palettes that formsculptor has counterparts for, in ZBrush's alphabetical order: [name, the panel's
+/** ZBrush's palettes that formsculpt has counterparts for, in ZBrush's alphabetical order: [name, the panel's
  * sections by their English headings]. */
 const PALETTES: [string, string[]][] = [
   ['Brush', ['Brush']],
@@ -195,7 +195,7 @@ export class ZBrushLayout {
     for (const b of parts.brushButtons) this.toolLabels.set(b.dataset.brush ?? '', b.textContent ?? '');
 
     // Title bar: name, version and counts; the window's notes; the layout presets and the default.
-    const name = el('span', 'zb-title-name', `formsculptor ${parts.version}`);
+    const name = el('span', 'zb-title-name', `formsculpt ${parts.version}`);
     for (const [value, label] of [['zbrush', 'ZBrush layout'], ['tablet', 'Tablet layout'], ['panel', 'Panel layout']]) {
       const o = el('option', '', t(label));
       o.value = value;
@@ -301,7 +301,7 @@ export class ZBrushLayout {
     brush.addEventListener('click', () => this.openPicker('brush', brush));
     this.left.append(brush);
     this.pickerAnchors.push(brush);
-    // Texture (F5) sits between Alpha and Material, as the Starting Guide lists the shelf; formsculptor's textures are
+    // Texture (F5) sits between Alpha and Material, as the Starting Guide lists the shelf; formsculpt's textures are
     // the images held in Spotlight, where Maxon's shortcut sheet says LightBox loads textures.
     this.left.append(this.swatch('stroke', t('Stroke'), 'F3'), this.swatch('alpha', t('Alpha'), 'F4'), this.textureSwatch(), this.swatch('material', t('Material'), 'F6'));
     const colour = el('label', 'zb-swatch zb-colour');
