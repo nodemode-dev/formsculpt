@@ -917,7 +917,7 @@ dependencies = [
 
 [[package]]
 name = "formsculptor"
-version = "1.14.2"
+version = "1.15.0"
 dependencies = [
  "objc2",
  "objc2-app-kit",
