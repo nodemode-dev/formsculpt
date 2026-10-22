@@ -2,6 +2,14 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.0 · 2026-10-22
+
+### Changed
+
+- The app is formsculpt everywhere, matching its repository `nodemode-ai/formsculpt`: the launchers (`./formsculpt`, `formsculpt.bat`), the desktop app and its identifier `ai.nodemode.formsculpt`, the data folders `~/Formsculpt` and `~/.formsculpt`, the MCP server and skills (`formsculpt-harness`, `formsculpt-modeling`), the Blender add-on `formsculpt_link`, the Unity and Unreal GoF receivers, and every interface string in all 26 languages. Projects keep the `.fsc` extension and open as before.
+- Saved preferences and data from earlier builds are not moved to the new folders automatically; move the old data folders to `~/Formsculpt` and `~/.formsculpt` by hand to keep them.
+- Send to NodeMode posts to `/api/formsculpt/receive`.
+
 ## 1.17.1 · 2026-10-22
 
 ### Changed
