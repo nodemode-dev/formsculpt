@@ -1431,7 +1431,7 @@ function buildShell(root: HTMLElement): Shell {
   const panelLeft = input('checkbox', { 'aria-label': 'Panel on the left' });
   const uiSize = choices('Interface size', [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]);
   // The theme here, or NodeMode's (the default); translucent panels let the viewport show through (ui/theme.ts).
-  const themePick = choices('Theme', [['nodemode', 'Follow NodeMode'], ['dark', 'Dark theme'], ['light', 'Light theme'], ['contrast', 'High contrast']]);
+  const themePick = choices('Theme', [['nodemode', 'Follow NodeMode'], ['family', 'Form family theme'], ['dark', 'Dark theme'], ['light', 'Light theme'], ['contrast', 'High contrast']]);
   const translucent = input('checkbox', { 'aria-label': 'Translucent panels' });
   {
     const kept = loadTheme();
@@ -4773,9 +4773,9 @@ class SceneView {
       { id: 'view.tool_swap', label: 'Second Press Swaps Tool', run: () => toggle(s.toolSwap), checked: () => s.toolSwap.checked },
       { id: 'view.bindings', label: 'Input Bindings', run: () => this.bindingsDialog.show() },
       { id: 'history.replay', label: 'Replay History', icon: 'refresh', run: () => this.toggleReplay(), checked: () => this.replay.playing },
-      ...(['nodemode', 'dark', 'light', 'contrast'] as const).map((name) => ({
+      ...(['nodemode', 'family', 'dark', 'light', 'contrast'] as const).map((name) => ({
         id: `view.theme_${name}`,
-        label: { nodemode: 'Follow NodeMode', dark: 'Dark theme', light: 'Light theme', contrast: 'High contrast' }[name],
+        label: { nodemode: 'Follow NodeMode', family: 'Form family theme', dark: 'Dark theme', light: 'Light theme', contrast: 'High contrast' }[name],
         run: () => {
           s.themePick.value = name;
           s.themePick.dispatchEvent(new Event('change', { bubbles: true }));
