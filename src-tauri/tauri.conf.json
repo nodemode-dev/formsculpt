@@ -35,6 +35,10 @@
     "longDescription": "formsculpt is a 3D sculpting and modeling application in the NodeMode design system: a Rust sculpting engine, dynamic topology, multiresolution, remeshing, painting and its own .fsc project files.",
     "copyright": "Copyright 2026 nodemode-ai.",
     "externalBin": ["binaries/formsculpt-engine"],
+    "resources": {
+      "../LICENSE": "LICENSE",
+      "../NOTICE.md": "NOTICE.md"
+    },
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
     "macOS": {
       "minimumSystemVersion": "12.0",

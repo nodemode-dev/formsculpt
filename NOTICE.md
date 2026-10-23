@@ -21,9 +21,27 @@ formsculpt is licensed under the Apache License 2.0 (see `LICENSE`). Copyright 2
 | zip (deflate only), base64 | MIT; MIT or Apache-2.0 | engine file formats (.fsc, 3MF, embedded glTF) |
 | png | MIT or Apache-2.0 | baked texture maps |
 | boolmesh (Saki Komikado) | MPL-2.0 | exact mesh booleans; used unmodified from crates.io, its source available there and at github.com/komietty/boolmesh |
-| FastAPI, Starlette, uvicorn, python-multipart | MIT or BSD-3-Clause | engine service |
+| FastAPI, Starlette, uvicorn, python-multipart | MIT (FastAPI), BSD-3-Clause (Starlette, uvicorn), Apache-2.0 (python-multipart) | engine service |
 | @xterm/xterm, @xterm/addon-fit | MIT | the terminal dock |
 | ptyprocess (Unix), pywinpty (Windows) | ISC; MIT | terminal sessions in the engine service |
+| Other Python packages frozen into the engine | MIT: annotated-doc, annotated-types, anyio, h11, httptools, pydantic, pydantic-core, pyyaml, typing-inspection, watchfiles; BSD-3-Clause: click, idna, python-dotenv, websockets; MIT OR Apache-2.0: uvloop; PSF-2.0: typing-extensions and the CPython runtime | read from the installed metadata of `backend/requirements.txt`, 2026-10-23 |
+
+## MPL-2.0 crates linked
+
+Five crates under the Mozilla Public License 2.0 are linked, all unedited and from crates.io (checked with `cargo metadata --locked` on `native/Cargo.lock` and `src-tauri/Cargo.lock`): boolmesh 0.2.1 in the sculpting engine workspace (listed above), and, through Tauri, cssparser 0.36.0, cssparser-macros 0.6.1, selectors 0.36.1, dtoa-short 0.3.5 and option-ext 0.2.0. Their source is at https://crates.io/crates/<name>/<version>.
+
+## Desktop shell: crates under other licences
+
+Tauri links these crates unedited (no `[patch]` and no vendored copy):
+
+| Crate | Licence | Why it is there |
+| --- | --- | --- |
+| cssparser, selectors, dtoa-short, option-ext | MPL-2.0 | Tauri's HTML handling (tauri-utils); used unmodified, source at crates.io |
+| ring | Apache-2.0 AND ISC | TLS for the updater (rustls) |
+| webpki-root-certs | CDLA-Permissive-2.0 | root certificates for the updater's TLS |
+| r-efi | MIT OR Apache-2.0 OR LGPL-2.1-or-later | used under MIT |
+
+The Linux AppImage also carries the build machine's WebKitGTK, GTK and GLib (LGPL-2.1-or-later) as separate shared libraries.
 
 ## Trademarks
 
