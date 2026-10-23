@@ -2,6 +2,13 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.1 · 2026-10-23
+
+### Changed
+
+- formsculpt's features carry its own names: the third layout is the ZUI Layout and its shelf is LightCube, in every language; the engine's undo labels say Vertex Paint; the MCP tool descriptions name no other product (Armature Spheres, Quad Remesh, Voxel Remesh, Pose Part). Ids, storage keys and `/api/lightbox` are unchanged, so saved choices and projects keep working.
+- NOTICE.md and the README carry a trademark notice.
+
 ## 1.18.0 · 2026-10-22
 
 ### Changed
