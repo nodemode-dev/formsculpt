@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.2 · 2026-10-23
+
+### Changed
+
+- NOTICE.md lists the MPL-2.0 crates linked, the desktop shell's crates under other licences and the Python packages frozen into the engine, with python-multipart's Apache-2.0 licence corrected; the installers carry LICENSE and NOTICE.md.
+
 ## 1.18.1 · 2026-10-23
 
 ### Changed
