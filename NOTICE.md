@@ -24,3 +24,7 @@ formsculpt is licensed under the Apache License 2.0 (see `LICENSE`). Copyright 2
 | FastAPI, Starlette, uvicorn, python-multipart | MIT or BSD-3-Clause | engine service |
 | @xterm/xterm, @xterm/addon-fit | MIT | the terminal dock |
 | ptyprocess (Unix), pywinpty (Windows) | ISC; MIT | terminal sessions in the engine service |
+
+## Trademarks
+
+ZBrush, ZRemesher, DynaMesh, ZSpheres, Polypaint and LightBox are trademarks or registered trademarks of Maxon Computer GmbH. Nomad Sculpt is a trademark of its owner. Blender is a registered trademark of the Blender Foundation. Unreal is a trademark of Epic Games, Inc. Unity is a trademark of Unity Technologies. Other names are the property of their owners. They are used only to describe compatibility, file formats and integrations; formsculpt is not affiliated with or endorsed by them. formsculpt's features carry its own names (ZUI Layout, LightCube, Quad Remesh, Voxel Remesh, Armature Spheres, Vertex Paint, Pose Part), and no other product's artwork, brushes, presets or code are included.

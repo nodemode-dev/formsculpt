@@ -12,7 +12,7 @@
 
 ## What it is
 
-formsculpt is the Form family's ZBrush alternative: a Rust sculpting engine driving a TypeScript viewport, a FastAPI engine service & a Tauri 2 desktop build. Every action is a keyed command in one registry, so the interface, the keyboard & outside agents (Claude Code, Codex, Cursor over MCP) all drive the same engine, w/ or w/o the window open. It is measured row by row against ZBrush 2026.2.1 & Nomad Sculpt 2.9.24 in the FormAI parity matrix.
+formsculpt is the Form family's sculpting and modeling app: a Rust sculpting engine driving a TypeScript viewport, a FastAPI engine service & a Tauri 2 desktop build. Every action is a keyed command in one registry, so the interface, the keyboard & outside agents (Claude Code, Codex, Cursor over MCP) all drive the same engine, w/ or w/o the window open. Its feature coverage is tracked row by row in the FormAI parity matrix.
 
 Stack · Rust engine (`native/`, one Cargo workspace) · vanilla TypeScript & Vite (`frontend/`) · Python & FastAPI (`backend/`) · Tauri 2 (`src-tauri/`)
 
@@ -26,7 +26,7 @@ Stack · Rust engine (`native/`, one Cargo workspace) · vanilla TypeScript & Vi
 - **Claude in the window** · a terminal dock with shells, a Claude Code tab and a Chat tab, wired to the same MCP tools.
 - **Menus, palette & shortcuts** · a menu bar and right-click menus built from the command registry, a `Mod+K` palette over every command & a `Mod+/` shortcut editor.
 - **26 languages** · English by default; switch in View > Language, live, no reload.
-- **A studio viewport** · a gradient backdrop w/ vignette (or a flat colour) & an infinite, anti-aliased floor grid that fades to the horizon, as in ZBrush & Nomad; Shift+P toggles the grid.
+- **A studio viewport** · a gradient backdrop w/ vignette (or a flat colour) & an infinite, anti-aliased floor grid that fades to the horizon; Shift+P toggles the grid.
 
 ## Quick Start
 
@@ -120,3 +120,5 @@ Inside the window: the terminal dock under the viewport (`Mod+J`, or the app-bar
 ## Licensing
 
 Apache License 2.0, see [LICENSE](LICENSE) & [NOTICE.md](NOTICE.md).
+
+ZBrush and its feature names are trademarks of Maxon Computer GmbH, and Nomad Sculpt is a trademark of its owner. They are named only for compatibility and history; formsculpt is not affiliated with or endorsed by them, and its features carry its own names. NOTICE.md has the full trademark notice.
