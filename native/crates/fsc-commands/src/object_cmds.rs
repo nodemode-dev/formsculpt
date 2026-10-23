@@ -402,7 +402,7 @@ pub(crate) fn split_schema() -> Value {
         "type": "object",
         "properties": {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
-            "by": {"type": "string", "enum": ["parts", "groups"], "default": "parts", "description": "parts: one object per connected part of the mesh. groups: one object per face group (ZBrush's Groups Split), each keeping its group, paint and UVs."}
+            "by": {"type": "string", "enum": ["parts", "groups"], "default": "parts", "description": "parts: one object per connected part of the mesh. groups: one object per face group (split by groups), each keeping its group, paint and UVs."}
         },
         "required": [],
         "additionalProperties": false

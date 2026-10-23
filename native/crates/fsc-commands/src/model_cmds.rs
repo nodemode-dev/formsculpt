@@ -34,7 +34,7 @@ pub(crate) fn quad_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "faces": {"type": "integer", "minimum": 100, "maximum": 400000, "default": 4000, "description": "Target number of quads."},
             "relax": {"type": "integer", "minimum": 0, "maximum": 30, "default": 6, "description": "Smoothing passes that even out the quads while staying on the original surface."},
-            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes."}
+            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as Quad Remesh guide curves steer it. Without guides the grid follows the world axes."}
         },
         "required": [],
         "additionalProperties": false
@@ -75,7 +75,7 @@ pub(crate) fn field_schema() -> Value {
             "hard_angle": {"type": "number", "minimum": 1, "maximum": 180, "default": 40, "description": "Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off."},
             "density_from_paint": {"type": "boolean", "default": false, "description": "Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even."},
             "iterations": {"type": "integer", "minimum": 4, "maximum": 200, "default": 40, "description": "Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer."},
-            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as ZRemesher's curves steer it."}
+            "guides": {"type": "array", "maxItems": 64, "items": {"type": "array", "minItems": 2, "maxItems": 4096, "items": crate::curve_cmds::point_schema(3)}, "description": "Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as Quad Remesh guide curves steer it."}
         },
         "required": [],
         "additionalProperties": false

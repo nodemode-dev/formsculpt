@@ -366,7 +366,7 @@ pub(crate) fn channel_paste(s: &mut Session, args: &Value) -> Result<Value, Comm
         }
         Clip::Paint(p) => {
             state.paint = Some((p, PaintLayers::default()));
-            "Paste Polypaint"
+            "Paste Vertex Paint"
         }
     };
     let object = commit(s, id, label, state)?;
@@ -407,7 +407,7 @@ pub(crate) fn channel_clear(s: &mut Session, args: &Value) -> Result<Value, Comm
             if o.mesh.has_paint() || !o.paint_layers.is_empty() {
                 state.paint = Some((Vec::new(), PaintLayers::default()));
             }
-            "Clear Polypaint"
+            "Clear Vertex Paint"
         }
     };
     if state.groups.is_none() && state.mask.is_none() && state.paint.is_none() {

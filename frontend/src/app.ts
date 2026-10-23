@@ -4760,7 +4760,7 @@ class SceneView {
       { id: 'gizmo.pivot_view', label: 'Pivot to View', run: () => void this.pivotToView(), enabled: () => this.scene.active !== null },
       { id: 'gizmo.apply', label: 'Apply Typed Transform', run: () => void this.applyTypedTransform(), enabled: () => this.scene.active !== null },
       { id: 'view.tablet_layout', label: 'Tablet Layout', run: () => s.tablet.toggle(), checked: () => s.tablet.enabled },
-      { id: 'view.zbrush_layout', label: 'ZBrush Layout', run: () => this.useLayout(s.zbrush.enabled ? 'panel' : 'zbrush'), checked: () => s.zbrush.enabled },
+      { id: 'view.zbrush_layout', label: 'ZUI Layout', run: () => this.useLayout(s.zbrush.enabled ? 'panel' : 'zbrush'), checked: () => s.zbrush.enabled },
       {
         id: 'view.default_layout',
         label: 'Open in This Layout by Default',

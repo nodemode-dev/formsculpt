@@ -83,7 +83,7 @@ pub(crate) fn clip_schema() -> Value {
             "id": {"type": "integer", "minimum": 1, "description": "Object id; the active object when omitted."},
             "point": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "A point on the cutting plane; the object's centre when omitted."},
             "normal": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "The plane's normal: the side it points to is cut away."},
-            "mode": {"type": "string", "enum": ["keep", "slice"], "default": "keep", "description": "keep removes the far side (ZBrush ClipCurve); slice keeps both halves as two capped objects."}
+            "mode": {"type": "string", "enum": ["keep", "slice"], "default": "keep", "description": "keep removes the far side (a clip cut); slice keeps both halves as two capped objects."}
         },
         "required": ["normal"],
         "additionalProperties": false

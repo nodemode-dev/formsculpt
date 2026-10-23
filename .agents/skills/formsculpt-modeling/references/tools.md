@@ -134,7 +134,7 @@ Note: removes or replaces (undoable).
 
 ## pick
 
-Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal, the distance and the mask there (0 unmasked to 1 masked, read across the triangle). The window uses it to pivot the camera on a double-clicked point and for Nomad's one-tap mask shortcuts.
+Cast a ray (origin and direction in world space) and report the nearest visible object hit: its id, the point, the face normal, the distance and the mask there (0 unmasked to 1 masked, read across the triangle). The window uses it to pivot the camera on a double-clicked point and for the one-tap mask shortcuts.
 
 - `direction`: array of number; required
 - `origin`: array of number; required
@@ -266,7 +266,7 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 
 ## triplanar_solid
 
-Turn a triplanar's masks into a solid, as Nomad Sculpt's Triplanar does: add_primitive kind triplanar makes three crossing planes (front x, y; side z, y; top x, z), each starting with a masked disc; mask a shape on each (mask brush, mask_fill and the rest, mask 1 is solid), then this keeps every point whose projections lie in the masked part of all three, rounded where they meet and polygonized into a watertight quad mesh. The planes become the solid (one undo step), or with keep_planes the solid is added beside them to preview.
+Turn a triplanar's masks into a solid: add_primitive kind triplanar makes three crossing planes (front x, y; side z, y; top x, z), each starting with a masked disc; mask a shape on each (mask brush, mask_fill and the rest, mask 1 is solid), then this keeps every point whose projections lie in the masked part of all three, rounded where they meet and polygonized into a watertight quad mesh. The planes become the solid (one undo step), or with keep_planes the solid is added beside them to preview.
 
 - `blend`: number; default 0.04; range 0 to 0.5; Rounds the edges where the three masks meet, as a fraction of the solid's size.
 - `id`: integer; range 1 to inf; A triplanar object (add_primitive kind triplanar); the active object when omitted.
@@ -275,9 +275,9 @@ Turn a triplanar's masks into a solid, as Nomad Sculpt's Triplanar does: add_pri
 
 ## edit_build
 
-Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move) or given sharp, round, radius or twist (set_points), and for tubes the interp, radius_mode, sides, profile, twist, spiral, spiral_offset, cap and hole as well as the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the ZSphere workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.
+Remake a tube (curve_tube), lathe or skeleton from changed settings while it has not been sculpted or otherwise changed since: a new curve or profile, single points moved by index (move) or given sharp, round, radius or twist (set_points), and for tubes the interp, radius_mode, sides, profile, twist, spiral, spiral_offset, cap and hole as well as the radius, segments, smoothing or closure. For a skeleton, add grows a new sphere linked to the nearest joint and drag moves the joint nearest a point (the Armature Spheres workflow), then the base mesh is remade. get_scene shows editable_build on objects that can still be edited. One undo step.
 
-- `add`: object; Skeleton: add a sphere at point, linked to the nearest sphere (ZSphere style: click beside a joint to grow a limb).; fields point, radius
+- `add`: object; Skeleton: add a sphere at point, linked to the nearest sphere (Armature Spheres: click beside a joint to grow a limb).; fields point, radius
 - `blend`: number; range 0 to 1; Skeleton: how softly limbs merge.
 - `cap`: string (flat | round | none); Tube: the end caps.
 - `closed`: boolean; Tube: close the curve into a ring.
@@ -408,7 +408,7 @@ Note: read-only.
 
 ## curve_bridge
 
-Loft a cross-section loop along a path into a new object (ZBrush's Curve Bridge and Snake Curve) as one undo step. from is the start loop: the longest border of a face set, either one face group (source group, with group) or the masked faces (source mask). With to (same shape) the bridge ends on that second loop; the path is the straight line between the two loop centres, or the curve through points (same formats as sample_curve). Without to the end section is the start loop scaled about its centre by end_scale (default 0.3), and the path runs along the loop's average normal for length world units (default four times the loop's mean radius) unless points is given: a tapering snake out of a mask or group border. Both loops are cut into samples points (8 to 256, default 48), made to correspond (same winding, start index turned to the nearest fit), and swept along the path on rotation-minimising frames in sections rings (4 to 512, default 48), so the bridge meets each loop exactly at its ends. The result is an open triangle tube with both ends left open. offset lifts the loops along the surface normal. Returns the new object plus sections and samples. Refuses with no_border when a loop is missing and with bad_arguments when the border is open, since a bridge needs closed loops.
+Loft a cross-section loop along a path into a new object (a curve bridge or snake curve) as one undo step. from is the start loop: the longest border of a face set, either one face group (source group, with group) or the masked faces (source mask). With to (same shape) the bridge ends on that second loop; the path is the straight line between the two loop centres, or the curve through points (same formats as sample_curve). Without to the end section is the start loop scaled about its centre by end_scale (default 0.3), and the path runs along the loop's average normal for length world units (default four times the loop's mean radius) unless points is given: a tapering snake out of a mask or group border. Both loops are cut into samples points (8 to 256, default 48), made to correspond (same winding, start index turned to the nearest fit), and swept along the path on rotation-minimising frames in sections rings (4 to 512, default 48), so the bridge meets each loop exactly at its ends. The result is an open triangle tube with both ends left open. offset lifts the loops along the surface normal. Returns the new object plus sections and samples. Refuses with no_border when a loop is missing and with bad_arguments when the border is open, since a bridge needs closed loops.
 
 - `end_scale`: number; default 0.3; range 0.001 to 100; Without to: the end section is the start loop scaled about its centre by this factor.
 - `from`: object; required; The start loop: the longest border of this face set.; fields group, source
@@ -501,7 +501,7 @@ Run one brush stroke along a path of points on the surface of an object, as one 
 - `emissive`: number; range 0 to 1; Paint brush: paint this glow in the paint colour.
 - `falloff`: string (smooth | sphere | linear | sharp); default "smooth"
 - `falloff_curve`: array of number; A drawn falloff instead of a named one: weights evenly spaced from the centre (first) to the rim (last), read linearly between. [1, 1, 1, 0] is a flat-topped brush with a hard edge; [0, 1, 0] a ring.
-- `focal_shift`: number; default 0; range -100 to 100; ZBrush's Focal Shift over the falloff (or falloff_curve): below 0 full strength reaches further out (-100 a crisp tip with no falloff), above 0 the falloff starts sooner (100 narrows the tip toward a point).
+- `focal_shift`: number; default 0; range -100 to 100; Focal Shift over the falloff (or falloff_curve): below 0 full strength reaches further out (-100 a crisp tip with no falloff), above 0 the falloff starts sooner (100 narrows the tip toward a point).
 - `front_facing`: boolean; default false; Only vertices whose normal faces the viewer are affected (dot of normal and minus view_dir above 0, easing in over 0 to 0.2), so a brush does not reach through to the back of a thin part. Uses view_dir; when that is absent in sculpt_stroke, the reverse of the surface normal at the stroke's first point (the nearest vertex's normal) stands in for the view (live strokes use each sample's ray direction).
 - `height`: number; default 0; range 0 to 10000; Layer brush: the most each vertex may rise (or sink, inverted) over one stroke, in world units; a tenth of the radius when 0.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
@@ -607,7 +607,7 @@ Note: read-only.
 
 ## spotlight_add
 
-Spotlight: load an image (png_base64 or path) onto the Spotlight, an image dial held over the view for projection painting and sculpting from an image, as in ZBrush. Place it with center ([x, y] fractions of the view, y down), size (its height as a fraction of the view's height), angle (degrees clockwise), opacity, tile and flip; it becomes the active image. Holds up to 16 images. View state: not in the undo history and not saved in projects. Then spotlight_apply paints or sculpts through it.
+Spotlight: load an image (png_base64 or path) onto the Spotlight, an image dial held over the view for projection painting and sculpting from an image. Place it with center ([x, y] fractions of the view, y down), size (its height as a fraction of the view's height), angle (degrees clockwise), opacity, tile and flip; it becomes the active image. Holds up to 16 images. View state: not in the undo history and not saved in projects. Then spotlight_apply paints or sculpts through it.
 
 - `angle`: number; range -360 to 360; Turn in degrees, clockwise on screen.
 - `center`: array of number; The image's centre over the view as [x, y] fractions of the view's width and height, y down; [0.5, 0.5] is the middle.
@@ -769,7 +769,7 @@ Simulate an object as cloth falling under gravity onto the other objects (or cho
 
 ## pose
 
-Pose a part as with ZBrush's Transpose: mask what must stay (the body), and the unmasked part (an arm) turns about a joint pivot by an angle around an axis; partly masked vertices turn partly, and falloff spreads the bend smoothly near the joint. One undo step.
+Pose a part (Pose Part): mask what must stay (the body), and the unmasked part (an arm) turns about a joint pivot by an angle around an axis; partly masked vertices turn partly, and falloff spreads the bend smoothly near the joint. One undo step.
 
 - `angle`: number; required; range -360 to 360; Degrees to turn, counter-clockwise about the axis.
 - `axis`: array of number; The hinge direction; [0, 0, 1] when omitted.
@@ -954,10 +954,10 @@ Bring textures exported from Substance 3D Painter back: [name]_BaseColor.png in 
 
 ## clip_plane
 
-Cut an object flat along a plane with an exact boolean: keep removes the side the normal points to (ZBrush ClipCurve, a planar cut for hard-surface parts), slice keeps both halves as two capped objects. One undo step.
+Cut an object flat along a plane with an exact boolean: keep removes the side the normal points to (a planar clip cut for hard-surface parts), slice keeps both halves as two capped objects. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
-- `mode`: string (keep | slice); default "keep"; keep removes the far side (ZBrush ClipCurve); slice keeps both halves as two capped objects.
+- `mode`: string (keep | slice); default "keep"; keep removes the far side (a clip cut); slice keeps both halves as two capped objects.
 - `normal`: array of number; required; The plane's normal: the side it points to is cut away.
 - `point`: array of number; A point on the cutting plane; the object's centre when omitted.
 
@@ -1326,7 +1326,7 @@ Subdivide an object's mesh, each level multiplying the triangles by four (Loop s
 
 ## remesh_voxel
 
-Rebuild an object as an even, closed mesh by sampling its surface on a voxel grid (like DynaMesh or Nomad's voxel remesher). Fixes stretched triangles after heavy grab or inflate strokes and merges intersecting parts. resolution is voxels along the longest side. The mask is cleared.
+Rebuild an object as an even, closed mesh by sampling its surface on a voxel grid (Voxel Remesh). Fixes stretched triangles after heavy grab or inflate strokes and merges intersecting parts. resolution is voxels along the longest side. The mask is cleared.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `keep_sharp`: number; default 0; range 0 to 180; Keep hard edges and corners, in degrees; 0 is off. Where the original's faces near a new point turn by more than this, the point moves onto the edge or corner they make (the best fit to their planes), so a cube stays a cube instead of rounding by a voxel. 30 suits most hard-surface parts.
@@ -1366,7 +1366,7 @@ Note: read-only.
 Rebuild an object as an even, quad-dominant mesh near a target face count: quads from a voxel grid, relaxed along the original surface. OBJ export writes them as quads. The grid makes edge flow follow the axes rather than the form (no guide curves). One undo step; the mask is cleared, paint is carried over.
 
 - `faces`: integer; default 4000; range 100 to 400000; Target number of quads.
-- `guides`: array of array; Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as ZRemesher's curves steer it. Without guides the grid follows the world axes.
+- `guides`: array of array; Guide curves as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool, or along a limb): the quads' edge loops are turned to run along their mean direction, as Quad Remesh guide curves steer it. Without guides the grid follows the world axes.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `relax`: integer; default 6; range 0 to 30; Smoothing passes that even out the quads while staying on the original surface.
 
@@ -1376,7 +1376,7 @@ Rebuild an object as all quads whose edge loops follow its form: a smoothed dire
 
 - `density_from_paint`: boolean; default false; Read the paint as a density map: red areas get smaller quads (down to half size), blue ones larger (up to double), white stays even.
 - `faces`: integer; default 2000; range 100 to 200000; Target number of quads (the result lands near it, more where the form is busy).
-- `guides`: array of array; Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as ZRemesher's curves steer it.
+- `guides`: array of array; Guide curves on or near the surface, as lists of [x, y, z] points or objects {p, sharp, round} (smoothed through catmull_rom, corners respected; drawn with the Curve stroke tool): edge loops run along each one where it passes, and the field blends between the guides and the hard edges elsewhere, as Quad Remesh guide curves steer it.
 - `hard_angle`: number; default 40; range 1 to 180; Edges whose faces meet at more than this many degrees are hard: the edge loops run along them (a cube's edges, a cylinder's rims). 180 turns hard edges off.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 - `iterations`: integer; default 40; range 4 to 200; Smoothing passes of the direction and position fields; more gives longer, straighter loops and takes longer.
@@ -1519,9 +1519,9 @@ Join several objects into the first one's mesh (the parts stay separate shells; 
 
 ## split_parts
 
-Split an object into one object per connected part of its mesh, or with by groups one object per face group (ZBrush's Groups Split). One undo step.
+Split an object into one object per connected part of its mesh, or with by groups one object per face group (split by groups). One undo step.
 
-- `by`: string (parts | groups); default "parts"; parts: one object per connected part of the mesh. groups: one object per face group (ZBrush's Groups Split), each keeping its group, paint and UVs.
+- `by`: string (parts | groups); default "parts"; parts: one object per connected part of the mesh. groups: one object per face group (split by groups), each keeping its group, paint and UVs.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.
 
 ## array_object
@@ -1547,28 +1547,28 @@ Repeat an object in a line (offset per copy) or around an axis (radial, evenly o
 
 ## instance_object
 
-Duplicate an object as an instance (Nomad Sculpt's Instance): modelling changes to the original (sculpt, paint, remesh, divide) are made to every instance, while each keeps its own place, so moving, turning or scaling one leaves the others. Optionally moved by an offset. Editing an instance itself makes it a unique shape. Made active. One undo step.
+Duplicate an object as an instance: modelling changes to the original (sculpt, paint, remesh, divide) are made to every instance, while each keeps its own place, so moving, turning or scaling one leaves the others. Optionally moved by an offset. Editing an instance itself makes it a unique shape. Made active. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted. The object to make an instance of; an instance of an instance links to the same original.
 - `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
 
 ## uninstance_object
 
-Make an instance a unique shape (Nomad Sculpt's Un-instance): it keeps its mesh and no longer follows the original. Refuses with not_instance for an object that is not one. One undo step.
+Make an instance a unique shape (Un-instance): it keeps its mesh and no longer follows the original. Refuses with not_instance for an object that is not one. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted. The linked copy to make a unique shape.
 - `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
 
 ## sync_instance_children
 
-Give every instance of a shape the same children (Nomad Sculpt's Sync): the objects under the chosen instance are the pattern, and each other instance of the same original (the original included) gets a linked copy of each pattern child it lacks, placed as the pattern sits on the chosen one and hung in the same tree. Children an instance already has, or a copy linked to the same original, stay. Refuses with no_instances or no_children. Returns added. One undo step.
+Give every instance of a shape the same children (Sync Instances): the objects under the chosen instance are the pattern, and each other instance of the same original (the original included) gets a linked copy of each pattern child it lacks, placed as the pattern sits on the chosen one and hung in the same tree. Children an instance already has, or a copy linked to the same original, stay. Refuses with no_instances or no_children. Returns added. One undo step.
 
 - `id`: integer; range 1 to inf; Object id; the active object when omitted. Any instance of the shape (or its original): its children are the hierarchy every other instance gets.
 - `offset`: array of number; Only for instance_object: move the new instance by this much; default none.
 
 ## repeat_object
 
-Nested repeaters on an object, as ZBrush's repeater stack: 1 to 4 steps, the first innermost, each repeating the whole set the steps before it made, so the copy counts multiply (at most 2048). A step is a line (count, offset between copies), radial (count, axis, total angle, centre), mirror (axis, plane offset; the reflected copy has its winding flipped so normals stay outward) or curve (points, count, align; copies evenly by arc length along the path). Any step can carry randomize (position in units, rotation in degrees, scale as a fraction) for each copy it creates, from a seed. validate merge (default) joins every copy into one new object and removes the source; separate makes one object per copy and keeps the source; linked does the same and the copies follow the source when it changes; preview changes nothing and only returns the transforms. One undo step; the reply gives the copy count, the new object ids, the first 64 transforms (position, rotation in Euler degrees, scale and the matrix) and a scene summary.
+Nested repeaters on an object, as a repeater stack: 1 to 4 steps, the first innermost, each repeating the whole set the steps before it made, so the copy counts multiply (at most 2048). A step is a line (count, offset between copies), radial (count, axis, total angle, centre), mirror (axis, plane offset; the reflected copy has its winding flipped so normals stay outward) or curve (points, count, align; copies evenly by arc length along the path). Any step can carry randomize (position in units, rotation in degrees, scale as a fraction) for each copy it creates, from a seed. validate merge (default) joins every copy into one new object and removes the source; separate makes one object per copy and keeps the source; linked does the same and the copies follow the source when it changes; preview changes nothing and only returns the transforms. One undo step; the reply gives the copy count, the new object ids, the first 64 transforms (position, rotation in Euler degrees, scale and the matrix) and a scene summary.
 
 - `id`: integer; range 1 to inf; The source object to repeat; the active object when omitted.
 - `seed`: integer; default 1; The random seed for every randomize.
@@ -1839,7 +1839,7 @@ Note: in the window: Mod+Shift+Z.
 
 ## selection_set_save
 
-Keep a named snapshot of an object's face groups, mask, vertex paint, sculpt layer strengths and UVs (all it has, or the channels listed) to bring back later with selection_set_restore, as ZBrush's Selection Sets do. Saving under an existing name replaces that set. Up to 64 sets per object; they are saved in projects. Returns the stored channels and the number of values in each.
+Keep a named snapshot of an object's face groups, mask, vertex paint, sculpt layer strengths and UVs (all it has, or the channels listed) to bring back later with selection_set_restore. Saving under an existing name replaces that set. Up to 64 sets per object; they are saved in projects. Returns the stored channels and the number of values in each.
 
 - `channels`: array of string; What to keep: face groups, the mask, vertex paint (the composited colour, roughness, metalness, opacity and glow), sculpt layer strengths and UVs. All the channels the object has when omitted.
 - `id`: integer; range 1 to inf; Object id; the active object when omitted.

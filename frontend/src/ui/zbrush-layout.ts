@@ -1,16 +1,16 @@
 /**
- * The ZBrush layout: a third face of the window, arranged as ZBrush's classic desktop interface is (researched from
- * Pixologic's ZBrush Starting Guide and Maxon's shortcut sheet; see the frontend side log). From the top: a title bar
+ * The ZUI layout (ids and file names keep the older `zbrush` prefix): a third face of the window, a classic
+ * palette-and-shelf desktop arrangement for people used to that way of working. From the top: a title bar
  * (version and counts on the left, the window's notes in the middle, the layout presets on the right), the palette
  * menu bar with its palettes in alphabetical order, and the top shelf (the Draw, Move, Scale and Rotate modes, Rgb and
  * Mrgb, Zadd and Zsub, Draw Size, Focal Shift, Z Intensity and Rgb Intensity). Below it the left shelf holds the brush, stroke, alpha, material and
  * colour; the right shelf the view buttons (Persp, Floor, symmetry, Frame, the Move, Zoom3D and Rotate drag buttons,
  * PolyF, Transp, Solo); and the right tray shows one palette at a time, the Tool palette (with its SubTool list) by
- * default. The keys are ZBrush's while this layout is on.
+ * default. This layout has its own key map while it is on.
  *
  * As with the tablet layout, nothing here is a feature of its own: buttons run registry commands (data-cmd, so their
  * pressed state follows the command) or write the panel control they stand for, and the palettes are the panel's own
- * sections. The look is formsculpt's, in ZBrush's grey; no ZBrush artwork is used.
+ * sections. The look, the greys and every icon are formsculpt's own; no other product's artwork is used.
  */
 
 import { el, setAttr, setText } from './dom';
@@ -196,7 +196,7 @@ export class ZBrushLayout {
 
     // Title bar: name, version and counts; the window's notes; the layout presets and the default.
     const name = el('span', 'zb-title-name', `formsculpt ${parts.version}`);
-    for (const [value, label] of [['zbrush', 'ZBrush layout'], ['tablet', 'Tablet layout'], ['panel', 'Panel layout']]) {
+    for (const [value, label] of [['zbrush', 'ZUI layout'], ['tablet', 'Tablet layout'], ['panel', 'Panel layout']]) {
       const o = el('option', '', t(label));
       o.value = value;
       this.layoutPick.append(o);
@@ -284,8 +284,8 @@ export class ZBrushLayout {
     // The utilities the Starting Guide lists on the top shelf; LightBox is the one built (comma, as Maxon's sheet has it).
     const utilities = group();
     this.lbButton.type = 'button';
-    this.lbButton.textContent = t('LightBox');
-    this.lbButton.title = t('LightBox (,)');
+    this.lbButton.textContent = t('LightCube');
+    this.lbButton.title = t('LightCube (,)');
     this.lbButton.setAttribute('aria-pressed', 'false');
     this.lbButton.addEventListener('click', () => this.toggleLightBox());
     utilities.append(this.lbButton);
@@ -549,7 +549,7 @@ export class ZBrushLayout {
 
   /** LightBox's frame: its shelves as tabs, a head (the Project shelf's save field), and the strip of thumbnails. */
   private buildLightBox(): void {
-    this.lightbox.setAttribute('aria-label', t('LightBox'));
+    this.lightbox.setAttribute('aria-label', t('LightCube'));
     this.lightbox.hidden = true;
     this.lbTabs.setAttribute('role', 'tablist');
     // 'Projects' rather than ZBrush's 'Project': the window already has Project as a verb (project detail), which
@@ -565,7 +565,7 @@ export class ZBrushLayout {
       this.lbTabs.append(tab);
     }
     this.lbStrip.setAttribute('role', 'listbox');
-    this.lbStrip.setAttribute('aria-label', t('LightBox items: double-click to load'));
+    this.lbStrip.setAttribute('aria-label', t('LightCube items: double-click to load'));
     this.lightbox.append(this.lbTabs, this.lbHead, this.lbStrip);
   }
 
@@ -647,7 +647,7 @@ export class ZBrushLayout {
     name.maxLength = 64;
     name.placeholder = t('Project name');
     name.setAttribute('aria-label', t('Project name'));
-    const save = el('button', 'zb-small', t('Save to LightBox'));
+    const save = el('button', 'zb-small', t('Save to LightCube'));
     save.type = 'button';
     const status = el('span', 'zb-lb-status');
     status.setAttribute('role', 'status');
