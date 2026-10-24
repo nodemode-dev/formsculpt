@@ -145,6 +145,7 @@ export class AboutDialog extends Dialog {
   constructor() {
     super('About formsculpt', 420);
     this.body.appendChild(fromHtml(`<div class="fs-about-title"><img src="/formsculpt-logo.png" width="28" height="28" alt="" draggable="false"><span>formsculpt ${VERSION}</span></div>`));
+    this.body.appendChild(fromHtml('<p class="fs-note" translate="no">by nodemode.ai</p>'));
     this.body.appendChild(fromHtml(`<p class="fs-note">${t('3D sculpting and modeling in the NodeMode design system.')}</p>`));
     this.body.appendChild(fromHtml(`<p class="fs-note">${t('Apache License 2.0. Copyright 2026 nodemode-ai.')}</p>`));
     this.button('Close', 'primary', () => this.close());

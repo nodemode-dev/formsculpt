@@ -993,6 +993,12 @@ The owner asked for formvis's startup in every app, so the splash is now the 360
 - logged: v1.15.0 · 2026-10-22
 The app bar brand and the About title drew a generic line head that is not the owner's bust icon. Both are now `<img src="/formsculpt-logo.png">` at the old sizes (18 and 28 px, width and height set) so nothing shifts, and the logo is preloaded in index.html. ICONS.mark is left in icons.ts, now unused by the page.
 
+### The credit in About
+- refers-to: src/ui/app-dialogs.ts :: AboutDialog
+- kind: rationale
+- logged: v1.18.3 · 2026-10-24
+formsculpt's Home has no credit line, so by the owner's choice the credit "by nodemode.ai" is in About, as an `fs-note` line under the title. It is built in the constructor with the rest of the dialog, so nothing moves when About opens. It is marked translate="no" and not passed through `t()`, since the owner's domain is the same in every language; `setup/i18n.py check` still reports 1385 of 1385 in every table. The About box's copyright line keeps its text by the owner's choice (the holder change is limited to the licence files and the README).
+
 ### Page side of the macOS overlay title bar
 - refers-to: index.html :: inline script; src/styles/shell.css :: has-overlay-titlebar, .mac-drag; src/styles/tablet.css; src/styles/zbrush.css; src/app.ts :: buildShell; src/ui/zbrush-layout.ts :: title; ../src-tauri/capabilities/engine-page.json
 - kind: rationale
