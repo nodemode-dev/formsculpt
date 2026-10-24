@@ -119,6 +119,6 @@ Inside the window: the terminal dock under the viewport (`Mod+J`, or the app-bar
 
 ## Licensing
 
-Apache License 2.0, see [LICENSE](LICENSE) & [NOTICE.md](NOTICE.md).
+Apache License 2.0. Copyright 2026 NodeAgentc, Inc. See [LICENSE](LICENSE) & [NOTICE.md](NOTICE.md).
 
 ZBrush and its feature names are trademarks of Maxon Computer GmbH, and Nomad Sculpt is a trademark of its owner. They are named only for compatibility and history; formsculpt is not affiliated with or endorsed by them, and its features carry its own names. NOTICE.md has the full trademark notice.
