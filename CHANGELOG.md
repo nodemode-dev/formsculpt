@@ -2,6 +2,11 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.3 · 2026-10-24
+
+- The copyright holder in LICENSE, NOTICE.md and the README is NodeAgentc, Inc.
+- The About box carries the credit "by nodemode.ai".
+
 ## 1.18.2 · 2026-10-23
 
 ### Changed
