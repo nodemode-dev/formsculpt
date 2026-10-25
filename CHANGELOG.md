@@ -2,6 +2,11 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.8 · 2026-10-25
+
+- With no window open, an outside agent can no longer change the scene unless the person already allowed agents; it is told to open formsculpt and allow them.
+- formsculpt's own ports are now 5260 (window), 5261 (preview) and 8260 (engine), no longer shared with another form app.
+
 ## 1.18.7 · 2026-10-25
 
 - A web page can no longer reach the engine through an image or a link.
