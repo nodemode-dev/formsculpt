@@ -6,7 +6,7 @@
 
 **3D sculpting & modeling for the web & the desktop, in the NodeMode style**
 
-![version](https://img.shields.io/badge/version-1.18.4-f97316) ![rust](https://img.shields.io/badge/rust-1.88%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+![version](https://img.shields.io/badge/version-1.18.5-f97316) ![rust](https://img.shields.io/badge/rust-1.88%2B-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 </div>
 
