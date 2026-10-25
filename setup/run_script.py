@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(ROOT, "backend"))
 
 from app.services.scripting import Fsc, ScriptError, run_file  # noqa: E402
 
-URL = os.environ.get("FSC_ENGINE_URL", "http://127.0.0.1:8196")
+URL = os.environ.get("FSC_ENGINE_URL", "http://127.0.0.1:8260")
 
 
 def http_dispatch(name: str, args: dict) -> dict:

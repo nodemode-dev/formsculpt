@@ -32,7 +32,7 @@ goto end
 cd frontend && call npm run build
 goto end
 :serve
-cd frontend && call npm run build && cd ..\backend && call venv\Scripts\activate.bat && set FSC_DIST=%~dp0frontend\dist && uvicorn app.main:app --host 127.0.0.1 --port 8196
+cd frontend && call npm run build && cd ..\backend && call venv\Scripts\activate.bat && set FSC_DIST=%~dp0frontend\dist && uvicorn app.main:app --host 127.0.0.1 --port 8260
 goto end
 :engine
 cd native && cargo build --workspace --release

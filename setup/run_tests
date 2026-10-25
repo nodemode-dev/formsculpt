@@ -25,7 +25,7 @@ window_tests() {
   local py
   py="$(fs_python)" || fs_die "Python 3.12 or newer not found"
   "$py" -c 'import playwright' 2>/dev/null || fs_die "Python Playwright not found; pip install playwright and run playwright install chromium"
-  "$py" "$FSC_ROOT/frontend/e2e/smoke.py" "${FSC_WINDOW_URL:-http://localhost:5196/}" "${FSC_SERVICE_URL:-http://127.0.0.1:8196}"
+  "$py" "$FSC_ROOT/frontend/e2e/smoke.py" "${FSC_WINDOW_URL:-http://localhost:5260/}" "${FSC_SERVICE_URL:-http://127.0.0.1:8260}"
 }
 case "$which" in
   engine) engine_tests ;;

@@ -7,7 +7,7 @@ Living log for the frontend side, _v0.1.0. Read the map and the TOC first; entri
 ```text
 frontend/
   index.html              critical style, pre-paint theme boot, #app and #overlay-root
-  vite.config.ts          port 5196, host false, strictPort, isolation headers, /api proxy
+  vite.config.ts          port 5260, host false, strictPort, isolation headers, /api proxy
   package.json            scripts dev, build, preview, typecheck, tauri
   public/favicon.svg      tab icon
   public/splash.html      the desktop splash window's page

@@ -170,7 +170,7 @@ def test_fbx_export_route(client):
 
 
 def test_mcp_lists_and_calls_tools(client):
-    headers = {"origin": "http://127.0.0.1:5196", "mcp-protocol-version": "2025-11-25"}
+    headers = {"origin": "http://127.0.0.1:5260", "mcp-protocol-version": "2025-11-25"}
     init = client.post("/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}}, headers=headers).json()
     assert init["result"]["serverInfo"]["name"] == "formsculpt"
     tools = client.post("/mcp", json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, headers=headers).json()["result"]["tools"]

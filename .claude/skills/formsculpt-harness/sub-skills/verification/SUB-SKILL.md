@@ -22,7 +22,7 @@ State at 0.22.0: the build is stable (78.0 of 97 parity at 0.21.0) and the test 
 4. Perf bench: `./formsculpt bench`; compare to the last recorded figure and flag regressions in sculpt and render.
 5. Throttled DOM check: observe mutations on the viewport and shell at a throttled rate while idle and while sculpting. Expected: zero unexpected node churn, no flash or flicker.
 6. Law scan on the diff: raw z-index numbers, icon-library imports, emoji, em dash in markdown, new comments.
-7. Release gate: version bumped at every site together (frontend/package.json and lock, `frontend/src/version.ts`, `backend/app/__init__.py`, `native/Cargo.toml` workspace.package, `src-tauri/Cargo.toml`, `tauri.conf.json`, README badge, CHANGELOG), Conventional Commit authored as nodemode-ai, desktop build launches. On Linux, `./formsculpt desktop build` then the frozen engine's `--selfcheck`, and the AppImage launched under `xvfb-run` with no dev service on 8196 (the sidecar takes a free port of its own, so probe the window, not 8196).
+7. Release gate: version bumped at every site together (frontend/package.json and lock, `frontend/src/version.ts`, `backend/app/__init__.py`, `native/Cargo.toml` workspace.package, `src-tauri/Cargo.toml`, `tauri.conf.json`, README badge, CHANGELOG), Conventional Commit authored as nodemode-ai, desktop build launches. On Linux, `./formsculpt desktop build` then the frozen engine's `--selfcheck`, and the AppImage launched under `xvfb-run` with no dev service on 8260 (the sidecar takes a free port of its own, so probe the window, not 8260).
 8. Report literally what ran and what did not.
 
 ## Gate

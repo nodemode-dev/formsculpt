@@ -40,8 +40,8 @@ Sub-skill paths resolve as `sub-skills/[skill-name]/SUB-SKILL.md` from this fold
 | fsc-commands | `native/crates/fsc-commands` | the single command registry and `dispatch(id, json)` |
 | fsc-wasm | `native/crates/fsc-wasm` (built at 0.27.0; `./formsculpt engine wasm`) | plain C ABI over fsc-commands and fsc_commands::live, no threads, loaded on the page's main thread by `frontend/src/engine/wasm.ts` when no engine service answers |
 | fsc-py | `native/crates/fsc-py` | PyO3 module `fsc_engine` built with maturin; the backend's engine, which the window and MCP both drive |
-| Frontend | `frontend/` (vanilla TypeScript, Vite, port 5196) | `src/engine/` worker client, `src/viewport/` renderer, `src/ui/` shell, `src/styles/tokens.css` |
-| Backend | `backend/app/` (FastAPI, 127.0.0.1:8196) | routers system, io, projects, jobs, assets, mcp, nodemode; serves the built frontend |
+| Frontend | `frontend/` (vanilla TypeScript, Vite, port 5260) | `src/engine/` worker client, `src/viewport/` renderer, `src/ui/` shell, `src/styles/tokens.css` |
+| Backend | `backend/app/` (FastAPI, 127.0.0.1:8260) | routers system, io, projects, jobs, assets, mcp, nodemode; serves the built frontend |
 | Sidecar entry | `backend/formsculpt_engine.py` | PyInstaller entry for the frozen engine |
 | Desktop | `src-tauri/` (Tauri 2) | splash, sidecar spawn, main window, file association |
 | Dispatcher | `./formsculpt`, `./build_app` and `setup/` | one script per task; `build_app` (and `build_app.bat`) builds the installable desktop app start to finish |

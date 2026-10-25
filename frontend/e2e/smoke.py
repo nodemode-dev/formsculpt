@@ -12,8 +12,8 @@ import urllib.request
 
 from playwright.sync_api import sync_playwright
 
-WINDOW = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:5196/"
-SERVICE = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:8196"
+WINDOW = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:5260/"
+SERVICE = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:8260"
 FAILURES: list[str] = []
 
 

@@ -8,5 +8,5 @@ pids+=($!)
 ( cd frontend && ./boot_frontend ) &
 pids+=($!)
 trap 'kill "${pids[@]}" 2>/dev/null' EXIT INT TERM
-fs_say "frontend http://localhost:5196 · backend http://127.0.0.1:${FSC_PORT:-8196}"
+fs_say "frontend http://localhost:5260 · backend http://127.0.0.1:${FSC_PORT:-8260}"
 wait

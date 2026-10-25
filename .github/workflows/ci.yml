@@ -60,9 +60,9 @@ jobs:
       - run: python formsculpt_engine.py --selfcheck
       - name: Boot the engine and probe it
         run: |
-          python -m uvicorn app.main:app --host 127.0.0.1 --port 8196 &
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8196/api/health && break; sleep 1; done
-          curl -sf http://127.0.0.1:8196/api/capabilities
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8260 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8260/api/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:8260/api/capabilities
 
   service-tests:
     runs-on: ubuntu-latest

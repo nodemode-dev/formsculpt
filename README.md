@@ -59,9 +59,9 @@ Every step is logged to `build_app.log`. Flags: `--clean`, `--install` (Linux de
 
 | Service | URL | Notes |
 | --- | --- | --- |
-| Frontend | http://localhost:5196 | Vite dev server, loopback only |
-| Backend | http://127.0.0.1:8196 | FastAPI, `/api/health`, `/api/version`, `/api/capabilities` |
-| Preview | http://localhost:5197 | `vite preview` |
+| Frontend | http://localhost:5260 | Vite dev server, loopback only |
+| Backend | http://127.0.0.1:8260 | FastAPI, `/api/health`, `/api/version`, `/api/capabilities` |
+| Preview | http://localhost:5261 | `vite preview` |
 
 Other commands: `./formsculpt engine build|check|wasm` (`wasm` builds the browser engine, which the window uses on its own when no service answers, or at `?engine=wasm`), `build`, `serve`, `freeze`, `desktop dev|build`, `clean`. Run `./formsculpt help` for all of them.
 
@@ -72,7 +72,7 @@ Set in `backend/.env` (copy `backend/.env.example`; never committed).
 | Variable | Purpose |
 | --- | --- |
 | `FSC_HOST` | Backend bind address, default 127.0.0.1 |
-| `FSC_PORT` | Backend port, default 8196 (0 picks a free port, as the desktop shell does) |
+| `FSC_PORT` | Backend port, default 8260 (0 picks a free port, as the desktop shell does) |
 | `FSC_CORS_ORIGINS` | Comma-separated extra origins |
 | `FSC_DIST` | Built frontend to serve, set by `serve` & the desktop sidecar |
 

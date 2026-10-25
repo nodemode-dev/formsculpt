@@ -48,7 +48,7 @@ def _prefs():
 
 def _url():
     prefs = _prefs()
-    return (prefs.url if prefs else "http://127.0.0.1:8196").rstrip("/")
+    return (prefs.url if prefs else "http://127.0.0.1:8260").rstrip("/")
 
 
 def dispatch(name, args, timeout=30.0):
@@ -349,7 +349,7 @@ def _set_live(self, context):
 class FormsculptPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    url: bpy.props.StringProperty(name="Address", default="http://127.0.0.1:8196", description="Where formsculpt's engine service listens")
+    url: bpy.props.StringProperty(name="Address", default="http://127.0.0.1:8260", description="Where formsculpt's engine service listens")
     interval: bpy.props.FloatProperty(name="Interval", default=0.5, min=0.1, max=10.0, subtype="TIME_ABSOLUTE", unit="TIME_ABSOLUTE", description="Seconds between live updates")
     live: bpy.props.BoolProperty(name="Live", default=False, update=_set_live, description="Keep linked objects in step both ways")
     gof_folder: bpy.props.StringProperty(name="GoF folder", default="", subtype="DIR_PATH", description="formsculpt's GoF folder; empty asks formsculpt, then uses Formsculpt/GoF in the home folder")

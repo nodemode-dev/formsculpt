@@ -5,8 +5,8 @@ from app import __version__
 
 APP_NAME = "formsculpt"
 VERSION = __version__
-FRONTEND_PORT = 5196
-BACKEND_PORT = 8196
+FRONTEND_PORT = 5260
+BACKEND_PORT = 8260
 REPO = Path(__file__).resolve().parents[3]
 
 

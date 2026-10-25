@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.request
 
-URL = os.environ.get("FSC_MCP_URL", "http://127.0.0.1:8196/mcp")
+URL = os.environ.get("FSC_MCP_URL", "http://127.0.0.1:8260/mcp")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _started = False
 

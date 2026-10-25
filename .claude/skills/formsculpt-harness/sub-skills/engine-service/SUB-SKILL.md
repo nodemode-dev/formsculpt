@@ -1,6 +1,6 @@
 ---
 name: engine-service
-description: "Covers the formsculpt Python backend in backend/app: FastAPI on 127.0.0.1:8196, routers system, io, projects, jobs, assets, mcp and nodemode, the fsc-py PyO3 module built with maturin, and the PyInstaller sidecar entry backend/formsculpt_engine.py. Load for backend, API, job or freeze changes."
+description: "Covers the formsculpt Python backend in backend/app: FastAPI on 127.0.0.1:8260, routers system, io, projects, jobs, assets, mcp and nodemode, the fsc-py PyO3 module built with maturin, and the PyInstaller sidecar entry backend/formsculpt_engine.py. Load for backend, API, job or freeze changes."
 ---
 
 # Engine Service
@@ -15,7 +15,7 @@ State at 0.9.0: routers `system`, `engine` (dispatch, mesh, stroke socket, impor
 
 ## Procedure
 
-1. Bind 127.0.0.1:8196 only. Routers: system, io, projects, jobs, assets, mcp, nodemode.
+1. Bind 127.0.0.1:8260 only. Routers: system, io, projects, jobs, assets, mcp, nodemode.
 2. Heavy engine work (remesh, bake, import of large files) runs as a job with progress, not inside a request.
 3. Headless engine calls go through the `fsc-py` module, built with maturin. Rebuild it after any Rust change you depend on.
 4. `backend/formsculpt_engine.py` is the PyInstaller sidecar entry. The desktop shell starts it with port 0 and reads the uvicorn port line from its output; do not change that line format without updating `sub-skills/desktop-shell/SUB-SKILL.md`.
@@ -25,7 +25,7 @@ State at 0.9.0: routers `system`, `engine` (dispatch, mesh, stroke socket, impor
 
 ## Gate
 
-Done when `./formsculpt doctor` is clean, the backend starts, and the changed route answers on 127.0.0.1:8196.
+Done when `./formsculpt doctor` is clean, the backend starts, and the changed route answers on 127.0.0.1:8260.
 
 ## Hands back
 

@@ -16,7 +16,7 @@ State at 0.10.0: `frontend/src/app.ts` builds the right panel in this order: Fil
 ## Procedure
 
 1. Stack: vanilla TypeScript and Vite. No frameworks added without a plan decision.
-2. Vite: port 5196, server.host false, strictPort, COOP/COEP headers (WASM threads), `/api` proxy to 127.0.0.1:8196.
+2. Vite: port 5260, server.host false, strictPort, COOP/COEP headers (WASM threads), `/api` proxy to 127.0.0.1:8260.
 3. `frontend/src/engine/` is the worker client and never touches the DOM. The shell talks to the engine only through it.
 4. Colours come from `frontend/src/styles/tokens.css` (accent #f97316). Every z-index is a `var(--z-*)` token from its scale.
 5. Icons: inline currentColor SVG in `frontend/src/ui/icons.ts`. No icon library, no emoji, and never the three-star sparkle for anything AI: Claude Code is the robot head (`agent`), Chat the speech bubble (`agentChat`). The tablet layout's own set falls back to these through `glyphBody`, so the panel, tablet and ZBrush layouts draw the same shapes.

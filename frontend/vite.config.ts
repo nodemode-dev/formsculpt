@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
-const FRONTEND_PORT = 5196;
-const BACKEND_PORT = 8196;
+const FRONTEND_PORT = 5260;
+const BACKEND_PORT = 8260;
 const ISOLATION = {
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Embedder-Policy': 'require-corp',

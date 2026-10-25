@@ -18,7 +18,7 @@ State at 0.7.0: `frontend/src/viewport/gl-renderer.ts` draws WebGL2 meshes with 
 1. Backends: WebGPU first, WebGL2 fallback. A feature must exist on both or degrade explicitly.
 2. Data comes from WASM memory views. Upload by dirty range after a sculpt; do a full upload only on a count change (topology).
 3. The viewport never mutates mesh data. Edits go through the worker client in `frontend/src/engine/` as commands.
-4. The page needs COOP and COEP headers for WASM threads; the Vite server sets them (port 5196, strictPort, host false).
+4. The page needs COOP and COEP headers for WASM threads; the Vite server sets them (port 5260, strictPort, host false).
 5. Colours come from `frontend/src/styles/tokens.css`; any overlay layer uses a `var(--z-*)` token.
 6. No per-frame DOM work. Zero flash or flicker is a law.
 

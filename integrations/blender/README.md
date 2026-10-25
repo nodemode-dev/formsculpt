@@ -8,7 +8,7 @@ A Blender add-on that keeps mesh objects in step with a running formsculpt, both
 2. In Blender, Edit > Preferences > Extensions, then Install from Disk, and pick the zip.
 3. The 3D Viewport's sidebar (N) has a formsculpt tab.
 
-Tested with Blender 5.2.2. formsculpt must be running (the window, `./formsculpt boot`, or the desktop app); the address is in the add-on's preferences (default `http://127.0.0.1:8196`).
+Tested with Blender 5.2.2. formsculpt must be running (the window, `./formsculpt boot`, or the desktop app); the address is in the add-on's preferences (default `http://127.0.0.1:8260`).
 
 ## Use
 
