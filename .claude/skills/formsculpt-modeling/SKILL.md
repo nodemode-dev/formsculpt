@@ -5,7 +5,7 @@ description: Sculpt and model 3D objects in formsculpt, the 3D sculpting app, by
 
 # Sculpting in formsculpt
 
-formsculpt's engine holds a scene of meshes on this computer. The tools change that scene directly; the formsculpt window, when it is open, shows each change live, and the tools work the same with no window at all. Every change is one undoable step.
+formsculpt's engine holds a scene of meshes on this computer. The tools change that scene directly; the formsculpt window, when it is open, shows each change live. Reading tools work with no window; a changing tool needs the person's yes, given once in the formsculpt window, and with no window open it is refused ("open formsculpt and allow agents there") unless they allowed agents earlier. Every change is one undoable step.
 
 The full tool reference, generated from the engine's command registry, is `references/tools.md`. Read it when a parameter is unclear.
 

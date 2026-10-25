@@ -27,7 +27,7 @@ Always route work through `.claude/skills/formsculpt-harness/SKILL.md` first: it
 
 ## Sculpting through formsculpt
 
-When the person wants a 3D model made or changed, use the `formsculpt` MCP server's tools with the `formsculpt-modeling` skill, not formsculpt's source code. `.mcp.json` starts it (`./formsculpt mcp`, which starts the engine if it is not running); with the window open, the first change asks the person once there. After adding or changing a command in `native/crates/fsc-commands`, rebuild the engine (`./formsculpt engine build`) and run `./formsculpt agents sync` so the skill's tool reference and its `.agents/skills` mirror follow.
+When the person wants a 3D model made or changed, use the `formsculpt` MCP server's tools with the `formsculpt-modeling` skill, not formsculpt's source code. `.mcp.json` starts it (`./formsculpt mcp`, which starts the engine if it is not running); with the window open, the first change asks the person once there, and with no window open a change is refused unless they allowed agents earlier. After adding or changing a command in `native/crates/fsc-commands`, rebuild the engine (`./formsculpt engine build`) and run `./formsculpt agents sync` so the skill's tool reference and its `.agents/skills` mirror follow.
 
 ## Commits
 

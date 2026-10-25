@@ -52,8 +52,10 @@ async def permit(tool: str, inapp: bool = False) -> str | None:
     global _pending, _answer
     if time.monotonic() < _declined_until:
         return "The person declined outside agents in the formsculpt window in the last ten minutes. Ask them to allow agents there, then retry."
-    if inapp or _allowed is True or not window_live():
+    if inapp or _allowed is True:
         return None
+    if not window_live():
+        return "The formsculpt window is not open, so nobody can approve outside agents. Ask the person to open formsculpt and allow agents there, then retry."
     if _pending is None:
         _answer = asyncio.Event()
         _pending = {"tool": tool, "asked": time.time()}

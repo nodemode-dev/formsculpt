@@ -32,7 +32,8 @@ Expected observable behaviour:
 Prompt: "An agent calls sculpt_stroke but the app is not open. What happens and how do we test it?"
 Expected observable behaviour:
 - Loads agent-substrate.
-- Explains the headless path: backend mcp router runs the same Rust dispatch through the fsc-py PyO3 module; with a window it would use the long-poll bridge after consent.
+- Explains that an outside agent's changing call is refused with no window open ("open formsculpt and allow agents there") unless agents were allowed earlier in this engine's life; read-only tools still run, and the in-app token is never refused.
+- Explains the headless path once allowed: backend mcp router runs the same Rust dispatch through the fsc-py PyO3 module; with a window it would use the long-poll bridge after consent.
 - Names the stdio shim `./formsculpt mcp` autostart and POST `/mcp` with protocol versions 2026-07-28 and 2025-11-25.
 - Notes one undo step per mutating command and flags the path as planned if code is absent.
 
