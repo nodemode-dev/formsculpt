@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.4 · 2026-10-25
+
+### Changed
+
+- The frontend's vite dev dependency moves from 8.3.0 to 8.3.5, which clears two command-injection advisories in the dev server's launch-editor; `npm audit` reports 0. Dev dependency only, nothing in the shipped app changed.
+
 ## 1.18.3 · 2026-10-24
 
 - The copyright holder in LICENSE, NOTICE.md and the README is NodeAgentc, Inc.
