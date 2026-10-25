@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.6 · 2026-10-25
+
+- The engine answers only this computer's own window and agents.
+
 ## 1.18.5 · 2026-10-25
 
 - Exporting STL no longer crashes the engine. Since 1.18.0 every STL export stopped the formsculpt service; the file is written again.
