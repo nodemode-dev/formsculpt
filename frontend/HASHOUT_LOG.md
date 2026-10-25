@@ -1018,3 +1018,10 @@ The owner's rule for formsculpt: its interface is meant to emulate a ZBrush or N
 - logged: v1.18.1 · 2026-10-23
 
 The owner's approval of the IP audit plans: the third layout is the ZUI Layout and its shelf is LightCube, and no label, tooltip or translation names another product. Labels only: the `zbrush` layout id, the `view.zbrush_layout` command, `formsculpt.zbrush` storage keys, the `zb-` classes, the file names and `/api/lightbox` with its `LightBox/Project` folder stay, so saved choices and projects keep working. The six keys were renamed in place in strings.json and in each of the 23 tables by hand (`i18n extract` re-sorts about 55 unrelated rows here, so it was not used). Copyright check C4: the file header and its tooltips were in formsculpt's own words already, with palette names and key bindings as facts; the header no longer cites the other product's guides. The engine's undo labels are Paste and Clear Vertex Paint.
+
+### vite 8.3.5 clears the dev server's launch-editor advisories
+- refers-to: package.json :: devDependencies.vite; package-lock.json :: node_modules/vite
+- kind: dependency
+- logged: v1.18.4 · 2026-10-25
+
+Family rule from `FAMILY_DEV_PLAN.md` v0.4.x Phase 2b (formai_dev sidecar): every frontend installs with zero `npm audit` findings. Vite 8.3.0 carries a `launch-editor` with two command-injection advisories in the dev server (ledger FB-004); 8.3.5 clears them. Dev dependency only, nothing in the shipped bundle changed. The pin stays exact. Checked: `npm install` then `npm audit` reports 0 vulnerabilities; `npm run typecheck` passes; `vite build` succeeds into an outDir outside the repo; `vite` dev starts as v8.3.5 on localhost:5196 only (no Network address) and answers 200.
