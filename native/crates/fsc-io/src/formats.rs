@@ -184,7 +184,7 @@ pub fn read_stl(bytes: &[u8]) -> Result<Vec<Named>, String> {
 
 pub fn write_stl(mesh: &Mesh) -> Vec<u8> {
     let mut out = vec![0u8; 80];
-    out[..20].copy_from_slice(b"formsculpt binary ");
+    out[..18].copy_from_slice(b"formsculpt binary ");
     out.extend_from_slice(&(mesh.triangle_count() as u32).to_le_bytes());
     for t in 0..mesh.triangle_count() {
         let [a, b, c] = mesh.triangle(t);
