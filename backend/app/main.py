@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core import config, quiet_log
 from app.core.isolation import CrossOriginIsolation
+from app.core.local_guard import LocalGuard
 from app.routers import commands, engine, events, gof, lightbox, mcp, nodemode, plugins, system, terminal_socket
 from app.services import autosave, claude_code, cmd_chat, cmd_terminal, terminal
 from app.services import events as bus
@@ -30,6 +31,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title=config.APP_NAME, version=config.VERSION, lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=config.cors_origins(), allow_methods=["*"], allow_headers=["*"])
 app.add_middleware(CrossOriginIsolation)
+app.add_middleware(LocalGuard, origins=config.window_origins())
 app.include_router(system.router, prefix="/api")
 app.include_router(engine.router, prefix="/api/engine")
 app.include_router(nodemode.router)
