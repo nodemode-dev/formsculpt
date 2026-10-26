@@ -1025,3 +1025,10 @@ The owner's approval of the IP audit plans: the third layout is the ZUI Layout a
 - logged: v1.18.4 · 2026-10-25
 
 Family rule from `FAMILY_DEV_PLAN.md` v0.4.x Phase 2b (formai_dev sidecar): every frontend installs with zero `npm audit` findings. Vite 8.3.0 carries a `launch-editor` with two command-injection advisories in the dev server (ledger FB-004); 8.3.5 clears them. Dev dependency only, nothing in the shipped bundle changed. The pin stays exact. Checked: `npm install` then `npm audit` reports 0 vulnerabilities; `npm run typecheck` passes; `vite build` succeeds into an outDir outside the repo; `vite` dev starts as v8.3.5 on localhost:5196 only (no Network address) and answers 200.
+
+### public/splash.html · the logo no longer depends on the lines under it
+- refers-to: public/splash.html :: body, p
+- kind: bugfix
+- logged: v1.19.1 · 2026-10-26
+
+Ledger FB-146. The body centred the logo, the line and the bar together, so a paint that landed after the logo but before the rest centred the logo alone and moved it when the rest arrived (layout shift 1.05e-4 when the page is sent up to the line, held 1 s and sent on; about 1 load in 10 in the window smoke at 4x CPU). The body now starts from a fixed top padding (50vh less 64 px, the place the three-part stack sat) and the line has a fixed 16 px height, so the logo's place no longer depends on later siblings. Checked with a server that sends the page up to the line, waits 1 s and sends the rest: shift 1.05e-4 before, 0 after.
