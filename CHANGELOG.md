@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.0 · 2026-10-26
+
+- A test suite: the family layers (guard, consent, MCP, versions, boot, project round trip, release profiles) and formsculpt's own checks (dynamic topology, voxel remesh and smoothing stay finite and manifold, undo restores meshes exactly, every primitive exports to STL, OBJ and glTF and reopens) run in CI.
+
 ## 1.18.9 · 2026-10-26
 
 - The desktop release build keeps its symbols, since macOS builds fail on a stripped binary.
