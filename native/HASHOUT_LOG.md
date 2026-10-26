@@ -929,3 +929,10 @@ Every binary STL export since 1.18.0 panicked and, inside the PyO3 module, abort
     out[..20].copy_from_slice(b"formsculpt binary ");
 ```
 Checked: `./formsculpt engine build`; `backend/tests` 18 of 18 passing (7 passed before the abort, 18 skipped before the engine was built); the exported cube re-imports as a second object.
+
+### crates/fsc-commands/tests/geometry_safety.rs
+- refers-to: crates/fsc-commands/tests/geometry_safety.rs; crates/fsc-io/src/formats.rs :: write_stl
+- kind: rationale
+- logged: v1.19.0 · 2026-10-26
+`FAMILY_TEST_PLAN.md` v0.3.0 P1 for formsculpt: dynamic topology (three modes, three methods, five brushes, every primitive, with a mask), voxel remesh (every primitive at two resolutions, thicken, keep_sharp, a sculpted object, an imported STL) and the smooth, relax and polish brushes never leave a non-finite position or normal, an out-of-range index or a non-manifold edge, and keep a closed mesh closed (smoothing also keeps the triangle count). Undo after eleven brushes, after dyntopo and after a voxel remesh restores positions and indices bit for bit. Every primitive, the plane included, exports to STL, OBJ, GLB and glTF and reopens with its triangle count, and a binary STL is 84 + 50 n bytes with the count in its header and the `formsculpt binary` label (FB-027, the 1.18.5 abort, as a permanent regression). No app change was needed: all 13 pass on the 1.18.9 tree. Mutation: `out[..20]` back in `write_stl` fails the STL tests.
+Checked: `cargo test --release --locked --workspace --exclude fsc-py` all passing.

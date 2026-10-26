@@ -25,6 +25,7 @@ formsculpt is licensed under the Apache License 2.0 (see `LICENSE`). Copyright 2
 | @xterm/xterm, @xterm/addon-fit | MIT | the terminal dock |
 | ptyprocess (Unix), pywinpty (Windows) | ISC; MIT | terminal sessions in the engine service |
 | Other Python packages frozen into the engine | MIT: annotated-doc, annotated-types, anyio, h11, httptools, pydantic, pydantic-core, pyyaml, typing-inspection, watchfiles; BSD-3-Clause: click, idna, python-dotenv, websockets; MIT OR Apache-2.0: uvloop; PSF-2.0: typing-extensions and the CPython runtime | read from the installed metadata of `backend/requirements.txt`, 2026-10-23 |
+| pytest 9.1.1 (with iniconfig, packaging, pluggy, pygments) | MIT (pytest, iniconfig, pluggy), Apache-2.0 OR BSD-2-Clause (packaging), BSD-2-Clause (pygments) | runs `backend/tests` in CI (`backend/requirements_test.txt`); never installed in the app |
 
 ## MPL-2.0 crates linked
 
