@@ -22,6 +22,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=low
       - run: npm run build
 
   engine:
@@ -83,6 +84,31 @@ jobs:
           backend/venv/bin/pip install -r backend/requirements_test.txt maturin
           ./formsculpt engine build
       - run: ./formsculpt test service
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: native
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements_test.txt
+      - name: Engine tests
+        working-directory: native
+        run: cargo test --release --locked --workspace --exclude fsc-py
+      - name: Install the engine module
+        run: |
+          python -m venv backend/venv
+          backend/venv/bin/pip install -r backend/requirements_test.txt maturin
+          ./formsculpt engine build
+      - name: Family layers and service tests
+        working-directory: backend
+        run: venv/bin/python -m pytest tests -q -p no:cacheprovider
 
   scripts:
     runs-on: ubuntu-latest
