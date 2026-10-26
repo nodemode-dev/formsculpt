@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.1 · 2026-10-26
+
+- The window smoke test (the built window and the splash page load under a slow CPU and network with no layout shift, console error or failed request) runs in CI, and the splash logo no longer moves when the line under it arrives.
+
 ## 1.19.0 · 2026-10-26
 
 - A test suite: the family layers (guard, consent, MCP, versions, boot, project round trip, release profiles) and formsculpt's own checks (dynamic topology, voxel remesh and smoothing stay finite and manifold, undo restores meshes exactly, every primitive exports to STL, OBJ and glTF and reopens) run in CI.
