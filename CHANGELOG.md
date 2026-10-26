@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.18.9 · 2026-10-26
+
+- The desktop release build keeps its symbols, since macOS builds fail on a stripped binary.
+
 ## 1.18.8 · 2026-10-25
 
 - With no window open, an outside agent can no longer change the scene unless the person already allowed agents; it is told to open formsculpt and allow them.
