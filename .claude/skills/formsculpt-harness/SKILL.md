@@ -74,7 +74,7 @@ These come from the dev-rules operating mode and apply to every sub-skill.
 6. Near-zero comments. Rationale goes to `frontend/HASHOUT_LOG.md`, `backend/HASHOUT_LOG.md` or `native/HASHOUT_LOG.md`.
 7. Versions v*.*.* are bumped together at every site: frontend/package.json and lock, `frontend/src/version.ts`, `backend/app/__init__.py`, `native/Cargo.toml` workspace.package, `src-tauri/Cargo.toml` and `tauri.conf.json`, README badge, CHANGELOG.
 8. Conventional Commits, authored as nodemode-ai.
-9. Tests only after the build is stable. Until then testing intent goes to TEST_PLAN.md in the planning sidecar.
+9. Tests only as the family plan names them. `backend/tests` (pytest) and `native/crates/*/tests` (cargo test) hold the suite FAMILY_TEST_PLAN names, and CI runs it; add no other test code. TEST_PLAN.md in the planning sidecar says what is covered and what is manual.
 10. Planning docs (DEV_PLAN, BUILD_NOTES, TEST_PLAN, root HASHOUT_LOG) live in the planning sidecar zip, not in the tree.
 11. Licences: no GPL code (Blender is study only), no code from ZBrush or Nomad.
 12. The Rust registry in fsc-commands is the one source of truth for commands. Never hand-write a tool list elsewhere.

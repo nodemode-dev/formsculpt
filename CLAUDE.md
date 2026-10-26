@@ -16,6 +16,7 @@
 - `backend/formsculpt_engine.py` is the PyInstaller entry for the desktop sidecar, not a dev server. Use `./formsculpt backend` or `./formsculpt boot`.
 - `src-tauri/binaries/` receives the frozen engine from `setup/freeze_backend`; git ignores it.
 - Planning documents (DEV_PLAN, BUILD_NOTES, TEST_PLAN, the root HASHOUT_LOG) ship in the planning sidecar zip, not in this tree. The living logs `frontend/HASHOUT_LOG.md`, `backend/HASHOUT_LOG.md` and `native/HASHOUT_LOG.md` are in the tree: read them before editing.
+- Tests live in `tests/` folders and run in CI; write only tests this plan or its successor names (`FAMILY_TEST_PLAN.md` in the formai_dev sidecar): `backend/tests` and `native/crates/*/tests`.
 
 ## Skills
 
