@@ -76,7 +76,7 @@ fn decode_positions(text: &str) -> Result<Vec<[f32; 3]>, CommandError> {
         return Err(bad(format!("{} vertices is more than the link carries ({VERTEX_LIMIT})", bytes.len() / 12)));
     }
     let f = |c: &[u8]| f32::from_le_bytes([c[0], c[1], c[2], c[3]]);
-    let positions: Vec<[f32; 3]> = bytes.chunks_exact(12).map(|c| [f(&c[0..4]), f(&c[4..8]), f(&c[8..12])]).collect();
+    let positions: Vec<[f32; 3]> = bytes.as_chunks::<12>().0.iter().map(|c| [f(&c[0..4]), f(&c[4..8]), f(&c[8..12])]).collect();
     if positions.iter().flatten().any(|c| !c.is_finite()) {
         return Err(bad("positions holds a value that is not a finite number"));
     }
@@ -88,7 +88,7 @@ fn decode_indices(text: &str) -> Result<Vec<u32>, CommandError> {
     if !bytes.len().is_multiple_of(12) {
         return Err(bad(format!("indices is {} bytes, not a whole number of u32 triangles", bytes.len())));
     }
-    Ok(bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+    Ok(bytes.as_chunks::<4>().0.iter().map(|&c| u32::from_le_bytes(c)).collect())
 }
 
 /// Writes a mesh from the other app. When the triangles are the ones the object already has, only the positions move

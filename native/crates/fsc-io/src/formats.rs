@@ -126,7 +126,7 @@ pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
             for t in &mesh.uvs {
                 s.push_str(&format!("vt {} {}\n", t[0], t[1]));
             }
-            for (k, t) in mesh.indices.chunks_exact(3).enumerate() {
+            for (k, t) in mesh.indices.as_chunks::<3>().0.iter().enumerate() {
                 let c = uv_base + 3 * k as u32;
                 s.push_str(&format!("f {}/{} {}/{} {}/{}\n", t[0] + base, c, t[1] + base, c + 1, t[2] + base, c + 2));
             }
@@ -141,7 +141,7 @@ pub fn write_obj(objects: &[(&str, &Mesh)]) -> Vec<u8> {
                 }
             }
             None => {
-                for t in mesh.indices.chunks_exact(3) {
+                for t in mesh.indices.as_chunks::<3>().0 {
                     s.push_str(&format!("f {} {} {}\n", t[0] + base, t[1] + base, t[2] + base));
                 }
             }
@@ -347,7 +347,7 @@ pub fn write_ply(mesh: &Mesh) -> Vec<u8> {
             out.extend(c[..3].iter().map(|x| (x.clamp(0.0, 1.0) * 255.0).round() as u8));
         }
     }
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         out.push(3);
         for i in t {
             out.extend_from_slice(&(*i as i32).to_le_bytes());
@@ -415,7 +415,7 @@ pub fn write_3mf(objects: &[(&str, &Mesh)]) -> Result<Vec<u8>, String> {
             model.push_str(&format!("<vertex x=\"{}\" y=\"{}\" z=\"{}\"/>\n", p[0], p[1], p[2]));
         }
         model.push_str("</vertices><triangles>\n");
-        for t in mesh.indices.chunks_exact(3) {
+        for t in mesh.indices.as_chunks::<3>().0 {
             model.push_str(&format!("<triangle v1=\"{}\" v2=\"{}\" v3=\"{}\"/>\n", t[0], t[1], t[2]));
         }
         model.push_str("</triangles></mesh></object>\n");

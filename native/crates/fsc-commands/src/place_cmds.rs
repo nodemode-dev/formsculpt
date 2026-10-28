@@ -97,7 +97,7 @@ pub(crate) fn instance_object(s: &mut Session, args: &Value) -> Result<Value, Co
     };
     let matrix = Mat4::from_translation(offset) * base;
     let src = s.scene.get(source).ok_or_else(|| CommandError::new("not_found", format!("the original {source} is gone")))?;
-    let (mesh, name, material, parent, source_revision) = (transformed(&src.mesh, matrix), o.name.clone(), o.material.clone(), o.parent, src.revision);
+    let (mesh, name, material, parent, source_revision) = (transformed(&src.mesh, matrix), o.name.clone(), o.material, o.parent, src.revision);
     s.history.push(Edit::Scene { label: "Instance".into(), objects: s.scene.objects.clone(), active: s.scene.active });
     let new_id = add_object(s, &name, mesh, false);
     let copy = s.scene.get_mut(new_id).expect("just added");
@@ -176,7 +176,7 @@ pub(crate) fn sync_instance_children(s: &mut Session, args: &Value) -> Result<Va
             }
             let Some(original) = s.scene.get(link_source) else { continue };
             let matrix = relative * base;
-            let (mesh, name, material, source_revision) = (transformed(&original.mesh, matrix), c.name.clone(), c.material.clone(), original.revision);
+            let (mesh, name, material, source_revision) = (transformed(&original.mesh, matrix), c.name.clone(), c.material, original.revision);
             // Its parent's counterpart under this member, or the member for a child hung on a group in between.
             let parent = s.scene.parent_of(child).and_then(|p| counterpart.get(&p).copied()).unwrap_or(member);
             let new_id = add_object(s, &name, mesh, false);

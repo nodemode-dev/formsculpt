@@ -169,7 +169,7 @@ fn plane_face(origin: Vec3, u: Vec3, v: Vec3, n: u32, positions: &mut Vec<[f32; 
     let start = indices.len();
     grid_indices(n, n, false, base, indices);
     // grid_indices winds its cells to face v x u; these faces must face u x v (out of a cube, up from a plane).
-    for t in indices[start..].chunks_exact_mut(3) {
+    for t in indices[start..].as_chunks_mut::<3>().0 {
         t.swap(1, 2);
     }
 }

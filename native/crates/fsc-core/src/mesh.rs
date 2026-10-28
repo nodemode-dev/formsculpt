@@ -112,9 +112,11 @@ impl Mesh {
             return None;
         }
         self.indices
-            .chunks_exact(6)
-            .map(|q| {
-                let (t1, t2) = ([q[0], q[1], q[2]], [q[3], q[4], q[5]]);
+            .as_chunks::<6>()
+            .0
+            .iter()
+            .map(|&[q0, q1, q2, q3, q4, q5]| {
+                let (t1, t2) = ([q0, q1, q2], [q3, q4, q5]);
                 let [a, b, c] = t1;
                 let d = t2.into_iter().find(|v| !t1.contains(v))?;
                 let has = |x: u32, y: u32| t2.contains(&x) && t2.contains(&y);

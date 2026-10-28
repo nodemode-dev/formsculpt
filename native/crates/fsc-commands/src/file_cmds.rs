@@ -454,7 +454,7 @@ pub(crate) fn repair(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let (filled, holes) = fsc_topo::fill_holes(&split);
     let mut indices = Vec::with_capacity(filled.indices.len());
     let mut degenerate = 0;
-    for t in filled.indices.chunks_exact(3) {
+    for t in filled.indices.as_chunks::<3>().0 {
         let (a, b, c) = (filled.position(t[0]), filled.position(t[1]), filled.position(t[2]));
         if t[0] == t[1] || t[1] == t[2] || t[0] == t[2] || (b - a).cross(c - a).length_squared() == 0.0 {
             degenerate += 1;

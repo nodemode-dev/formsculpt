@@ -120,8 +120,7 @@ fn frames(positions: &[[f32; 3]], indices: &[u32]) -> Frames {
     let p = |i: u32| Vec3::from_array(positions[i as usize]);
     let mut normal = vec![Vec3::ZERO; n];
     let mut reference = vec![u32::MAX; n];
-    for tri in indices.chunks_exact(3) {
-        let (a, b, c) = (tri[0], tri[1], tri[2]);
+    for &[a, b, c] in indices.as_chunks::<3>().0 {
         let f = (p(b) - p(a)).cross(p(c) - p(a));
         for (v, next) in [(a, b), (b, c), (c, a)] {
             normal[v as usize] += f;

@@ -18,14 +18,14 @@ pub fn read_f32s(bytes: &[u8]) -> Result<Vec<f32>, String> {
     if !bytes.len().is_multiple_of(4) {
         return Err("a float buffer has a broken length".into());
     }
-    Ok(bytes.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+    Ok(bytes.as_chunks::<4>().0.iter().map(|&c| f32::from_le_bytes(c)).collect())
 }
 
 pub fn read_u32s(bytes: &[u8]) -> Result<Vec<u32>, String> {
     if !bytes.len().is_multiple_of(4) {
         return Err("an index buffer has a broken length".into());
     }
-    Ok(bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+    Ok(bytes.as_chunks::<4>().0.iter().map(|&c| u32::from_le_bytes(c)).collect())
 }
 
 pub fn read_vec3s(bytes: &[u8]) -> Result<Vec<[f32; 3]>, String> {
@@ -33,7 +33,7 @@ pub fn read_vec3s(bytes: &[u8]) -> Result<Vec<[f32; 3]>, String> {
     if flat.len() % 3 != 0 {
         return Err("a vector buffer has a broken length".into());
     }
-    Ok(flat.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect())
+    Ok(flat.as_chunks::<3>().0.to_vec())
 }
 
 pub fn welded(triangles: &[[f32; 3]]) -> Mesh {
@@ -49,7 +49,7 @@ pub fn welded(triangles: &[[f32; 3]]) -> Mesh {
         indices.push(i);
     }
     let mut out = Vec::with_capacity(indices.len());
-    for t in indices.chunks_exact(3) {
+    for t in indices.as_chunks::<3>().0 {
         if t[0] != t[1] && t[1] != t[2] && t[0] != t[2] {
             out.extend_from_slice(t);
         }

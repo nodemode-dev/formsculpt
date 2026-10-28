@@ -218,8 +218,8 @@ impl Texture {
         let mut tex = Texture::blank(size);
         let n = size * size;
         for k in 0..PAINT_LEN {
-            for (i, c) in bytes[k * n * 2..(k + 1) * n * 2].chunks_exact(2).enumerate() {
-                tex.texels[i][k] = u16::from_le_bytes([c[0], c[1]]) as f32 / 65535.0;
+            for (i, c) in bytes[k * n * 2..(k + 1) * n * 2].as_chunks::<2>().0.iter().enumerate() {
+                tex.texels[i][k] = u16::from_le_bytes(*c) as f32 / 65535.0;
             }
         }
         Ok(tex)

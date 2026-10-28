@@ -151,7 +151,7 @@ pub fn read_usda(bytes: &[u8]) -> Result<Vec<Named>, String> {
         let points = numbers(body, "points").ok_or_else(|| format!("{name} has no points"))?;
         let counts = numbers(body, "faceVertexCounts").ok_or_else(|| format!("{name} has no faceVertexCounts"))?;
         let corners = numbers(body, "faceVertexIndices").ok_or_else(|| format!("{name} has no faceVertexIndices"))?;
-        let positions: Vec<[f32; 3]> = points.chunks_exact(3).map(|c| [c[0] as f32, c[1] as f32, c[2] as f32]).collect();
+        let positions: Vec<[f32; 3]> = points.as_chunks::<3>().0.iter().map(|c| [c[0] as f32, c[1] as f32, c[2] as f32]).collect();
         let mut indices = Vec::with_capacity(corners.len() * 3 / 2);
         let mut at = 0usize;
         for &n in &counts {

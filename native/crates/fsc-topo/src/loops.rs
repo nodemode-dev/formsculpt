@@ -200,7 +200,7 @@ pub fn delete_edge_loop(mesh: &Mesh, near: Vec3) -> Result<(Mesh, usize), String
 /// The open borders of a mesh as closed vertex loops, each in the direction its faces run along it.
 pub fn border_loops(mesh: &Mesh) -> Vec<Vec<u32>> {
     let mut directed: HashMap<(u32, u32), ()> = HashMap::new();
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         for k in 0..3 {
             directed.insert((t[k], t[(k + 1) % 3]), ());
         }
