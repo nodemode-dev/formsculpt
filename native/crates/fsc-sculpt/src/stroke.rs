@@ -485,7 +485,7 @@ impl Stroke {
         let m = &object.mesh;
         let normals: Vec<Vec3> = m
             .indices
-            .chunks_exact(3)
+            .as_chunks::<3>().0.iter()
             .map(|t| {
                 let (a, b, c) = (m.position(t[0]), m.position(t[1]), m.position(t[2]));
                 (b - a).cross(c - a).normalize_or_zero()
@@ -494,7 +494,7 @@ impl Stroke {
         let cos = deg.to_radians().cos();
         let mut held = vec![false; m.vertex_count()];
         let mut edges: HashMap<(u32, u32), usize> = HashMap::new();
-        for (t, tri) in m.indices.chunks_exact(3).enumerate() {
+        for (t, tri) in m.indices.as_chunks::<3>().0.iter().enumerate() {
             for e in 0..3 {
                 let (a, b) = (tri[e], tri[(e + 1) % 3]);
                 match edges.get(&(a.min(b), a.max(b))) {

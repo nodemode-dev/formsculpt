@@ -391,7 +391,7 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
             let Some(pa) = prim["attributes"]["POSITION"].as_u64() else { continue };
             let p = accessor(&doc, &buffers, pa as usize)?;
             let base = positions.len() as u32;
-            for c in p.chunks_exact(3) {
+            for c in p.as_chunks::<3>().0 {
                 positions.push(world.transform_point3(Vec3::new(c[0] as f32, c[1] as f32, c[2] as f32)).to_array());
             }
             match prim["attributes"]["COLOR_0"].as_u64() {
@@ -416,7 +416,7 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
             }
         }
         if world.determinant() < 0.0 {
-            for t in indices.chunks_exact_mut(3) {
+            for t in indices.as_chunks_mut::<3>().0 {
                 t.swap(1, 2);
             }
         }

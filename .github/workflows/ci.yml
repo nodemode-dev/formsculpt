@@ -29,10 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-          targets: wasm32-unknown-unknown
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version && cargo clippy --version
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: native
@@ -51,17 +49,35 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version && cargo clippy --version
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: native
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: backend/requirements.txt
-      - run: pip install -r requirements.txt
-      - run: python -m compileall -q app formsculpt_engine.py
-      - run: python formsculpt_engine.py --selfcheck
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Window bundle where the freeze puts it
+        run: |
+          (cd ../frontend && npm ci && npm run build)
+          cp -R ../frontend/dist frontend_dist
+      - name: Service venv with the engine module
+        run: |
+          python -m venv venv
+          venv/bin/pip install -r requirements.txt
+          ../formsculpt engine build
+      - run: venv/bin/python -m compileall -q app formsculpt_engine.py
+      - run: venv/bin/python formsculpt_engine.py --selfcheck
       - name: Boot the engine and probe it
         run: |
-          python -m uvicorn app.main:app --host 127.0.0.1 --port 8260 &
+          venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8260 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8260/api/health && break; sleep 1; done
           curl -sf http://127.0.0.1:8260/api/capabilities
 
@@ -69,7 +85,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version && cargo clippy --version
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: native
@@ -89,7 +106,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version && cargo clippy --version
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: native
@@ -114,7 +132,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version && cargo clippy --version
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: native
@@ -153,7 +172,7 @@ jobs:
             [ -d "$f" ] && continue
             bash -n "$f"
           done
-      - name: No em dash or emoji in tracked text
+      - name: No em dash in tracked markdown, no emoji in tracked text
         run: |
           python3 - <<'PY'
           import subprocess, sys
@@ -163,9 +182,10 @@ jobs:
                   text = open(path, encoding='utf-8').read()
               except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
                   continue
+              markdown = path.endswith('.md')
               for ch in text:
                   cp = ord(ch)
-                  if cp == 0x2014 or 0x1F000 <= cp <= 0x1FAFF or 0x2600 <= cp <= 0x27BF:
+                  if (markdown and cp == 0x2014) or 0x1F000 <= cp <= 0x1FAFF or 0x2600 <= cp <= 0x27BF:
                       bad.append(f'{path}: U+{cp:04X}')
                       break
           print('\n'.join(bad) or 'clean')

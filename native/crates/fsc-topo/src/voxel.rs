@@ -556,11 +556,9 @@ fn symmetric_eigen(m: glam::Mat3) -> ([f32; 3], glam::Mat3) {
             row[p] = c * x - s * y;
             row[q] = s * x + c * y;
         }
-        for k in 0..3 {
-            let (x, y) = (a[p][k], a[q][k]);
-            a[p][k] = c * x - s * y;
-            a[q][k] = s * x + c * y;
-        }
+        let (rp, rq) = (a[p], a[q]);
+        a[p] = std::array::from_fn(|k| c * rp[k] - s * rq[k]);
+        a[q] = std::array::from_fn(|k| s * rp[k] + c * rq[k]);
         for row in v.iter_mut() {
             let (x, y) = (row[p], row[q]);
             row[p] = c * x - s * y;
@@ -615,10 +613,10 @@ pub fn sharpen_to(mesh: &mut Mesh, source: &Mesh, source_bvh: &Bvh, cell: f32, h
             continue;
         }
         let mut step = Vec3::ZERO;
-        for k in 0..3 {
-            if values[k].abs() > top * 0.1 {
+        for (k, &value) in values.iter().enumerate() {
+            if value.abs() > top * 0.1 {
                 let e = vectors.col(k);
-                step += e * (e.dot(atb) / values[k]);
+                step += e * (e.dot(atb) / value);
             }
         }
         if step.length() <= reach {
@@ -634,7 +632,7 @@ pub fn sharpen_to(mesh: &mut Mesh, source: &Mesh, source_bvh: &Bvh, cell: f32, h
     };
     for _ in 0..8 {
         let mut undo = Vec::new();
-        for t in mesh.indices.chunks_exact(3) {
+        for t in mesh.indices.as_chunks::<3>().0 {
             let (n0, n1) = (normal_of(&before, t), normal_of(&mesh.positions, t));
             if n1.dot(n0) <= 0.0 || n1.length_squared() <= n0.length_squared() * 1e-6 {
                 undo.extend_from_slice(t);

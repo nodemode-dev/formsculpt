@@ -121,7 +121,7 @@ fn write_node(out: &mut Vec<u8>, n: &Node) {
 fn geometry_children(mesh: &Mesh) -> Vec<Node> {
     let vertices: Vec<f64> = mesh.positions.iter().flat_map(|p| p.iter().map(|&c| c as f64)).collect();
     // A polygon's last index is stored as -(index + 1).
-    let polygons: Vec<i32> = mesh.indices.chunks_exact(3).flat_map(|t| [t[0] as i32, t[1] as i32, -(t[2] as i32) - 1]).collect();
+    let polygons: Vec<i32> = mesh.indices.as_chunks::<3>().0.iter().flat_map(|t| [t[0] as i32, t[1] as i32, -(t[2] as i32) - 1]).collect();
     let normals: Vec<f64> = mesh.indices.iter().flat_map(|&v| mesh.normals[v as usize].iter().map(|&c| c as f64)).collect();
     let mut children = vec![
         node("GeometryVersion", vec![P::I32(124)]),
@@ -370,10 +370,10 @@ impl Reader<'_> {
                 };
                 let (data, count, next) = self.array(at, size)?;
                 let v = match t {
-                    b'f' => V::Floats(data.chunks_exact(4).take(count).map(|c| f32::from_le_bytes(c.try_into().expect("4")) as f64).collect()),
-                    b'd' => V::Floats(data.chunks_exact(8).take(count).map(|c| f64::from_le_bytes(c.try_into().expect("8"))).collect()),
-                    b'i' => V::Ints(data.chunks_exact(4).take(count).map(|c| i32::from_le_bytes(c.try_into().expect("4")) as i64).collect()),
-                    b'l' => V::Ints(data.chunks_exact(8).take(count).map(|c| i64::from_le_bytes(c.try_into().expect("8"))).collect()),
+                    b'f' => V::Floats(data.as_chunks::<4>().0.iter().take(count).map(|&c| f32::from_le_bytes(c) as f64).collect()),
+                    b'd' => V::Floats(data.as_chunks::<8>().0.iter().take(count).map(|&c| f64::from_le_bytes(c)).collect()),
+                    b'i' => V::Ints(data.as_chunks::<4>().0.iter().take(count).map(|&c| i32::from_le_bytes(c) as i64).collect()),
+                    b'l' => V::Ints(data.as_chunks::<8>().0.iter().take(count).map(|&c| i64::from_le_bytes(c)).collect()),
                     _ => V::Ints(data.iter().take(count).map(|&x| x as i64).collect()),
                 };
                 (v, next)
@@ -519,7 +519,7 @@ pub fn read_fbx(bytes: &[u8]) -> Result<Vec<Named>, String> {
         }
         let model = parent_of.get(&g.id()).copied().unwrap_or(0);
         let m = world(model);
-        let positions: Vec<[f32; 3]> = verts.chunks_exact(3).map(|c| m.transform_point3(Vec3::new(c[0] as f32, c[1] as f32, c[2] as f32)).to_array()).collect();
+        let positions: Vec<[f32; 3]> = verts.as_chunks::<3>().0.iter().map(|c| m.transform_point3(Vec3::new(c[0] as f32, c[1] as f32, c[2] as f32)).to_array()).collect();
         let n = positions.len() as i64;
         let mut indices = Vec::new();
         let mut corners: Vec<u32> = Vec::new();

@@ -92,7 +92,7 @@ pub(crate) fn cloth_drape(s: &mut Session, args: &Value) -> Result<Value, Comman
     let mut edges: Vec<(u32, u32, f32)> = Vec::new();
     {
         let mut seen = std::collections::HashSet::new();
-        for t in cloth.mesh.indices.chunks_exact(3) {
+        for t in cloth.mesh.indices.as_chunks::<3>().0 {
             for k in 0..3 {
                 let (a, b) = (t[k].min(t[(k + 1) % 3]), t[k].max(t[(k + 1) % 3]));
                 if seen.insert((a, b)) {
@@ -562,7 +562,7 @@ pub(crate) fn delete_faces(s: &mut Session, args: &Value) -> Result<Value, Comma
         }
     }
     // Quads survive when each deleted quad went whole.
-    let quads = mesh.quads && gone.chunks_exact(2).all(|p| p[0] == p[1]);
+    let quads = mesh.quads && gone.as_chunks::<2>().0.iter().all(|p| p[0] == p[1]);
     let mut out = Mesh::new(positions, indices);
     out.paint = paint;
     out.groups = groups;

@@ -234,9 +234,9 @@ impl Reader {
 /// Paint from a flat buffer of `n` vertices: seven floats each, or five from projects before 0.26.0 (opaque, no glow).
 fn paint_floats(flat: &[f32], n: usize) -> Option<Vec<Paint>> {
     if flat.len() == n * PAINT_LEN {
-        Some(flat.chunks_exact(PAINT_LEN).map(|c| std::array::from_fn(|k| c[k])).collect())
+        Some(flat.as_chunks::<PAINT_LEN>().0.to_vec())
     } else if flat.len() == n * 5 {
-        Some(flat.chunks_exact(5).map(fsc_core::paint_from5).collect())
+        Some(flat.as_chunks::<5>().0.iter().map(|c| fsc_core::paint_from5(c)).collect())
     } else {
         None
     }
@@ -284,7 +284,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
             if flat.len() != mesh.indices.len() * 2 {
                 return Err("a UV buffer does not match its mesh".into());
             }
-            mesh.uvs = flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
+            mesh.uvs = flat.as_chunks::<2>().0.to_vec();
         }
         if e["groups"].is_string() {
             let groups = r.u32(&e["groups"])?;
@@ -306,7 +306,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
             if flat.len() % 2 != 0 || flat.iter().any(|&v| v >= n) {
                 return Err("a crease buffer does not match its mesh".into());
             }
-            mesh.creases = flat.chunks_exact(2).map(|c| (c[0].min(c[1]), c[0].max(c[1]))).collect();
+            mesh.creases = flat.as_chunks::<2>().0.iter().map(|c| (c[0].min(c[1]), c[0].max(c[1]))).collect();
         }
         let maps = match e.get("maps").filter(|m| m.is_object()) {
             Some(m) => Some(fsc_core::Maps {
@@ -464,7 +464,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 if flat.len() != faces * 6 {
                     return Err(broken.into());
                 }
-                set.uvs = Some(flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect());
+                set.uvs = Some(flat.as_chunks::<2>().0.to_vec());
             }
             o.selection_sets.push(set);
         }

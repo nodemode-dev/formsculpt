@@ -93,7 +93,7 @@ fn patch_slab(mesh: &Mesh, inside: &[bool], local: &HashMap<u32, u32>, base: &[u
         indices.extend_from_slice(&[vt, ut, ub, vt, ub, vb]);
     }
     if flip {
-        for tri in indices.chunks_exact_mut(3) {
+        for tri in indices.as_chunks_mut::<3>().0 {
             tri.swap(1, 2);
         }
     }
@@ -211,7 +211,7 @@ pub fn extract_patch(mesh: &Mesh, mask: &[f32], mode: PatchMode, thickness: f32,
                 indices.extend_from_slice(&[a, c, b]);
             }
             if flip {
-                for tri in indices.chunks_exact_mut(3) {
+                for tri in indices.as_chunks_mut::<3>().0 {
                     tri.swap(1, 2);
                 }
             }

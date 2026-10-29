@@ -111,7 +111,7 @@ pub fn collapse_sphere(mesh: &mut Mesh, mask: &mut [f32], center: Vec3, radius: 
     }
     if !dead.is_empty() {
         let old = std::mem::take(&mut mesh.indices);
-        mesh.indices = old.chunks_exact(3).enumerate().filter(|(t, _)| !dead.contains(&(*t as u32))).flat_map(|(_, tri)| tri.iter().copied()).collect();
+        mesh.indices = old.as_chunks::<3>().0.iter().enumerate().filter(|(t, _)| !dead.contains(&(*t as u32))).flat_map(|(_, tri)| tri.iter().copied()).collect();
     }
     collapsed
 }

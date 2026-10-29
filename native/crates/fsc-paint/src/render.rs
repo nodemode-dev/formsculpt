@@ -135,7 +135,7 @@ fn raster_band(band: &mut [Sample], y0: usize, w: usize, projected: &[Vec<[f32; 
     let y1 = y0 + band.len() / w;
     for (oi, (o, pts)) in objects.iter().zip(projected).enumerate() {
         let hid = o.mesh.has_hidden();
-        for (ti, t) in o.mesh.indices.chunks_exact(3).enumerate() {
+        for (ti, t) in o.mesh.indices.as_chunks::<3>().0.iter().enumerate() {
             if hid && o.mesh.hidden[ti] {
                 continue;
             }

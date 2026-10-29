@@ -67,7 +67,7 @@ fn lattice_nearest(t: Vec3, a: Vec3, b: Vec3, s: f32, p: Vec3) -> Vec3 {
 /// piece can be closed on its own; border_loops would stop at the repeat and lose the rest of the loop.
 fn border_cycles(mesh: &Mesh) -> Vec<Vec<u32>> {
     let mut directed: HashSet<(u32, u32)> = HashSet::new();
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         for k in 0..3 {
             directed.insert((t[k], t[(k + 1) % 3]));
         }
