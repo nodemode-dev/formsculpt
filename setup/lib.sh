@@ -13,7 +13,7 @@ fs_os() {
 }
 fs_python() {
   local c
-  for c in python3.14 python3.13 python3.12 python3; do
+  for c in python3.14 python3.13 python3.12 python3 python; do
     if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)' 2>/dev/null; then
       echo "$c"
       return 0
@@ -35,6 +35,7 @@ fs_target_triple() {
   rustc -vV | awk '/^host:/ {print $2}'
 }
 fs_exe() { [ "$(fs_os)" = windows ] && echo ".exe" || echo ""; }
+fs_native_path() { if [ "$(fs_os)" = windows ]; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
 fs_rust_env() {
   [ -d "$HOME/.cargo/bin" ] && PATH="$HOME/.cargo/bin:$PATH"
   export PATH
