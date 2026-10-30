@@ -2,6 +2,12 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.2 · 2026-10-30
+
+- The desktop app builds on Windows: the install finds `python` and the Windows venv layout, and the engine freeze hands PyInstaller Windows paths.
+- `build_app.bat` bundles the Blender add-on and the Unreal and Unity receivers, as the other builds do.
+- Scripts check out with LF line endings and `.bat` files with CRLF on every system.
+
 ## 1.19.1 · 2026-10-26
 
 - The window smoke test (the built window and the splash page load under a slow CPU and network with no layout shift, console error or failed request) runs in CI, and the splash logo no longer moves when the line under it arrives.
