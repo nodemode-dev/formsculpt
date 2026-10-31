@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.3 · 2026-10-31
+
+- The Windows desktop app no longer opens to a blank window on PCs where an installer set the `.js` file type to `text/plain` in the registry: the engine now serves scripts and stylesheets with their real types.
+
 ## 1.19.2 · 2026-10-30
 
 - The desktop app builds on Windows: the install finds `python` and the Windows venv layout, and the engine freeze hands PyInstaller Windows paths.
