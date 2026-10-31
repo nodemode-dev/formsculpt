@@ -1,4 +1,5 @@
 import asyncio
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +12,10 @@ from app.core.local_guard import LocalGuard
 from app.routers import commands, engine, events, gof, lightbox, mcp, nodemode, plugins, system, terminal_socket
 from app.services import autosave, claude_code, cmd_chat, cmd_terminal, terminal
 from app.services import events as bus
+
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("text/css", ".css")
 
 WINDOW_COMMANDS = (cmd_terminal, claude_code, cmd_chat)
 

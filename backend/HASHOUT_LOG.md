@@ -28,6 +28,7 @@ backend/
 - [formsculpt_engine.py](#formsculpt_enginepy)
 - [app/core/isolation.py](#appcoreisolationpy)
 - [app/routers/system.py](#approuterssystempy)
+- [app/main.py](#appmainpy)
 
 ## formsculpt_engine.py
 
@@ -377,3 +378,11 @@ formcompiler's Windows leg runs `./formsculpt install`, `install-desktop` and `d
 - kind: rationale
 - logged: v1.19.2 · 2026-10-30
 `build_app.bat` is the supported start-to-finish build on Windows (CLAUDE.md, and `build_app` sends Windows users to it), but its PyInstaller line bundled only `frontend\dist`, so its sidecar had no Blender add-on, Unreal or Unity receiver and `/api/integrations/blender`, `/unreal` and `/unity` had nothing to serve. It now passes the same three `--add-data` pairs as `setup/freeze_backend`. formcompiler does not run this file; it builds Windows through `./formsculpt` in Git Bash.
+
+## app/main.py
+
+### app/main.py · .js, .mjs and .css keep their types on Windows
+- refers-to: app/main.py :: the three mimetypes.add_type calls after the last import
+- kind: rationale
+- logged: v1.19.3 · 2026-10-31
+Python's `mimetypes` takes file types from the Windows registry (`HKEY_CLASSES_ROOT\.js`, value `Content Type`) over its own table, and some installers and editors set `.js` to `text/plain`. On those PCs the engine served the built window's scripts as `text/plain`, WebView2 refused every module script under strict MIME checking, and the desktop window stayed blank; macOS, Linux, dev mode (Vite serves the page) and Windows PCs with the default value never showed it. The three calls pin `.js` and `.mjs` to `text/javascript` and `.css` to `text/css`, which covers `StaticFiles`, `FileResponse` and any direct `guess_type`. They sit after the last import, not above the imports: a module that re-reads the registry while importing cannot undo them, and no import follows a statement (E402). They look redundant off Windows; keep them. Repro on a Windows PC: `reg add "HKCU\Software\Classes\.js" /v "Content Type" /d "text/plain" /f`, then launch the rebuilt app; restore with `/d "text/javascript"`. Checked here: with the table poisoned to `text/plain` for js, mjs and css through `mimetypes.init(files=...)`, the three calls return `text/javascript`, `text/javascript` and `text/css`; `py_compile` passes. Not yet run on a Windows PC.
