@@ -1,124 +1,219 @@
-<div align="center">
+<p align="center">
+  <img src="assets/app-icon/formsculpt-256.png" width="128" height="128" alt="FormSculpt icon: a planar bust in the Form family colours">
+</p>
 
-<img src="assets/formsculpt_folder_icon.png" alt="formsculpt" width="120">
+<h1 align="center">FormSculpt</h1>
 
-<h1>formsculpt</h1>
+<p align="center">
+  <b>3D sculpting; a Rust engine and a studio viewport for the Form family.</b><br>
+  Brushes, quad remesh, UVs, painting and a path renderer,<br>
+  on your own machine with no account. Agents sculpt over MCP.
+</p>
 
-**3D sculpting & modeling for the web & the desktop, in the NodeMode style**
+<p align="center">
+  <img alt="version 1.19.5" src="https://img.shields.io/badge/version-1.19.5-eef0f4?style=flat-square">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-1.99.1-f97316?style=flat-square&logo=rust&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/typescript-vite-3178c6?style=flat-square">
+  <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-native-2f7bf5?style=flat-square">
+  <img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-3a3a3a?style=flat-square">
+  <img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-d69e2e?style=flat-square">
+</p>
 
-![version](https://img.shields.io/badge/version-1.19.3-f97316) ![rust](https://img.shields.io/badge/rust-1.99.1-f97316) ![node](https://img.shields.io/badge/node-22-339933) ![python](https://img.shields.io/badge/python-3.12%2B-3776ab) ![tauri](https://img.shields.io/badge/tauri-2-24c8db) ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+<p align="center">
+  <a href="https://formsculpt.formai.studio/"><b>Download FormSculpt on formai.studio</b></a> ·
+  <a href="#run-it-from-source">Run it from source</a> ·
+  <a href="#the-form-family">All Form apps</a>
+</p>
 
-</div>
+<p align="center">
+  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with a marble bust open in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
+  <br>
+  <sub>A marble bust (CC0, Poly Haven) in the sculpt viewport with the Clay brush active.</sub>
+</p>
 
-## What it is
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#everything-in-the-box">In the box</a> ·
+  <a href="#built-for-agents">Agents</a> ·
+  <a href="#under-the-hood">Under the hood</a> ·
+  <a href="#download">Download</a> ·
+  <a href="#run-it-from-source">Run from source</a> ·
+  <a href="#the-form-family">Form family</a>
+</p>
 
-formsculpt is the Form family's sculpting and modeling app: a Rust sculpting engine driving a TypeScript viewport, a FastAPI engine service & a Tauri 2 desktop build. Every action is a keyed command in one registry, so the interface, the keyboard & outside agents (Claude Code, Codex, Cursor over MCP) all drive the same engine, w/ or w/o the window open. Its feature coverage is tracked row by row in the FormAI parity matrix.
+<table>
+  <tr>
+    <td width="25%" valign="top">
+      <h3>Rust engine</h3>
+      One Cargo workspace does the sculpting, remeshing and baking, and compiles to WebAssembly so the window works with no service.
+    </td>
+    <td width="25%" valign="top">
+      <h3>Full pipeline</h3>
+      Sculpt, retopologize, unwrap UVs, paint, bake maps and path-render without leaving the window.
+    </td>
+    <td width="25%" valign="top">
+      <h3>Local and private</h3>
+      No account and no upload. The servers bind to 127.0.0.1 and your scenes stay on your machine.
+    </td>
+    <td width="25%" valign="top">
+      <h3>Agent-ready</h3>
+      The UI, the keyboard and an MCP server call the same 184 commands from one registry.
+    </td>
+  </tr>
+</table>
 
-Stack · Rust engine (`native/`, one Cargo workspace) · vanilla TypeScript & Vite (`frontend/`) · Python & FastAPI (`backend/`) · Tauri 2 (`src-tauri/`)
+## Features
 
-## Highlights
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/formsculpt-wireframe.png" alt="The marble bust shown with its triangle wireframe over the shaded surface" width="100%">
+      <br><sub>The same bust with the wireframe view on.</sub>
+      <h3>Dense meshes, live</h3>
+      Strokes run in a WebGL2 viewport, with dynamic topology, multires levels and voxel remesh underneath.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/formsculpt-paint.png" alt="Red paint brushed across the bust's cheek with the Paint tool active and its colour and roughness options below" width="100%">
+      <br><sub>Vertex paint with colour, roughness and metalness.</sub>
+      <h3>Paint on the model</h3>
+      Paint layers, a Spotlight projection tool and texture painting sit beside the sculpt brushes.
+    </td>
+  </tr>
+</table>
 
-- **One command registry** · `native/crates/fsc-commands` declares every command once: dotted id, MCP name, JSON schema, annotations, label & keys. It exports the catalogue the UI, MCP server & agent skills read.
-- **Engine in Rust, three targets** · the same crates are planned to compile to WASM for the window, a PyO3 module for the service (headless agent work) & native code for the desktop shell.
-- **Desktop shell in formvis's shape** · splash window, frozen engine sidecar on an OS-assigned port, updater, `.fsc` file association, CI bundles for macOS, Linux & Windows.
-- **Zero-flash shell** · theme applied before first paint, reserved layout, in-place text updates only.
-- **Local only by default** · Vite binds 127.0.0.1 (`server.host` false), uvicorn binds 127.0.0.1.
-- **Claude in the window** · a terminal dock with shells, a Claude Code tab and a Chat tab, wired to the same MCP tools.
-- **Menus, palette & shortcuts** · a menu bar and right-click menus built from the command registry, a `Mod+K` palette over every command & a `Mod+/` shortcut editor.
-- **26 languages** · English by default; switch in View > Language, live, no reload.
-- **A studio viewport** · a gradient backdrop w/ vignette (or a flat colour) & an infinite, anti-aliased floor grid that fades to the horizon; Shift+P toggles the grid.
+## Everything in the box
 
-## Quick Start
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h4>Sculpt and topology</h4>
+      Clay · Draw · Grab · Smooth · Crease · Snake hook · Dyntopo · Multires · Voxel remesh · Quad remesh · Decimate · Booleans
+    </td>
+    <td width="33%" valign="top">
+      <h4>Surface and render</h4>
+      UV unwrap · UDIM tiles · Map baking · Vertex paint · Paint layers · Spotlight · Path render · Lights and HDRIs
+    </td>
+    <td width="33%" valign="top">
+      <h4>Formats</h4>
+      Opens: <code>.fsc</code> · OBJ · STL · PLY · glTF/GLB · 3MF · FBX · USD · Saves: OBJ · STL · PLY · GLB · 3MF · Native: <code>.fsc</code>
+    </td>
+  </tr>
+</table>
 
-Requirements: Rust 1.99.1 (pinned in `rust-toolchain.toml`, which rustup installs on the first build), Node 20.19+ or 22.12+, Python 3.12+.
+## Built for agents
 
-### macOS & Linux
+184 commands live in one registry in `native/crates/fsc-commands`; the window, the keyboard and the MCP server all call them.
 
-```bash
-./formsculpt_oc_install
-./formsculpt doctor
-./formsculpt
+```sh
+./formsculpt mcp                 # MCP server on stdio for Claude Code, Codex and Cursor
+./formsculpt agents install      # register FormSculpt with Claude Code, Codex and Cursor
 ```
 
-### Windows
+`.mcp.json`, `.codex/config.toml` and `.cursor/mcp.json` are already wired in this repo. See [`AGENTS.md`](AGENTS.md).
 
-```bat
-formsculpt_oc_install.bat
-formsculpt.bat
+## Under the hood
+
+- **Engine:** Rust crates for core, sculpt, topology, paint, I/O and the command registry (`native/`).
+- **Window:** vanilla TypeScript and Vite with a WebGL2 viewport (`frontend/`), no UI framework.
+- **Service:** a FastAPI engine service on 127.0.0.1:8260 (`backend/`), optional when the WebAssembly engine is built.
+- **Tested:** engine suites, a service suite and a browser smoke test, run by `./formsculpt test`.
+
+## Download
+
+**Get the app:** download FormSculpt from [formai.studio](https://formsculpt.formai.studio/). **Keep it updated:** [FormPortal](https://github.com/nodemode-dev/formportal) installs, updates and rolls back every Form app from the same signed catalogue.
+
+| Platform | Builds |
+|---|---|
+| macOS | Apple silicon |
+| Windows | x64 |
+| Linux | x64 |
+
+All FormSculpt builds are compiled and released from [`nodemode-dev/formcompiler`](https://github.com/nodemode-dev/formcompiler/releases), not from this repo. This repo holds the source. No FormSculpt release has been published there yet.
+
+## Run it from source
+
+Prefer it in your browser, or want to contribute? Run the web UI straight from this repo.
+
+**Requires:** Rust 1.99.1 (pinned in `rust-toolchain.toml`), Node 20.19+ or 22.12+, Python 3.12+.
+
+```sh
+git clone git@github.com:nodemode-dev/formsculpt.git
+cd formsculpt
+./formsculpt_oc_install     # checks the toolchain, installs the backend and frontend
+./formsculpt                # backend on 8260, web UI at http://localhost:5260
 ```
 
-### Build the desktop app in one step
+To run with no service, build the browser engine with `./formsculpt engine wasm`, start `./formsculpt frontend`, and open `http://localhost:5260/?engine=wasm`. On Windows use `formsculpt_oc_install.bat` and `formsculpt.bat`. `./formsculpt desktop dev` opens the desktop window instead.
 
-```bash
-./build_app            # macOS & Linux: tools checked, everything built, the app bundled (and installed on macOS)
-./build_app --open     # the same, then open it
-build_app.bat          # Windows: msi & nsis installers
-```
+> [!IMPORTANT]
+> **Status:** pre-release. CI builds the macOS and Windows bundles, but only the Linux build has been run. See [`CHANGELOG.md`](CHANGELOG.md).
 
-Every step is logged to `build_app.log`. Flags: `--clean`, `--install` (Linux deb), `--no-install` (macOS); `FSC_BUNDLES=deb,rpm,appimage` for more Linux bundles.
+**Contributing:** branch from `main`, keep changes to source here, and leave packaging and releases to formcompiler. See [`.docs/BRANCHING.md`](.docs/BRANCHING.md) and [`AGENTS.md`](AGENTS.md).
 
-| Service | URL | Notes |
-| --- | --- | --- |
-| Frontend | http://localhost:5260 | Vite dev server, loopback only |
-| Backend | http://127.0.0.1:8260 | FastAPI, `/api/health`, `/api/version`, `/api/capabilities` |
-| Preview | http://localhost:5261 | `vite preview` |
+## Repository
 
-Other commands: `./formsculpt engine build|check|wasm` (`wasm` builds the browser engine, which the window uses on its own when no service answers, or at `?engine=wasm`), `build`, `serve`, `freeze`, `desktop dev|build`, `clean`. Run `./formsculpt help` for all of them.
+| Path | What it is |
+|---|---|
+| `native/` | Rust engine workspace and the command registry |
+| `frontend/` | Vite app: shell, engine client, WebGL2 viewport |
+| `backend/` · `src-tauri/` | FastAPI engine service · Tauri 2 desktop shell |
 
-## Configuration
+Docs: [`.docs/wiki`](.docs/wiki) · Agents: [`CLAUDE.md`](CLAUDE.md), [`AGENTS.md`](AGENTS.md)
 
-Set in `backend/.env` (copy `backend/.env.example`; never committed).
+## The Form family
 
-| Variable | Purpose |
-| --- | --- |
-| `FSC_HOST` | Backend bind address, default 127.0.0.1 |
-| `FSC_PORT` | Backend port, default 8260 (0 picks a free port, as the desktop shell does) |
-| `FSC_CORS_ORIGINS` | Comma-separated extra origins |
-| `FSC_DIST` | Built frontend to serve, set by `serve` & the desktop sidecar |
+FormSculpt is one of the **Form apps**: native creative tools that install, update and roll back through FormPortal and can all be driven by agents.
 
-## Architecture
+| | App | What it's for | Download | Code |
+|:-:|---|---|---|---|
+| <img src=".github/assets/family/form.md.png" alt="" width="32" height="32"> | **form.md** | Documents, databases and realtime editing together | [formai.studio](https://formmd.formai.studio/) | [GitHub](https://github.com/nodemode-dev/form.md) |
+| <img src=".github/assets/family/format.png" alt="" width="32" height="32"> | **FormAT** | Chat and agent workspace on your key | [formai.studio](https://format.formai.studio/) | [GitHub](https://github.com/nodemode-dev/format) |
+| <img src=".github/assets/family/formCAD.png" alt="" width="32" height="32"> | **FormCAD** | Drafting, parametric parts and NURBS surfaces | | [GitHub](https://github.com/nodemode-dev/formCAD) |
+| <img src=".github/assets/family/formcel.png" alt="" width="32" height="32"> | **FormCel** | Spreadsheets agents can read and edit | [formai.studio](https://formcel.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formcel) |
+| <img src=".github/assets/family/formcraft.png" alt="" width="32" height="32"> | **FormCraft** | Generate images, video, audio, 3D and worlds | | [GitHub](https://github.com/nodemode-dev/formcraft) |
+| <img src=".github/assets/family/formcut.png" alt="" width="32" height="32"> | **FormCut** | Multi-track video editing with no upload | [formai.studio](https://formcut.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formcut) |
+| <img src=".github/assets/family/formDAM.png" alt="" width="32" height="32"> | **FormDAM** | Photo library and asset manager | [formai.studio](https://formdam.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formDAM) |
+| <img src=".github/assets/family/formdeck.png" alt="" width="32" height="32"> | **FormDeck** | Presentations and pitch decks | [formai.studio](https://formdeck.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formdeck) |
+| <img src=".github/assets/family/formdesign.png" alt="" width="32" height="32"> | **FormDesign** | Page layout for print and the web | [formai.studio](https://formdesign.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formdesign) |
+| <img src=".github/assets/family/formencoder.png" alt="" width="32" height="32"> | **FormEncoder** | Media encoding queue with presets | [formai.studio](https://formencoder.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formencoder) |
+| <img src=".github/assets/family/formfabric.png" alt="" width="32" height="32"> | **FormFabric** | Sewing patterns draped with cloth simulation | | [GitHub](https://github.com/nodemode-dev/formfabric) |
+| <img src=".github/assets/family/formlit.png" alt="" width="32" height="32"> | **FormLit** | Photo library and raw development | [formai.studio](https://formlit.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formlit) |
+| <img src=".github/assets/family/formmorpheus.png" alt="" width="32" height="32"> | **FormMorpheus** | Frame-by-frame and performed animation | | [GitHub](https://github.com/nodemode-dev/formmorpheus) |
+| <img src=".github/assets/family/formNET.png" alt="" width="32" height="32"> | **FormNET** | See what your computer sends online | | [GitHub](https://github.com/nodemode-dev/formNET) |
+| <img src=".github/assets/family/formpath.png" alt="" width="32" height="32"> | **FormPath** | Vector illustration with artboards and type | [formai.studio](https://formpath.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formpath) |
+| <img src=".github/assets/family/formpdf.png" alt="" width="32" height="32"> | **FormPDF** | Edit, redact, sign and fill PDFs | [formai.studio](https://formpdf.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formpdf) |
+| <img src=".github/assets/family/formpromo.png" alt="" width="32" height="32"> | **FormPromo** | Promo films from your own media | [formai.studio](https://formpromo.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formpromo) |
+| <img src=".github/assets/family/formref.png" alt="" width="32" height="32"> | **FormRef** | Reference boards for creative work | [formai.studio](https://formref.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formref) |
+| <img src=".github/assets/family/formrig.png" alt="" width="32" height="32"> | **FormRig** | Rig, skin and retarget any mesh | | [GitHub](https://github.com/nodemode-dev/formrig) |
+| <img src=".github/assets/family/formsculpt.png" alt="" width="32" height="32"> | **FormSculpt** | 3D sculpting, remeshing and painting | [formai.studio](https://formsculpt.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formsculpt) |
+| <img src=".github/assets/family/formsurface.png" alt="" width="32" height="32"> | **FormSurface** | Texture painting with PBR export | [formai.studio](https://formsurface.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formsurface) |
+| <img src=".github/assets/family/formtools.png" alt="" width="32" height="32"> | **FormTools** | Viewers, batch tools and file utilities | | [GitHub](https://github.com/nodemode-dev/formtools) |
+| <img src=".github/assets/family/formtxt.png" alt="" width="32" height="32"> | **FormTxt** | Word processing with .docx round trips | [formai.studio](https://formtxt.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formtxt) |
+| <img src=".github/assets/family/formvfx.png" alt="" width="32" height="32"> | **FormVFX** | Motion graphics and VFX compositing | [formai.studio](https://formvfx.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formvfx) |
+| <img src=".github/assets/family/formvis.png" alt="" width="32" height="32"> | **FormVis** | Layered image editing with local AI | [formai.studio](https://formvis.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formvis) |
+| <img src=".github/assets/family/formwav.png" alt="" width="32" height="32"> | **FormWav** | Multitrack audio editing and mixing | [formai.studio](https://formwav.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formwav) |
+| <img src=".github/assets/family/formweb.png" alt="" width="32" height="32"> | **FormWeb** | Visual website building with a CMS | [formai.studio](https://formweb.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formweb) |
+| <img src=".github/assets/family/formportal.png" alt="" width="32" height="32"> | **FormPortal** | Install, update and roll back Form apps | [formai.studio](https://formportal.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formportal) |
+| <img src=".github/assets/family/formtray.png" alt="" width="32" height="32"> | **FormTray** | One dock icon for every app | [formai.studio](https://formtray.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formtray) |
+| <img src=".github/assets/family/formMCP.png" alt="" width="32" height="32"> | **FormMCP** | One MCP connection to the family | [formai.studio](https://formmcp.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formMCP) |
+| <img src=".github/assets/family/formskills.png" alt="" width="32" height="32"> | **FormSkills** | Every app's agent skills in one place | [formai.studio](https://formskill.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formskills) |
+| <img src=".github/assets/family/formbench.png" alt="" width="32" height="32"> | **FormBench** | Parity, testing and rankings for the family | [formai.studio](https://formranker.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formbench) |
+| <img src=".github/assets/family/formslot.png" alt="" width="32" height="32"> | **FormSlot** | Codebase memory for coding agents | | [GitHub](https://github.com/nodemode-dev/formslot) |
+| <img src=".github/assets/family/subform.png" alt="" width="32" height="32"> | **SubForm** | Workbench for parallel Claude Code agents | | [GitHub](https://github.com/nodemode-dev/subform) |
+| <img src=".github/assets/family/formcompiler.png" alt="" width="32" height="32"> | **FormCompiler** | Builds, signs and releases every app | [formai.studio](https://formcompiler.formai.studio/) | [GitHub](https://github.com/nodemode-dev/formcompiler) |
+| <img src=".github/assets/family/formpipe.png" alt="" width="32" height="32"> | **FormPipe** | Release pipeline and update feeds | | [GitHub](https://github.com/nodemode-dev/formpipe) |
 
-```text
-formsculpt/
-  native/            Rust engine workspace
-    crates/fsc-core      mesh, scene, undo (planned contents)
-    crates/fsc-sculpt    brushes, strokes, symmetry (planned)
-    crates/fsc-topo      dyntopo, multires, remesh, booleans (planned)
-    crates/fsc-paint     vertex paint, UVs, bakes (planned)
-    crates/fsc-io        file formats & .fsc projects (planned)
-    crates/fsc-commands  the command registry & catalogue
-  frontend/          Vite app: shell, engine client, viewport
-  backend/           FastAPI engine service, PyInstaller entry
-  src-tauri/         Tauri 2 desktop shell
-  setup/             one script per dispatcher command
-  .claude/skills/    formsculpt-harness, the project skill pack
-  .docs/             branching model & wiki source
-```
+## Maintainers
 
-## Development
+| Maintainer | Role |
+|---|---|
+| [@nodemode-ai](https://github.com/nodemode-ai) | Owner |
+| [@gbarnai](https://github.com/gbarnai) | Co-owner |
 
-Branching & versions follow [.docs/BRANCHING.md](.docs/BRANCHING.md). Work on the code routes through `.claude/skills/formsculpt-harness`. Edits are surgical, the DOM never flashes, every z-index is a token, & rationale lives in each side's `HASHOUT_LOG.md` rather than in comments.
+Code owners are set in [`.github/CODEOWNERS`](.github/CODEOWNERS).
 
-`./formsculpt test` runs the engine suites (registry, modeling, files & renders, all through the command registry) & the service suite; `./formsculpt test e2e` drives a booted window in Chromium under 4x throttling & fails on any layout shift or console error. CI runs the engine & service suites.
+## License
 
-## Status
+FormSculpt is licensed under the Apache License 2.0 ([`LICENSE`](LICENSE), SPDX `Apache-2.0`). Copyright 2026 NodeAgentc, Inc. Third-party notices: [`NOTICE.md`](NOTICE.md).
 
-1.17.0 adds Form family theme as a theme option (View > Theme), following the theme shared across the Form apps; the sculpting interface itself is unchanged. 1.16.0 leaves room for the macOS traffic lights in every layout's top row and lets that row drag the window. 1.15.0 starts like the rest of the Form family: a rounded splash card with the icon and a loading bar, then the window appears whole once its page has painted. 1.14.2 swaps in the owner's cleaned-up icon at every size. 1.14.1 gives the app a new icon, the owner's planar bust in the Form family colours. 1.14.0 puts Claude Code & Chat in every layout as formlit has them (the robot head & speech bubble in the tablet layout's top bar, the ZBrush layout's title bar & Help) & lets Chat pick which Claude Code conversation to continue. 1.13.0 adds local symmetry & Keep hard edges on voxel remesh. 1.12.0 adds Clay strips, Delete Edge Loop, split by face group & OBJ material colours. 1.11.0 stops bounce light fading at the view's edges & audits the plan. 1.10.0 cleans path-render outlines between surfaces (even pixel samples, a denoiser per surface). 1.9.0 shows a triplanar's solid live while you mask it & keeps each stroke on one plane. 1.8.0 evens the head primitive's neck rim. 1.7.0 adds Nomad's instances (Instance, Un-instance & Sync Instances, which gives every instance the same children; moving an instance keeps it linked). 1.6.0 moves, turns & scales a group w/ the gizmo (click its row to select it, again to fold). 1.5.0 reorders objects & groups by dragging their rows (top edge above, bottom edge below). 1.4.0 adds smooth shading, global & per object, so faceted models (the flat icosahedron, hard-surface pieces) show their faces. 1.3.0 adds GoF receivers for Unreal Engine & Unity (File > GoF for Unreal / for Unity; not yet run inside those apps). 1.2.0 gives GoF real units (GLB & OBJ in metres, FBX in centimetres, so Unity & Unreal get the right size) & brings edits back from every app an object was sent to. 1.1.0 brings paint back from FormSurface (File > From FormSurface, after exporting there w/ its Blender template). 1.0.0 brings GoF into Blender: the add-on imports what formsculpt sends, watches for more & sends edits back (File > Blender add-on). 0.99.0 adds GoF, formsculpt's own hand-off to other apps (one folder & a gof.json manifest; GLB for Blender, Unreal Engine & FormSurface, FBX for Unity, a Substance 3D Painter package; edits saved there come back; FormSurface loads it when its Agent link is on). 0.98.0 adds Nomad's one-tap hide shortcuts (w/ a selection tool set to Hide, tap a face group to hide it, empty space to invert). 0.97.0 adds Nomad's one-tap mask shortcuts (w/ the Mask tool, tap the background to invert, a masked area to blur, an unmasked one to sharpen). 0.96.0 makes the tablet layout's view cube turn the view when dragged, adds a Home view beside it & Nomad's gesture options (finger always smooths, three-finger radius, intensity & lighting). 0.95.0 adds textures to the ZBrush layout (a Texture swatch, F5 & a LightBox shelf of Spotlight images) & keeps Z Intensity apart from Rgb Intensity while painting. 0.94.0 adds ZBrush's LightBox to the ZBrush layout (comma; saved projects w/ pictures, primitives, brushes, strokes, alphas & materials). 0.93.0 adds ZBrush's Focal Shift & a separate paint strength (Rgb Intensity), w/ all four ZBrush shelf sliders. 0.92.0 adds import & export options (scale, Z up for Blender, triangles, one object from a many-part file). 0.91.0 adds a live two-way link w/ Blender (an add-on that sends & receives meshes as they change, no file between). 0.90.0 adds real-world scale for printing (Print check, STL & 3MF in millimetres) & renders up to 4K. 0.89.0 adds a Triplanar primitive (masks painted on three planes, validated into a solid). 0.88.0 adds a Head primitive w/ a layer that blends a masculine head into a feminine one. 0.87.0 adds icosahedron & quad sphere primitives & puts the UV sphere in the window. 0.86.0 adds a scene hierarchy (objects under objects or empty groups, moved & hidden together, dragged into place in the object list). 0.85.0 adds bounce light (screen-space global illumination) to the viewport. 0.84.0 adds a denoiser to the path render (cleaner images from fewer samples). 0.83.0 makes each layout work like the app it follows (ZBrush modifiers, thumbnail pop-ups, QuickMenu; Nomad's Sub, Face Group, finger taps). 0.82.0 adds a ZBrush layout (palette bar, shelves, tray, ZBrush keys) that can be set as the default. 0.81.0 adds screen-space reflections to lit shading. 0.80.0 adds material types (Opaque, Dithered, Additive, Refraction) & refraction in the path render. 0.79.0 adds spot lights (cone, softness, distance) & colour temperature in kelvin, in the window & the path render. 0.78.0 adds AgX & Neutral tone maps & a colour grade (contrast, saturation, white balance) to lit shading & the path render. 0.77.0 keeps named camera views w/ the scene & in projects (a Views tab, Next & Previous view) & adds first-person fly navigation (W A S D, Q E, drag to look). 0.76.0 adds an Objects & Layers panel to the main layout (select, show, hide, lock, add, duplicate, rename & delete objects; choose, hide & weigh sculpt layers), puts a word under every top bar button, shows the window's notes over the viewport & stops the terminal filling w/ request lines. 0.75.1 opens the interface rebuilt to the owner's recording by default (it had stayed behind Window > Tablet Layout) & starts the panel layout's rail w/ ten tools. 0.75.0 gives the transform gizmo modes (move, turn or scale alone), a pin & pivot to view, typed move, turn & scale values & modifier gestures (Alt moves the gizmo, Ctrl for fine control, Shift snaps). 0.74.0 adds display overlays: other objects darkened around the active one, the wireframe on the active object only & a statistics readout over the viewport. 0.73.0 replays the undo history from the start w/ each step seen from the camera it was made from, shows the memory each step keeps & limits the history by steps or memory. 0.72.0 adds themes (dark, light & high contrast, or following NodeMode), translucent panels the viewport shows through & tool buttons coloured by family. 0.71.0 binds the pen's barrel button & eraser & every gamepad button to commands, tapped or held (a held tool is a temporary tool), w/ the gamepad sticks turning & moving the camera. 0.70.0 rebuilds the tablet layout to the owner's recording of a tablet sculpting app: the viewport on black, floating corner bars, a labelled & colour-coded tool palette, a side strip w/ tall Radius & Intensity bars, an options card, a quick bar, floating panels & an orange clay. 0.69.1 makes the voxel remesh fuse overlapping parts into one watertight piece without rings, makes smooth work on dense meshes & crease cut one clean line, fixes found while Claude Code rebuilt a viper head from a Nomad Sculpt recording through the MCP tools. 0.69.0 adds floating toolbars built from any command, layout files that carry the whole interface arrangement to another browser & a second press that swaps back to the previous tool. 0.68.0 turns & scales w/ the gizmo about a picked pivot or the world origin w/ angle & move snapping, adds visibility & lock toggles to the scene list & keeps thin parts through a voxel remesh. 0.67.0 adds a tablet layout (the viewport full window, a left tool mini-rail w/ tall Radius & Intensity sliders, the active tool's options floating at the bottom, a quick bar & the panel as floating sheets) & Wireframe & X-ray views. 0.66.0 adds a skeleton retopology template: quads over a whole figure, animal or hand w/ loops ringing every limb, from the skeleton it was built on. 0.65.0 adds whole-object retopology templates: a head (w/ eye & mouth loops) or a sphere of quads wrapped onto the sculpt in one click. 0.64.0 adds ZModeler's edge inset (loops on both sides of an edge loop), point split (a circular inset round a point) & point stitch (welding two points), all keeping the mesh quads. 0.63.0 steers the field-aligned remesh w/ guide curves drawn on the surface & closes it at sharp rims. 0.62.0 adds a field-aligned quad remesh whose edge loops follow the form & its hard edges, w/ density painted in red & blue. 0.61.0 adds dynamic topology modes (speed, balanced, quality), methods (subdivide, collapse or both) & masked-area protection. 0.60.0 lets decimation keep paint, face groups & UVs (w/ a painted texture). 0.59.0 adds a retopology patch library (grids, strips, eye & mouth loops, pole discs laid onto the sculpt in one click) & draws the retopology wire over the sculpt. 0.58.0 aligns & slides edge loops, slides points by dragging & draws creases while modelling. 0.57.0 adds creased edges that stay sharp through subdivision, crease & uncrease for edges & points, & auto-crease on loops, insets & extrudes. 0.56.0 adds ZModeler-style quad actions w/ a hover highlight: edge loops at any position, edge extrude, closing holes w/ quads, face inset, extrude & delete, & point slide. 0.55.0 draws a painted texture's roughness, metalness & opacity in lit shading. 0.54.0 adds ZBrush's Spotlight: images held over the view on a dial (move, turn, size, fade, flip) that paint their colour or sculpt their brightness onto the model through the camera, all at once or w/ a Spotlight brush. 0.53.0 paints straight into a texture (finer than the mesh, shown in the viewport & exported), adds an eyedropper & material presets. 0.52.0 lets sculpt layers carry paint & mask w/ per-channel factors (bake, offset, extract) & gives paint layers 23 blend modes. 0.51.0 adds selection shapes (smooth curve, path band, line, flip) that mask, hide, group or split, & balloon, extrude, splat & project mesh from a mask. 0.50.0 adds alpha stretch, rotation, tiling, mid value & invert, saved tool presets & a brush cursor ring. 0.49.0 adds stroke filters (front faces only, connected only, same face group, keep sharp edges, accumulate off, area sampling & depth masking). 0.48.0 adds stroke options (even deposit at any spacing, brush offset, seeded jitter, snapped radius, a constant 3D radius & per-brush radius). 0.47.0 adds Elastic, Polish, Layer (w/ a height cap), Nudge, Stamp & Layer reset brushes. 0.46.0 adds nested repeaters (line, radial, mirror & curve steps merged, separate or linked) & scattering copies over a surface. 0.45.0 exports UDIM objects w/ one material per tile & shows every tile at once in the UV view. 0.44.0 adds UDIM tiles (tiles by face group or by area, islands moved between tiles, per-tile bakes in Mari naming). 0.43.0 adds automatic UV charts & a UV checker in the viewport. 0.42.0 lets the UV view pin points & draw vertex paths for cutting & straightening. 0.41.0 adds UV sew, cut & straighten. 0.40.0 adds UV texel density readout & equalizing & a conformal UV relax w/ pins. 0.39.0 adds Curve Bridge & Snake Curve (`curve_bridge`) & a live re-edit that re-applies a stroke as its curve handles move. 0.38.0 adds Slice curve & Trim curve (split face groups or cut an object along a drawn line) & `group_from_outline`. 0.37.0 gives arrays a scale ramp & seeded jitter & the falloff curve smooth or corner points. 0.36.0 adds a tube profile editor w/ saved profiles & intensity that fades or pulses along a curve stroke. 0.35.0 makes curves from clicked points, from the last brush stroke (undone & brought back as handles to move & apply again) & from a mask edge or face-group border (`curve_from_border`). 0.34.0 gives curves a radius & twist per handle, start-to-end or per-point tube radii, surface offset & grid snap, & a drag that moves the handles as a fixed-length chain (`curve_ik`), & lists Selection Sets in the panel. 0.33.0 replaces the viewport's flat background & line grid w/ a studio gradient & an infinite floor grid, adds ZBrush-style Selection Sets (named snapshots of groups, mask, paint, layer strengths & UVs) & a channel clipboard that moves a mask, groups or paint between objects, & fills all 26 interface languages. 0.32.0 puts Claude in the window (a terminal dock w/ shells, a Claude Code tab & a Chat tab), builds the desktop app in one step (`./build_app`), gives every action a command w/ a menu bar, context menus, a palette & a shortcut editor, opens the interface to 26 languages, & makes paths real curves: points smooth or sharp, corners rounded by a radius, smooth, softer or straight paths, closed loops, tubes from a curve w/ circle, square, triangle, star or strap profiles, round or flat ends, hollow pipes & spirals, rounded lathe profiles & objects bent along a curve. Before it, 0.31.0 sculpts, paints, bakes, retopologizes, builds base meshes, manages topology, combines objects, reads and writes files & runs as a desktop app (a Linux AppImage, deb & rpm built from this tree & launched on its own bundled engine), w/ engine, service & window tests: skeleton base meshes posed joint by joint by their own skeleton w/ automatic weights (sculpted detail rides along), grown fibers combed, cut, curled & lengthened; a quad remesh steered by guide curves, a chamfer or round bevel on a chosen edge run & planar clips & slices (both exact booleans), ZSphere-style skeleton editing (click to grow a joint, drag to move one), single UV points dragged by hand, Substance Painter's textures read back onto the paint, & path renders w/ added lights, depth of field & depth, normal & AO passes; cloth draped over the scene, Transpose-style posing, grown fibers (hair, fur, grass), a path-traced production render, manual retopology quad by quad, edge loops, bridges & face deletion, a Substance Painter package; exact mesh booleans (cut along the true intersection, detail & paint kept) w/ a Live boolean preview; a browser engine (the whole engine as WebAssembly, so the window sculpts, paints, remeshes & saves w/ no service behind it), USD as text (.usda) both ways; opacity & emissive paint channels (see-through and glowing paint in the viewport, GLB & baked maps), UV editing (seams along face groups, a UV layout view where islands are chosen, moved, turned, scaled & packed); a smooth preview that shows any object up to three subdivision levels smoother without changing it (dynamic subdivision), a conformal UV unwrap that keeps angles (mean distortion about 1.01 against 1.2 for the box projection); binary FBX import & export (layers as blend shapes, checked against assimp), subsurface scattering w/ real thickness & refractive transmission in lit shading, & a 3D mouse over WebHID; a volumetric bevel that rounds convex & concave edges, tubes & lathes that stay editable until sculpted, a two-way file bridge to any app that opens & saves OBJ or GLB, & plugins that declare their own fields & surface tools; an insert brush that strings copies along a stroke, face groups by paint, by UV island or painted w/ a group brush, a keyframed timeline of camera moves & sculpt-layer morphs rendered to an animated PNG, an undo-history movie, & glTF written & read w/ its .bin beside it; vector displacement stamps (horn, hook & mushroom built in, more captured from a sculpted plane) that overhang, solid 3D text & extruded vector outlines w/ holes, booleans w/ a filleted seam that fuse parts, & lasso cuts & trims straight through an object; shadow-box solids from front, side & top outlines drawn w/ a Silhouette tool, mirror copies & arrays along a curve, linked copies that follow their original, & a panel whose sections fold away, which sits on either side & comes in three sizes, w/ any of its buttons pinned to the tool rail; images projected from the view or tiled triplanar into paint, reference image planes in the scene, Python scripting (`./formsculpt script`) & plugins listed & run from the window; a movable key light w/ shadows & up to three added lights, a ground shadow catcher, a noise editor (value, ridged, turbulence, cells & tiled alpha noise w/ octaves, gain & stretch) & primitives that stay editable until changed; an on-canvas transform gizmo (move, turn & scale per axis or evenly), lattice deformation, two-finger pan & pinch zoom & pen tilt turning the brush alpha; image-based lighting from four built-in environments or a loaded .hdr, turned, exposed & tone-mapped (Reinhard or ACES), shown behind the model if wanted, & post effects (ambient occlusion, bloom, depth of field, vignette, grain); paint layers w/ blend modes (normal, multiply, screen, overlay, add), opacity & visibility, reordered, merged down or flattened, saved in projects; curve strokes drawn on the surface w/ handles you drag before applying any brush along them, spray strokes, drag dot, a drawn falloff curve & a pen pressure curve that sets strength or size; brush alphas (seven built in, any PNG loaded) on every brush, upright, turned or rolled along the stroke, a drag stamp, a smudge brush for paint, image matcaps & shading per object, & custom hotkeys over the registry's keys; face groups (automatic by angle or parts, from the mask) shown in colour, masked & hidden by group or mask; arrays, insert mesh, folders, a reference image, trackball rotation, sharp-border subdivision & turntable recording; fourteen brushes (adding relax, planar, trim, snake hook & noise) w/ a lazy rope, surface noise in a layer, masks by box, lasso & ellipse, by topology, by cavity or peaks & by paint colour w/ grow & shrink, hide & isolate, align & distribute, a pivot on a double-clicked point, a field-of-view control & an undo history list you can jump through; a Linux AppImage, deb & rpm built from this tree (native save dialog, the engine inside), Send to NodeMode (standalone or embedded in its portal), & a headless render agents can look through (`get_view`); base meshes from a skeleton of spheres (watertight, w/ figure, animal, hand & snake presets), tubes swept along a drawn or given curve, & lathe solids from a profile; a quad remesh to a target count (quads in OBJ), detail projection between objects, & extract, extrude & inset from the mask; vertex paint (colour, roughness, metalness) w/ a Paint brush & fill that survives levels, dyntopo, remesh, booleans & export, a matcap library & a lit PBR mode; automatic UVs & map bakes (colour, roughness-metal, tangent-space normal from the highest level or another object, 32-bit EXR displacement) exported in GLB w/ tangents or as files; .fsc projects that reopen exactly (w/ autosave & recovery), import of OBJ, STL, PLY, glTF/GLB & 3MF, export to OBJ, STL, PLY, GLB (layers as morph targets) & 3MF, a print check (watertight, size, volume, wall thickness) & mesh repair; nine brushes (draw, clay, inflate, pinch, crease, flatten, smooth, grab, mask) w/ mirror & radial symmetry, dynamic topology that splits & collapses edges under the brush (brush, constant or screen detail), multiresolution levels (divide, step up & down w/ detail kept, delete higher & lower, rebuild lower), Loop subdivision, voxel remesh (watertight), quadric decimation, hole filling, watertight voxel booleans (union, difference, intersection), duplicate, merge & split, transform, bend, twist & taper held by the mask, sculpt layers w/ strength, masks, undo & redo, live strokes in the WebGL2 viewport, & an MCP server w/ 167 tools that drives the same engine w/ or w/o the window open (the window asks once before an agent's first change). Not yet: panel lines along face groups, a rig for meshes not built from a skeleton, painted weights, cloth brushes, HD geometry (sculpting levels too heavy to keep loaded), painting straight into texture maps, binary USD, WebGPU, threads in the browser engine, & macOS & Windows bundles built and run (CI builds them; none was run here).
-
-### Agents
-
-Inside the window: the terminal dock under the viewport (`Mod+J`, or the app-bar buttons) holds real shells, a **Claude Code** tab (`Shift+Mod+J`) running your own Claude Code sign-in already connected to formsculpt's tools (no permission prompt for it), and a **Chat** tab (`Alt+Mod+J`) where Claude answers in plain language and sculpts through the same tools; each change is one undo step. The ask line sends a request with the active object as context. Claude Code is found on your PATH (or `FSC_CLAUDE_BIN`); it starts in `~/Formsculpt/Agent` (`FSC_AGENT_DIR`).
-
-`.mcp.json`, `.codex/config.toml` & `.cursor/mcp.json` start `./formsculpt mcp`; the `formsculpt-modeling` skill teaches the tools. `./formsculpt agents install` registers formsculpt for Claude Code, Codex & Cursor outside this folder; `./formsculpt agents sync` refreshes the skill's tool reference after a command changes.
-
-## Contributors
-
-| Name | Role |
-| --- | --- |
-| nodemode-ai | owner |
-
-## Licensing
-
-Apache License 2.0. Copyright 2026 NodeAgentc, Inc. See [LICENSE](LICENSE) & [NOTICE.md](NOTICE.md).
-
-ZBrush and its feature names are trademarks of Maxon Computer GmbH, and Nomad Sculpt is a trademark of its owner. They are named only for compatibility and history; formsculpt is not affiliated with or endorsed by them, and its features carry its own names. NOTICE.md has the full trademark notice.
+<sub>Screenshot content: a CC0 model from Poly Haven. ZBrush is a trademark of Maxon Computer GmbH, and Nomad Sculpt is a trademark of its owner. FormSculpt is an independent project and is not affiliated with or endorsed by them.</sub>
