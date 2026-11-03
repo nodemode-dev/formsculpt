@@ -117,7 +117,7 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
         })
         .unwrap_or(FALLBACK_LOGICAL);
     let builder = WebviewWindowBuilder::new(handle, "main", WebviewUrl::External(url))
-        .title("formsculpt")
+        .title("FormSculpt")
         .visible(reveal::BUILD_VISIBLE)
         .background_color(reveal::BACKGROUND)
         .inner_size(width, height)
