@@ -1,7 +1,7 @@
 {
   "name": "formsculpt",
   "private": true,
-  "version": "1.19.4",
+  "version": "1.19.5",
   "description": "formsculpt · 3D sculpting and modeling in the NodeMode style",
   "license": "Apache-2.0",
   "type": "module",
