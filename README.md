@@ -26,9 +26,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon open in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
+  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon shown as white plaster in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
   <br>
-  <sub>The head bust the FormSculpt icon was made from, in the sculpt viewport after a few Clay strokes.</sub>
+  <sub>The head bust the FormSculpt icon was made from, imported as FBX and shown with a white plaster matcap.</sub>
 </p>
 
 <p align="center">
