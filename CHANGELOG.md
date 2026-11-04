@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.6 · 2026-11-04
+
+- The README hero shows the icon bust as white plaster, using a plaster matcap.
+
 ## 1.19.5 · 2026-11-03
 
 - The README follows the Form family template, with real screenshots under `docs/images/`.
