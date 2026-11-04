@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="version 1.19.5" src="https://img.shields.io/badge/version-1.19.5-eef0f4?style=flat-square">
+  <img alt="version 1.19.6" src="https://img.shields.io/badge/version-1.19.6-eef0f4?style=flat-square">
   <img alt="Rust" src="https://img.shields.io/badge/rust-1.99.1-f97316?style=flat-square&logo=rust&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-vite-3178c6?style=flat-square">
   <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-native-2f7bf5?style=flat-square">
@@ -26,9 +26,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon shown as white plaster in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
+  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon shown as white plaster with visible Clay strips, Crease and Draw tool marks in the hair, cheek and plinth, the tool grid on the right and the Objects panel on the left" width="100%">
   <br>
-  <sub>The head bust the FormSculpt icon was made from, imported as FBX and shown with a white plaster matcap.</sub>
+  <sub>The head bust the FormSculpt icon was made from, imported as FBX, shown with a white plaster matcap and worked over with Clay strips, Crease and Draw strokes.</sub>
 </p>
 
 <p align="center">
