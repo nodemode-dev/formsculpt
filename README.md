@@ -26,9 +26,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon shown as white plaster with visible Clay strips, Crease and Draw tool marks in the hair, cheek and plinth, the tool grid on the right and the Objects panel on the left" width="100%">
+  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon shown as clean white plaster, soft additive Clay strips marks worked into the hair and plinth while the face stays untouched, the Clay strips tool selected in the tool grid on the right and the Objects panel on the left" width="100%">
   <br>
-  <sub>The head bust the FormSculpt icon was made from, imported as FBX, shown with a white plaster matcap and worked over with Clay strips, Crease and Draw strokes.</sub>
+  <sub>The head bust the FormSculpt icon was made from, imported as FBX, shown with a white plaster matcap and reworked with soft additive Clay strips passes on the hair, back of the head and plinth, with the face left intact.</sub>
 </p>
 
 <p align="center">
