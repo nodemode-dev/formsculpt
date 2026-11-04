@@ -26,9 +26,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with a marble bust open in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
+  <img src="docs/images/formsculpt-hero.png" alt="FormSculpt with the female head bust from the app icon open in the viewport, the tool grid on the right and the Objects panel on the left" width="100%">
   <br>
-  <sub>A marble bust (CC0, Poly Haven) in the sculpt viewport with the Clay brush active.</sub>
+  <sub>The head bust the FormSculpt icon was made from, in the sculpt viewport after a few Clay strokes.</sub>
 </p>
 
 <p align="center">
