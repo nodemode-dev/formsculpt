@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.19.6 · 2026-11-04
+
+- The README hero shows the icon bust as white plaster, using a plaster matcap.
+
+## 1.19.5 · 2026-11-03
+
+- The README follows the Form family template, with real screenshots under `docs/images/`.
+
+## 1.19.4 · 2026-11-03
+
+- The app icon is the unified v3 icon on the desktop, the favicon, the splash and in the README, and the favicon is now a PNG.
+- The desktop app and its window are named FormSculpt.
+- The repo is co-owned by gbarnai (CODEOWNERS).
+
 ## 1.19.3 · 2026-10-31
 
 - The Windows desktop app no longer opens to a blank window on PCs where an installer set the `.js` file type to `text/plain` in the registry: the engine now serves scripts and stylesheets with their real types.

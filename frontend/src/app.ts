@@ -6138,7 +6138,7 @@ class SceneView {
       this.note('The scene is empty; there is nothing to send');
       return;
     }
-    const title = this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? 'formsculpt';
+    const title = this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? 'FormSculpt';
     const shading = this.shell.shading.value;
     this.note('Sending to NodeMode');
     if (this.host.embedded) {
