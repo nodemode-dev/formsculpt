@@ -382,6 +382,11 @@ export class TabletLayout {
     }
     for (const b of parts.brushButtons) this.toolLabels.set(b.dataset.brush ?? '', b.textContent ?? '');
 
+    const homeButton = labelled('home', t('Home'), 'tb-icon tb-worded');
+    homeButton.title = t('Home');
+    homeButton.setAttribute('aria-label', t('Home'));
+    homeButton.dataset.cmd = 'app.home';
+    this.tl.append(homeButton);
     // Top left: the scene menus, and the counts under them.
     for (const [g, title, sections, word] of LEFT_MENUS) {
       this.menus.set(g, [title, sections, 'left']);

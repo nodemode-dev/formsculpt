@@ -4,10 +4,12 @@ const LEGACY = 'formsculpt.keys';
 export interface Prefs {
   shortcuts: Record<string, string[]>;
   recent: string[];
+  autoShowHome: boolean;
+  homeOnLastClose: boolean;
 }
 
 export function loadPrefs(): Prefs {
-  const out: Prefs = { shortcuts: {}, recent: [] };
+  const out: Prefs = { shortcuts: {}, recent: [], autoShowHome: true, homeOnLastClose: true };
   try {
     const raw = localStorage.getItem(STORE);
     const p = raw ? (JSON.parse(raw) as Partial<Prefs>) : {};
@@ -15,6 +17,8 @@ export function loadPrefs(): Prefs {
       for (const [id, keys] of Object.entries(p.shortcuts)) if (Array.isArray(keys)) out.shortcuts[id] = keys.filter((k): k is string => typeof k === 'string');
     }
     if (Array.isArray(p.recent)) out.recent = p.recent.filter((k): k is string => typeof k === 'string');
+    if (typeof p.autoShowHome === 'boolean') out.autoShowHome = p.autoShowHome;
+    if (typeof p.homeOnLastClose === 'boolean') out.homeOnLastClose = p.homeOnLastClose;
   } catch {
     // storage blocked or unreadable; defaults stand
   }

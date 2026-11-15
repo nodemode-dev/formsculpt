@@ -45,6 +45,9 @@ def main() -> int:
         # The smoke test drives the panel layout's controls; the tablet layout is the default since 0.75.1, so the
         # panel layout is chosen the way a person's choice is kept.
         page.add_init_script("try{localStorage.setItem('formsculpt.tablet.default','1');localStorage.setItem('formsculpt.tablet','off')}catch(e){}")
+        # Home covers the window while no sculpt is open since 1.20.0; the smoke test drives the workspace, so both
+        # Home preferences are off the way a person's choice is kept.
+        page.add_init_script("try{localStorage.setItem('formsculpt.prefs',JSON.stringify({autoShowHome:false,homeOnLastClose:false}))}catch(e){}")
         page.goto(WINDOW)
         page.wait_for_timeout(3000)
         panel = page.locator(".panel")

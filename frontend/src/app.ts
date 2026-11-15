@@ -33,6 +33,7 @@ import { familyOf } from './ui/tool-family';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
+import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
 import { commands, comboOf, normalizeCombo, type Command, type CommandParam } from './ui/commands';
 import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
 import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
@@ -41,6 +42,7 @@ import { AboutDialog, PromptDialog, ShortcutsDialog } from './ui/app-dialogs';
 import { CommandPalette, fuzzyScore } from './ui/command-palette';
 import { MenuBar, PopupMenu } from './ui/menu';
 import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, TOOLBAR_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
+import { desktopShell, noteScene, sceneEpoch, sceneSettled, startDesktopShell } from './ui/desktop-shell';
 import { scheduleChrome } from './ui/chrome';
 import { language, languages, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
@@ -670,6 +672,12 @@ function buildShell(root: HTMLElement): Shell {
   const brand = el('div', 'brand');
   brand.innerHTML = '<img src="/formsculpt-logo.png" width="18" height="18" alt="" draggable="false">';
   brand.append(el('span', '', 'formsculpt'), el('span', 'ver', `v${VERSION}`));
+  for (const [name, value] of Object.entries({ role: 'button', tabindex: '0', title: 'Home', 'aria-label': 'Home', 'data-cmd': 'app.home' })) brand.setAttribute(name, value);
+  brand.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    showHome();
+  });
   const menubar = el('div', 'fs-menubar');
   bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
 
@@ -1666,7 +1674,7 @@ function buildShell(root: HTMLElement): Shell {
   if (document.documentElement.classList.contains('has-overlay-titlebar')) {
     const drag = el('div', 'mac-drag');
     root.append(drag);
-    for (const n of [drag, bar, brand, menubar, ...bar.querySelectorAll('.spacer, .appbar-tools')]) n.setAttribute('data-tauri-drag-region', '');
+    for (const n of [drag, bar, menubar, ...bar.querySelectorAll('.spacer, .appbar-tools')]) n.setAttribute('data-tauri-drag-region', '');
   }
   // Folds, panel side and size are layout only, so the window keeps them here rather than in the engine.
   const layout = new PanelLayout(root, panel);
@@ -5599,17 +5607,21 @@ class SceneView {
   }
 
   private async refreshNow(): Promise<void> {
+    const began = sceneEpoch();
     const reply = await dispatch<SceneSummary>('get_scene');
     if (!reply.ok) {
       this.note(reply.error.message);
       return;
     }
+    homeScene(reply.result.objects.length);
     await this.apply(reply.result);
     void this.drawUv(false);
     const history = await dispatch<HistoryReply>('get_history');
     if (history.ok) {
       this.patchHistory(history.result.steps, history.result.done, history.result.bytes ?? []);
       this.syncHistoryEngine(history.result);
+      noteScene(began, this.scene.objects, history.result.steps, history.result.done);
+      homeSceneEnded(this.scene.objects.length === 0 && history.result.steps[history.result.done - 1] === 'New Scene');
     }
     await this.patchSets();
     await this.spotlight.sync();
@@ -6109,12 +6121,35 @@ class SceneView {
     else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
   }
 
+  homeHost(): HomeHost {
+    return {
+      objects: () => this.scene.objects.length,
+      sceneName: () => this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? this.scene.objects[0]?.name ?? '',
+      replaced: () => this.forgetScene(),
+      refresh: () => this.refresh(),
+      frame: () => this.frameActive(),
+      note: (text) => this.note(text),
+      importFile: async (file) => {
+        const reply = await uploadFile<unknown>(file, file.name, { scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y' });
+        if (reply.ok && file.name.toLowerCase().endsWith('.fsc')) this.forgetScene();
+        await this.refresh();
+        if (reply.ok) this.frameActive();
+        return reply.ok ? null : reply.error.message;
+      },
+      picture: () => {
+        this.viewport.invalidate();
+        return this.shell.canvas;
+      },
+      download: () => this.download('/api/engine/project', 'scene.fsc'),
+    };
+  }
+
   private async fileAction(action: string): Promise<void> {
     const id = this.scene.active;
     if (action === 'open') {
       this.shell.fileInput.click();
     } else if (action === 'save') {
-      await this.download('/api/engine/project', 'scene.fsc');
+      await saveSculpt();
     } else if (action === 'export') {
       const format = this.shell.exportFormat.value;
       const q = new URLSearchParams({ format, scale: String(this.exchangeScale()), up_axis: this.shell.fileUp.value });
@@ -6250,8 +6285,25 @@ class SceneView {
     if (reply.ok) this.frameActive();
   }
 
+  /** Files the system handed the desktop app (a double-clicked project, a second launch): a project opens, a mesh imports. */
+  async openPaths(paths: string[]): Promise<void> {
+    for (const path of paths) {
+      const name = path.split(/[\\/]/).pop() ?? path;
+      const project = name.toLowerCase().endsWith('.fsc');
+      const reply = project
+        ? await dispatch<unknown>('open_project', { path })
+        : await dispatch<unknown>('import_mesh', { path, scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
+      this.note(reply.ok ? `Opened ${name}` : reply.error.message);
+      if (reply.ok && project) this.forgetScene();
+      await this.refresh();
+      if (reply.ok) this.frameActive();
+    }
+  }
+
   /** A project replaced the scene and its ids start over, so what this window kept by object id is dropped. */
   private forgetScene(): void {
+    homeSceneReplaced();
+    sceneSettled();
     this.locked.clear();
     this.previous = null;
     this.groupPick = null;
@@ -7174,6 +7226,8 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
     { id: 'app.shortcuts', label: 'Keyboard Shortcuts', keys: ['Mod+/'], icon: 'keyboard', run: () => shortcuts.show() },
     { id: 'app.palette', label: 'Command Palette', keys: ['Mod+K'], icon: 'search', run: () => palette.show() },
     { id: 'app.about', label: 'About formsculpt', icon: 'info', run: () => about.show() },
+    { id: 'app.home', label: 'Home', keys: ['Alt+Mod+H'], icon: 'home', run: () => showHome() },
+    ...homeCommands(),
     {
       id: 'view.clear_rail',
       label: 'Clear Tool Rail',
@@ -7183,7 +7237,9 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
       },
     },
   );
-  const bar = new MenuBar(shell.menubar, commands, menuDefs());
+  const menus = menuDefs();
+  const bar = new MenuBar(shell.menubar, commands, menus);
+  startDesktopShell(commands, () => menus, (text) => setText(shell.message, text));
   root.addEventListener('click', (e) => {
     const node = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
     if (node && !(node as HTMLButtonElement).disabled) commands.run(node.dataset.cmd ?? '');
@@ -7198,6 +7254,7 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
     const target = e.target instanceof HTMLElement ? e.target : null;
     if (target?.closest('.xterm, .dock')) return;
     if (overlayOpen() || bar.isOpen) return;
+    if (isHomeOpen() && !(e.metaKey || e.ctrlKey)) return;
     const cmd = commands.forEvent(e);
     if (!cmd) return;
     const combo = comboOf(e);
@@ -7210,10 +7267,12 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
 export function start(root: HTMLElement): void {
   const shell = buildShell(root);
   wireChrome(root, shell);
-  void Promise.race([
+  mountHome();
+  const fonts = Promise.race([
     (document.fonts?.ready ?? Promise.resolve()).catch(() => undefined),
     new Promise((resolve) => setTimeout(resolve, 2500)),
-  ]).then(revealApp);
+  ]);
+  void Promise.all([fonts, homeReady]).then(revealApp);
   void boot(shell);
 }
 
@@ -7224,7 +7283,9 @@ async function boot(shell: Shell): Promise<void> {
     setText(shell.statRenderer, viewport.renderer.kind);
     const view = new SceneView(shell, viewport);
     view.registerCommands();
+    attachHome(view.homeHost());
     view.wireContextMenus();
+    void desktopShell()?.listen({ open: (paths) => view.openPaths(paths), save: () => commands.call('file.save') });
     const tools = document.querySelector<HTMLElement>('.appbar-tools');
     const root = document.getElementById('app');
     if (tools && root) {

@@ -214,7 +214,7 @@ export class ZBrushLayout {
     this.titleNote.setAttribute('role', 'status');
     this.titleNote.setAttribute('aria-live', 'polite');
     const agents = el('span', 'zb-title-tools');
-    for (const [g, id, label] of [['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
+    for (const [g, id, label] of [['home', 'app.home', 'Home'], ['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
       const b = el('button', 'zb-title-tool');
       b.type = 'button';
       b.dataset.cmd = id;
