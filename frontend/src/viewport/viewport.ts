@@ -69,6 +69,8 @@ export class Viewport {
   /** Fingers' taps: when the first finger landed, the most fingers down at once, and whether they moved. */
   private tap: { at: number; most: number; moved: boolean } | null = null;
   onFrame: ((stats: ViewportStats) => void) | null = null;
+  /** Set by the app: the context came back after a loss, so images given to the renderer must be given again. */
+  onRestore: (() => void) | null = null;
   strokes: StrokeHandler | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -82,6 +84,19 @@ export class Viewport {
     b.bottom = hexColor(css.getPropertyValue('--viewport-bottom')) ?? b.bottom;
     b.gridColor = hexColor(css.getPropertyValue('--viewport-grid')) ?? b.gridColor;
     new ResizeObserver(() => this.resize()).observe(canvas);
+    const watchRatio = (): void => {
+      matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`).addEventListener('change', () => {
+        this.resize();
+        watchRatio();
+      }, { once: true });
+    };
+    watchRatio();
+    canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.renderer.restore();
+      this.onRestore?.();
+      this.invalidate();
+    });
     canvas.addEventListener('pointerdown', (e) => this.down(e));
     canvas.addEventListener('pointermove', (e) => this.move(e));
     canvas.addEventListener('pointerup', (e) => this.up(e));
@@ -95,12 +110,14 @@ export class Viewport {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
-    if (this.canvas.width !== w || this.canvas.height !== h) {
+    const sized = this.canvas.width !== w || this.canvas.height !== h;
+    if (sized) {
       this.canvas.width = w;
       this.canvas.height = h;
     }
     this.camera.aspect = w / h;
     this.invalidate();
+    if (sized) this.draw();
   }
 
   invalidate(): void {
@@ -396,7 +413,7 @@ export class Viewport {
       if (this.touches.size === 0 && this.tap) {
         const t = this.tap;
         this.tap = null;
-        if (this.scheme === 'nomad' && !t.moved && t.most >= 2 && performance.now() - t.at < 300) {
+        if (this.scheme === 'nomad' && e.type !== 'pointercancel' && !t.moved && t.most >= 2 && performance.now() - t.at < 300) {
           this.command?.(t.most >= 3 ? 'history.redo' : 'history.undo');
           this.gesture = null;
           this.drag = null;
@@ -412,7 +429,7 @@ export class Viewport {
         return;
       }
     }
-    const d = this.drag;
+    const d = e.type === 'pointercancel' && this.drag?.mode !== 'stroke' ? null : this.drag;
     if (d?.mode === 'pending' && this.pendingStart) {
       if (d.pick) {
         // ZBrush's Alt+click: pick the SubTool under the pointer.
