@@ -1,6 +1,6 @@
 # formsculpt tools
 
-Generated from the engine's command registry (formsculpt 1.19.6) by `./formsculpt agents sync`; do not edit by hand.
+Generated from the engine's command registry (formsculpt 1.20.0) by `./formsculpt agents sync`; do not edit by hand.
 
 ## Contents
 
@@ -266,7 +266,7 @@ Build a base mesh from two or three outlines: the solid whose silhouette from th
 
 ## triplanar_solid
 
-Turn a triplanar's masks into a solid: add_primitive kind triplanar makes three crossing planes (front x, y; side z, y; top x, z), each starting with a masked disc; mask a shape on each (mask brush, mask_fill and the rest, mask 1 is solid), then this keeps every point whose projections lie in the masked part of all three, rounded where they meet and polygonized into a watertight quad mesh. The planes become the solid (one undo step), or with keep_planes the solid is added beside them to preview.
+Turn a triplanar's masks into a solid: add_primitive kind triplanar makes three crossing planes (front x, y; side z, y; top x, z), each starting with a masked disc; mask a shape on each (mask brush, mask_shape and the rest, mask 1 is solid), then this keeps every point whose projections lie in the masked part of all three, rounded where they meet and polygonized into a watertight quad mesh. The planes become the solid (one undo step), or with keep_planes the solid is added beside them to preview.
 
 - `blend`: number; default 0.04; range 0 to 0.5; Rounds the edges where the three masks meet, as a fraction of the solid's size.
 - `id`: integer; range 1 to inf; A triplanar object (add_primitive kind triplanar); the active object when omitted.
@@ -455,8 +455,6 @@ Make an empty group in the scene hierarchy, optionally gathering objects or grou
 - `children`: array of integer; Objects or groups to move under the new group (grouping a selection).
 - `name`: string; The group's name; Group (numbered if taken) when omitted.
 - `parent`: integer; range 1 to inf; An object or group to hang the new group under; where the first child was, or the top, when omitted.
-
-Note: in the window: Ctrl+G.
 
 ## set_parent
 
