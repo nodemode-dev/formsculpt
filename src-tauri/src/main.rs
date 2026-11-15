@@ -1,17 +1,33 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
-use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_updater::UpdaterExt;
 
 mod reveal;
+mod text_edit;
 mod traffic_lights;
 
 struct Backend(Mutex<Option<CommandChild>>);
+
+/// Files the system asked formsculpt to open (a double-clicked project, a second launch). They wait here until the page
+/// has registered its listener and called take_pending_opens; after that they are sent to the page as they arrive.
+#[derive(Default)]
+struct Opens {
+    ready: bool,
+    paths: Vec<String>,
+}
+
+struct OpenQueue(Mutex<Opens>);
+
+/// Set once the page has settled unsaved work (or the app is restarting for an update): from then on a close or quit
+/// request goes through instead of being handed to the page.
+struct ExitGate(AtomicBool);
 
 const FALLBACK_LOGICAL: (f64, f64) = (1323.0, 860.0);
 const MIN_LOGICAL: (f64, f64) = (980.0, 640.0);
@@ -49,6 +65,91 @@ fn close_splash(handle: &tauri::AppHandle) {
     }
 }
 
+fn open_exit_gate(handle: &tauri::AppHandle) {
+    handle.state::<ExitGate>().0.store(true, Ordering::SeqCst);
+}
+
+/// Hands the page a quit request so it can ask about unsaved work; false when the page cannot answer (it has not
+/// started listening, or the window is gone), which means the app may exit at once.
+fn ask_page_to_quit(handle: &tauri::AppHandle) -> bool {
+    if handle.state::<ExitGate>().0.load(Ordering::SeqCst) {
+        return false;
+    }
+    let ready = handle.state::<OpenQueue>().0.lock().map(|opens| opens.ready).unwrap_or(false);
+    if !ready || handle.get_webview_window("main").is_none() {
+        return false;
+    }
+    handle.emit("formsculpt://exit-requested", ()).is_ok()
+}
+
+fn show_main_window(handle: &tauri::AppHandle) {
+    if let Some(window) = handle.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+/// Sends files to the page, or queues them until the page is listening.
+fn open_paths(handle: &tauri::AppHandle, paths: Vec<String>) {
+    if paths.is_empty() {
+        return;
+    }
+    let send = match handle.state::<OpenQueue>().0.lock() {
+        Ok(mut opens) => {
+            if opens.ready {
+                Some(paths)
+            } else {
+                opens.paths.extend(paths);
+                None
+            }
+        }
+        Err(_) => None,
+    };
+    if let Some(paths) = send {
+        let _ = handle.emit("formsculpt://open-paths", paths);
+        show_main_window(handle);
+    }
+}
+
+/// The files named in a launch's arguments (the first is the program); a relative one is read from `cwd`.
+fn paths_from_args(args: &[String], cwd: Option<&str>) -> Vec<String> {
+    args.iter()
+        .skip(1)
+        .filter(|arg| !arg.starts_with('-'))
+        .filter_map(|arg| {
+            let path = std::path::PathBuf::from(arg);
+            let full = match cwd {
+                Some(dir) if path.is_relative() => std::path::Path::new(dir).join(path),
+                _ => path,
+            };
+            full.is_file().then(|| full.to_string_lossy().into_owned())
+        })
+        .collect()
+}
+
+/// The page registers its listeners and then asks for the files that arrived before it was ready.
+#[tauri::command]
+fn take_pending_opens(queue: tauri::State<OpenQueue>) -> Vec<String> {
+    match queue.0.lock() {
+        Ok(mut opens) => {
+            opens.ready = true;
+            std::mem::take(&mut opens.paths)
+        }
+        Err(_) => Vec::new(),
+    }
+}
+
+/// The page has saved or discarded unsaved work: the app may exit now. The engine is stopped by the Exit event.
+#[tauri::command]
+fn confirm_exit(app: tauri::AppHandle, cancel: Option<bool>) {
+    if cancel == Some(true) {
+        return;
+    }
+    open_exit_gate(&app);
+    app.exit(0);
+}
+
 fn check_for_updates(handle: tauri::AppHandle) {
     let configured = handle
         .config()
@@ -71,6 +172,7 @@ fn check_for_updates(handle: tauri::AppHandle) {
             .buttons(MessageDialogButtons::OkCancel)
             .blocking_show();
         if install && update.download_and_install(|_, _| {}, || {}).await.is_ok() {
+            open_exit_gate(&handle);
             kill_backend(&handle);
             handle.restart();
         }
@@ -158,17 +260,50 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
     }
 }
 
+fn single_instance() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    tauri_plugin_single_instance::Builder::<tauri::Wry>::new()
+        .callback(|app, args, cwd| {
+            open_paths(app, paths_from_args(&args, Some(&cwd)));
+            show_main_window(app);
+        })
+        .build()
+}
+
 fn main() {
     reveal::mark_launch();
     let app = tauri::Builder::default()
+        .plugin(single_instance())
+        .manage(OpenQueue(Mutex::new(Opens::default())))
+        .manage(ExitGate(AtomicBool::new(false)))
+        .on_window_event(|window, event| {
+            if window.label() == "main"
+                && matches!(event, WindowEvent::Resized(_) | WindowEvent::Focused(_) | WindowEvent::ThemeChanged(_) | WindowEvent::ScaleFactorChanged { .. })
+            {
+                traffic_lights::place(window);
+            }
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && ask_page_to_quit(window.app_handle()) {
+                    api.prevent_close();
+                }
+            }
+        })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Backend(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![save_file, traffic_lights::set_window_title, reveal::app_ready])
+        .invoke_handler(tauri::generate_handler![
+            save_file,
+            take_pending_opens,
+            confirm_exit,
+            traffic_lights::set_window_title,
+            reveal::app_ready,
+            text_edit::text_edit
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             reveal::round_splash(&handle);
+            let launch_args: Vec<String> = std::env::args().collect();
+            open_paths(&handle, paths_from_args(&launch_args, None));
             let (mut rx, child) = app
                 .shell()
                 .sidecar("formsculpt-engine")
@@ -209,7 +344,7 @@ fn main() {
                             .message("The formsculpt engine failed to start. Please relaunch the app.")
                             .blocking_show();
                         kill_backend(&handle);
-                        std::process::exit(1);
+                        handle.exit(1);
                     }
                 }
             });
@@ -218,9 +353,23 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("tauri app should build");
 
-    app.run(|handle, event| {
-        if let RunEvent::Exit = event {
-            kill_backend(handle);
+    app.run(|handle, event| match event {
+        RunEvent::Exit => kill_backend(handle),
+        RunEvent::ExitRequested { api, .. } => {
+            if ask_page_to_quit(handle) {
+                api.prevent_exit();
+            }
         }
+        #[cfg(target_os = "macos")]
+        RunEvent::Opened { urls } => {
+            let paths = urls
+                .iter()
+                .filter_map(|url| url.to_file_path().ok())
+                .map(|path| path.to_string_lossy().into_owned())
+                .collect();
+            open_paths(handle, paths);
+            show_main_window(handle);
+        }
+        _ => {}
     });
 }
