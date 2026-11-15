@@ -46,6 +46,7 @@ function save(p: LayoutPrefs): void {
 
 export class PanelLayout {
   private prefs = load();
+  private readonly names = new WeakMap<Element, string>();
 
   constructor(private root: HTMLElement, private panel: HTMLElement) {}
 
@@ -54,6 +55,7 @@ export class PanelLayout {
     const heads = [...this.panel.querySelectorAll<HTMLHeadingElement>(':scope > h2')];
     for (const h of heads) {
       const name = h.textContent ?? '';
+      this.names.set(h, name);
       h.classList.add('fold');
       h.tabIndex = 0;
       h.setAttribute('role', 'button');
@@ -83,7 +85,7 @@ export class PanelLayout {
       (n as HTMLElement).classList.toggle('fold-hidden', folded);
     }
     if (keep) {
-      const name = h.textContent ?? '';
+      const name = this.names.get(h) ?? h.textContent ?? '';
       const set = new Set(this.prefs.collapsed);
       if (folded) set.add(name);
       else set.delete(name);
@@ -95,7 +97,7 @@ export class PanelLayout {
   /** Re-reads the kept layout (after an import) and applies its folds, side, size and rail; listeners stay as they are. */
   reload(): void {
     this.prefs = load();
-    for (const h of Array.from(this.panel.querySelectorAll<HTMLHeadingElement>(':scope > h2'))) this.fold(h, this.prefs.collapsed.includes(h.textContent ?? ''), false);
+    for (const h of Array.from(this.panel.querySelectorAll<HTMLHeadingElement>(':scope > h2'))) this.fold(h, this.prefs.collapsed.includes(this.names.get(h) ?? h.textContent ?? ''), false);
     this.setSide(this.prefs.panelLeft, false);
     this.setSize(this.prefs.size, false);
     this.drawRail();
