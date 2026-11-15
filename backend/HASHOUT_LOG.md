@@ -19,6 +19,8 @@ backend/
   app/core/isolation.py    CrossOriginIsolation ASGI middleware
   app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module), /api/integrations/blender
   app/routers/lightbox.py  /api/lightbox/projects: LightBox's Project shelf (list, save with a picture, open, picture)
+  app/routers/library.py   Home's library routes: /api/sculpts, /api/sculpt-trash, /api/sculpt-templates, /api/sculpt-settings
+  app/services/library.py  the sculpt library on LightBox's Project folder: names, atomic writes, the Trash, templates, thumbnails
   app/routers/engine.py    /api/engine/catalogue, /api/engine/dispatch, /api/engine/mesh/{id}
   app/services/engine.py   the one fsc_engine.Engine, status, dispatch, mesh_payload (FSCM binary)
 ```
@@ -30,6 +32,8 @@ backend/
 - [app/routers/system.py](#approuterssystempy)
 - [app/main.py](#appmainpy)
 - [The pre-release audit of the service, the shell and the scripts](#the-pre-release-audit-of-the-service-the-shell-and-the-scripts)
+- [The desktop shell: opened files, one instance, the quit gate, text-field edits](#the-desktop-shell-opened-files-one-instance-the-quit-gate-text-field-edits)
+- [The Home screen's library](#the-home-screens-library)
 
 ## formsculpt_engine.py
 
@@ -440,3 +444,81 @@ The README sends Windows users to `formsculpt_oc_install.bat` and `formsculpt.ba
 - kind: rationale
 - logged: v1.20.0 · 2026-11-15
 The add-on's `website` named `github.com/nodemode-ai/formsculpt`; the repository is `nodemode-dev/formsculpt` (the remote, and the README's clone line), so Blender's extension page linked to the old account. The CI loop that runs `bash -n` listed every shell script except `build_app`; it is in the list now. Checked: `bash -n build_app` passes.
+
+## The desktop shell: opened files, one instance, the quit gate, text-field edits
+
+The page's half is logged in `frontend/HASHOUT_LOG.md` under the same heading.
+
+### src-tauri/src/main.rs · a double-clicked project opens in the running window
+- refers-to: src-tauri/src/main.rs :: Opens, OpenQueue, open_paths, paths_from_args, show_main_window, take_pending_opens, single_instance, setup (launch arguments), run (RunEvent::Opened); src-tauri/Cargo.toml :: tauri-plugin-single-instance; src-tauri/build.rs; src-tauri/capabilities/engine-page.json
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`tauri.conf.json` declares the `.fsc` association and nothing handled it: the app opened with an empty scene, and a second double-click started a second app with a second engine. The three paths formvis has are here now, with its code: the launch arguments (Windows and Linux), `RunEvent::Opened` (macOS: Finder and the Dock) and a second launch, which `tauri-plugin-single-instance` 2.4.5 (the version formvis locks; MIT or Apache-2.0) hands to the running app before it exits. Paths wait in `OpenQueue` until the page has its listener and calls `take_pending_opens`; later ones go out as the event `formsculpt://open-paths`, and the window is unminimized, shown and focused. Left out of formvis's version: the `--command`, `--action` and `--script` launch arguments, and the Linux hand-off key per data folder (formvis keys the D-Bus name on its data folder so two folders can run side by side; formsculpt's shell takes no data folder argument, so the plugin's own key, the application identifier, is used: one running formsculpt per login).
+`Cargo.lock` gained the plugin and the 32 crates it brings on Linux and Windows (zbus and the async-io family; all MIT or Apache-2.0), written by cargo.
+Checked: `cargo check` of src-tauri on Linux, exit 0, no warning. Not compiled there: the `RunEvent::Opened` arm (macOS only). Not run: any of it in a built app.
+
+### src-tauri/src/main.rs · quit and close ask the page first
+- refers-to: src-tauri/src/main.rs :: ExitGate, open_exit_gate, ask_page_to_quit, confirm_exit, on_window_event (CloseRequested), run (RunEvent::ExitRequested), check_for_updates
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The run loop handled `RunEvent::Exit` only, so Cmd+Q, the native Quit item (new with the macOS menu bar) and the close button ended the app with unsaved work unasked. formvis's gate: `CloseRequested` on the main window and `ExitRequested` send `formsculpt://exit-requested` and are held back while the page is listening; the page answers with `confirm_exit`, which opens the gate and exits, or with `cancel`, which leaves the app running. The app exits at once when the page cannot answer (not loaded yet, or no main window), so a splash with a dead engine never traps the person. The update path opens the gate before it restarts. `on_window_event` also puts the traffic lights back after a resize, focus, theme or scale change, as formvis does.
+The engine-failure path ended with `std::process::exit(1)`; it is `handle.exit(1)` now, formvis's form, so the Exit event runs.
+Removed code, quoted in full:
+
+```rust
+    app.run(|handle, event| {
+        if let RunEvent::Exit = event {
+            kill_backend(handle);
+        }
+    });
+```
+
+Checked: `cargo check`, exit 0. Not run: a real quit; whether macOS raises `ExitRequested` for Cmd+Q is taken from formvis, which relies on it.
+
+### src-tauri/src/text_edit.rs · Edit items act on a focused text field
+- refers-to: src-tauri/src/text_edit.rs :: text_edit, send; src-tauri/src/main.rs :: generate_handler
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+formvis's file, unchanged but for its header comment. On macOS the menu bar's Edit items own Cmd+Z, X, C, V and A, so a focused text field never sees those keys; while one has focus the page calls `text_edit` and the standard action (`undo:`, `redo:`, `cut:`, `copy:`, `paste:`, `selectAll:`) goes to the first responder, the web view, which edits the field as its context menu does. Elsewhere the command does nothing and the page uses the browser's own editing.
+Checked: `cargo check`, exit 0, which compiles the command and the empty `send`. Not compiled on Linux: the macOS `send` (objc2 `msg_send!` to `NSApplication`), copied from formvis line for line.
+
+## The Home screen's library
+
+The service side of the Home screen (frontend/src/ui/home.ts), shaped after formdeck's deck routes. No native change, no new dependency.
+
+### app/services/library.py · where the files live
+- refers-to: app/services/library.py :: folder, _home, _trash, _files
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The library is LightBox's Project folder as it stands (`<data>/LightBox/Project/<name>.fsc` with LightBox's square `<name>.png`), so nothing is migrated and both screens list the same sculpts. Home's own files sit in two hidden folders there, which LightBox's `*.fsc` glob never sees: `.home/` holds `<name>.thumb` (the 16:9 picture), `<name>.json` (objects, triangles, the template it came from) and `home.json` (pinned, recentHidden, when each was last opened); `.trash/<name>-<unix seconds>/` holds a deleted sculpt as `sculpt.fsc`, `picture.png`, `thumb`, `info.json`. The entry's name is all a restore needs, as in formdeck. Template pictures are drawn once and kept in `<data>/LightBox/.templates/<id>-<version>.png`.
+
+### app/services/library.py · names are ids, and every one is checked
+- refers-to: app/services/library.py :: checked, _within, _entry, NAME, ENTRY, RESERVED
+- kind: warning-context
+- logged: v1.20.0 · 2026-11-15
+A sculpt's id is its file name, under LightBox's own rule (1 to 64 letters, digits, spaces, dots, dashes, underscores, starting with a letter or digit), plus no trailing dot and no Windows device name. Every id and trash entry from a request passes `checked` or `_entry` and then `_within`, which refuses a symlink or a path that resolves outside the library, before any file is touched. Because an id is a free name, the Trash, the templates and the settings are not under `/api/sculpts/...` (a sculpt called `trash` would shadow them): they are `/api/sculpt-trash`, `/api/sculpt-templates`, `/api/sculpt-settings`. That is the one place the routes leave formdeck's shape.
+
+### app/services/library.py · writes
+- refers-to: app/services/library.py :: _write, _store, remove, restore
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Every file is written to `<name>.part` beside it and moved into place with `os.replace`, so a crash leaves the old file or the new one. Moving to the Trash and restoring are `os.replace` moves inside the same folder tree. A restore whose name is taken again becomes `<name> restored`; a duplicate is `<name> copy`; a new sculpt whose name is taken gets ` 2`, ` 3`. One lock serialises the mutating calls.
+
+### app/services/library.py · templates are built in a second engine
+- refers-to: app/services/library.py :: TEMPLATES, _build, create, template_picture, _scratch
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The ten starting meshes are the engine's own primitives (`add_primitive`), listed in `TEMPLATES` with the commands that build them; no asset is shipped. Creating one, or drawing its picture, runs in a second `fsc_engine.Engine` kept by this module, so the scene on screen is never replaced by a template being built; the new sculpt is written to the library and the window then opens it like any other.
+
+### app/services/library.py · thumbnails
+- refers-to: app/services/library.py :: _store, put_thumb, thumb, THUMB_SIZE, PICTURE_SIZE
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+A save writes LightBox's 160 px square picture as before and a 480 by 270 `get_view` render as the Home thumbnail. The window then replaces that thumbnail with a 16:9 capture of the viewport (`PUT /api/sculpts/{id}/thumb`, PNG, JPEG or WebP by its first bytes, 2 MB at most); when it says it will (`thumb=client`) the service skips its own 16:9 render. A sculpt saved by LightBox before 1.20.0 has only the square picture, which the thumb route serves and Home shows whole inside its 16:9 box.
+
+### app/routers/library.py · the routes
+- refers-to: app/routers/library.py :: router
+- kind: explainer
+- logged: v1.20.0 · 2026-11-15
+`GET /api/sculpts`, `POST /api/sculpts` (`{title?, template?}` or `{title?, fromScene: true}`), `POST /api/sculpts/{id}/open`, `POST /api/sculpts/{id}/save`, `POST /api/sculpts/{id}/duplicate`, `DELETE /api/sculpts/{id}`, `PUT` and `GET /api/sculpts/{id}/thumb`, `GET /api/sculpt-trash`, `POST /api/sculpt-trash/{entry}/restore`, `DELETE /api/sculpt-trash/{entry}`, `DELETE /api/sculpt-trash`, `GET /api/sculpt-templates`, `GET /api/sculpt-templates/{id}/thumb`, `GET` and `POST /api/sculpt-settings`. There is no rename route: renaming stays with saving under a new name. All of them sit behind `LocalGuard` like every other route.
+Checked: the existing suite (148 passed), and the routes in process against a temporary data folder, including `../x`, `con`, an encoded slash and a `.home-1` trash entry, each refused. No test file was added (not assigned).
