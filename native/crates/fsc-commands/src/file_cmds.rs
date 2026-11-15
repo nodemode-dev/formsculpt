@@ -36,6 +36,7 @@ pub fn open_data(s: &mut Session, bytes: Vec<u8>) -> Result<Value, CommandError>
     }
     scene.reserve(s.scene.high_water());
     s.stroke = None;
+    s.bridges.clear();
     s.scene = scene;
     s.history.clear();
     Ok(json!({"objects": s.scene.objects.iter().map(summary).collect::<Vec<_>>(), "active": s.scene.active}))
@@ -317,6 +318,7 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
             let format = Format::parse(&path).ok_or("unknown file type")?;
             fsc_io::import(format, &bytes)
         });
+        let mut synced = false;
         match read {
             Ok(meshes) if !meshes.is_empty() => {
                 let parts: Vec<&fsc_core::Mesh> = meshes.iter().map(|(_, m)| m).collect();
@@ -327,18 +329,26 @@ pub(crate) fn bridge_sync(s: &mut Session, _: &Value) -> Result<Value, CommandEr
                         *p = [p[0] / scale, p[1] / scale, p[2] / scale];
                     }
                 }
-                let object = s.scene.get_mut(id).expect("checked");
-                let mask = vec![0.0; mesh.vertex_count()];
-                let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-                object.revision += 1;
-                s.history.push(Edit::Topology { label: "Bridge Update".into(), object: id, mesh: old_mesh, mask: old_mask });
-                updated.push(summary(s.scene.get(id).expect("checked")));
+                let object = s.scene.get(id).expect("checked");
+                let reshaped = mesh.vertex_count() != object.mesh.vertex_count() || mesh.indices != object.mesh.indices;
+                match guard(s, id, "The edit from the bridged file").err().filter(|_| reshaped) {
+                    Some(refused) => problems.push(json!({"path": path, "message": refused.message})),
+                    None => {
+                        let object = s.scene.get_mut(id).expect("checked");
+                        let mask = vec![0.0; mesh.vertex_count()];
+                        let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
+                        object.revision += 1;
+                        s.history.push(Edit::Topology { label: "Bridge Update".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
+                        updated.push(summary(s.scene.get(id).expect("checked")));
+                        synced = true;
+                    }
+                }
             }
             // A file caught half written reads as broken; it is tried again on the next sync.
             Ok(_) => problems.push(json!({"path": path, "message": "the file has no mesh"})),
             Err(e) => problems.push(json!({"path": path, "message": e})),
         }
-        let seen = if updated.last().map(|o| o["id"] == id).unwrap_or(false) { now } else { seen };
+        let seen = if synced { now } else { seen };
         keep.push((id, path, seen, scale));
     }
     s.bridges = keep;
@@ -473,7 +483,7 @@ pub(crate) fn repair(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     if object.mesh.has_paint() {
         fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], &mut mesh);
     }
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
-    s.history.push(Edit::Topology { label: "Repair".into(), object: id, mesh: old_mesh, mask: old_mask });
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
+    s.history.push(Edit::Topology { label: "Repair".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"id": id, "changed": true, "non_manifold_vertices_split": splits, "holes_filled": holes, "degenerate_removed": degenerate, "orphans_removed": orphans, "object": summary(s.scene.get(id).expect("checked"))}))
 }
