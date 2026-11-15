@@ -942,3 +942,36 @@ Checked: `cargo test --release --locked --workspace --exclude fsc-py` all passin
 - kind: rationale
 - logged: v1.19.1 · 2026-10-28
 Stable clippy 1.99 added `chunks_exact_to_as_chunks` and tightened `excessive_precision`, `needless_range_loop` and `clone_on_copy`, which broke `./formsculpt engine check` under `-D warnings` with no code change. Every constant-size `chunks_exact(N)` / `chunks_exact_mut(N)` is now `as_chunks::<N>().0` (or `as_chunks_mut`), so each chunk is a `[T; N]` array: byte readers take the array straight into `from_le_bytes` (the fbx readers lost their `try_into().expect`), and flat-to-array copies are `to_vec()`. Chunks of a run-time size (`channels`, `stride + 1`, `comps`) stay `chunks_exact`. Four f32 literals in kelvin.rs and tone.rs are written at the precision f32 holds (same values once compiled), `symmetric_eigen` rotates rows p and q with `array::from_fn`, the Newton step iterates eigenvalues directly, and `Material` (Copy) is no longer cloned. `as_chunks` is stable since 1.88, so the workspace minimum is unchanged. The repo root's `rust-toolchain.toml` pins 1.99.1 with clippy, rustfmt and the wasm32 target, and CI installs it with `rustup toolchain install` instead of `dtolnay/rust-toolchain@stable`, so a new stable clippy cannot turn CI red again; moving the pin is a deliberate change.
+
+### Files that crashed or exhausted the engine on open (pre-release audit)
+- refers-to: crates/fsc-io/src/formats.rs :: read_ply, read_3mf; crates/fsc-io/src/gltf.rs :: accessor, local, read_gltf_with; crates/fsc-io/src/usd.rs :: read_usda; crates/fsc-io/src/fbx.rs :: Reader::array; crates/fsc-io/src/project.rs :: ENTRY_MAX, Reader (len), Reader::raw, levels_fit (new), open; crates/fsc-paint/src/encode.rs :: png_rgba_decode, png_gray; crates/fsc-topo/src/dyntopo.rs :: refine_sphere_protected; crates/fsc-sculpt/src/stroke.rs :: Stroke::sample_ray, grab_between, sample_point
+- kind: fix + removed
+- logged: v1.20.0 · 2026-11-15
+The release profile is `panic = "abort"`, so inside the PyO3 module a panic or a failed allocation ends the whole service process (as the 1.18.5 STL entry found), and in the browser it traps the module. Each of these was reached with a small crafted file or one bad number, shown with a throwaway program outside the repo before the change and re-run after it.
+PLY: an element's count came straight from the header, so `element vertex 99999999999999` with no properties pushed vertices until memory ran out, and a face list's count went into `Vec::with_capacity` unchecked (a u32 of 4294967295 asked for 17 GB, a double of 1e300 overflowed the capacity). A count above the bytes left in the file (or any count on an element with no properties) is now refused, and a list count above the file's length reads as an early end.
+glTF: an accessor's `count` sized the allocation before any bound was checked (24 TB for a count of 1e12), a node listed among its own children was walked forever, a `scale`, `rotation` or `translation` shorter than its 3 or 4 numbers indexed past its end, and a GLB whose BIN length wrapped past 32 bits sliced backwards in the browser build. The accessor now checks its stride and count against the buffer first; each node is visited once; short transforms read as the identity; the BIN end saturates; an index that would overflow u32 saturates and so fails the range check. An accessor with no bufferView used to read as zeros, which imported a Draco-compressed or sparse file as triangles at the origin without a word; it is now refused with a message naming the cause. With no `scenes` every node was taken as a root, so a child's mesh came in twice (once without its parent's transform); the roots are now the nodes that are nobody's child.
+USD: a face count whose sum wrapped past usize slipped under the corner check and indexed past the list (`faceVertexCounts = [3, 1e300]`), and a Mesh prim with no points sliced an empty colour list. The check no longer adds, the colour lookup uses `get`, and a prim with no faces is skipped as the other readers do.
+FBX: a zlib array inflated without limit; it now stops at the size its own count gives, and the error names the inflate status instead of printing the bytes read so far.
+Projects (.fsc): `Reader::raw` pre-sized each buffer by the zip's declared size, so a 300 byte file declaring a 4 GB manifest asked for 4 GB before reading a byte. The buffer is now sized by the smaller of the declared size and what the archive's own bytes could inflate to (deflate's 1032 to 1), read stops at the declared size, and an entry above ENTRY_MAX (4 GiB) is refused; the 3MF model part has the same ceiling. A level stack's stencil offsets, sources and kept-vertex list were stored unchecked and indexed on the next level step; `levels_fit` checks every one against the level's and the lower level's vertex counts at open, and a stack that fails is refused with the message the count check already gave. Stacks saved at any level, and one made by reconstruct, still open and step (checked).
+PNG: both decoders allocated the header's width times height before the size limit was read, so a 69 byte PNG declaring 50000 by 50000 asked for 10 GB; the limit is now checked from the header first, in u64.
+Dynamic topology: a degenerate triangle that uses one edge twice (a, b, a), alone on that edge, listed itself twice for the split and the second pass hit `expect("edge in face")`; it is now skipped.
+Strokes: a NaN pressure or ray origin (JSON carries NaN through the service) wrote NaN into every vertex under the brush; samples that are not finite are dropped at the three entry points.
+```rust
+    let Some(view_index) = a["bufferView"].as_u64() else { return Ok(vec![0.0; count * comps]) };
+    let base = view["byteOffset"].as_u64().unwrap_or(0) as usize + a["byteOffset"].as_u64().unwrap_or(0) as usize;
+            &bytes[rest + 8..(rest + 8 + blen).min(bytes.len())]
+    .unwrap_or_else(|| (0..doc["nodes"].as_array().map(|a| a.len()).unwrap_or(0)).collect());
+                Some(ia) => indices.extend(accessor(&doc, &buffers, ia as usize)?.into_iter().map(|i| base + i as u32)),
+            if at + n > corners.len() {
+                Some(list[v * width..v * width + width].to_vec())
+            1 => miniz_oxide::inflate::decompress_to_vec_zlib(raw).map_err(|e| format!("an FBX array does not inflate: {e:?}"))?,
+        let mut f = self.zip.by_name(name).map_err(|_| format!("the project is missing {name}"))?;
+        let mut out = Vec::with_capacity(f.size() as usize);
+        f.read_to_end(&mut out).map_err(|e| e.to_string())?;
+            if current >= levels.len() || levels[current].vertices != o.mesh.vertex_count() {
+    zip.by_name(&name).map_err(|e| e.to_string())?.read_to_string(&mut xml).map_err(|e| e.to_string())?;
+    if w * h > 8192 * 8192 {
+    if w * h > 4096 * 4096 {
+                let k = (0..3).find(|&k| key(tri[k], tri[(k + 1) % 3]) == (a, b)).expect("edge in face");
+```
+Checked: `cargo check` on fsc-core, fsc-io, fsc-paint, fsc-sculpt, fsc-topo, fsc-py and fsc-wasm (wasm32); `cargo test -p fsc-commands` 64 of 64 passing and `cargo test -p fsc-wasm` 1 of 1. The Python extension and the wasm were not rebuilt here.

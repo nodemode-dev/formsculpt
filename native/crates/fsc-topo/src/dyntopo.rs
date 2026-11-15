@@ -228,7 +228,7 @@ pub fn refine_sphere_protected(mesh: &mut Mesh, mask: &mut Vec<f32>, center: Vec
             for &f in faces {
                 let base = 3 * f as usize;
                 let tri = [mesh.indices[base], mesh.indices[base + 1], mesh.indices[base + 2]];
-                let k = (0..3).find(|&k| key(tri[k], tri[(k + 1) % 3]) == (a, b)).expect("edge in face");
+                let Some(k) = (0..3).find(|&k| key(tri[k], tri[(k + 1) % 3]) == (a, b)) else { continue };
                 let (u, v, w) = (tri[k], tri[(k + 1) % 3], tri[(k + 2) % 3]);
                 mesh.indices[base] = u;
                 mesh.indices[base + 1] = m;
