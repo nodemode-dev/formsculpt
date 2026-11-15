@@ -39,6 +39,15 @@ export function sceneSaved(): void {
 
 export const unsavedWork = (): boolean => !settle && saved !== null && seen !== saved;
 
+export function documentTitle(name: string): void {
+  const label = document.querySelector('.bar-doc');
+  if (label) setText(label, name);
+  const title = name ? `${name} · FormSculpt` : 'FormSculpt';
+  if (document.title === title) return;
+  document.title = title;
+  if (inShell()) void invoke('set_window_title', { title }).catch(() => undefined);
+}
+
 let lastField: HTMLElement | null = null;
 
 function trackFields(): void {

@@ -4,7 +4,7 @@ import { browserEngine, dispatch } from '../engine/service';
 import { brandMark } from './brand';
 import { commands, type Command } from './commands';
 import { DEMOS, type DemoId } from './demos';
-import { sceneSaved, unsavedWork } from './desktop-shell';
+import { documentTitle, sceneSaved, unsavedWork } from './desktop-shell';
 import { anyDialogOpen, Dialog, overlayRoot } from './dialog';
 import { fromHtml, patchList, setClass, setHidden } from './dom';
 import { onLanguage, t } from './i18n';
@@ -582,6 +582,7 @@ ${demos}
       this.hooks.closeSculpt(id);
     }
     const title = this.sculpts.find((d) => d.id === done[0])?.title ?? done[0];
+    const before = this.sculpts;
     this.sculpts = this.sculpts.filter((d) => !done.includes(d.id));
     this.pinned = this.pinned.filter((x) => !done.includes(x));
     this.hiddenRecent = this.hiddenRecent.filter((x) => !done.includes(x));
@@ -589,10 +590,10 @@ ${demos}
     const tr = await library.trash().catch(() => null);
     if (tr) this.trashed = tr.sculpts;
     this.renderTrash();
-    this.undoToast(done.length === 1 ? t('Moved "{name}" to the Trash.').replace('{name}', title) : t('Moved {n} sculpts to the Trash.').replace('{n}', String(done.length)), entries);
+    this.undoToast(done.length === 1 ? t('Moved "{name}" to the Trash.').replace('{name}', title) : t('Moved {n} sculpts to the Trash.').replace('{n}', String(done.length)), entries, before, done);
   }
 
-  private undoToast(text: string, entries: string[]): void {
+  private undoToast(text: string, entries: string[], before: SculptSummary[] = [], ids: string[] = []): void {
     if (!entries.length) {
       toast(text);
       return;
@@ -602,12 +603,17 @@ ${demos}
     write(node.querySelector('button'), t('Undo'));
     node.querySelector('button')?.addEventListener('click', () => {
       dismissToast(node);
-      void this.restore(entries);
+      void this.restore(entries, before, ids);
     });
     pushToast(toastRoot(), node, 8000);
   }
 
-  private async restore(entries: string[]): Promise<void> {
+  private async restore(entries: string[], before: SculptSummary[] = [], ids: string[] = []): Promise<void> {
+    const back = before.filter((d) => ids.includes(d.id) || this.sculpts.some((x) => x.id === d.id));
+    if (back.some((d) => ids.includes(d.id))) {
+      this.sculpts = [...this.sculpts.filter((x) => !back.some((d) => d.id === x.id)), ...back];
+      this.renderSculpts();
+    }
     let n = 0;
     for (const entry of entries) {
       try {
@@ -617,13 +623,13 @@ ${demos}
         toast(why(e), 'error');
       }
     }
-    if (!n) return;
+    if (!n && !ids.length) return;
     const [l, tr] = await Promise.all([library.list().catch(() => null), library.trash().catch(() => null)]);
     if (l) this.sculpts = l.sculpts;
     if (tr) this.trashed = tr.sculpts;
     this.renderSculpts();
     this.renderTrash();
-    toast(count(n, t('Sculpt restored.'), t('{n} sculpts restored.')));
+    if (n) toast(count(n, t('Sculpt restored.'), t('{n} sculpts restored.')));
   }
 
   private async purge(entry: string | null): Promise<void> {
@@ -854,6 +860,7 @@ class HomePrefsDialog extends Dialog {
 let home: Home | null = null;
 let host: HomeHost | null = null;
 let current: OpenSculpt | null = null;
+let closed: { sculpt: OpenSculpt; trail: string } | null = null;
 let decided = false;
 let settle: () => void = () => undefined;
 let prefsDialog: HomePrefsDialog | null = null;
@@ -881,9 +888,11 @@ function remembered(): OpenSculpt | null {
   }
 }
 
-function setCurrent(next: OpenSculpt | null): void {
+function setCurrent(next: OpenSculpt | null, keepClosed = false): void {
+  if (!keepClosed) closed = null;
   current = next;
   remember();
+  documentTitle(current ? current.title.trim() || t('Untitled sculpt') : '');
   home?.setOpenSculpts(current ? [{ id: 'current', title: current.title }] : []);
 }
 
@@ -902,9 +911,9 @@ async function openSculpt(id: string): Promise<void> {
     const reply = await library.open(id);
     host.replaced();
     setCurrent({ id: reply.sculpt.id, title: reply.sculpt.title, blank: false });
-    home?.leave();
-    await host.refresh();
+    await host.refresh().catch(() => undefined);
     host.frame();
+    home?.leave();
   } catch (e) {
     toast(why(e), 'error');
   }
@@ -912,6 +921,14 @@ async function openSculpt(id: string): Promise<void> {
 
 async function createSculpt(template: string, title?: string): Promise<void> {
   if (!host) return;
+  if (browserEngine()) {
+    await blankScene();
+    const made = await dispatch('add_primitive', { kind: 'sphere' });
+    if (!made.ok) toast(why(made.error.message), 'error');
+    await host.refresh().catch(() => undefined);
+    host.frame();
+    return;
+  }
   try {
     const made = await library.create(template || home?.defaultTemplate() || 'sphere', title ? tidyName(title) : undefined);
     await openSculpt(made.id);
@@ -929,8 +946,8 @@ async function blankScene(): Promise<void> {
   }
   host.replaced();
   setCurrent({ id: null, title: '', blank: true });
+  await host.refresh().catch(() => undefined);
   home?.leave();
-  await host.refresh();
 }
 
 async function openFiles(files: File[]): Promise<void> {
@@ -978,6 +995,7 @@ export function mountHome(hooks: Partial<HomeHooks> = {}): Home {
       else guarded(() => void openSculpt(id));
     },
     closeSculpt: (id) => {
+      if (closed?.sculpt.id === id) closed = null;
       if (current?.id === id) setCurrent({ ...current, id: null });
     },
     createSculpt: (template, title) => {
@@ -1020,15 +1038,20 @@ export function homeScene(objects: number): void {
     settle();
     return;
   }
-  if (objects > 0 && !current) setCurrent({ id: null, title: '', blank: false });
+  if (objects > 0 && !current) setCurrent({ id: null, title: '', blank: false }, true);
   else if (objects > 0 && current?.blank) current.blank = false;
 }
 
-export function homeSceneEnded(ended: boolean): void {
-  if (ended && decided && current && !current.blank) setCurrent(null);
+export function homeSceneEnded(ended: boolean, trail: readonly string[] = [], undone = false): void {
+  if (ended && decided && current && !current.blank) {
+    const was = current.id || current.title || !closed ? { sculpt: current, trail: trail.slice(0, -1).join('\n') } : closed;
+    setCurrent(null);
+    closed = was;
+  } else if (undone && closed && current && !current.id && !current.title && !current.blank && trail.join('\n') === closed.trail) setCurrent(closed.sculpt);
 }
 
 export function homeSceneReplaced(): void {
+  closed = null;
   if (current?.id) setCurrent({ ...current, id: null });
 }
 
@@ -1088,6 +1111,16 @@ export function homeCommands(): Command[] {
   };
   return [
     { id: 'file.save_file', label: 'Save Project File...', icon: 'save', run: () => void host?.download() },
+    {
+      id: 'app.preferences',
+      label: 'Preferences',
+      keys: ['Mod+,'],
+      icon: 'settings',
+      run: () => {
+        prefsDialog ??= new HomePrefsDialog(() => home?.sync());
+        prefsDialog.show();
+      },
+    },
     { id: 'pref.home_launch', label: 'Show Home Screen at Launch', run: () => flip('autoShowHome'), checked: () => loadPrefs().autoShowHome },
     { id: 'pref.home_last_close', label: 'Show Home Screen When the Last Document Closes', run: () => flip('homeOnLastClose'), checked: () => loadPrefs().homeOnLastClose },
   ];

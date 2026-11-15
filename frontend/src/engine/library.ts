@@ -1,3 +1,5 @@
+import { browserEngine } from './service';
+
 export interface SculptSummary {
   id: string;
   title: string;
@@ -42,6 +44,7 @@ export interface HomeSettings {
 }
 
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  if (browserEngine()) throw new Error('the library needs the engine service; this window is running the browser engine');
   const init: RequestInit = { method, cache: 'no-store' };
   if (body instanceof Blob) init.body = body;
   else if (body !== undefined) {

@@ -679,7 +679,11 @@ function buildShell(root: HTMLElement): Shell {
     showHome();
   });
   const menubar = el('div', 'fs-menubar');
-  bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
+  const spacer = el('div', 'spacer');
+  const docName = el('span', 'bar-doc');
+  docName.setAttribute('data-no-i18n', '');
+  spacer.append(docName);
+  bar.append(brand, menubar, spacer, el('div', 'appbar-tools'));
 
   const rail = el('nav', 'rail');
   rail.setAttribute('aria-label', 'Tools');
@@ -5621,7 +5625,7 @@ class SceneView {
       this.patchHistory(history.result.steps, history.result.done, history.result.bytes ?? []);
       this.syncHistoryEngine(history.result);
       noteScene(began, this.scene.objects, history.result.steps, history.result.done);
-      homeSceneEnded(this.scene.objects.length === 0 && history.result.steps[history.result.done - 1] === 'New Scene');
+      homeSceneEnded(this.scene.objects.length === 0 && history.result.steps[history.result.done - 1] === 'New Scene', history.result.steps.slice(0, history.result.done), history.result.steps[history.result.done] === 'New Scene');
     }
     await this.patchSets();
     await this.spotlight.sync();
