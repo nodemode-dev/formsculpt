@@ -55,12 +55,17 @@ pub(crate) fn divide(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     if projected > MAX_TRIANGLES {
         return Err(CommandError::new("bad_arguments", format!("that would make {projected} triangles; the limit is {MAX_TRIANGLES}")));
     }
+    let texture = object.texture.take();
     for _ in 0..count {
         let out = fsc_topo::loop_subdivide(&object.mesh, smooth);
-        object.divide(out.mesh, out.stencil).map_err(failed)?;
+        if let Err(e) = object.divide(out.mesh, out.stencil) {
+            crate::history::settle_texture(object, texture);
+            return Err(failed(e));
+        }
     }
+    let texture = crate::history::settle_texture(object, texture);
     let after = summary(object);
-    s.history.push(Edit::Divide { object: id, count: count as usize, parked: Vec::new() });
+    s.history.push(Edit::Divide { object: id, count: count as usize, parked: Vec::new() }.with_texture(id, texture));
     Ok(json!({"object": after}))
 }
 
@@ -91,10 +96,18 @@ pub(crate) fn set_level(s: &mut Session, args: &Value) -> Result<Value, CommandE
         (None, Some("down")) => cur.saturating_sub(1),
         _ => return Err(CommandError::new("bad_arguments", "give level or step")),
     };
-    let from = object.set_level(to).map_err(failed)?;
+    let texture = object.texture.take();
+    let from = match object.set_level(to) {
+        Ok(from) => from,
+        Err(e) => {
+            object.texture = texture;
+            return Err(failed(e));
+        }
+    };
+    let texture = crate::history::settle_texture(object, texture);
     let after = summary(object);
     if from != to {
-        s.history.push(Edit::Level { object: id, from, to });
+        s.history.push(Edit::Level { object: id, from, to }.with_texture(id, texture));
     }
     Ok(json!({"object": after, "from": from}))
 }

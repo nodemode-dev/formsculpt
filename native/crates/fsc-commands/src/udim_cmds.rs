@@ -200,9 +200,10 @@ pub(crate) fn uv_to_tile(s: &mut Session, args: &Value) -> Result<Value, Command
     }
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Move UVs to Tile".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Move UVs to Tile".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "moved": moved, "islands": chosen.iter().filter(|&&c| c).count(), "tile": tile}))
 }
 
@@ -305,7 +306,8 @@ pub(crate) fn uv_pack_udim(s: &mut Session, args: &Value) -> Result<Value, Comma
     mesh.uvs = coords.iter().map(|q| q.to_array()).collect();
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let texture = object.texture.take();
     object.clear_maps();
-    s.history.push(Edit::Topology { label: "Pack UVs into Tiles".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Pack UVs into Tiles".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"tiles": listed, "islands": l.count()}))
 }

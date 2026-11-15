@@ -17,6 +17,22 @@ pub struct StepCamera {
     pub ortho: bool,
 }
 
+/// Swaps in a mesh and returns the old mesh and mask with the texture the swap ended (None while the object keeps UVs).
+pub(crate) fn replace_mesh(object: &mut Object, mesh: Mesh, mask: Vec<f32>) -> (Mesh, Vec<f32>, Option<fsc_core::Texture>) {
+    let texture = object.texture.take();
+    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    (old_mesh, old_mask, settle_texture(object, texture))
+}
+
+/// Gives a texture taken off before a mesh change back to an object that still has UVs; returns it when the change ended it.
+pub(crate) fn settle_texture(object: &mut Object, texture: Option<fsc_core::Texture>) -> Option<fsc_core::Texture> {
+    if object.has_uvs() {
+        object.texture = texture;
+        return None;
+    }
+    texture
+}
+
 #[derive(Debug)]
 struct Step {
     edit: Edit,
@@ -79,6 +95,14 @@ impl Edit {
             Edit::Add { .. } => "Add Object".into(),
             Edit::Delete { .. } => "Delete Object".into(),
             Edit::Clear { .. } => "New Scene".into(),
+        }
+    }
+
+    /// With the texture a topology or UV step ended, the step parks it, so undoing the step brings it back.
+    pub(crate) fn with_texture(self, object: ObjectId, texture: Option<fsc_core::Texture>) -> Edit {
+        match texture {
+            None => self,
+            Some(t) => Edit::Many { label: self.label(), edits: vec![Edit::TextureState { label: String::new(), object, texture: Some(t) }, self] },
         }
     }
 

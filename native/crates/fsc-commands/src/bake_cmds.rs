@@ -62,12 +62,15 @@ pub(crate) fn unwrap(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let mut mesh = object.mesh.clone();
     mesh.uvs = result.uvs;
     let mask = object.mask.clone();
-    let kept = if mesh.uvs == object.mesh.uvs { object.texture.take() } else { None };
+    let same = mesh.uvs == object.mesh.uvs;
+    let mut texture = object.texture.take();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     object.clear_maps();
-    object.texture = kept;
+    if same {
+        object.texture = texture.take();
+    }
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Unwrap UVs".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     let round = |v: f32| (f64::from(v) * 1000.0).round() / 1000.0;
     let mut out = json!({"object": after, "charts": result.charts, "coverage": result.coverage, "stretch": {"mean": round(mean), "max": round(worst)}, "ms": started.elapsed().as_millis()});
     if auto {
@@ -237,9 +240,10 @@ pub(crate) fn uv_transform(s: &mut Session, args: &Value) -> Result<Value, Comma
     }
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Move UV island".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Move UV island".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "island": chosen, "corners": corners.len()}))
 }
 
@@ -266,9 +270,10 @@ pub(crate) fn uv_pack(s: &mut Session, args: &Value) -> Result<Value, CommandErr
     let (mesh, count, coverage) = packed_mesh(&object.mesh);
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Pack UVs".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Pack UVs".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "islands": count, "coverage": coverage}))
 }
 
@@ -296,7 +301,7 @@ pub(crate) fn bake(s: &mut Session, args: &Value) -> Result<Value, CommandError>
     }
     let started = Instant::now();
     let object = s.scene.get(id).expect("checked");
-    if object.mesh.uvs.is_empty() {
+    if !object.has_uvs() {
         return Err(CommandError::new("no_uvs", "the object has no UVs; run uv_unwrap first (UVs are cleared by topology changes)"));
     }
     let tile = match args.get("tile") {

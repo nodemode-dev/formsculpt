@@ -167,6 +167,7 @@ pub(crate) fn uv_straighten(s: &mut Session, args: &Value) -> Result<Value, Comm
     let mut edited = original.clone();
     edited.uvs = uvs;
     object.replace_mesh(edited, mask.clone());
+    let texture = object.texture.take();
     object.clear_maps();
 
     if relax > 0 {
@@ -174,6 +175,7 @@ pub(crate) fn uv_straighten(s: &mut Session, args: &Value) -> Result<Value, Comm
         if let Err(e) = uv_relax(s, &call) {
             let object = s.scene.get_mut(id).expect("checked");
             object.replace_mesh(original, mask);
+            object.texture = texture;
             return Err(e);
         }
         let finished = s.scene.get_mut(id).expect("checked").mesh.clone();
@@ -186,6 +188,6 @@ pub(crate) fn uv_straighten(s: &mut Session, args: &Value) -> Result<Value, Comm
     let object = s.scene.get_mut(id).expect("checked");
     let (after, _) = fsc_paint::stretch(&object.mesh, &object.mesh.uvs);
     let result = summary(object);
-    s.history.push(Edit::Topology { label: "Straighten UVs".into(), object: id, mesh: original, mask });
+    s.history.push(Edit::Topology { label: "Straighten UVs".into(), object: id, mesh: original, mask }.with_texture(id, texture));
     Ok(json!({"object": result, "straightened": path.len(), "distortion_before": round3(before), "distortion_after": round3(after)}))
 }

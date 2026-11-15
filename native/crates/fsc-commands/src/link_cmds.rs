@@ -127,9 +127,9 @@ pub(crate) fn link_push(s: &mut Session, args: &Value) -> Result<Value, CommandE
     let mesh = checked(positions, indices)?;
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
     object.revision += 1;
-    s.history.push(Edit::Topology { label: "Blender Link".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Blender Link".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     let object = s.scene.get(id).expect("checked");
     Ok(json!({"object": summary(object), "revision": object.revision, "created": false, "topology": true}))
 }
