@@ -12,13 +12,15 @@ backend/
   requirements.txt         pinned
   requirements_macos.txt   unpinned twin
   requirements_desktop*.txt  PyInstaller
-  .env.example             FSC_HOST, FSC_PORT, FSC_CORS_ORIGINS
+  .env.example             FSC_PORT, FSC_CORS_ORIGINS
   app/__init__.py          __version__, a version site
   app/main.py              FastAPI app, middleware, routers, static mount
   app/core/config.py       names, ports, dist_dir, is_desktop, cors_origins
   app/core/isolation.py    CrossOriginIsolation ASGI middleware
   app/routers/system.py    /api/health, /api/version, /api/capabilities (engine status from the module), /api/integrations/blender
   app/routers/lightbox.py  /api/lightbox/projects: LightBox's Project shelf (list, save with a picture, open, picture)
+  app/routers/library.py   Home's library routes: /api/sculpts, /api/sculpt-trash, /api/sculpt-templates, /api/sculpt-settings
+  app/services/library.py  the sculpt library on LightBox's Project folder: names, atomic writes, the Trash, templates, thumbnails
   app/routers/engine.py    /api/engine/catalogue, /api/engine/dispatch, /api/engine/mesh/{id}
   app/services/engine.py   the one fsc_engine.Engine, status, dispatch, mesh_payload (FSCM binary)
 ```
@@ -29,6 +31,9 @@ backend/
 - [app/core/isolation.py](#appcoreisolationpy)
 - [app/routers/system.py](#approuterssystempy)
 - [app/main.py](#appmainpy)
+- [The pre-release audit of the service, the shell and the scripts](#the-pre-release-audit-of-the-service-the-shell-and-the-scripts)
+- [The desktop shell: opened files, one instance, the quit gate, text-field edits](#the-desktop-shell-opened-files-one-instance-the-quit-gate-text-field-edits)
+- [The Home screen's library](#the-home-screens-library)
 
 ## formsculpt_engine.py
 
@@ -386,3 +391,134 @@ formcompiler's Windows leg runs `./formsculpt install`, `install-desktop` and `d
 - kind: rationale
 - logged: v1.19.3 · 2026-10-31
 Python's `mimetypes` takes file types from the Windows registry (`HKEY_CLASSES_ROOT\.js`, value `Content Type`) over its own table, and some installers and editors set `.js` to `text/plain`. On those PCs the engine served the built window's scripts as `text/plain`, WebView2 refused every module script under strict MIME checking, and the desktop window stayed blank; macOS, Linux, dev mode (Vite serves the page) and Windows PCs with the default value never showed it. The three calls pin `.js` and `.mjs` to `text/javascript` and `.css` to `text/css`, which covers `StaticFiles`, `FileResponse` and any direct `guess_type`. They sit after the last import, not above the imports: a module that re-reads the registry while importing cannot undo them, and no import follows a statement (E402). They look redundant off Windows; keep them. Repro on a Windows PC: `reg add "HKCU\Software\Classes\.js" /v "Content Type" /d "text/plain" /f`, then launch the rebuilt app; restore with `/d "text/javascript"`. Checked here: with the table poisoned to `text/plain` for js, mjs and css through `mimetypes.init(files=...)`, the three calls return `text/javascript`, `text/javascript` and `text/css`; `py_compile` passes. Not yet run on a Windows PC.
+
+## The pre-release audit of the service, the shell and the scripts
+
+### routers/nodemode.py · a send no longer stops the whole service
+- refers-to: app/routers/nodemode.py :: send, _announce (new)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`send` is an async route and called `_upload` twice and `outbound.request` once directly, so each blocking `urlopen` (20 s timeout) ran on the event loop. Seen on a booted service: with a NodeMode address that accepts the connection and never answers, `GET /api/health` got no reply for 6 s while the send was in flight (the window's polls, strokes and every other route wait the same way). The three calls now run through `run_in_threadpool`; the announce moved into `_announce` so it can. Removed code, quoted in full: `model_url = _upload(base, f"{stem}.glb", glb, "model/gltf-binary")`, `preview_url = _upload(base, f"{stem}.png", png, "image/png")` and `with outbound.request(base + "/api/formsculpt/receive", announce, {"Content-Type": "application/json"}, "POST"):` followed by `placed = True`.
+Checked against a booted service: the same hanging address, `/api/health` 200 in 2 ms during the send and the send still ends 502; against a stand-in receiver, `status` gives running and receiver true and `send` gives placed true with both files.
+
+### routers/engine.py and routers/mcp.py · three requests that answered 500
+- refers-to: app/routers/engine.py :: export_file; app/routers/mcp.py :: mcp
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`GET /api/engine/export?ids=abc` raised ValueError outside the route's own try, `POST /mcp` with `params` as a list raised AttributeError on `params.get`, and `tools/call` with a `name` that is a list raised `TypeError: unhashable type` on `name in names`; each answered 500 with a traceback in the engine log. The id list is now parsed inside the try (400 with the reason), non-object `params` answer 400 with JSON-RPC -32602, and `name` must be a string before it is looked up (-32602, "No tool named"). Checked on a booted service: 400, 400 and 200 with the error object; a valid export and `tools/call get_scene` unchanged.
+
+### app/main.py · the Chat tab's Claude Code process ends with the service
+- refers-to: app/main.py :: lifespan; app/services/cmd_chat.py :: cancel
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The lifespan closed the terminal sessions at shutdown but not the `claude -p` process a Chat answer runs in. Seen with a stand-in program set as `claudeBin`: after `chat.send` and SIGTERM to the service, the service was gone and the child was still running. `lifespan` now calls `cmd_chat.cancel()` before `terminal.close_all()`. Checked the same way: the child is gone with the service, the terminal's shell too.
+
+### formsculpt_engine.py · the desktop engine prefers 8260, and removes what it unpacked when the shell is gone
+- refers-to: formsculpt_engine.py :: free_port, watch_parent; src-tauri/src/main.rs :: kill_backend
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Port. The shell starts the engine with `FSC_PORT=0` and `free_port` asked the OS for any port, so the installed app listened somewhere new on every launch, while everything that talks to a running formsculpt assumes 8260: the Blender add-on's default address (its README says the desktop app works), `setup/mcp_stdio.py` (which then started a second engine with its own scene beside the open window), `setup/run_script.py` and the harness skill. `free_port` now tries `config.BACKEND_PORT` first and falls back to any free port when it is taken (a dev service or a second window), which is formdeck's `FORMDECK_PORT_PREFER`. The probe sets SO_REUSEADDR off Windows so a relaunch right after a quit gets the port back, as uvicorn's own socket does. Removed code, quoted in full: `with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:` / `s.bind(("127.0.0.1", 0))` / `return s.getsockname()[1]`.
+Stopping. The one-file sidecar is PyInstaller's launcher with the server as its child; the launcher removes the `_MEI` folder it unpacked when the child exits. `kill_backend` used `child.kill()`, a forced kill that reaches only the launcher (PyInstaller 6.22.3's launcher has no parent-death signal and no job object: read in its `bootloader/src`), so on every quit the server lived on until `watch_parent` saw the shell gone and called `os._exit(0)`, and nothing removed the folder: one copy of the window, Python and the engine left in the temporary folder per launch. This is formvis's fault of 1.86.2 and the same two changes: `kill_backend` sends SIGTERM first on unix (the launcher passes it to the server, uvicorn shuts down, the lifespan closes terminals and Chat, the launcher removes the folder) and waits up to 1.5 s before the forced kill; and `watch_parent` removes `sys._MEIPASS` (only when its name starts with `_MEI`) before `os._exit(0)`, for the cases where the launcher is already dead. On Windows the forced kill stays, so the server still exits through `watch_parent`, which now removes everything Windows lets a running program delete; the loaded libraries stay behind. formvis's `sweep_stale_unpacks` (1.86.3) would clear those at the next launch and is not copied here.
+Checked: `formsculpt_engine.py` run unfrozen with `FSC_PORT=0` printed `http://127.0.0.1:8260`, a second one beside it took another port, and the first exited within 3 s of the process named in `FSC_PARENT_PID` ending; `watch_parent` with a stand-in `_MEI` folder as `sys._MEIPASS` removed it before exiting; the `kill_backend` block compiled alone with rustc against a stand-in child and returned in 55 ms after SIGTERM with no forced kill. Not run: the frozen sidecar, and `src-tauri` itself (no webkit2gtk here).
+
+### app/services/scripting.py, setup/freeze_backend, build_app.bat · the desktop app carries the plugins
+- refers-to: app/services/scripting.py :: ROOT; setup/freeze_backend and build_app.bat (the pyinstaller line)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`ROOT` was three folders above `scripting.py`. In the frozen engine that file is `<unpack folder>/app/services/scripting.py`, so `ROOT / "plugins"` was `plugins` in the temporary folder itself (`/tmp/plugins` on Linux, which any user of the computer can create), and the freeze did not pack `plugins/` at all: the installed app listed none of rock, pedestal and rivets. `ROOT` is now `sys._MEIPASS` when frozen, and both freezes pass `--add-data` for `plugins`, as they do for the integrations. Removed code, quoted in full: `ROOT = Path(__file__).resolve().parents[3]`. Checked: with a stand-in unpack folder as `sys._MEIPASS`, `list_plugins` finds the three there; from the checkout it finds them as before, and the three ran on a booted service. Not run: PyInstaller.
+
+### setup/serve, backend/boot_backend, .env.example · loopback only
+- refers-to: setup/serve; backend/boot_backend; backend/.env.example
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Both scripts passed `--host "${FSC_HOST:-127.0.0.1}"`. `LocalGuard` trusts the Host header, which the sender writes: with `FSC_HOST=0.0.0.0`, `curl -H 'Host: 127.0.0.1' http://<this computer's network address>:8263/api/commands/terminal.list -X POST` answered 200, so anyone on the network could reach the window-only terminal commands. The harness's engine-service rule is "Bind 127.0.0.1:8260 only", and the `.bat` twin, CI and the desktop engine already do. The two scripts now pass `--host 127.0.0.1` and the example file no longer lists the variable. Removed code, quoted in full: `--host "${FSC_HOST:-127.0.0.1}"` (twice) and the line `FSC_HOST=127.0.0.1`.
+
+### formsculpt.bat · install and engine build the engine module, serve sets FSC_DIST without a trailing space
+- refers-to: formsculpt.bat :: install, engine, serve
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The README sends Windows users to `formsculpt_oc_install.bat` and `formsculpt.bat`. `install` ran only the two `oc_install.bat` files, where `setup/install_all` also builds the engine, and `engine` ran `cargo build --workspace --release`, which never installs the Python module (`setup/engine_build` excludes fsc-py and runs `maturin develop`). So a Windows checkout installed this way booted a service that answers 503 "the engine module is not built" on every engine route, with no `.bat` command that builds it. `engine` now does what `build_app.bat` already does (the workspace without fsc-py, then `maturin develop --release` in the venv with `CARGO_TARGET_DIR` on `native\target`), and `install` runs it when cargo is there, saying so when it is not. `serve` had `set FSC_DIST=%~dp0frontend\dist && uvicorn ...`: cmd keeps the space before `&&` in the value, so the service looked for `dist \index.html`; the assignment is now quoted. Removed code, quoted in full: `cd native && cargo build --workspace --release` and `set FSC_DIST=%~dp0frontend\dist`. Not run: there is no Windows here; the file keeps CRLF line ends.
+
+### blender_manifest.toml and ci.yml · the add-on's website, build_app in the shell syntax check
+- refers-to: integrations/blender/formsculpt_link/blender_manifest.toml :: website; .github/workflows/ci.yml :: scripts, Shell syntax
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The add-on's `website` named `github.com/nodemode-ai/formsculpt`; the repository is `nodemode-dev/formsculpt` (the remote, and the README's clone line), so Blender's extension page linked to the old account. The CI loop that runs `bash -n` listed every shell script except `build_app`; it is in the list now. Checked: `bash -n build_app` passes.
+
+## The desktop shell: opened files, one instance, the quit gate, text-field edits
+
+The page's half is logged in `frontend/HASHOUT_LOG.md` under the same heading.
+
+### src-tauri/src/main.rs · a double-clicked project opens in the running window
+- refers-to: src-tauri/src/main.rs :: Opens, OpenQueue, open_paths, paths_from_args, show_main_window, take_pending_opens, single_instance, setup (launch arguments), run (RunEvent::Opened); src-tauri/Cargo.toml :: tauri-plugin-single-instance; src-tauri/build.rs; src-tauri/capabilities/engine-page.json
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`tauri.conf.json` declares the `.fsc` association and nothing handled it: the app opened with an empty scene, and a second double-click started a second app with a second engine. The three paths formvis has are here now, with its code: the launch arguments (Windows and Linux), `RunEvent::Opened` (macOS: Finder and the Dock) and a second launch, which `tauri-plugin-single-instance` 2.4.5 (the version formvis locks; MIT or Apache-2.0) hands to the running app before it exits. Paths wait in `OpenQueue` until the page has its listener and calls `take_pending_opens`; later ones go out as the event `formsculpt://open-paths`, and the window is unminimized, shown and focused. Left out of formvis's version: the `--command`, `--action` and `--script` launch arguments, and the Linux hand-off key per data folder (formvis keys the D-Bus name on its data folder so two folders can run side by side; formsculpt's shell takes no data folder argument, so the plugin's own key, the application identifier, is used: one running formsculpt per login).
+`Cargo.lock` gained the plugin and the 32 crates it brings on Linux and Windows (zbus and the async-io family; all MIT or Apache-2.0), written by cargo.
+Checked: `cargo check` of src-tauri on Linux, exit 0, no warning. Not compiled there: the `RunEvent::Opened` arm (macOS only). Not run: any of it in a built app.
+
+### src-tauri/src/main.rs · quit and close ask the page first
+- refers-to: src-tauri/src/main.rs :: ExitGate, open_exit_gate, ask_page_to_quit, confirm_exit, on_window_event (CloseRequested), run (RunEvent::ExitRequested), check_for_updates
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The run loop handled `RunEvent::Exit` only, so Cmd+Q, the native Quit item (new with the macOS menu bar) and the close button ended the app with unsaved work unasked. formvis's gate: `CloseRequested` on the main window and `ExitRequested` send `formsculpt://exit-requested` and are held back while the page is listening; the page answers with `confirm_exit`, which opens the gate and exits, or with `cancel`, which leaves the app running. The app exits at once when the page cannot answer (not loaded yet, or no main window), so a splash with a dead engine never traps the person. The update path opens the gate before it restarts. `on_window_event` also puts the traffic lights back after a resize, focus, theme or scale change, as formvis does.
+The engine-failure path ended with `std::process::exit(1)`; it is `handle.exit(1)` now, formvis's form, so the Exit event runs.
+Removed code, quoted in full:
+
+```rust
+    app.run(|handle, event| {
+        if let RunEvent::Exit = event {
+            kill_backend(handle);
+        }
+    });
+```
+
+Checked: `cargo check`, exit 0. Not run: a real quit; whether macOS raises `ExitRequested` for Cmd+Q is taken from formvis, which relies on it.
+
+### src-tauri/src/text_edit.rs · Edit items act on a focused text field
+- refers-to: src-tauri/src/text_edit.rs :: text_edit, send; src-tauri/src/main.rs :: generate_handler
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+formvis's file, unchanged but for its header comment. On macOS the menu bar's Edit items own Cmd+Z, X, C, V and A, so a focused text field never sees those keys; while one has focus the page calls `text_edit` and the standard action (`undo:`, `redo:`, `cut:`, `copy:`, `paste:`, `selectAll:`) goes to the first responder, the web view, which edits the field as its context menu does. Elsewhere the command does nothing and the page uses the browser's own editing.
+Checked: `cargo check`, exit 0, which compiles the command and the empty `send`. Not compiled on Linux: the macOS `send` (objc2 `msg_send!` to `NSApplication`), copied from formvis line for line.
+
+## The Home screen's library
+
+The service side of the Home screen (frontend/src/ui/home.ts), shaped after formdeck's deck routes. No native change, no new dependency.
+
+### app/services/library.py · where the files live
+- refers-to: app/services/library.py :: folder, _home, _trash, _files
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The library is LightBox's Project folder as it stands (`<data>/LightBox/Project/<name>.fsc` with LightBox's square `<name>.png`), so nothing is migrated and both screens list the same sculpts. Home's own files sit in two hidden folders there, which LightBox's `*.fsc` glob never sees: `.home/` holds `<name>.thumb` (the 16:9 picture), `<name>.json` (objects, triangles, the template it came from) and `home.json` (pinned, recentHidden, when each was last opened); `.trash/<name>-<unix seconds>/` holds a deleted sculpt as `sculpt.fsc`, `picture.png`, `thumb`, `info.json`. The entry's name is all a restore needs, as in formdeck. Template pictures are drawn once and kept in `<data>/LightBox/.templates/<id>-<version>.png`.
+
+### app/services/library.py · names are ids, and every one is checked
+- refers-to: app/services/library.py :: checked, _within, _entry, NAME, ENTRY, RESERVED
+- kind: warning-context
+- logged: v1.20.0 · 2026-11-15
+A sculpt's id is its file name, under LightBox's own rule (1 to 64 letters, digits, spaces, dots, dashes, underscores, starting with a letter or digit), plus no trailing dot and no Windows device name. Every id and trash entry from a request passes `checked` or `_entry` and then `_within`, which refuses a symlink or a path that resolves outside the library, before any file is touched. Because an id is a free name, the Trash, the templates and the settings are not under `/api/sculpts/...` (a sculpt called `trash` would shadow them): they are `/api/sculpt-trash`, `/api/sculpt-templates`, `/api/sculpt-settings`. That is the one place the routes leave formdeck's shape.
+
+### app/services/library.py · writes
+- refers-to: app/services/library.py :: _write, _store, remove, restore
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Every file is written to `<name>.part` beside it and moved into place with `os.replace`, so a crash leaves the old file or the new one. Moving to the Trash and restoring are `os.replace` moves inside the same folder tree. A restore whose name is taken again becomes `<name> restored`; a duplicate is `<name> copy`; a new sculpt whose name is taken gets ` 2`, ` 3`. One lock serialises the mutating calls.
+
+### app/services/library.py · templates are built in a second engine
+- refers-to: app/services/library.py :: TEMPLATES, _build, create, template_picture, _scratch
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The ten starting meshes are the engine's own primitives (`add_primitive`), listed in `TEMPLATES` with the commands that build them; no asset is shipped. Creating one, or drawing its picture, runs in a second `fsc_engine.Engine` kept by this module, so the scene on screen is never replaced by a template being built; the new sculpt is written to the library and the window then opens it like any other.
+
+### app/services/library.py · thumbnails
+- refers-to: app/services/library.py :: _store, put_thumb, thumb, THUMB_SIZE, PICTURE_SIZE
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+A save writes LightBox's 160 px square picture as before and a 480 by 270 `get_view` render as the Home thumbnail. The window then replaces that thumbnail with a 16:9 capture of the viewport (`PUT /api/sculpts/{id}/thumb`, PNG, JPEG or WebP by its first bytes, 2 MB at most); when it says it will (`thumb=client`) the service skips its own 16:9 render. A sculpt saved by LightBox before 1.20.0 has only the square picture, which the thumb route serves and Home shows whole inside its 16:9 box.
+
+### app/routers/library.py · the routes
+- refers-to: app/routers/library.py :: router
+- kind: explainer
+- logged: v1.20.0 · 2026-11-15
+`GET /api/sculpts`, `POST /api/sculpts` (`{title?, template?}` or `{title?, fromScene: true}`), `POST /api/sculpts/{id}/open`, `POST /api/sculpts/{id}/save`, `POST /api/sculpts/{id}/duplicate`, `DELETE /api/sculpts/{id}`, `PUT` and `GET /api/sculpts/{id}/thumb`, `GET /api/sculpt-trash`, `POST /api/sculpt-trash/{entry}/restore`, `DELETE /api/sculpt-trash/{entry}`, `DELETE /api/sculpt-trash`, `GET /api/sculpt-templates`, `GET /api/sculpt-templates/{id}/thumb`, `GET` and `POST /api/sculpt-settings`. There is no rename route: renaming stays with saving under a new name. All of them sit behind `LocalGuard` like every other route.
+Checked: the existing suite (148 passed), and the routes in process against a temporary data folder, including `../x`, `con`, an encoded slash and a `.home-1` trash entry, each refused. No test file was added (not assigned).

@@ -281,6 +281,9 @@ impl Stroke {
 
     pub fn sample_ray(&mut self, object: &mut Object, origin: Vec3, dir: Vec3, pressure: f32) -> bool {
         let dir = dir.normalize_or(Vec3::NEG_Z);
+        if !origin.is_finite() || !pressure.is_finite() {
+            return false;
+        }
         self.view = Some(dir);
         self.capture(object);
         if self.settings.kind.drags() {
@@ -316,12 +319,18 @@ impl Stroke {
     }
 
     pub fn grab_between(&mut self, object: &mut Object, from: Vec3, to: Vec3, pressure: f32) {
+        if !from.is_finite() || !to.is_finite() || !pressure.is_finite() {
+            return;
+        }
         self.capture(object);
         self.begin_grab(object, from, Vec3::Z);
         self.apply_grab(object, to - from, pressure);
     }
 
     pub fn sample_point(&mut self, object: &mut Object, point: Vec3, pressure: f32) {
+        if !point.is_finite() || !pressure.is_finite() {
+            return;
+        }
         self.capture(object);
         // Lazy rope: the brush trails the pointer on a rope of lazy times three radii and moves only when the rope
         // pulls taut, so hand jitter inside the rope never reaches the surface and lines come out steady.

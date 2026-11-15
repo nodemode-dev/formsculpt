@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use crate::bin::{f32s, read_f32s, read_u32s, read_vec3s, u32s, vec3s};
 
 const FORMAT: &str = "formsculpt-project";
+pub(crate) const ENTRY_MAX: u64 = 4 << 30;
 
 struct Writer {
     zip: zip::ZipWriter<Cursor<Vec<u8>>>,
@@ -204,14 +205,19 @@ pub fn save(scene: &Scene) -> Result<Vec<u8>, String> {
 
 struct Reader {
     zip: zip::ZipArchive<Cursor<Vec<u8>>>,
+    len: usize,
 }
 
 impl Reader {
     fn raw(&mut self, v: &Value) -> Result<Vec<u8>, String> {
         let name = v.as_str().ok_or("the manifest names a missing buffer")?;
-        let mut f = self.zip.by_name(name).map_err(|_| format!("the project is missing {name}"))?;
-        let mut out = Vec::with_capacity(f.size() as usize);
-        f.read_to_end(&mut out).map_err(|e| e.to_string())?;
+        let f = self.zip.by_name(name).map_err(|_| format!("the project is missing {name}"))?;
+        let size = f.size();
+        if size > ENTRY_MAX {
+            return Err(format!("{name} is too large to read"));
+        }
+        let mut out = Vec::with_capacity((size as usize).min(self.len.saturating_mul(1032)));
+        f.take(size).read_to_end(&mut out).map_err(|e| e.to_string())?;
         Ok(out)
     }
     fn vec3(&mut self, v: &Value) -> Result<Vec<[f32; 3]>, String> {
@@ -257,6 +263,27 @@ fn layer_floats(flat: &[f32], n: usize) -> Option<Vec<LayerPaint>> {
     )
 }
 
+/// Whether a level stack read from a file can be stepped through: each level's recorded vertex count is its mesh's
+/// (`live` for the current one), and above the lowest every stencil row, source and kept-vertex index is in range.
+fn levels_fit(levels: &[Level], current: usize, live: usize) -> bool {
+    let count = |k: usize| if k == current { live } else { levels[k].mesh.vertex_count() };
+    (0..levels.len()).all(|k| {
+        let (l, n) = (&levels[k], count(k));
+        if l.vertices != n || k == 0 {
+            return l.vertices == n;
+        }
+        let (below, s) = (count(k - 1), &l.stencil);
+        below <= n
+            && s.offsets.len() == n + 1
+            && s.weights.len() == s.sources.len()
+            && s.offsets.windows(2).all(|w| w[0] <= w[1])
+            && s.offsets[n] as usize <= s.sources.len()
+            && s.sources.iter().all(|&v| (v as usize) < below)
+            && (l.evens.is_empty() || l.evens.len() == below)
+            && l.evens.iter().all(|&v| (v as usize) < n)
+    })
+}
+
 fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> {
     if !indices.len().is_multiple_of(3) || indices.iter().any(|&i| i as usize >= positions.len()) {
         return Err("a mesh in the project has broken indices".into());
@@ -265,8 +292,9 @@ fn checked(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Result<Mesh, String> 
 }
 
 pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
+    let len = bytes.len();
     let zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("not a formsculpt project (not a zip): {e}"))?;
-    let mut r = Reader { zip };
+    let mut r = Reader { zip, len };
     let manifest: Value = serde_json::from_slice(&r.raw(&json!("manifest.json"))?).map_err(|e| format!("the manifest is broken: {e}"))?;
     if manifest["format"] != FORMAT {
         return Err("not a formsculpt project (wrong manifest format)".into());
@@ -390,7 +418,7 @@ pub fn open(bytes: Vec<u8>) -> Result<Scene, String> {
                 }
                 levels.push(level);
             }
-            if current >= levels.len() || levels[current].vertices != o.mesh.vertex_count() {
+            if current >= levels.len() || !levels_fit(&levels, current, o.mesh.vertex_count()) {
                 return Err("the level stack does not match its object".into());
             }
             o.multires = Some(Multires { levels, current });

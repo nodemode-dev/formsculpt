@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="version 1.19.6" src="https://img.shields.io/badge/version-1.19.6-eef0f4?style=flat-square">
+  <img alt="version 1.20.0" src="https://img.shields.io/badge/version-1.20.0-eef0f4?style=flat-square">
   <img alt="Rust" src="https://img.shields.io/badge/rust-1.99.1-f97316?style=flat-square&logo=rust&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-vite-3178c6?style=flat-square">
   <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-native-2f7bf5?style=flat-square">
@@ -98,6 +98,8 @@
   </tr>
 </table>
 
+FormSculpt opens on **Home**: your recent sculpts with previews, ten starting meshes as templates, and a Trash you can restore from, over a sculpt library on your own disk. File > Save saves into that library; File > Save Project File hands you the `.fsc` file itself.
+
 ## Built for agents
 
 184 commands live in one registry in `native/crates/fsc-commands`; the window, the keyboard and the MCP server all call them.
@@ -114,6 +116,7 @@
 - **Engine:** Rust crates for core, sculpt, topology, paint, I/O and the command registry (`native/`).
 - **Window:** vanilla TypeScript and Vite with a WebGL2 viewport (`frontend/`), no UI framework.
 - **Service:** a FastAPI engine service on 127.0.0.1:8260 (`backend/`), optional when the WebAssembly engine is built.
+- **Desktop:** a Tauri 2 shell (`src-tauri/`) with the Form family splash and menu bar; on macOS the same menus sit in the native menu bar, and a double-clicked `.fsc` opens in the one running window.
 - **Tested:** engine suites, a service suite and a browser smoke test, run by `./formsculpt test`.
 
 ## Download
@@ -144,7 +147,7 @@ To run with no service, build the browser engine with `./formsculpt engine wasm`
 > [!IMPORTANT]
 > **Status:** pre-release. CI builds the macOS and Windows bundles, but only the Linux build has been run. See [`CHANGELOG.md`](CHANGELOG.md).
 
-**Contributing:** branch from `main`, keep changes to source here, and leave packaging and releases to formcompiler. See [`.docs/BRANCHING.md`](.docs/BRANCHING.md) and [`AGENTS.md`](AGENTS.md).
+**Contributing:** branch from `main`, keep changes to source here, and leave packaging and releases to formcompiler. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`.docs/BRANCHING.md`](.docs/BRANCHING.md) and [`AGENTS.md`](AGENTS.md).
 
 ## Repository
 

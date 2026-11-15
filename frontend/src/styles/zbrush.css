@@ -10,7 +10,7 @@
   --zb-line: #1b1b1b;
   --zb-text: #d6d6d6;
   --zb-dim: #9a9a9a;
-  --zb-on: var(--accent, #f97316);
+  --zb-on: var(--accent-color, #f97316);
   --zb-on-ink: #1a1206;
   --zb-tray-w: 300px;
   /* The SubTool list (the tablet layout's dock) takes these. */

@@ -12,6 +12,7 @@
  * stands for, as a person would, and reads it back, and the floating panels are the panel's own sections.
  */
 
+import { overlayOpen } from './dialog';
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
 import { glyphBody } from './icons';
@@ -381,6 +382,11 @@ export class TabletLayout {
     }
     for (const b of parts.brushButtons) this.toolLabels.set(b.dataset.brush ?? '', b.textContent ?? '');
 
+    const homeButton = labelled('home', t('Home'), 'tb-icon tb-worded');
+    homeButton.title = t('Home');
+    homeButton.setAttribute('aria-label', t('Home'));
+    homeButton.dataset.cmd = 'app.home';
+    this.tl.append(homeButton);
     // Top left: the scene menus, and the counts under them.
     for (const [g, title, sections, word] of LEFT_MENUS) {
       this.menus.set(g, [title, sections, 'left']);
@@ -593,7 +599,7 @@ export class TabletLayout {
 
     // Nomad's K opens Search (its manual labels Search with K), while this layout is on and no field has the keys.
     window.addEventListener('keydown', (e) => {
-      if (!this.on || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.repeat || e.key.toLowerCase() !== 'k') return;
+      if (!this.on || overlayOpen() || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.repeat || e.key.toLowerCase() !== 'k') return;
       const target = e.target instanceof HTMLElement ? e.target : null;
       if (target?.closest('input:not([type=checkbox]):not([type=range]), textarea, select, [contenteditable="true"], .xterm')) return;
       const search = this.tr.querySelector<HTMLButtonElement>('[data-cmd="app.palette"]');
@@ -699,9 +705,11 @@ export class TabletLayout {
       const up = (): void => {
         handle.removeEventListener('pointermove', move);
         handle.removeEventListener('pointerup', up);
+        handle.removeEventListener('pointercancel', up);
       };
       handle.addEventListener('pointermove', move);
       handle.addEventListener('pointerup', up);
+      handle.addEventListener('pointercancel', up);
     });
   }
 

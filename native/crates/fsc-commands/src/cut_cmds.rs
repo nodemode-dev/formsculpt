@@ -334,9 +334,10 @@ pub(crate) fn uv_move_point(s: &mut Session, args: &Value) -> Result<Value, Comm
     }
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Move UV point".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Move UV point".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "corners_moved": moved, "grabbed": anchor, "distance": best.sqrt()}))
 }
 

@@ -170,10 +170,11 @@ pub(crate) fn poly_pick(s: &mut Session, args: &Value) -> Result<Value, CommandE
 fn replace(s: &mut Session, id: ObjectId, label: &str, mesh: Mesh) -> Value {
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
+    let texture = texture.or_else(|| object.texture.take());
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     after
 }
 

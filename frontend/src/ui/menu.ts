@@ -1,8 +1,8 @@
-import { fromHtml, q, setClass, setDisabled, setText, setTitle } from './dom';
+import { fromHtml, isMac, q, setClass, setDisabled, setText, setTitle } from './dom';
 import { icon } from './icons';
 import type { Commands } from './commands';
 import { onLanguage, t } from './i18n';
-import { overlayRoot } from './dialog';
+import { anyDialogOpen, overlayRoot } from './dialog';
 
 export type MenuItem = string | '-' | SubMenu;
 export interface SubMenu {
@@ -116,6 +116,32 @@ export class PopupMenu {
     return m;
   }
 
+  items(): HTMLButtonElement[] {
+    return Array.from(this.panel.children).filter((n): n is HTMLButtonElement => n instanceof HTMLButtonElement && !n.disabled);
+  }
+
+  deepest(): PopupMenu {
+    let m: PopupMenu = this;
+    while (m.openSub?.isOpen) m = m.openSub;
+    return m;
+  }
+
+  openSubAt(row: HTMLElement): PopupMenu | null {
+    const s = this.subs.find((x) => x.node === row);
+    if (!s) return null;
+    this.showSub(s.menu, row);
+    return s.menu;
+  }
+
+  leave(): boolean {
+    const p = this.parent;
+    if (!p) return false;
+    const row = p.subs.find((x) => x.menu === this)?.node;
+    p.closeSub();
+    row?.focus();
+    return true;
+  }
+
   private showSub(menu: PopupMenu, row: HTMLElement): void {
     if (this.openSub === menu && menu.isOpen) return;
     this.closeSub();
@@ -218,8 +244,12 @@ export class MenuBar {
       const idx = this.bars.length;
       menu.onClose = () => {
         if (this.openIndex === idx) {
+          const inside = !!document.activeElement?.closest('.fs-menu');
+          const back = this.returnTo;
           this.openIndex = -1;
           setClass(btn, 'is-open', false);
+          this.returnTo = null;
+          if (inside && back?.isConnected) back.focus();
         }
       };
       btn.addEventListener('pointerdown', (e) => {
@@ -243,14 +273,20 @@ export class MenuBar {
       },
       true,
     );
+    document.addEventListener('keydown', (e) => this.key(e), true);
+    document.addEventListener('keyup', (e) => this.altUp(e), true);
     document.addEventListener(
-      'keydown',
-      (e) => {
-        if (this.openIndex >= 0 && e.key === 'Escape') this.close();
+      'pointerdown',
+      () => {
+        this.altLone = false;
       },
       true,
     );
-    window.addEventListener('blur', () => this.close());
+    window.addEventListener('blur', () => {
+      this.close();
+      this.altLone = false;
+      setClass(document.documentElement, 'is-menu-mnemonics', false);
+    });
     window.addEventListener('resize', () => this.close());
     onLanguage(() => {
       for (const b of this.bars) {
@@ -264,21 +300,151 @@ export class MenuBar {
     return this.openIndex >= 0;
   }
 
-  open(i: number): void {
-    this.close();
+  private returnTo: HTMLElement | null = null;
+  private typed = '';
+  private typedAt = 0;
+  private altLone = false;
+  private barBack: HTMLElement | null = null;
+
+  private get shown(): boolean {
+    return this.bars.length > 0 && this.bars[0].btn.getClientRects().length > 0 && !document.body.classList.contains('nm-home');
+  }
+
+  private altUp(e: KeyboardEvent): void {
+    if (e.key !== 'Alt') return;
+    setClass(document.documentElement, 'is-menu-mnemonics', false);
+    if (!this.altLone) return;
+    this.altLone = false;
+    if (this.openIndex >= 0 || anyDialogOpen() || !this.shown) return;
+    e.preventDefault();
+    const from = document.activeElement;
+    this.barBack = from instanceof HTMLElement && !this.bars.some((b) => b.btn === from) ? from : this.barBack;
+    this.bars[0].btn.focus();
+  }
+
+  private leaveBar(): void {
+    const back = this.barBack;
+    this.barBack = null;
+    if (back?.isConnected && back !== document.body) back.focus();
+    else (document.activeElement as HTMLElement | null)?.blur();
+  }
+
+  private key(e: KeyboardEvent): void {
+    const stop = (): void => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    if (e.key === 'Alt') {
+      const inTerminal = e.target instanceof Element && !!e.target.closest('.xterm');
+      if (!e.repeat && !isMac && !inTerminal && this.openIndex < 0 && this.shown && !anyDialogOpen() && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        this.altLone = true;
+        setClass(document.documentElement, 'is-menu-mnemonics', true);
+      }
+      return;
+    }
+    this.altLone = false;
+    if (this.openIndex < 0) {
+      if (!this.shown || anyDialogOpen() || e.ctrlKey || e.metaKey) return;
+      if (e.target instanceof Element && e.target.closest('.xterm')) return;
+      const at = this.bars.findIndex((b) => b.btn === document.activeElement);
+      if (at >= 0 && !e.altKey && !e.shiftKey) {
+        const focus = (i: number): void => this.bars[(i + this.bars.length) % this.bars.length].btn.focus();
+        if (e.key === 'ArrowRight') { stop(); focus(at + 1); return; }
+        if (e.key === 'ArrowLeft') { stop(); focus(at - 1); return; }
+        if (e.key === 'Home') { stop(); focus(0); return; }
+        if (e.key === 'End') { stop(); focus(-1); return; }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') { stop(); this.open(at, true); return; }
+        if (e.key === 'Escape') { stop(); this.leaveBar(); return; }
+        if (e.key.length === 1 && /\S/.test(e.key)) {
+          const hit = this.bars.findIndex((b) => (b.btn.textContent ?? '').trim().charAt(0).toLowerCase() === e.key.toLowerCase());
+          if (hit >= 0) { stop(); this.open(hit, true); }
+          return;
+        }
+      }
+      if (e.key === 'F10' && !e.altKey && !e.shiftKey) { stop(); this.open(0, true); return; }
+      if (!e.altKey || e.shiftKey || isMac || !/^Key[A-Z]$/.test(e.code)) return;
+      const letter = e.code.slice(3).toLowerCase();
+      const hit = this.bars.findIndex((b) => (b.btn.textContent ?? '').trim().charAt(0).toLowerCase() === letter);
+      if (hit < 0) return;
+      stop();
+      this.open(hit, true);
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const cur = this.bars[this.openIndex].menu.deepest();
+    const items = cur.items();
+    const at = items.findIndex((n) => n === document.activeElement);
+    const go = (i: number): void => {
+      if (items.length) items[(i + items.length) % items.length].focus();
+    };
+    if (e.key === 'ArrowDown') { stop(); go(at + 1); }
+    else if (e.key === 'ArrowUp') { stop(); go(at < 0 ? -1 : at - 1); }
+    else if (e.key === 'Home') { stop(); go(0); }
+    else if (e.key === 'End') { stop(); go(-1); }
+    else if (e.key === 'ArrowRight') {
+      stop();
+      const sub = at >= 0 ? cur.openSubAt(items[at]) : null;
+      if (sub) sub.items()[0]?.focus();
+      else this.open((this.openIndex + 1) % this.bars.length, true);
+    } else if (e.key === 'ArrowLeft') {
+      stop();
+      if (!cur.leave()) this.open((this.openIndex + this.bars.length - 1) % this.bars.length, true);
+    } else if ((e.key === 'Enter' || e.key === ' ') && at >= 0) {
+      stop();
+      const sub = cur.openSubAt(items[at]);
+      if (sub) sub.items()[0]?.focus();
+      else items[at].click();
+    } else if (e.key === 'Escape') {
+      stop();
+      if (!cur.leave()) this.close();
+    } else if (e.key === 'Tab') {
+      stop();
+      this.close();
+    } else if (e.key.length === 1 && /\S/.test(e.key) && !e.shiftKey) {
+      stop();
+      const now = performance.now();
+      const word = now - this.typedAt < 700 ? this.typed + e.key.toLowerCase() : e.key.toLowerCase();
+      this.typed = word;
+      this.typedAt = now;
+      const starts = (n: HTMLElement): boolean => (n.querySelector('.fs-menu-label')?.textContent ?? '').trim().toLowerCase().startsWith(word);
+      const from = word.length === 1 ? at + 1 : Math.max(0, at);
+      for (let k = 0; k < items.length; k++) {
+        const n = items[(from + k) % items.length];
+        if (starts(n)) {
+          n.focus();
+          break;
+        }
+      }
+    }
+  }
+
+  open(i: number, keyboard = false): void {
+    const from = document.activeElement;
+    const keep = this.returnTo;
+    this.shut();
+    this.returnTo = keep ?? (keyboard && from instanceof HTMLElement && !from.closest('.fs-menu') ? from : null);
     const b = this.bars[i];
     b.menu.setItems(itemsOf(b.def));
     this.openIndex = i;
     setClass(b.btn, 'is-open', true);
     const r = b.btn.getBoundingClientRect();
     b.menu.openAt(r.left, r.bottom + 4);
+    if (keyboard) b.menu.items()[0]?.focus();
   }
 
-  close(): void {
+  private shut(): void {
     if (this.openIndex < 0) return;
     const b = this.bars[this.openIndex];
     this.openIndex = -1;
     setClass(b.btn, 'is-open', false);
     b.menu.close();
+  }
+
+  close(): void {
+    const inside = !!document.activeElement?.closest('.fs-menu');
+    this.shut();
+    const back = this.returnTo;
+    this.returnTo = null;
+    if (inside && back && back.isConnected) back.focus();
   }
 }

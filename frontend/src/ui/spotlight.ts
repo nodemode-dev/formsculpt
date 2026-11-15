@@ -78,6 +78,7 @@ export class SpotlightDial {
     stage.addEventListener('pointerdown', (e) => this.brushDown(e), { capture: true });
     window.addEventListener('pointermove', (e) => this.pointerMove(e));
     window.addEventListener('pointerup', () => void this.pointerUp());
+    window.addEventListener('pointercancel', () => void this.pointerUp());
   }
 
   get images(): SpotlightInfo[] {

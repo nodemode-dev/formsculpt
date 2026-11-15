@@ -321,11 +321,14 @@ fn accessor(doc: &Value, buffers: &[Vec<u8>], i: usize) -> Result<Vec<f64>, Stri
         Some(5121) => (1, |b| b[0] as f64),
         _ => return Err("an accessor component type is not supported".into()),
     };
-    let Some(view_index) = a["bufferView"].as_u64() else { return Ok(vec![0.0; count * comps]) };
+    let Some(view_index) = a["bufferView"].as_u64() else { return Err("an accessor keeps its data outside the buffers (sparse or compressed, such as Draco), which is not read".into()) };
     let view = &doc["bufferViews"][view_index as usize];
     let buf = buffers.get(view["buffer"].as_u64().unwrap_or(0) as usize).ok_or("a view points at a missing buffer")?;
-    let base = view["byteOffset"].as_u64().unwrap_or(0) as usize + a["byteOffset"].as_u64().unwrap_or(0) as usize;
+    let base = (view["byteOffset"].as_u64().unwrap_or(0) as usize).saturating_add(a["byteOffset"].as_u64().unwrap_or(0) as usize);
     let stride = view["byteStride"].as_u64().map(|s| s as usize).unwrap_or(size * comps);
+    if stride < size * comps || base > buf.len() || count.saturating_sub(1) > buf.len() / stride {
+        return Err("an accessor reads past its buffer".into());
+    }
     let mut out = Vec::with_capacity(count * comps);
     for e in 0..count {
         for c in 0..comps {
@@ -348,6 +351,9 @@ fn local(node: &Value) -> Mat4 {
     let t = arr("translation", vec![0.0, 0.0, 0.0]);
     let r = arr("rotation", vec![0.0, 0.0, 0.0, 1.0]);
     let s = arr("scale", vec![1.0, 1.0, 1.0]);
+    if t.len() < 3 || r.len() < 4 || s.len() < 3 {
+        return Mat4::IDENTITY;
+    }
     Mat4::from_scale_rotation_translation(Vec3::new(s[0], s[1], s[2]), Quat::from_xyzw(r[0], r[1], r[2], r[3]), Vec3::new(t[0], t[1], t[2]))
 }
 
@@ -358,7 +364,7 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
         let rest = 20 + jlen;
         let bin = (bytes.len() >= rest + 8).then(|| {
             let blen = u32::from_le_bytes(bytes[rest..rest + 4].try_into().expect("4")) as usize;
-            &bytes[rest + 8..(rest + 8 + blen).min(bytes.len())]
+            &bytes[rest + 8..(rest + 8).saturating_add(blen).min(bytes.len())]
         });
         (doc, bin)
     } else {
@@ -366,10 +372,18 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
     };
     let buffers = buffer_bytes(&doc, bin, resolve)?;
     let scene = doc["scene"].as_u64().unwrap_or(0) as usize;
-    let roots: Vec<usize> = doc["scenes"][scene]["nodes"].as_array().map(|a| a.iter().filter_map(|x| x.as_u64().map(|v| v as usize)).collect()).unwrap_or_else(|| (0..doc["nodes"].as_array().map(|a| a.len()).unwrap_or(0)).collect());
+    let roots: Vec<usize> = doc["scenes"][scene]["nodes"].as_array().map(|a| a.iter().filter_map(|x| x.as_u64().map(|v| v as usize)).collect()).unwrap_or_else(|| {
+        let nodes = doc["nodes"].as_array().map_or(&[][..], |a| a.as_slice());
+        let children: std::collections::HashSet<u64> = nodes.iter().filter_map(|n| n["children"].as_array()).flatten().filter_map(|c| c.as_u64()).collect();
+        (0..nodes.len()).filter(|&i| !children.contains(&(i as u64))).collect()
+    });
     let mut stack: Vec<(usize, Mat4)> = roots.into_iter().map(|n| (n, Mat4::IDENTITY)).collect();
     let mut out = Vec::new();
+    let mut seen = vec![false; doc["nodes"].as_array().map_or(0, |a| a.len())];
     while let Some((n, parent)) = stack.pop() {
+        if n >= seen.len() || std::mem::replace(&mut seen[n], true) {
+            continue;
+        }
         let node = &doc["nodes"][n];
         let world = parent * local(node);
         if let Some(children) = node["children"].as_array() {
@@ -411,7 +425,7 @@ pub fn read_gltf_with(bytes: &[u8], resolve: Resolve) -> Result<Vec<Named>, Stri
             }
             let count = (p.len() / 3) as u32;
             match prim["indices"].as_u64() {
-                Some(ia) => indices.extend(accessor(&doc, &buffers, ia as usize)?.into_iter().map(|i| base + i as u32)),
+                Some(ia) => indices.extend(accessor(&doc, &buffers, ia as usize)?.into_iter().map(|i| base.saturating_add(i as u32))),
                 None => indices.extend(base..base + count),
             }
         }

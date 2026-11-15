@@ -13,6 +13,7 @@
  * sections. The look, the greys and every icon are formsculpt's own; no other product's artwork is used.
  */
 
+import { overlayOpen } from './dialog';
 import { el, setAttr, setText } from './dom';
 import { t } from './i18n';
 import { alphaPreview, materialPreview, strokePreview } from './previews';
@@ -213,7 +214,7 @@ export class ZBrushLayout {
     this.titleNote.setAttribute('role', 'status');
     this.titleNote.setAttribute('aria-live', 'polite');
     const agents = el('span', 'zb-title-tools');
-    for (const [g, id, label] of [['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
+    for (const [g, id, label] of [['home', 'app.home', 'Home'], ['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
       const b = el('button', 'zb-title-tool');
       b.type = 'button';
       b.dataset.cmd = id;
@@ -631,10 +632,11 @@ export class ZBrushLayout {
     } else {
       const control = this.controlOf(shelf);
       for (const o of Array.from(control.options)) {
-        tiles.push(this.lbTile(o.textContent ?? o.value, this.previewOf(shelf, o.value, 56), () => {
+        const tile = this.lbTile(o.textContent ?? o.value, this.previewOf(shelf, o.value, 56), () => {
           write(control, o.value);
-          void this.showShelf(shelf);
-        }, control.value === o.value));
+          for (const x of tiles) x.classList.toggle('current', x === tile);
+        }, control.value === o.value);
+        tiles.push(tile);
       }
     }
     this.lbStrip.replaceChildren(...tiles);
@@ -922,7 +924,7 @@ export class ZBrushLayout {
 
   /** ZBrush's keys, while this layout is on and no field has the keyboard. */
   private key(e: KeyboardEvent): void {
-    if (!this.on || e.isComposing) return;
+    if (!this.on || e.isComposing || overlayOpen()) return;
     const target = e.target instanceof HTMLElement ? e.target : null;
     if (target?.closest('input:not([type=checkbox]):not([type=range]), textarea, select, [contenteditable="true"], .xterm')) return;
     const k = e.key.toLowerCase();

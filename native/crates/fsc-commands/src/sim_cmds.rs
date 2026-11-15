@@ -362,6 +362,9 @@ pub(crate) fn retopo_face(s: &mut Session, args: &Value) -> Result<Value, Comman
         normal += n;
     }
     let into = args.get("into").and_then(Value::as_u64).map(|v| v as ObjectId);
+    if let Some(id) = into.filter(|id| s.scene.get(*id).is_some()) {
+        crate::multires_cmds::guard(s, id, "Adding retopology faces")?;
+    }
     let mut mesh = match into {
         Some(id) => s.scene.get(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?.mesh.clone(),
         None => Mesh::new(Vec::new(), Vec::new()),
@@ -406,8 +409,8 @@ pub(crate) fn retopo_face(s: &mut Session, args: &Value) -> Result<Value, Comman
         Some(id) => {
             let object = s.scene.get_mut(id).expect("checked");
             let mask = vec![0.0; rebuilt.vertex_count()];
-            let (old_mesh, old_mask) = object.replace_mesh(rebuilt, mask);
-            s.history.push(Edit::Topology { label: "Retopology Face".into(), object: id, mesh: old_mesh, mask: old_mask });
+            let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, rebuilt, mask);
+            s.history.push(Edit::Topology { label: "Retopology Face".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
             id
         }
         None => {
@@ -438,10 +441,11 @@ pub(crate) fn edge_loop_schema() -> Value {
 fn replace_topology(s: &mut Session, id: ObjectId, label: &str, mesh: Mesh) -> Value {
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
+    let texture = texture.or_else(|| object.texture.take());
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     after
 }
 
@@ -568,10 +572,11 @@ pub(crate) fn delete_faces(s: &mut Session, args: &Value) -> Result<Value, Comma
     out.groups = groups;
     out.quads = quads;
     let object = s.scene.get_mut(id).expect("checked");
-    let (old_mesh, old_mask) = object.replace_mesh(out, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, out, mask);
+    let texture = texture.or_else(|| object.texture.take());
     object.clear_maps();
     let after = summary(object);
-    s.history.push(Edit::Topology { label: "Delete Faces".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Delete Faces".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "deleted": removed}))
 }
 

@@ -1,4 +1,5 @@
 import { commands } from './commands';
+import { DEMOS } from './demos';
 import type { MenuDef, MenuItem } from './menu';
 
 const tool = (...kinds: string[]): string[] => kinds.map((k) => `tool.brush.${k}`);
@@ -22,18 +23,21 @@ export function tidy(items: MenuItem[], has: (id: string) => boolean = (id) => !
 const EXPORTS = ['glb', 'obj', 'fbx', 'usda', 'stl', 'ply', '3mf'].map((f) => `file.export.${f}`);
 
 const FILE: MenuItem[] = [
-  'scene.new', 'file.open', 'file.save', '-',
+  'app.home', '-',
+  'scene.new', 'file.open', 'file.save', 'file.save_file', '-',
   { label: 'Export As', items: EXPORTS }, 'file.export', '-',
   'file.print_check', 'file.repair', 'file.recover', '-',
-  'file.send_nodemode', 'file.bridge_send', 'file.blender_addon', 'file.gof', 'file.gof_back', 'file.gof_unreal', 'file.gof_unity', 'file.substance', 'file.substance_sync',
+  'file.send_nodemode', 'file.bridge_send', 'file.blender_addon', 'file.gof', 'file.gof_back', 'file.gof_unreal', 'file.gof_unity', 'file.substance', 'file.substance_sync', '-',
+  'app.exit',
 ];
 
 const EDIT: MenuItem[] = [
   'history.undo', 'history.redo', 'history.replay', '-',
+  'edit.cut', 'edit.copy', 'edit.paste', 'edit.select_all', '-',
   'object.duplicate', 'object.delete', 'object.rename', '-',
   { label: 'Transform', items: [...tool('gizmo', 'lattice'), '-', 'gizmo.mode_all', 'gizmo.mode_move', 'gizmo.mode_rotate', 'gizmo.mode_scale', 'gizmo.pin', 'gizmo.pivot_view', 'gizmo.apply', '-', 'object.bend', 'object.twist', 'object.taper', '-', 'object.align', 'object.distribute'] },
   { label: 'Channels', items: ['channel.copy_mask', 'channel.paste_mask', 'channel.clear_mask', '-', 'channel.copy_groups', 'channel.paste_groups', 'channel.clear_groups', '-', 'channel.copy_paint', 'channel.paste_paint', 'channel.clear_paint'] }, '-',
-  'app.palette', 'app.shortcuts',
+  'app.palette', 'app.shortcuts', '-', 'app.preferences',
 ];
 
 const ADD: MenuItem[] = [
@@ -86,7 +90,8 @@ const VIEW: MenuItem[] = [
   'view.front', 'view.back', 'view.right', 'view.left', 'view.top', 'view.bottom', 'view.ortho', 'view.frame', 'view.set_pivot', '-',
   'view.groups', 'view.uv_checker', 'view.trackball', 'view.floor_grid', 'view.wireframe', 'view.wire_active', 'view.xray', 'view.dim_others', 'view.stats', 'view.backdrop_gradient', { label: 'Saved Views', items: ['view.save_current', 'view.next_saved', 'view.prev_saved'] }, 'view.fly', { label: 'Smooth Preview', items: ['view.smooth_0', 'view.smooth_1', 'view.smooth_2', 'view.smooth_3'] }, '-',
   'view.reference', 'view.clear_reference', 'view.matcap', 'light.load_hdri', 'light.add', 'light.remove', '-',
-  'view.turntable', 'view.history_movie', 'view.path_render', 'view.anim_key', 'view.anim_record', 'view.anim_clear', 'view.spacemouse',
+  'view.turntable', 'view.history_movie', 'view.path_render', 'view.anim_key', 'view.anim_record', 'view.anim_clear', 'view.spacemouse', '-',
+  'view.menus_in_window',
 ];
 
 const WINDOW: MenuItem[] = [
@@ -95,7 +100,10 @@ const WINDOW: MenuItem[] = [
   'view.terminal', 'view.newTerminal', 'agent.claude', 'agent.chat',
 ];
 
-const HELP: MenuItem[] = ['app.shortcuts', 'app.palette', '-', 'agent.chat', 'agent.claude', '-', 'app.about'];
+const HELP = (): MenuItem[] => [
+  ...(DEMOS.length ? [{ label: 'Demos', items: DEMOS.map((d) => d.command) }, '-'] : []),
+  'app.shortcuts', 'app.palette', '-', 'agent.chat', 'agent.claude', '-', 'app.about',
+];
 
 export const VIEWPORT_MENU: MenuItem[] = [
   'history.undo', 'history.redo', '-', 'view.frame', 'view.set_pivot', '-',
@@ -115,6 +123,6 @@ export function menuDefs(): MenuDef[] {
   const def = (label: string, items: MenuItem[]): MenuDef => ({ label, items: () => tidy(items) });
   return [
     def('File', FILE), def('Edit', EDIT), def('Add', ADD), def('Sculpt', SCULPT), def('Mask', MASK), def('Topology', TOPOLOGY),
-    def('Object', OBJECT), def('Paint', PAINT), def('View', VIEW), def('Window', WINDOW), def('Help', HELP),
+    def('Object', OBJECT), def('Paint', PAINT), def('View', VIEW), def('Window', WINDOW), { label: 'Help', items: () => tidy(HELP()) },
   ];
 }

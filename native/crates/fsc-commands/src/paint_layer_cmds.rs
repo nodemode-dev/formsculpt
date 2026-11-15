@@ -29,7 +29,7 @@ fn step(s: &mut Session, id: ObjectId, label: &str, change: impl FnOnce(&mut fsc
 }
 
 fn index(object: &fsc_core::Object, args: &Value) -> Result<usize, CommandError> {
-    let n = object.paint_layers.list.len();
+    let n = if object.layered() { object.paint_layers.list.len() } else { 0 };
     if n == 0 {
         return Err(CommandError::new("no_layer", "the object has no paint layers; paint_layer_add first"));
     }

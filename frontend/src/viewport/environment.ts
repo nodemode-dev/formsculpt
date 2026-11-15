@@ -121,6 +121,7 @@ export function parseHdr(buf: ArrayBuffer): EnvImage {
       for (let c = 0; c < 4; c++) {
         let x = 0;
         while (x < width) {
+          if (pos >= bytes.length) throw new Error('the HDR file is cut short');
           let n = bytes[pos++];
           if (n > 128) {
             n -= 128;

@@ -1,0 +1,14 @@
+{
+  "name": "formsculpt",
+  "description": "Sculpt and model in formsculpt, the 3D sculpting app, in plain language: the formsculpt MCP server and the skill that drives it.",
+  "author": { "name": "nodemode-dev", "email": "mackin@nodemode.ai" },
+  "license": "Apache-2.0",
+  "keywords": ["3d sculpting", "modeling", "remesh", "mesh", "mcp"],
+  "skills": ["./.claude/skills/formsculpt-modeling"],
+  "mcpServers": {
+    "formsculpt": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/formsculpt",
+      "args": ["mcp"]
+    }
+  }
+}

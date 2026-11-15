@@ -535,6 +535,9 @@ pub(crate) fn insert_along(s: &mut Session, args: &Value) -> Result<Value, Comma
         let len = (b.0 - a.0).length();
         let mut at = step - carried;
         while at <= len {
+            if places.len() > 2000 {
+                return Err(bad("that would place more than 2000 copies; raise spacing or size"));
+            }
             let t = at / len.max(1e-9);
             places.push((a.0.lerp(b.0, t), a.1.lerp(b.1, t).normalize_or(Vec3::Y), (b.0 - a.0).normalize_or(Vec3::X)));
             at += step;
@@ -573,10 +576,14 @@ pub(crate) fn insert_along(s: &mut Session, args: &Value) -> Result<Value, Comma
         return Ok(json!({"object": summary(s.scene.get(id).expect("added")), "active": id, "copies": count}));
     }
     let mut ids = Vec::with_capacity(count);
+    let mut edits = Vec::with_capacity(count);
     for p in places {
         let m = copy(p);
-        ids.push(add_object(s, &name, m, true));
+        let id = add_object(s, &name, m, false);
+        edits.push(Edit::Add { id, index: s.scene.index_of(id).expect("just added"), parked: None });
+        ids.push(id);
     }
+    s.history.push(Edit::Many { label: "Insert Along".into(), edits });
     Ok(json!({"ids": ids, "active": ids.last(), "copies": count}))
 }
 

@@ -200,7 +200,7 @@ pub(crate) fn record_animation(s: &mut Session, args: &Value) -> Result<Value, C
             };
             let o = s.scene.get(id as u32).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?;
             if at as usize >= o.layers.list.len() {
-                return Err(CommandError::new("not_found", format!("object {id} has no layer {at}; layer_list shows them")));
+                return Err(CommandError::new("not_found", format!("object {id} has no layer {at}; get_scene lists its layers")));
             }
             layer_tracks.entry((id as u32, at as usize)).or_default().push((time, (v as f32).clamp(-1.0, 2.0)));
         }

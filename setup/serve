@@ -6,4 +6,4 @@ fs_venv
 cd "$FSC_ROOT/backend"
 export FSC_DIST="$FSC_ROOT/frontend/dist"
 fs_say "serving http://127.0.0.1:${FSC_PORT:-8260}"
-exec uvicorn app.main:app --host "${FSC_HOST:-127.0.0.1}" --port "${FSC_PORT:-8260}"
+exec uvicorn app.main:app --host 127.0.0.1 --port "${FSC_PORT:-8260}"

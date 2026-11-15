@@ -76,6 +76,11 @@ def watch_parent() -> None:
     def loop() -> None:
         while parent_alive(pid):
             time.sleep(1.5)
+        unpacked = getattr(sys, "_MEIPASS", "")
+        if os.path.basename(unpacked).startswith("_MEI"):
+            import shutil
+
+            shutil.rmtree(unpacked, ignore_errors=True)
         os._exit(0)
 
     threading.Thread(target=loop, name="parent-watch", daemon=True).start()
@@ -84,9 +89,18 @@ def watch_parent() -> None:
 def free_port() -> int:
     import socket
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+    from app.core.config import BACKEND_PORT
+
+    for want in (BACKEND_PORT, 0):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if os.name != "nt":
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(("127.0.0.1", want))
+            except OSError:
+                continue
+            return s.getsockname()[1]
+    raise OSError("no free port on 127.0.0.1")
 
 
 def main() -> int:

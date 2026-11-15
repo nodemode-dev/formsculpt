@@ -144,9 +144,10 @@ pub(crate) fn uv_sew(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let after = island_count(&fsc_paint::islands(&edited));
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(edited, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let result = summary(object);
-    s.history.push(Edit::Topology { label: "Sew UV islands".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Sew UV islands".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": result, "welded": welded, "shared_edges": shared, "islands_before": before, "islands_after": after}))
 }
 
@@ -337,8 +338,9 @@ pub(crate) fn uv_cut(s: &mut Session, args: &Value) -> Result<Value, CommandErro
     let after = island_count(&island);
     let mask = object.mask.clone();
     let (old_mesh, old_mask) = object.replace_mesh(edited, mask);
+    let texture = object.texture.take();
     object.clear_maps();
     let result = summary(object);
-    s.history.push(Edit::Topology { label: "Cut UV seam".into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: "Cut UV seam".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": result, "cut_edges": cut.len(), "islands_before": before, "islands_after": after}))
 }

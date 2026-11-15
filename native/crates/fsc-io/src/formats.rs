@@ -251,6 +251,9 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
     if format == "other" || format.is_empty() {
         return Err("only ASCII and binary little-endian PLY are read".into());
     }
+    if elements.iter().any(|e| e.count > if e.props.is_empty() { 0 } else { bytes.len() - body }) {
+        return Err("the PLY header names more elements than the file holds".into());
+    }
     let mut positions: Vec<[f32; 3]> = Vec::new();
     let mut colors: Vec<[f32; 3]> = Vec::new();
     let has_rgb = elements.iter().any(|e| e.name == "vertex" && e.props.iter().any(|p| p.0 == "red"));
@@ -276,6 +279,9 @@ pub fn read_ply(bytes: &[u8]) -> Result<Vec<Named>, String> {
                 match list {
                     Some(it) => {
                         let n = take(ty)? as usize;
+                        if n > bytes.len() {
+                            return Err("the PLY body ends early".into());
+                        }
                         let mut poly = Vec::with_capacity(n);
                         for _ in 0..n {
                             poly.push(take(it)? as u32);
@@ -367,7 +373,10 @@ pub fn read_3mf(bytes: &[u8]) -> Result<Vec<Named>, String> {
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("the 3MF is not a readable zip: {e}"))?;
     let name = (0..zip.len()).filter_map(|i| zip.by_index(i).ok().map(|f| f.name().to_string())).find(|n| n.to_lowercase().ends_with(".model")).ok_or("the 3MF has no model part")?;
     let mut xml = String::new();
-    zip.by_name(&name).map_err(|e| e.to_string())?.read_to_string(&mut xml).map_err(|e| e.to_string())?;
+    zip.by_name(&name).map_err(|e| e.to_string())?.take(crate::project::ENTRY_MAX + 1).read_to_string(&mut xml).map_err(|e| e.to_string())?;
+    if xml.len() as u64 > crate::project::ENTRY_MAX {
+        return Err("the 3MF model part is too large to read".into());
+    }
     let mut out = Vec::new();
     for chunk in xml.split("<object").skip(1) {
         let head = &chunk[..chunk.find('>').unwrap_or(0)];

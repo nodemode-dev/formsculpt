@@ -93,6 +93,8 @@ async def mcp(request: Request) -> Response:
     req_id, method, params = msg.get("id"), msg.get("method"), msg.get("params") or {}
     if req_id is None:
         return Response(status_code=202)
+    if not isinstance(params, dict):
+        return Response(content=json.dumps(_err(req_id, -32602, "params must be an object")), media_type="application/json", status_code=400)
     meta = params.get("_meta") or {}
     version = meta.get("io.modelcontextprotocol/protocolVersion") or request.headers.get("mcp-protocol-version") or "2025-11-25"
     modern = version == "2026-07-28"
@@ -120,7 +122,7 @@ async def mcp(request: Request) -> Response:
         inapp = secrets.compare_digest(request.headers.get(agents.INAPP_HEADER, ""), agents.INAPP_TOKEN)
         if inapp:
             events.publish("agent.activity", tool=name)
-        out = _ok(req_id, await call_tool(name, args, inapp), modern) if name in names and isinstance(args, dict) else _err(req_id, -32602, f"No tool named {name}")
+        out = _ok(req_id, await call_tool(name, args, inapp), modern) if isinstance(name, str) and name in names and isinstance(args, dict) else _err(req_id, -32602, f"No tool named {name}")
     else:
         out = _err(req_id, -32601, f"Method not found: {method}")
     return Response(content=json.dumps(out), media_type="application/json")

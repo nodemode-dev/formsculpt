@@ -248,6 +248,7 @@ pub(crate) fn fiber_record(curves: &[Vec<(Vec3, f32)>], color: Option<[f32; 3]>)
 pub(crate) fn groom_fibers(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
     let id = target(s, args)?;
     let (rec, records) = made(s, id, "fibers")?;
+    crate::multires_cmds::guard(s, id, "Grooming")?;
     let before = fingerprint(&s.scene.get(id).expect("checked").mesh);
     let started = Instant::now();
     let mode = args.get("mode").and_then(Value::as_str).unwrap_or("");
@@ -338,9 +339,9 @@ pub(crate) fn groom_fibers(s: &mut Session, args: &Value) -> Result<Value, Comma
     let record = fiber_record(&curves, color);
     let object = s.scene.get_mut(id).expect("checked");
     let mask = vec![0.0; mesh.vertex_count()];
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
     let after = summary(object);
-    s.history.push(Edit::Topology { label: format!("Groom ({mode})"), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: format!("Groom ({mode})"), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     store(s, id, record, records, &rec, before);
     Ok(json!({"object": after, "fibers_groomed": touched, "ms": started.elapsed().as_millis()}))
 }

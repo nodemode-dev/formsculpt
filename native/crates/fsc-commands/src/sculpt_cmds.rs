@@ -623,9 +623,13 @@ pub(crate) fn stroke_schema() -> Value {
 }
 
 pub(crate) fn target(s: &Session, args: &Value) -> Result<ObjectId, CommandError> {
-    let id = match args.get("id").and_then(Value::as_u64) {
-        Some(id) => id as ObjectId,
-        None => s.scene.active.ok_or_else(|| CommandError::new("no_object", "the scene is empty; add_primitive first"))?,
+    let id = match args.get("id") {
+        None | Some(Value::Null) => s.scene.active.ok_or_else(|| CommandError::new("no_object", "the scene is empty; add_primitive first"))?,
+        Some(v) => v
+            .as_u64()
+            .or_else(|| v.as_f64().filter(|f| *f >= 0.0 && f.fract() == 0.0).map(|f| f as u64))
+            .and_then(|i| ObjectId::try_from(i).ok())
+            .ok_or_else(|| bad("id must be an object id (a whole number); get_scene lists object ids"))?,
     };
     if s.scene.get(id).is_none() {
         return Err(CommandError::new("not_found", format!("no object {id}; get_scene lists object ids")));
@@ -652,7 +656,13 @@ pub(crate) fn sculpt_stroke(s: &mut Session, args: &Value) -> Result<Value, Comm
         let a = p.as_array().ok_or_else(|| bad("each point is [x, y, z] or [x, y, z, pressure]"))?;
         let n = |i: usize| a.get(i).and_then(Value::as_f64).map(|x| x as f32);
         let (Some(x), Some(y), Some(z)) = (n(0), n(1), n(2)) else { return Err(bad("each point needs three numbers")) };
+        if !(x.is_finite() && y.is_finite() && z.is_finite()) {
+            return Err(bad("point values must be finite numbers"));
+        }
         parsed.push((Vec3::new(x, y, z), n(3).unwrap_or(1.0).clamp(0.0, 1.0)));
+    }
+    if parsed.is_empty() {
+        return Err(bad("points needs at least one point"));
     }
     let object = s.scene.get_mut(id).expect("checked");
     if settings.texture && object.live_texture().is_none() {

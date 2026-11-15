@@ -114,6 +114,11 @@ export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: numbe
   const start = (): void => {
     if (!press) return;
     dragging = true;
+    try {
+      list.setPointerCapture(press.pointer);
+    } catch {
+      // the pointer is already gone; the next press clears the drag
+    }
     press.row.setAttribute('data-dragging', 'true');
     list.setAttribute('data-dragging', 'true');
   };
@@ -126,6 +131,7 @@ export function wireTreeDrag(list: HTMLElement, drop: (id: number, parent: numbe
     dragging = false;
   };
   list.addEventListener('pointerdown', (e) => {
+    end();
     const row = (e.target as HTMLElement).closest<HTMLElement>('li[data-id]');
     if (!row || !list.contains(row) || (e.target as HTMLElement).closest('button') || e.button !== 0) return;
     const touch = e.pointerType === 'touch';

@@ -156,7 +156,7 @@ pub fn read_usda(bytes: &[u8]) -> Result<Vec<Named>, String> {
         let mut at = 0usize;
         for &n in &counts {
             let n = n as usize;
-            if at + n > corners.len() {
+            if n > corners.len() - at {
                 return Err(format!("{name}'s faces name more corners than it lists"));
             }
             for k in 1..n.saturating_sub(1) {
@@ -167,13 +167,16 @@ pub fn read_usda(bytes: &[u8]) -> Result<Vec<Named>, String> {
         if indices.iter().any(|&i| i as usize >= positions.len()) {
             return Err(format!("{name} has a face index past its points"));
         }
+        if indices.is_empty() {
+            continue;
+        }
         let mut mesh = Mesh::new(positions, indices);
         let vc = mesh.vertex_count();
         let colors = numbers(body, "primvars:displayColor").unwrap_or_default();
         let opacity = numbers(body, "primvars:displayOpacity").unwrap_or_default();
         let per = |list: &[f64], width: usize, v: usize| -> Option<Vec<f64>> {
             if list.len() == vc * width {
-                Some(list[v * width..v * width + width].to_vec())
+                list.get(v * width..v * width + width).map(|s| s.to_vec())
             } else if list.len() == width {
                 Some(list.to_vec())
             } else {

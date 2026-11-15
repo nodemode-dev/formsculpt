@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "engine-page",
-  "description": "The main window shows the page the engine sidecar serves on the loopback address; it may call the app's own save_file command (the native save dialog) and nothing else.",
+  "description": "The main window shows the page the engine sidecar serves on the loopback address; it may call the app's own commands (the native save dialog, the window title, the ready signal, text-field edits, opened files and the quit answer), set its menus in the macOS menu bar (core:default includes the core menu and event permissions) and nothing else.",
   "windows": ["main"],
   "remote": { "urls": ["http://127.0.0.1:*"] },
-  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-toggle-maximize", "allow-save-file", "allow-set-window-title", "allow-app-ready"]
+  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-toggle-maximize", "allow-save-file", "allow-set-window-title", "allow-app-ready", "allow-text-edit", "allow-take-pending-opens", "allow-confirm-exit"]
 }

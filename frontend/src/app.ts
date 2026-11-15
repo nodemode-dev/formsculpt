@@ -33,6 +33,7 @@ import { familyOf } from './ui/tool-family';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
+import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
 import { commands, comboOf, normalizeCombo, type Command, type CommandParam } from './ui/commands';
 import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
 import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
@@ -41,6 +42,7 @@ import { AboutDialog, PromptDialog, ShortcutsDialog } from './ui/app-dialogs';
 import { CommandPalette, fuzzyScore } from './ui/command-palette';
 import { MenuBar, PopupMenu } from './ui/menu';
 import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, TOOLBAR_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
+import { desktopShell, noteScene, sceneEpoch, sceneSettled, startDesktopShell } from './ui/desktop-shell';
 import { scheduleChrome } from './ui/chrome';
 import { language, languages, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
@@ -670,8 +672,18 @@ function buildShell(root: HTMLElement): Shell {
   const brand = el('div', 'brand');
   brand.innerHTML = '<img src="/formsculpt-logo.png" width="18" height="18" alt="" draggable="false">';
   brand.append(el('span', '', 'formsculpt'), el('span', 'ver', `v${VERSION}`));
+  for (const [name, value] of Object.entries({ role: 'button', tabindex: '0', title: 'Home', 'aria-label': 'Home', 'data-cmd': 'app.home' })) brand.setAttribute(name, value);
+  brand.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    showHome();
+  });
   const menubar = el('div', 'fs-menubar');
-  bar.append(brand, menubar, el('div', 'spacer'), el('div', 'appbar-tools'));
+  const spacer = el('div', 'spacer');
+  const docName = el('span', 'bar-doc');
+  docName.setAttribute('data-no-i18n', '');
+  spacer.append(docName);
+  bar.append(brand, menubar, spacer, el('div', 'appbar-tools'));
 
   const rail = el('nav', 'rail');
   rail.setAttribute('aria-label', 'Tools');
@@ -1666,7 +1678,7 @@ function buildShell(root: HTMLElement): Shell {
   if (document.documentElement.classList.contains('has-overlay-titlebar')) {
     const drag = el('div', 'mac-drag');
     root.append(drag);
-    for (const n of [drag, bar, brand, menubar, ...bar.querySelectorAll('.spacer, .appbar-tools')]) n.setAttribute('data-tauri-drag-region', '');
+    for (const n of [drag, bar, menubar, ...bar.querySelectorAll('.spacer, .appbar-tools')]) n.setAttribute('data-tauri-drag-region', '');
   }
   // Folds, panel side and size are layout only, so the window keeps them here rather than in the engine.
   const layout = new PanelLayout(root, panel);
@@ -2399,6 +2411,7 @@ class SceneView {
       this.drawZmodelHover();
     });
     this.strokes.warm();
+    viewport.onRestore = () => this.restoreImages();
     viewport.strokes = {
       // A locked active object takes no strokes or tool clicks; a press turns the view instead.
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null && !this.locked.has(this.scene.active)),
@@ -2688,6 +2701,7 @@ class SceneView {
       open: async (name) => {
         const problem = await lightboxOpen(name);
         if (problem) return problem;
+        this.forgetScene();
         await this.refresh();
         this.frameActive();
         return null;
@@ -4591,6 +4605,7 @@ class SceneView {
       const name = `img:${file.name}`;
       this.viewport.renderer.addMatcap(name, bitmap);
       bitmap.close();
+      this.matcapFiles.set(name, file);
       const select = this.shell.shading;
       if (![...select.options].some((o) => o.value === name)) {
         const option = el('option', '', file.name.replace(/\.[^.]+$/, ''));
@@ -4603,6 +4618,34 @@ class SceneView {
     } catch {
       this.note('That image could not be read as a matcap');
     }
+  }
+
+  /** The matcap images loaded this session, by their shading value, kept to give the renderer again. */
+  private matcapFiles = new Map<string, Blob>();
+
+  /** After a lost WebGL context came back: the images only the GPU held are sent again. */
+  private restoreImages(): void {
+    const r = this.viewport.renderer;
+    for (const [name, file] of this.matcapFiles) {
+      void createImageBitmap(file).then((bitmap) => {
+        r.addMatcap(name, bitmap);
+        bitmap.close();
+        this.viewport.invalidate();
+      }, () => undefined);
+    }
+    const env = this.shell.envSelect.value;
+    if (env !== 'off') r.setEnvironment(this.environments.get(env) ?? presetEnvironment(env));
+    const ref = this.shell.reference;
+    if (ref.src.startsWith('blob:') && ref.complete && ref.naturalWidth > 0) {
+      void createImageBitmap(ref).then((bitmap) => {
+        r.setReferenceImage(bitmap);
+        bitmap.close();
+        this.viewport.invalidate();
+      }, () => undefined);
+    }
+    this.checkerFor = '';
+    this.textureShown.clear();
+    void this.syncChecker();
   }
 
   private async loadCatalogue(): Promise<void> {
@@ -5059,7 +5102,15 @@ class SceneView {
 
   /** Saves the panel folds, side and size, the rail, the toolbars, the tablet switch and the shortcuts as one file. */
   private exportLayoutFile(): void {
-    saveBlob(new Blob([exportLayout(VERSION)], { type: 'application/json' }), 'formsculpt-layout.json');
+    const blob = new Blob([exportLayout(VERSION)], { type: 'application/json' });
+    if (inDesktop) {
+      void saveNative(blob, 'formsculpt-layout.json').then(
+        (saved) => this.note(saved ? t('Layout exported') : ''),
+        (err) => this.note(`Could not save: ${String(err)}`),
+      );
+      return;
+    }
+    saveBlob(blob, 'formsculpt-layout.json');
     this.note(t('Layout exported'));
   }
 
@@ -5127,7 +5178,7 @@ class SceneView {
     set(s.paintColor, r.result.color);
     set(s.paintRough, String(Math.round(r.result.roughness * 100)));
     set(s.paintMetal, String(Math.round(r.result.metalness * 100)));
-    this.note(t('Picked {color} from the {source}').replace('{color}', r.result.color).replace('{source}', r.result.source === 'texture' ? t('texture') : t('vertex paint')));
+    this.note(t('Picked {color} from the {source}').replace('{color}', r.result.color).replace('{source}', r.result.source === 'texture' ? (language() === 'en' ? 'texture' : t('Texture')) : t('vertex paint')));
   }
 
   /** Material presets: colour, roughness and metalness written into the Paint fields together. */
@@ -5550,18 +5601,31 @@ class SceneView {
     return Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) * frac * 0.05;
   }
 
-  async refresh(): Promise<void> {
+  private refreshQueue: Promise<void> = Promise.resolve();
+
+  /** One refresh at a time, in the order asked, so an older scene summary never lands over a newer one. */
+  refresh(): Promise<void> {
+    const turn = this.refreshQueue.then(() => this.refreshNow());
+    this.refreshQueue = turn.catch(() => undefined);
+    return turn;
+  }
+
+  private async refreshNow(): Promise<void> {
+    const began = sceneEpoch();
     const reply = await dispatch<SceneSummary>('get_scene');
     if (!reply.ok) {
       this.note(reply.error.message);
       return;
     }
+    homeScene(reply.result.objects.length);
     await this.apply(reply.result);
     void this.drawUv(false);
     const history = await dispatch<HistoryReply>('get_history');
     if (history.ok) {
       this.patchHistory(history.result.steps, history.result.done, history.result.bytes ?? []);
       this.syncHistoryEngine(history.result);
+      noteScene(began, this.scene.objects, history.result.steps, history.result.done);
+      homeSceneEnded(this.scene.objects.length === 0 && history.result.steps[history.result.done - 1] === 'New Scene', history.result.steps.slice(0, history.result.done), history.result.steps[history.result.done] === 'New Scene');
     }
     await this.patchSets();
     await this.spotlight.sync();
@@ -5600,6 +5664,31 @@ class SceneView {
 
   /** The texture revision last drawn, by object; refetched (at most 1024 px) when the engine's revision moves on. */
   private textureShown = new Map<number, number>();
+
+  /** An object's UV copy and, when it has a texture, its pictures, fetched before its new mesh is shown. */
+  private async fetchSkin(o: ObjectSummary): Promise<{ uvs: Float32Array; color?: HTMLImageElement; mr?: HTMLImageElement; revision: number } | null> {
+    const reply = await dispatch<{ uvs: string }>('get_uvs', { id: o.id });
+    if (!reply.ok) return null;
+    const raw = atob(reply.result.uvs);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const uvs = new Float32Array(bytes.buffer);
+    if ((o.texture_size ?? null) === null) return { uvs, revision: 0 };
+    try {
+      const picture = async (png: string): Promise<HTMLImageElement> => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        return img;
+      };
+      const c = await dispatch<{ png_base64: string; revision: number }>('get_texture', { id: o.id, size: 1024 });
+      if (!c.ok) return { uvs, revision: 0 };
+      const m = await dispatch<{ png_base64: string }>('get_texture', { id: o.id, size: 1024, channel: 'roughness_metal' });
+      return { uvs, color: await picture(c.result.png_base64), mr: m.ok ? await picture(m.result.png_base64) : undefined, revision: c.result.revision };
+    } catch {
+      return { uvs, revision: 0 };
+    }
+  }
 
   private async syncTexture(id: number, force = false): Promise<void> {
     const r = await dispatch<{ png_base64: string; revision: number; texture_size: number }>('get_texture', { id, size: 1024 });
@@ -5824,7 +5913,13 @@ class SceneView {
     for (const o of next.objects) {
       if (o.visible && !replaced.includes(o.id) && !this.viewport.renderer.has(o.id, o.revision)) {
         const mesh = await fetchMesh(o.id, this.smoothPreview);
+        // An object drawn with its UV copy gets the copy and texture of the new revision in the same frame as the mesh.
+        const skin = mesh && o.uvs && this.checkerFor.startsWith(`${o.id}:`) ? await this.fetchSkin(o) : null;
         if (mesh) this.viewport.setMesh(mesh);
+        if (skin && this.viewport.renderer.setChecker(o.id, skin.uvs)) {
+          this.checkerFor = `${o.id}:${o.revision}`;
+          if (skin.color && this.viewport.renderer.setPaintTexture(o.id, skin.color, skin.mr)) this.textureShown.set(o.id, skin.revision);
+        }
       }
     }
     const keep = new Set(next.objects.filter((o) => o.visible && !replaced.includes(o.id)).map((o) => o.id));
@@ -6030,12 +6125,35 @@ class SceneView {
     else void this.run('deform_object', { id, kind: action, axis, toward: axis === 'x' ? 'y' : 'x', angle });
   }
 
+  homeHost(): HomeHost {
+    return {
+      objects: () => this.scene.objects.length,
+      sceneName: () => this.scene.objects.find((o) => o.id === this.scene.active)?.name ?? this.scene.objects[0]?.name ?? '',
+      replaced: () => this.forgetScene(),
+      refresh: () => this.refresh(),
+      frame: () => this.frameActive(),
+      note: (text) => this.note(text),
+      importFile: async (file) => {
+        const reply = await uploadFile<unknown>(file, file.name, { scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y' });
+        if (reply.ok && file.name.toLowerCase().endsWith('.fsc')) this.forgetScene();
+        await this.refresh();
+        if (reply.ok) this.frameActive();
+        return reply.ok ? null : reply.error.message;
+      },
+      picture: () => {
+        this.viewport.invalidate();
+        return this.shell.canvas;
+      },
+      download: () => this.download('/api/engine/project', 'scene.fsc'),
+    };
+  }
+
   private async fileAction(action: string): Promise<void> {
     const id = this.scene.active;
     if (action === 'open') {
       this.shell.fileInput.click();
     } else if (action === 'save') {
-      await this.download('/api/engine/project', 'scene.fsc');
+      await saveSculpt();
     } else if (action === 'export') {
       const format = this.shell.exportFormat.value;
       const q = new URLSearchParams({ format, scale: String(this.exchangeScale()), up_axis: this.shell.fileUp.value });
@@ -6044,6 +6162,7 @@ class SceneView {
     } else if (action === 'recover') {
       const reply = await postJson<unknown>('/api/engine/autosave/recover');
       this.note(reply.ok ? 'Recovered the last autosave' : reply.error.message);
+      if (reply.ok) this.forgetScene();
       await this.refresh();
       if (reply.ok) this.frameActive();
     } else if (action === 'nodemode') {
@@ -6165,8 +6284,40 @@ class SceneView {
     if (!file) return;
     const reply = await uploadFile<unknown>(file, file.name, { scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
     this.note(reply.ok ? `Opened ${file.name}` : reply.error.message);
+    if (reply.ok && file.name.toLowerCase().endsWith('.fsc')) this.forgetScene();
     await this.refresh();
     if (reply.ok) this.frameActive();
+  }
+
+  /** Files the system handed the desktop app (a double-clicked project, a second launch): a project opens, a mesh imports. */
+  async openPaths(paths: string[]): Promise<void> {
+    for (const path of paths) {
+      const name = path.split(/[\\/]/).pop() ?? path;
+      const project = name.toLowerCase().endsWith('.fsc');
+      const reply = project
+        ? await dispatch<unknown>('open_project', { path })
+        : await dispatch<unknown>('import_mesh', { path, scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
+      this.note(reply.ok ? `Opened ${name}` : reply.error.message);
+      if (reply.ok && project) this.forgetScene();
+      await this.refresh();
+      if (reply.ok) this.frameActive();
+    }
+  }
+
+  /** A project replaced the scene and its ids start over, so what this window kept by object id is dropped. */
+  private forgetScene(): void {
+    homeSceneReplaced();
+    sceneSettled();
+    this.locked.clear();
+    this.previous = null;
+    this.groupPick = null;
+    this.retopoInto = null;
+    this.retopoPoints = [];
+    this.lastStroke = null;
+    this.liveCurve = null;
+    this.zstitch = null;
+    this.clearCurve();
+    this.scene = { objects: [], active: null };
   }
 
   /** The File scale field as a usable factor: 1 when it is empty or out of range. */
@@ -7079,6 +7230,8 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
     { id: 'app.shortcuts', label: 'Keyboard Shortcuts', keys: ['Mod+/'], icon: 'keyboard', run: () => shortcuts.show() },
     { id: 'app.palette', label: 'Command Palette', keys: ['Mod+K'], icon: 'search', run: () => palette.show() },
     { id: 'app.about', label: 'About formsculpt', icon: 'info', run: () => about.show() },
+    { id: 'app.home', label: 'Home', keys: ['Alt+Mod+H'], icon: 'home', run: () => showHome() },
+    ...homeCommands(),
     {
       id: 'view.clear_rail',
       label: 'Clear Tool Rail',
@@ -7088,7 +7241,9 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
       },
     },
   );
-  const bar = new MenuBar(shell.menubar, commands, menuDefs());
+  const menus = menuDefs();
+  const bar = new MenuBar(shell.menubar, commands, menus);
+  startDesktopShell(commands, () => menus, (text) => setText(shell.message, text));
   root.addEventListener('click', (e) => {
     const node = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
     if (node && !(node as HTMLButtonElement).disabled) commands.run(node.dataset.cmd ?? '');
@@ -7103,6 +7258,7 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
     const target = e.target instanceof HTMLElement ? e.target : null;
     if (target?.closest('.xterm, .dock')) return;
     if (overlayOpen() || bar.isOpen) return;
+    if (isHomeOpen() && !(e.metaKey || e.ctrlKey)) return;
     const cmd = commands.forEvent(e);
     if (!cmd) return;
     const combo = comboOf(e);
@@ -7115,10 +7271,12 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
 export function start(root: HTMLElement): void {
   const shell = buildShell(root);
   wireChrome(root, shell);
-  void Promise.race([
+  mountHome();
+  const fonts = Promise.race([
     (document.fonts?.ready ?? Promise.resolve()).catch(() => undefined),
     new Promise((resolve) => setTimeout(resolve, 2500)),
-  ]).then(revealApp);
+  ]);
+  void Promise.all([fonts, homeReady]).then(revealApp);
   void boot(shell);
 }
 
@@ -7129,7 +7287,9 @@ async function boot(shell: Shell): Promise<void> {
     setText(shell.statRenderer, viewport.renderer.kind);
     const view = new SceneView(shell, viewport);
     view.registerCommands();
+    attachHome(view.homeHost());
     view.wireContextMenus();
+    void desktopShell()?.listen({ open: (paths) => view.openPaths(paths), save: () => commands.call('file.save') });
     const tools = document.querySelector<HTMLElement>('.appbar-tools');
     const root = document.getElementById('app');
     if (tools && root) {

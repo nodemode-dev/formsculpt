@@ -637,7 +637,6 @@ export class GlRenderer {
   }
 
   private dropExpanded(m: GpuMesh): void {
-    if (m.checker) this.dropChecker(m);
     if (!m.expanded) return;
     m.expanded.buffers.forEach((b) => this.gl.deleteBuffer(b));
     this.gl.deleteVertexArray(m.expanded.vao);
@@ -851,7 +850,10 @@ export class GlRenderer {
   remove(id: number): void {
     const m = this.meshes.get(id);
     if (!m) return;
+    this.dropChecker(m);
     this.dropExpanded(m);
+    if (m.paintTexture) this.gl.deleteTexture(m.paintTexture);
+    if (m.paintMr) this.gl.deleteTexture(m.paintMr);
     if (m.lines) {
       this.gl.deleteBuffer(m.lines.buf);
       this.gl.deleteVertexArray(m.lines.vao);
@@ -861,8 +863,49 @@ export class GlRenderer {
     this.meshes.delete(id);
   }
 
+  /** After the browser gives a lost context back: the programs and every mesh are built again from the copies kept
+   * here. Images handed in (matcaps, the environment, painted textures, the UV checker, the reference) are gone. */
+  restore(): void {
+    const gl = this.gl;
+    this.meshProgram = compile(gl, MESH_VS, MESH_FS);
+    this.bgProgram = compile(gl, BG_VS, BG_FS);
+    this.gradientProgram = compile(gl, BG_VS, GRADIENT_FS);
+    this.floorProgram = compile(gl, BG_VS, FLOOR_FS);
+    this.bgVao = gl.createVertexArray();
+    this.blankEnv = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.blankEnv);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    gl.enable(gl.DEPTH_TEST);
+    this.blank = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.blank);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 128, 255]));
+    this.lineProgram = null;
+    this.shadow = null;
+    this.shadowProgram = null;
+    this.groundProgram = null;
+    this.groundVao = null;
+    this.referenceProgram = null;
+    this.referenceVao = null;
+    this.reference = null;
+    this.env = null;
+    this.matcaps.clear();
+    this.post = anyPost(this.postSettings) ? new PostFx(gl) : null;
+    const held = [...this.meshes.values()];
+    this.meshes.clear();
+    for (const m of held) {
+      const tris = m.cpu.indices.length / 3;
+      let hidden: Uint8Array | null = null;
+      if (m.drawnTris.length < tris) {
+        hidden = new Uint8Array(tris).fill(1);
+        for (let k = 0; k < m.drawnTris.length; k++) hidden[m.drawnTris[k]] = 0;
+      }
+      this.upload({ ...m.cpu, revision: m.revision, hidden });
+    }
+  }
+
   render(camera: OrbitCamera, width: number, height: number): void {
     const gl = this.gl;
+    if (gl.isContextLost()) return;
     const p = this.postSettings;
     const post = this.post && anyPost(p) ? this.post : null;
     // The key light: its world direction (from azimuth and elevation, about the view when it follows the camera).

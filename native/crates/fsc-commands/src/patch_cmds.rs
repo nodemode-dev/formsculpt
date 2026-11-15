@@ -210,6 +210,9 @@ pub(crate) fn retopo_patch(s: &mut Session, args: &Value) -> Result<Value, Comma
 fn lay(s: &mut Session, args: &Value, target_id: ObjectId, kind: &str, dropped: &[Vec3], patch_quads: &[[u32; 4]], normals: Option<&[Vec3]>, weld: f32, folded: Option<usize>) -> Result<Value, CommandError> {
     let target_name = s.scene.get(target_id).expect("checked").name.clone();
     let into = args.get("into").and_then(Value::as_u64).map(|v| v as ObjectId);
+    if let Some(id) = into.filter(|id| s.scene.get(*id).is_some()) {
+        crate::multires_cmds::guard(s, id, "Adding retopology faces")?;
+    }
     let mut mesh = match into {
         Some(id) => s.scene.get(id).ok_or_else(|| CommandError::new("not_found", format!("no object {id}")))?.mesh.clone(),
         None => Mesh::new(Vec::new(), Vec::new()),
@@ -281,8 +284,8 @@ fn lay(s: &mut Session, args: &Value, target_id: ObjectId, kind: &str, dropped: 
         Some(id) => {
             let object = s.scene.get_mut(id).expect("checked");
             let mask = vec![0.0; rebuilt.vertex_count()];
-            let (old_mesh, old_mask) = object.replace_mesh(rebuilt, mask);
-            s.history.push(Edit::Topology { label: "Retopology Patch".into(), object: id, mesh: old_mesh, mask: old_mask });
+            let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, rebuilt, mask);
+            s.history.push(Edit::Topology { label: "Retopology Patch".into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
             id
         }
         None => {

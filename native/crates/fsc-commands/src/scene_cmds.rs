@@ -262,9 +262,14 @@ pub(crate) fn edit_primitive(s: &mut Session, args: &Value) -> Result<Value, Com
             merged[key] = v.clone();
         }
     }
-    let (mesh, _) = primitive_mesh(&merged)?;
+    let (mesh, kind) = primitive_mesh(&merged)?;
+    let (mesh, mask) = if kind == "triplanar" {
+        fsc_core::triplanar::planes(num(&merged, "size", 1.0, 0.0, 1000.0)?, int(&merged, "detail", 64, 512)?.max(8))
+    } else {
+        let mask = vec![0.0; mesh.vertex_count()];
+        (mesh, mask)
+    };
     let object = s.scene.get_mut(id).expect("checked");
-    let mask = vec![0.0; mesh.vertex_count()];
     let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
     object.revision += 1;
     object.primitive = Some((merged.to_string(), object.revision));
@@ -306,7 +311,7 @@ fn primitive_mesh(args: &Value) -> Result<(fsc_core::Mesh, String), CommandError
 fn object_id(args: &Value) -> Result<u32, CommandError> {
     args.get("id")
         .and_then(Value::as_u64)
-        .map(|v| v as u32)
+        .and_then(|v| u32::try_from(v).ok())
         .ok_or_else(|| CommandError::new("bad_arguments", "id is required; get_scene lists object ids"))
 }
 

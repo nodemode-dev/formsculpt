@@ -25,6 +25,12 @@ frontend/
   src/styles/tokens.css   colour, spacing, size tokens and the stacking scale
   src/styles/fonts.css    fontsource imports
   src/styles/shell.css    grid shell, bars, rail, stage, panel, status
+  src/styles/home.css     the Home screen, its cards, chips, badges, toasts and the Home layers
+  src/engine/library.ts   the HTTP client of the sculpt library (/api/sculpts and its Trash, templates, settings)
+  src/ui/home.ts          the Home screen, the open sculpt, save to the library, the Home commands
+  src/ui/toast.ts         toast, pushToast, dismissToast (#toast-root made on first use)
+  src/ui/brand.ts         brandMark
+  src/ui/demos.ts         DEMOS, empty this release
 ```
 
 ## Contents
@@ -33,6 +39,9 @@ frontend/
 - [vite.config.ts](#viteconfigts)
 - [src/app.ts](#srcappts)
 - [src/styles/tokens.css](#srcstylestokenscss)
+- [The desktop shell: the family splash, the native menu bar, the quit gate](#the-desktop-shell-the-family-splash-the-native-menu-bar-the-quit-gate)
+- [The Home screen](#the-home-screen)
+- [Home and the title row after the 1.20.0 verification](#home-and-the-title-row-after-the-1200-verification)
 
 ## index.html
 
@@ -1032,3 +1041,307 @@ Family rule from `FAMILY_DEV_PLAN.md` v0.4.x Phase 2b (formai_dev sidecar): ever
 - logged: v1.19.1 · 2026-10-26
 
 Ledger FB-146. The body centred the logo, the line and the bar together, so a paint that landed after the logo but before the rest centred the logo alone and moved it when the rest arrived (layout shift 1.05e-4 when the page is sent up to the line, held 1 s and sent on; about 1 load in 10 in the window smoke at 4x CPU). The body now starts from a fixed top padding (50vh less 64 px, the place the three-part stack sat) and the line has a fixed 16 px height, so the logo's place no longer depends on later siblings. Checked with a server that sends the page up to the line, waits 1 s and sends the rest: shift 1.05e-4 before, 0 after.
+
+### Pre-release audit of the window core: refreshes in order, Export Layout in the desktop app, state kept by object id
+- refers-to: src/app.ts :: SceneView.refresh, refreshNow, refreshQueue, exportLayoutFile, forgetScene, uploadChosen, fileAction (recover), wireTablet (zb.projects.open), eyedrop; src/engine/service.ts :: fetchMesh
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Five defects found by reading app.ts, the engine clients and the locale tables end to end and by driving the window on a private service.
+
+1. Refreshes overlapped. `refresh` ran unqueued from every command, stroke end and agent tick, and `apply` awaits one mesh fetch per changed object, so an older refresh whose fetch was slow could finish after a newer one: it removed the meshes its older summary did not list, drew the older list and left `this.scene` on the older summary. Reproduced with the first mesh fetch held 6 s: Sphere, then Cube 300 ms later; the list showed both and then went back to the sphere alone and stayed there, while the engine held both. `refresh` is now a queue (`refreshQueue`): each call runs `refreshNow` (the old body) after the one before it, so the newest summary is always applied last. Nothing inside a refresh awaits another refresh (`updateLive` and `syncHistoryEngine` call it without waiting), so the queue cannot wait on itself; a refresh that throws does not stop the queue.
+2. `fetchMesh` let a network failure or an unreadable body throw. In `refetch` that skipped `fetching.delete(id)`, so that object was never fetched again by the stroke path, and in `apply` it ended the refresh halfway. It now answers null, as it already did for a refused or missing mesh, and the next refresh fetches the object again (the renderer does not hold its revision).
+3. View > Export Layout saved nothing in the desktop app: it was the one file still written with `saveBlob` alone, and the desktop window has no download handling (Save, Export and Download maps go through `saveNative` for that reason, see the NodeMode and desktop entry). It now uses `saveNative` there and says Layout exported only once a path was chosen. Not run: the desktop shell cannot be built on the audit machine.
+4. A project that replaces the scene (Open of a .fsc, Recover, a LightCube project) starts its object ids over, and the window kept several things by id: the row locks, the object chosen before, the selected group, the retopology target and its pending corners, the last stroke, the live curve, the waiting curve and the pending stitch corner. A lock set on object 1 landed on object 1 of the opened project (seen in a run: Sphere locked, cube.fsc opened, Cube shown locked), and a Retopo click could add faces to an unrelated object. `forgetScene` drops them on those three paths. Mesh buffers need no reset: the engine puts its load count in the high bits of each revision (file_cmds.rs), which was checked in a run.
+5. The eyedropper's note used `t('texture')`, a key that is in no table and that `setup/i18n.py` cannot extract (it drops single lower-case words), so every language showed the English word inside a translated sentence. It now uses the existing `Texture` key outside English.
+
+Checked: `tsc --noEmit`; the bundle rebuilt; `frontend/tests/window` 2 passed; `frontend/e2e/smoke.py` against a private service on 47311, 10 of 10; `wasm_smoke.mjs` passed; `./formsculpt i18n check` 1385 of 1385 in every table; the 6 s reproduction ends with both objects listed; the lock reproduction ends with the cube unlocked.
+
+Two more, handed over by the UI and viewport audit (its entries follow):
+
+6. `viewport.onRestore` was not wired (refers-to: src/app.ts :: SceneView constructor, restoreImages, matcapFiles, loadMatcap), so after a WebGL context came back image matcaps drew as clay, the environment was the built-in sky, the reference plane was gone and a painted texture or UV checker stayed off until the next revision. `restoreImages` gives them again: each loaded matcap from the file kept in `matcapFiles` (the bitmap is closed after upload, so the file is what is kept), the chosen environment through `setEnvironment` (not `chooseEnvironment`, which would also switch the shading to lit), the reference from the picture element already on the stage, and the UV copy and texture by clearing `checkerFor` and `textureShown` and running `syncChecker`. Checked on SwiftShader with WEBGL_lose_context: a textured cube under a loaded matcap with a reference plane looks the same before the loss and after the restore, no console error.
+7. A textured object was drawn untextured for a few frames at every new mesh revision (undo, redo, a move): `apply` uploaded the new mesh, which drops the UV copy and the texture with the old buffers, and `syncChecker` put them back only after the refresh's later round trips. For an object already drawn through its UV copy (`checkerFor` names it), `apply` now fetches the new revision's UVs and texture pictures first (`fetchSkin`) and sets mesh, UV copy and texture in one task, so no frame is drawn between them; the old mesh stays on screen while they load. `syncChecker` then finds its key current and does nothing more. Checked by the request order after a revision: get_scene, mesh, get_uvs, get_texture twice, then the rest.
+
+Checked again after 6 and 7: `tsc --noEmit`, the bundle rebuilt, `frontend/tests/window` 2 passed, `smoke.py` on 47311 all passed.
+
+### src/viewport/viewport.ts, gl-renderer.ts · a lost WebGL context comes back
+- refers-to: src/viewport/viewport.ts :: constructor (webglcontextlost, webglcontextrestored), onRestore (new); src/viewport/gl-renderer.ts :: restore (new), render
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Nothing listened for the context events, so after a GPU reset or a driver restart the canvas stayed blank until the app was restarted (with WEBGL_lose_context: "context restoration not allowed", a white box). The canvas now prevents the default on loss, which is what lets the browser restore it. On restore the renderer compiles its four base programs again, remakes the two 1 by 1 textures, forgets everything built on first use (wire, shadow, ground, reference, post, environment, matcaps) and uploads every mesh again from the copies it keeps; hidden faces come back from drawnTris, since the copy holds no hidden array. render does nothing while the context is lost, so a program built on first use is not compiled against a dead context. Images the app handed in are not kept on the CPU here: onRestore is the app's cue to send matcaps, the environment, painted textures, the UV checker and the reference again (wired in app.ts, point 6 of the entry above). Checked on SwiftShader: lose, restore, the sphere, grid and gradient draw again.
+
+### src/viewport/viewport.ts · resize draws in the same frame, the pixel ratio is watched, a cancelled touch is not a tap
+- refers-to: src/viewport/viewport.ts :: resize, constructor (watchRatio), up
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Setting canvas.width clears the buffer, and resize runs in a ResizeObserver callback, after the frame's animation callbacks, so the redraw it asked for came one frame late and the blank canvas was shown once per resize step. When the size changed the frame is now drawn in the callback. devicePixelRatio was read only when the CSS size changed; a matchMedia resolution listener (re-armed after each change) covers a move between a 2x and a 1x display. pointercancel still goes through up(), but it now only ends a stroke in progress: a waiting tap (a dab, a mask shortcut, a pick, the ZUI Ctrl click) and the two and three finger undo and redo taps are skipped.
+
+### src/viewport/gl-renderer.ts · Face groups off keeps the UV copy, textures are freed
+- refers-to: src/viewport/gl-renderer.ts :: dropExpanded, remove
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+dropExpanded also dropped the per-corner UV copy, so switching Face groups off took the painted texture and the UV checker out of view, and the app did not put them back because its checkerFor key had not changed. It now drops the face group copy only; remove drops the UV copy itself. remove also deletes paintTexture and paintMr, which were left to the garbage collector on every re-upload of a textured object.
+
+### src/viewport/environment.ts · a cut-off .hdr no longer hangs
+- refers-to: src/viewport/environment.ts :: parseHdr (run-length branch)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Past the end of the file the run-length loop read undefined, copied nothing and never advanced x, so while (x < width) never ended and Load HDRI froze the window. The loop now throws "the HDR file is cut short"; loadEnvironment already shows parse errors in the note line.
+
+### src/ui/scene-tree.ts · a drag released outside the list ends
+- refers-to: src/ui/scene-tree.ts :: wireTreeDrag (start, pointerdown)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The list never captured the pointer, so a mouse released outside it never reached the list's pointerup: dragging stayed true with the last row still marked, and the next plain click on a row sent set_parent with that stale row. The list now captures the pointer when the drag starts (the release outside does nothing, as the comment always said), and every press on the list first clears whatever an undelivered release left.
+
+### src/ui/zbrush-layout.ts, tablet-layout.ts · the layouts' keys stand down while a dialog or menu is open
+- refers-to: src/ui/zbrush-layout.ts :: key; src/ui/tablet-layout.ts :: constructor (the K listener)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Both are window capture listeners made in buildShell, before the shortcut editor's, and both stop the event, so with a dialog open and a button focused the ZUI map still ran (Q, Tab, Space, Ctrl+D and the rest, behind the modal) and the tablet layout's K opened Search over the dialog; neither key could be bound in Keyboard Shortcuts. Both now return when overlayOpen() is true, the test wireChrome's handler already uses.
+
+### src/ui/zbrush-layout.ts · a LightCube pick marks its tile in place
+- refers-to: src/ui/zbrush-layout.ts :: showShelf (stroke, alpha, material)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The load handler re-ran showShelf, replacing every tile to move one mark, which dropped keyboard focus and the strip's scroll position. It now toggles `current` on the tiles it already has.
+
+### src/ui/layout.ts · folds are kept by the heading's English name
+- refers-to: src/ui/layout.ts :: PanelLayout.names (new), apply, fold, reload
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+apply() reads the headings before the page translator runs, fold() stored textContent after it had, so in any other language the stored name never matched and folds were lost on the next start. The English name is kept per heading and used for storing and reloading.
+
+### src/ui/spotlight.ts, tablet-layout.ts · a cancelled press ends the drag
+- refers-to: src/ui/spotlight.ts :: constructor (pointercancel); src/ui/tablet-layout.ts :: draggable
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Spotlight cleared `painting` and `drag` on pointerup only, so after a pointercancel every pointer move over the window queued another spotlight_apply dab with nothing pressed. The Voxel panel's title bar drag removed its move listener on pointerup only. Both now end on pointercancel as every other drag here does.
+
+### src/styles/tablet.css, shell.css, zbrush.css · the sheet under its bar, the UV marks in their own layer, tokens
+- refers-to: src/styles/tablet.css :: --tb-row (new), .panel.tl-sheet, .tb-sheet-head, .tb-field .tb-fill, .tb-field .tb-num; src/styles/shell.css :: .uv-view; src/styles/zbrush.css :: --zb-on
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The sheet kept top 56 px from before the bars' buttons carried words (bar bottom at 70 px), so it clipped the bar's labels, and under the macOS overlay title bar, where the bars sit 38 px lower inside the stage, it covered six of the eight buttons that open it. Its top and height are now built on --tb-under and --tb-row (0, or --bar-h under has-overlay-titlebar); the bottom edge is where it was. .uv-view made no stacking context, so .uv-marks (--z-raised) painted over the sheet's sticky head and the ZUI tray head when scrolled under them: .uv-view now has isolation: isolate. The three raw z-index numbers in tablet.css are tokens (--z-raised, --z-selected, --z-raised), same order. --zb-on read var(--accent), a token that does not exist, so the ZUI layout never followed the accent colour; it reads --accent-color.
+
+## The desktop shell: the family splash, the native menu bar, the quit gate
+
+Map additions: `public/favicon.ico` (the app icon as an .ico, a byte copy of `src-tauri/icons/icon.ico`), `src/ui/native-menu.ts` (the macOS menu bar built from the window's menu list), `src/ui/desktop-shell.ts` (the Edit commands for text fields, Menus in Window, Exit, the quit gate, files the system opens). The Rust side is logged in `backend/HASHOUT_LOG.md`.
+
+### public/splash.html, public/favicon.ico · the splash is formvis's, with the name changed
+- refers-to: public/splash.html :: title, img rule, p rule, the img tag; public/favicon.ico (new)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+Four lines differed from the family template (CANON-shell.md 1a): the title is `FormSculpt`, `img` loses `user-select: none`, `p` has formvis's property order, and the image is `favicon.png` with no `draggable` attribute. `favicon.png`, `formsculpt-logo.png` and `src-tauri/icons/128x128@2x.png` were already the same bytes, so the picture did not change. The file's sha256 is the canon's `7b3ae24f...0f3c`. A browser that opens `/splash.html` asks for `/favicon.ico`, which was a 404; formvis ships its `icon.ico` as `public/favicon.ico`, and so does formsculpt now.
+Checked: both pages served statically and shot at 360 by 200 in headless Chrome, at rest and after `SplashDone`: with formvis's file renamed, 0 pixels differ outside the 72 px icon box; the window tests pass with the splash under throttling.
+
+### src/ui/menu.ts · the menu bar answers the keyboard
+- refers-to: src/ui/menu.ts :: PopupMenu.items, deepest, openSubAt, leave (new); MenuBar.key, altUp, leaveBar, shown, shut (new), open, close
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+Ported from formvis's menu.ts: F10 opens the first menu with a row focused, Alt with a menu's first letter opens that menu (not on macOS), Alt alone puts focus on the bar, the arrows move through a menu and across the bar, Home and End jump, Enter and Space run a row or open its submenu, Escape steps back one level and returns focus to where it was, letters jump to the next row that starts with them. Three differences from formvis, all guards: nothing happens while the bar is not drawn (the tablet and ZUI layouts, native menus) or while Home covers the window, and keys typed in the terminal are left to it. Opening a menu still only unhides a panel in `#overlay-root`: no node under `#app` is added, removed or moved.
+Removed: the bar's own Escape listener, which closed the menu without stopping the key.
+
+```ts
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (this.openIndex >= 0 && e.key === 'Escape') this.close();
+      },
+      true,
+    );
+```
+
+### src/ui/menus.ts · the family's standard items
+- refers-to: src/ui/menus.ts :: FILE, EDIT, VIEW, HELP, menuDefs
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+File starts with `app.home` (the Home builder's command, Alt+Mod+H as in formdeck) and ends with `app.exit`; `file.save_file` follows `file.save`. Edit gains Cut, Copy, Paste and Select All after Undo and Redo. View ends with `view.menus_in_window`. Help is built per open: a Demos submenu from `DEMOS.map((d) => d.command)` comes first only while `ui/demos.ts` lists any, so this release shows none. `tidy` drops an id that is not registered, so Exit shows only in the desktop app and Menus in Window only on macOS there. No Preferences row: formsculpt has no preferences dialog; the application menu shows `app.preferences` by itself once a command with that id exists.
+
+### src/ui/native-menu.ts · the macOS menu bar
+- refers-to: src/ui/native-menu.ts :: wantsNativeMenus, menusInWindow, accelerator, TEXT_EDITS, textFieldFocused, textEditReady, NativeMenus.build, NativeMenus.refresh
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+One menu list and one registry feed both renderers: `wireChrome` makes `menuDefs()` once and hands it to `MenuBar` and to `NativeMenus`. The file follows formdeck's newer form for the embedding (application menu with About, Services, Hide, Hide Others, Show All, Quit; the predefined Minimize, Maximize, Fullscreen and Bring All to Front appended to the app's own Window menu, which is registered as the system's windows menu; Help registered as the help menu; a rebuild when the item lists change; a failed first build takes `has-native-menus` off again) and formvis's way for text fields: while a field has focus, Undo, Redo, Cut, Copy, Paste and Select All call the shell's `text_edit` and are enabled whatever the command says. Copy also goes that way while text is selected outside a field (the chat, a dialog).
+`accelerator` is formdeck's: a key with no Mod, Ctrl or Alt gets none unless it is F1 to F12, so tool keys stay with the page's one key listener and typing is never swallowed. formsculpt's own arrow names (Up, Down, Left, Right) are in the table.
+Own to formsculpt: an accelerator is given to the first item that asks for it only (the same command sits in two menus here, for example Keyboard Shortcuts in Edit and Help), and no item may take Cmd+Q, Cmd+H or Cmd+M from the system's items. Alt+Cmd+H goes to Home as formdeck does it, beside the system's Hide Others; which of the two macOS runs was not tried (no Mac here).
+Not done on a language change by `refresh`: labels are native text, so `onLanguage` rebuilds the menu.
+Checked without a Mac: the built window in headless Chrome with a stand-in for Tauri's IPC and a Mac platform string; the recorded tree had the application menu first, the family order, File > Home first with Alt+CmdOrCtrl+H, 23 accelerators with none repeated and none bare, no item without a label, no Demos. Never run on macOS.
+
+### src/ui/desktop-shell.ts · text-field edits, Menus in Window, Exit, the quit gate, opened files
+- refers-to: src/ui/desktop-shell.ts :: DesktopShell, startDesktopShell, noteScene, sceneEpoch, sceneSettled, sceneSaved, unsavedWork, editField, ExitDialog; src/app.ts :: wireChrome (menus, startDesktopShell), boot (listen), SceneView.refreshNow (sceneEpoch, noteScene), SceneView.forgetScene (sceneSettled), SceneView.openPaths (new)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+Commands: `edit.cut`, `edit.copy`, `edit.paste`, `edit.select_all` (Mod+X, C, V, A), enabled only for a text field or selected text. From the in-window menu a click moves focus to the row, so the last field is remembered and focused again before the edit. The page's key listener already leaves these keys alone while typing. `view.menus_in_window` exists only on macOS in the desktop app, is ticked from `localStorage['formsculpt.menusInWindow']` and takes effect at the next start, which the status line says; nothing in the title bar changes in the session. `app.exit` exists only in the desktop app (Mod+Q off macOS; on macOS the system's Quit owns Cmd+Q).
+`has-native-menus` is put on `<html>` in the constructor, before the page is revealed, so the in-window bar is never painted and then taken away; it comes back only if the first native build fails.
+Quit gate, the page's half of formvis's: the shell sends `formsculpt://exit-requested` for Cmd+Q, the native Quit and the close button; the page answers `confirm_exit`. With nothing unsaved it answers at once. Otherwise "Save Changes?" offers Don't Save, Cancel and Save; Save runs `file.save` and waits up to 15 s for the save to land before it lets the app quit, and a save that fails leaves the app open.
+What counts as unsaved: formsculpt had no such notion. `noteScene` keeps a key of the scene at every refresh (each object's id, name, revision and vertex count, the history's length and position) and `unsavedWork` compares it with the key at the last settle or save. `forgetScene` settles (a project or sculpt replaced the scene); a refresh that began before the settle is ignored, by `sceneEpoch`, because the first refresh after launch otherwise took the settle meant for the file the system opened. A save is seen by wrapping `library.save` and `library.keepScene` (engine/library.ts) in the constructor, since `saveSculpt` reports nothing: a direct `sceneSaved()` call in `saveSculpt` would be the plain form (asked of the Home builder in shell-contract.md). Save Project File (`file.save_file`) does not count as a save, so a quit after it still asks.
+Opened files: `listen` registers the two listeners, then asks `take_pending_opens`; `SceneView.openPaths` opens a `.fsc` with `open_project` and imports anything else with `import_mesh` and the panel's import options.
+Checked in headless Chrome with the stand-in IPC: a waiting `.fsc` opened; a clean scene quit at once; a changed one asked, and Cancel, Don't Save and Save each answered as written above; after File > Save the next quit did not ask; Edit > Select All and Cut acted on a panel field in the window, and Paste and Undo called `text_edit` with the field focused.
+
+### src/styles/menu.css · focus, mnemonics, the bar hidden under native menus
+- refers-to: src/styles/menu.css :: .fs-menu-btn:focus-visible, .is-menu-mnemonics .fs-menu-btn::first-letter, .has-native-menus .fs-menubar, .fs-menu-item:focus
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+
+A focused bar button and a focused row are drawn like a hovered one; Alt held underlines the menus' first letters (a text decoration, nothing moves); `.has-native-menus .fs-menubar { display: none; }` as in formvis. The brand keeps its place either way: it sits before the bar in the row, after the 78 px traffic light inset. No z-index was added.
+Checked under 4x CPU and slow network throttling: with every menu opened in turn the boxes of the title bar, brand, menu bar, tools, rail, stage, panel and status line stayed the same, no node under `#app` was added or removed, and the layout shift was 0.
+
+## The Home screen
+
+Home as formdeck builds it (formdeck `frontend/src/ui/home.ts`), under this app's `fs-` prefix, with formvis's Esc rule and its two "show Home" preferences. The service side is in `backend/HASHOUT_LOG.md` § The Home screen's library.
+
+### src/ui/home.ts · one template, built once
+- refers-to: src/ui/home.ts :: Home (constructor), show, setOpenSculpts, renderSculpts, renderTemplates, renderTrash
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`section.fs-home` is one template string appended to `#app` once and never rebuilt: side nav (brand, Start, Recent sculpts, Templates, Trash with count badges, the open sculpt, Agents, the foot with Back to sculpt, Local only, Preferences), the resizer, the two edge buttons, and the main column (narrow nav, confirm bar, the Start, Recent, Trash and Templates pages). Pages switch by the `hidden` attribute. Lists go through `patchList` keyed by sculpt id, trash entry, template id and category; counts, names and meta lines through a write-on-change helper. The Start page's Recent grid holds a skeleton card and a hidden empty card from the first paint, so the row has its height before the library answers. The Demos section is in the template only while `DEMOS` (src/ui/demos.ts) is not empty, between Recent and Templates.
+
+### src/ui/home.ts · previews load into reserved boxes
+- refers-to: src/ui/home.ts :: showPicture, setPreview, previewHtml; src/styles/home.css :: .fs-card-preview
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Every preview box is 16:9 by `aspect-ratio` with the `--surface-1` ground before any picture exists. A picture is fetched by a detached `Image`, then set on the card's `img` and shown once it has decoded; a sculpt with no picture shows the cube glyph in the same box. `object-fit: contain`, so a square picture LightBox saved before 1.20.0 sits whole in the box and the card never changes size. The picture's address carries the thumbnail's own time (`thumbAt`), so a save shows the new capture without a reload.
+
+### src/ui/home.ts · when Home is up
+- refers-to: src/ui/home.ts :: Home.sync, request, leave, homeScene, homeSceneReplaced, setCurrent, homeReady
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+One rule, formvis's: shown while forced (the Home command, the brand mark) or, with no sculpt open, by "Show Home Screen at Launch" before any sculpt has been open and by "Show Home Screen When the Last Document Closes" afterwards (`autoShowHome`, `homeOnLastClose` in `formsculpt.prefs`, both on by default so the default is formdeck's). A sculpt opens when the scene first holds an object, or with Blank scene; `SceneView.refreshNow` reports the object count through `homeScene`, so a scene an agent fills counts too. It closes only by New Scene: after the history is read, `refreshNow` tells `homeSceneEnded` whether the scene is empty and the last step done is `New Scene`. Deleting the last object is an edit like any other and leaves the sculpt open, so delete, undo and redo never bring Home up; undoing a New Scene reopens the scene as an unsaved sculpt, and redoing it closes it again. The window is not revealed until the first report (`homeReady`, 8 s at most), so Home is already up, or already known to stay down, at the first paint and never flashes. The open sculpt's library id is kept for this tab in `sessionStorage['formsculpt.home.current']`, and dropped whenever a project replaces the scene (`forgetScene` calls `homeSceneReplaced`), so Save cannot write one sculpt over another. With the browser engine (no service, so no library) Home does not show by itself; the command still opens it.
+
+### src/ui/home.ts · keys
+- refers-to: src/ui/home.ts :: Home.wire (keydown), escape; src/app.ts :: wireChrome (keydown)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Esc closes the card menu, else the confirm bar, else clears the selection, else leaves Home when a sculpt is open; with none open it does nothing. Delete on a focused card moves it, or the selection, to the Trash. Home takes focus when it opens and stops keys without Ctrl or Cmd from bubbling, and `wireChrome` skips them too, so the tool keys of the layouts behind it stay quiet while Mod shortcuts (Save, Undo, the palette, Home) still run.
+
+### src/ui/home.ts · Save goes to the library
+- refers-to: src/ui/home.ts :: saveSculpt, thumbnail, homeCommands; src/app.ts :: SceneView.fileAction, homeHost
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`file.save` (Mod+S) writes the scene back to the open sculpt, or into the library under a new name when the scene did not come from it, and sends a 480 by 270 capture of the viewport as its thumbnail: the viewport is asked for a frame and the canvas is copied in the next animation frame, while the drawing buffer is still whole. The download of `scene.fsc` that Save used to do is `file.save_file` (Save Project File...); with the browser engine Save still downloads.
+
+Removed from `SceneView.fileAction`:
+
+```ts
+    } else if (action === 'save') {
+      await this.download('/api/engine/project', 'scene.fsc');
+```
+
+### src/ui/home.ts · replacing unsaved work asks first
+- refers-to: src/ui/home.ts :: guarded
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Opening a sculpt, a template, a file or a blank scene from Home replaces the scene. When the shell's `unsavedWork()` (src/ui/desktop-shell.ts) says the open sculpt has changes, the inline confirm bar asks "Discard them?" first.
+
+### src/styles/home.css · family components inside Home only
+- refers-to: src/styles/home.css :: .fs-home .fs-btn, .fs-menu.fs-home-menu, #toast-root, body.nm-home #overlay-root
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The app already has `.fs-btn`, `.fs-menu` and `.fs-note` with its own metrics (src/styles/menu.css). Home keeps formdeck's class suffixes, so the family metrics (30 px buttons, the white call to action, the danger outline, the glass menu) are written scoped to `.fs-home`, `.fs-toast` and `.fs-home-menu`, and the app's own dialogs and menus are untouched. Layers: Home is `--z-home`; while `body.nm-home`, `#overlay-root` becomes a `--z-home-modal` layer and `#toast-root` `--z-home-preview`; inside Home only `--z-raised`. No raw number. `#toast-root` is made by src/ui/toast.ts on first use, beside `#app` and `#overlay-root`.
+
+### src/styles/tokens.css · the family's token names
+- refers-to: src/styles/tokens.css :: the block after body.theme-light
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Added beside the app's own: `--surface-0..2`, `--surface-field`, `--surface-raised`, `--group-head`, `--line-0..3`, `--cta-*`, `--accent-soft`, `-line`, `-glow`, `-ink`, `-wash`, `-tint`, `--bg-node`, `--bg-input`, `--glass-*`, `--radius-xs`, `--radius`, `-lg`, `-xl`, `-pill`, `--space-6..8`, `--ctl-*`, `--fs-9..18`, `--font-ui`, `--shadow-sm`, `-md`, `-window`, `--ok`, `--warn`, `--danger` and their soft, text and fill forms, and the layers `--z-toast`, `--z-home`, `--z-home-modal`, `--z-home-preview`, `--z-account-panel`. The derived ones are declared on `:root` and on `body`, because this app's themes set their base colours on `body` and a value derived on `:root` would not follow them. Left as they were, and different from the family: `--space-5` (24 px here, 20 px in the family), `--text-muted`, `--font-sans`.
+
+### src/app.ts · the brand mark is the Home button
+- refers-to: src/app.ts :: buildShell (brand), wireChrome (app.home)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`.brand` has `role="button"`, `tabindex="0"`, `title` and `aria-label` "Home" and `data-cmd="app.home"`; Enter and Space open Home; it no longer carries the macOS drag region. `app.home` (Alt+Mod+H) is registered beside `app.about`.
+
+### src/ui/tablet-layout.ts, src/ui/zbrush-layout.ts · a Home button in the layouts without the app bar
+- refers-to: src/ui/tablet-layout.ts :: TabletLayout (constructor, top left bar); src/ui/zbrush-layout.ts :: ZBrushLayout (constructor, .zb-title-tools)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Both layouts hide the app bar and its brand mark. The tablet layout's top left bar gets a first button, Home, made by the bar's own `labelled('home', ...)` with the classes of its neighbours (`tb-icon tb-worded`); the ZUI title strip gets a first `zb-title-tool`, before Claude Code, Chat and Terminal, from the same loop. Both carry `data-cmd="app.home"`, so the window's click handler runs the command; the glyph is the `home` both layouts already draw. No new style rule.
+
+### src/ui/home.ts, src/ui/desktop-shell.ts · one save path reports to the quit gate
+- refers-to: src/ui/home.ts :: saveSculpt; src/ui/desktop-shell.ts :: DesktopShell (constructor), sceneSaved
+- kind: removed-code
+- logged: v1.20.0 · 2026-11-15
+`saveSculpt` calls `sceneSaved()` once the library has the scene, so the shell no longer wraps the library client to learn of a save. Removed from `DesktopShell`'s constructor, with the `library` import it needed (its `['save', 'keepScene']` literal was also read by the i18n extract as an interface string):
+
+```ts
+    for (const name of ['save', 'keepScene'] as const) {
+      const call = library[name] as (...args: never[]) => Promise<unknown>;
+      (library as Record<string, unknown>)[name] = async (...args: never[]): Promise<unknown> => {
+        const out = await call(...args);
+        sceneSaved();
+        return out;
+      };
+    }
+```
+
+Checked: type check, production build, the two window tests (Home is up at launch there, layout shift 0 under 4x CPU and a slow network), the smoke run (frontend/e2e/smoke.py now starts with both Home preferences off, since it drives the workspace), the i18n check (every table 1470/1470), and a Playwright script kept outside the repo that drives every Home path: with and without 4x CPU plus slow network throttling, 84 checks, among them delete the last object, undo, redo with Home never appearing, and both layouts' Home buttons. Under throttling the window was revealed with Home already shown, Home was never shown and hidden again, no list node was rebuilt, and no layout shift came from data arriving. Two shifts were recorded and are not load shifts: cards moving over when two restored sculpts re-enter the list after Undo, and the tablet layout's object rows when another sculpt replaces the scene. Not run: macOS (the traffic light inset on Home, key precedence of Alt+Cmd+H), the desktop shell.
+
+## Home and the title row after the 1.20.0 verification
+
+Found by walking the built app as a first-time user and by putting formdeck's own Home (run from its source) beside this one. Each entry says what was seen and what changed.
+
+### src/ui/home.ts, src/app.ts · an undone New Scene is the same sculpt again
+- refers-to: src/ui/home.ts :: closed, setCurrent (keepClosed), homeScene, homeSceneEnded (trail, undone), homeSceneReplaced, mountHome (closeSculpt); src/app.ts :: SceneView.refreshNow
+- kind: fix
+- logged: v1.20.0 · 2026-11-15
+New Scene closes the open sculpt, and undoing it brought the objects back as an unsaved, untitled sculpt: its link to the library entry was gone, so Save then made a second entry (seen in the running app: "First Sphere" saved, New Scene, Ctrl+Z, Ctrl+S, and the library held "Sphere" beside "First Sphere"). `homeSceneEnded` now keeps what it closed in `closed`, with the labels of the history steps done before that New Scene. When a later refresh finds the scene back with no sculpt attached, the next step to redo is New Scene and the done steps are that same list, the sculpt is attached again with its id and title. The list of labels is what ties the scene on screen to the one that was closed: a New Scene made later, over another scene, has another list. `closed` is dropped whenever a sculpt is set by any other path (open, template, blank scene, a file, Save), when a project replaces the scene (`homeSceneReplaced`) and when its sculpt is moved to the Trash. A scene with neither id nor title that ends does not overwrite an earlier `closed`, so New Scene, Add Sphere, undo, undo still ends on the saved sculpt.
+
+### src/ui/home.ts · the window changes when the person acts, not when the service answers
+- refers-to: src/ui/home.ts :: Home.trashSculpts, undoToast, restore; openSculpt, blankScene
+- kind: fix + removed
+- logged: v1.20.0 · 2026-11-15
+Two things were late under a 4x slower CPU and a slow network. Undo in the "Moved to the Trash" toast waited for the restore requests and the library list before the cards came back, 589 ms after the click, so the cards beside them moved with no input near (layout shift 0.034): `restore` now puts the summaries it removed back at once, in their old order, and the service's list is patched over them when it arrives (82 ms, no late shift). And Home left before the workspace had the new scene: opening Beta while Alpha was open showed Alpha's mesh, object rows and counts until the refresh landed, and Blank scene showed the old scene the same way. Home now leaves after the refresh. Removed order, quoted:
+```ts
+    setCurrent({ id: reply.sculpt.id, title: reply.sculpt.title, blank: false });
+    home?.leave();
+    await host.refresh();
+    host.frame();
+```
+```ts
+  setCurrent({ id: null, title: '', blank: true });
+  home?.leave();
+  await host.refresh();
+```
+When no sculpt was open before, Home still closes as soon as the scene holds an object (the rule in "when Home is up"), and the empty viewport fills when the mesh arrives; nothing stale is shown there.
+
+### src/engine/library.ts, src/ui/home.ts · the library belongs to the service
+- refers-to: src/engine/library.ts :: call; src/ui/home.ts :: createSculpt
+- kind: fix
+- logged: v1.20.0 · 2026-11-15
+With the window on the browser engine and a service answering (`?engine=wasm`), Home listed the service's sculpts and templates. A card "opened" there set the title and left Home while the window's own scene stayed empty and the service's scene was replaced; New sculpt made a library entry and showed nothing. `call` now refuses on the browser engine, so Home lists nothing it cannot open, and New sculpt there makes a blank scene with a sphere in the window's own engine. Open file, Choose a file and Blank scene worked already. Templates are not offered on the browser engine: they are built by the service.
+
+### src/styles/home.css · three rules against formdeck's
+- refers-to: src/styles/home.css :: .fs-home :where(h1, h2, p), .fs-home-section-head, .fs-home .fs-home-hero-actions .fs-btn-primary
+- kind: fix + removed
+- logged: v1.20.0 · 2026-11-15
+Measured against formdeck's Home at 1440 by 900. The margin reset was `.fs-home :is(h1, h2, p)`, which outranks `.fs-home-sub` and `.fs-home-section-title`, so the line under the page title had lost its 4 px and the section title its 6 px: every page sat 4 px high. It is `:where` now. `.fs-home-section-head` had `min-height: 30px`; formdeck's Recent head is 24 px, and nothing needs the reserve (the head with the search field is 30 px by the field itself), so it is gone. The hero's primary button has formdeck's glow, from `--cta-bg`. After these the head, hero, section heads and card rows sit on formdeck's lines, apart from the side panel's default width (248 against 232 px).
+
+### src/ui/desktop-shell.ts, src/app.ts, src/styles/shell.css, src/ui/home.ts · the open sculpt's name in the title row
+- refers-to: src/ui/desktop-shell.ts :: documentTitle (new); src/app.ts :: buildShell (.bar-doc inside .spacer); src/styles/shell.css :: .bar-doc, .appbar .spacer; src/ui/home.ts :: setCurrent
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The family's title row shows the document's name; the page never called `set_window_title` and the bar had no place for it. `setCurrent` now hands the name to `documentTitle`, which writes it into `.bar-doc`, a label inside the bar's spacer (so it takes only space the spacer had, moves nothing, and leaves the spacer a drag region: the label has no pointer events), sets `document.title` to "name · FormSculpt" and, in the desktop app, calls `set_window_title` so the system frame and the task switcher carry it. An unsaved scene reads "Untitled sculpt"; with no sculpt open the title is "FormSculpt" and the label is empty. The tablet and ZUI layouts have no app bar, so there the name is in the window title only.
+
+### src/ui/home.ts, src/ui/menus.ts · Preferences is a command
+- refers-to: src/ui/home.ts :: homeCommands (app.preferences); src/ui/menus.ts :: EDIT
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The family's Edit menu ends with Preferences and the macOS application menu carries it under About; the dialog existed (Home's two preferences) but no command opened it, so neither menu had the row. `app.preferences` (Mod+,) opens that dialog; Edit lists it last, `NativeMenus` already adds it to the application menu when the command exists, and Home's own Preferences item runs it.
+
+Checked on the final build: type check, production build, i18n check (1470 of 1470, no new string), and Playwright scripts kept outside the repo: the first-time walk on the service (53 steps: template, strokes, symmetry, remesh, subdivide, paint, undo and redo, Save, New Scene, undo of New Scene then Save leaving one entry, Recent, duplicate, Trash, restore, delete permanently, Empty Trash, OBJ and GLB in, OBJ, STL and GLB out and in again, narrow windows), every row of the panel layout's eleven menus clicked, the palette, Preferences from Edit and by Mod+,, the five themes over a reload, the three layouts' Home buttons, and the same Home paths under 4x CPU and a slow network with no late shift and no stale scene shown. Not run: macOS and Windows, the desktop shell.

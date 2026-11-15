@@ -14,7 +14,8 @@ button { font: inherit; color: inherit; }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: 600; letter-spacing: -0.01em; }
 .brand img { display: block; flex: none; }
 .brand .ver { font: 11px/1 var(--font-mono); color: var(--text-muted); }
-.appbar .spacer { flex: 1; }
+.appbar .spacer { flex: 1; min-width: 0; }
+.bar-doc { display: block; overflow: hidden; color: var(--text-secondary); font-size: 12px; text-align: center; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .appbar .fs-menubar { flex: none; overflow: visible; }
 
 .rail { grid-area: rail; position: relative; z-index: var(--z-rail); background: var(--bg-secondary); border-right: 1px solid var(--border-color); }
@@ -102,7 +103,7 @@ button { font: inherit; color: inherit; }
 .profile-editor .profile-axes { fill: none; stroke: var(--border-light); stroke-width: 1; }
 .profile-editor polygon { fill: var(--accent-color-dim); stroke: var(--accent-color); stroke-width: 2; stroke-linejoin: round; }
 .profile-editor path:not(.profile-axes) { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 1.5; }
-.uv-view { position: relative; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
+.uv-view { position: relative; isolation: isolate; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
 .uv-view img { display: block; width: 100%; height: 100%; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
 .uv-view [hidden] { display: none; }
 .uv-view .uv-marks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }

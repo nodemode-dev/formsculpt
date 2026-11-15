@@ -22,9 +22,9 @@ pub(crate) fn apply(s: &mut Session, id: u32, label: &str, mut mesh: Mesh, mask:
         fsc_topo::transfer_paint(&[(&object.mesh, &object.bvh)], &mut mesh);
     }
     let before_tris = object.mesh.triangle_count();
-    let (old_mesh, old_mask) = object.replace_mesh(mesh, mask);
+    let (old_mesh, old_mask, texture) = crate::history::replace_mesh(object, mesh, mask);
     let after = summary(object);
-    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask });
+    s.history.push(Edit::Topology { label: label.into(), object: id, mesh: old_mesh, mask: old_mask }.with_texture(id, texture));
     Ok(json!({"object": after, "triangles_before": before_tris}))
 }
 
