@@ -359,9 +359,11 @@ pub(crate) fn merge_schema() -> Value {
 }
 
 pub(crate) fn merge(s: &mut Session, args: &Value) -> Result<Value, CommandError> {
-    let ids: Vec<ObjectId> = args.get("ids").and_then(Value::as_array).ok_or_else(|| bad("ids is required"))?.iter().filter_map(|v| v.as_u64().map(|x| x as ObjectId)).collect();
+    let mut ids: Vec<ObjectId> = args.get("ids").and_then(Value::as_array).ok_or_else(|| bad("ids is required"))?.iter().filter_map(|v| v.as_u64().map(|x| x as ObjectId)).collect();
+    let mut listed = std::collections::HashSet::new();
+    ids.retain(|id| listed.insert(*id));
     if ids.len() < 2 {
-        return Err(bad("give at least two object ids"));
+        return Err(bad("give at least two different object ids"));
     }
     for &id in &ids {
         if s.scene.get(id).is_none() {
@@ -464,6 +466,8 @@ fn finish_split(s: &mut Session, id: ObjectId, parts: Vec<Mesh>, label: &str) ->
 fn faces_to_mesh(mesh: &Mesh, inside: &[bool], want: bool) -> (Mesh, Vec<u32>) {
     let mut local = vec![u32::MAX; mesh.vertex_count()];
     let (mut old, mut positions, mut indices, mut groups, mut hidden) = (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    let corner_uvs = mesh.uvs.len() == mesh.indices.len();
+    let mut uvs = Vec::new();
     for t in (0..mesh.triangle_count()).filter(|&t| inside[t] == want) {
         for v in mesh.triangle(t) {
             if local[v as usize] == u32::MAX {
@@ -473,6 +477,9 @@ fn faces_to_mesh(mesh: &Mesh, inside: &[bool], want: bool) -> (Mesh, Vec<u32>) {
             }
             indices.push(local[v as usize]);
         }
+        if corner_uvs {
+            uvs.extend_from_slice(&mesh.uvs[t * 3..t * 3 + 3]);
+        }
         groups.push(if mesh.has_groups() { mesh.groups[t] } else { 0 });
         hidden.push(mesh.face_hidden(t));
     }
@@ -480,9 +487,7 @@ fn faces_to_mesh(mesh: &Mesh, inside: &[bool], want: bool) -> (Mesh, Vec<u32>) {
     if mesh.has_paint() {
         out.paint = old.iter().map(|&v| mesh.paint[v as usize]).collect();
     }
-    if mesh.uvs.len() == mesh.vertex_count() {
-        out.uvs = old.iter().map(|&v| mesh.uvs[v as usize]).collect();
-    }
+    out.uvs = uvs;
     if mesh.has_groups() {
         out.groups = groups;
     }
@@ -498,9 +503,9 @@ fn closed_piece(piece: Mesh, mask: &mut Vec<f32>) -> Mesh {
         filled.paint = piece.paint.clone();
         filled.paint.resize(filled.vertex_count(), fsc_core::DEFAULT_PAINT);
     }
-    if piece.uvs.len() == piece.vertex_count() {
+    if !piece.uvs.is_empty() && piece.uvs.len() == piece.indices.len() {
         filled.uvs = piece.uvs.clone();
-        filled.uvs.resize(filled.vertex_count(), [0.0; 2]);
+        filled.uvs.resize(filled.indices.len(), [0.0; 2]);
     }
     if piece.has_groups() {
         let extra = filled.triangle_count() - piece.triangle_count();
