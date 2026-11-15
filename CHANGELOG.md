@@ -2,6 +2,55 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.20.0 · 2026-11-15
+
+FormSculpt joins the Form family standard for Home, the menu bar and the splash, with a full review of the engine, the window, the service and the desktop app behind it.
+
+### Added
+
+- Home: a start screen over a sculpt library. A side panel carries Start, Recent, Templates and Trash with counts, the open sculpt, Agents, Local only and Preferences; the main column shows your recent sculpts with previews and the templates, with filters and search. It shows at launch and when the sculpt is closed by New Scene (two preferences, both on by default), Esc leaves it while a sculpt is open, and the brand mark, File > Home and Alt+Ctrl+H (Alt+Cmd+H on macOS) bring it back. The tablet and ZUI layouts each get a Home button.
+- The sculpt library: sculpts live in the existing LightBox project folder, with no migration. From Home you can open, duplicate, move to Trash, restore, delete for good and empty the Trash, each with an undo toast or a confirm bar.
+- Templates: ten starting meshes built from the engine's own primitives, each making a new sculpt in the library.
+- The family menu bar: one menu list feeds the bar in the window and the native macOS menu bar, with the application menu first, File starting with Home and ending with Exit, and Edit (Cut, Copy, Paste, Select All) acting on a focused text field. A "Menus in Window" preference keeps the bar in the window on macOS.
+- The family splash, with the app's own icon and "Starting formsculpt".
+- Double-clicking a `.fsc` file opens it in the one running window; a second launch no longer starts a second app.
+- Quit, Cmd+Q and the window's close button ask first when the sculpt has changes that are not saved.
+- Home's and the menu bar's strings in every language.
+
+### Changed
+
+- File > Save now saves into the sculpt library. The former download of `scene.fsc` is its own command, Save Project File.
+- The desktop app's engine takes port 8260 when it is free, so the Blender add-on, `./formsculpt mcp` and scripts find the open app; it falls back to a free port as before.
+- A glTF file whose data has no buffer view (Draco or sparse) is refused with a message instead of importing as zeros, and one entry of a `.fsc` or 3MF archive may unpack to at most 4 GiB.
+- The service listens on 127.0.0.1 only; the `FSC_HOST` setting is gone.
+- `scene.add_group` no longer shows Ctrl+G, which Group already owns.
+
+### Fixed
+
+- Files: small crafted or cut-off PLY, glTF, USD, FBX, PNG, Radiance HDR and `.fsc` files no longer crash the engine, ask for gigabytes of memory or freeze the window; each is refused with a message.
+- Sculpting: a stroke sample that is not a number no longer writes broken vertices into the mesh, and a degenerate face no longer aborts a dynamic topology stroke.
+- Undo: a painted texture ended by a topology, UV or level step comes back on undo, and the undo after it no longer fails.
+- Levels: retopology, groom and a sculpt returning from another app refuse an object with subdivision levels instead of breaking them.
+- Commands: bad arguments (an empty stroke, a repeated id in Merge, a very small Insert size, an id that is not a whole number, paint layer commands after a topology change) are refused instead of aborting the engine or acting on the wrong object. Splitting an object keeps its UVs.
+- Viewport: the scene comes back after a lost WebGL context instead of staying a white canvas; a resize no longer shows a blank frame; painted textures are freed when a mesh is replaced; a textured object no longer flashes untextured on every edit.
+- Window: an older, slower refresh can no longer put an older scene back; View > Export Layout really saves in the desktop app; locks and other per-object state no longer land on the next project's objects.
+- Interface: a drag in the object list released outside the list no longer re-parents the next object you click; layout keys no longer run behind an open dialog; folded panel sections are remembered in every language; the tablet layout's menu sheet no longer covers the bar that opens it.
+- Service: Send to NodeMode no longer freezes the service while the other side answers; bad export ids and malformed MCP requests answer with the reason instead of an error 500; Chat's Claude Code process ends with the service.
+- Desktop: the app carries the example plugins; the engine is asked to stop on quit and removes what it unpacked into the temp folder (Windows still leaves part of it).
+- Windows from source: `formsculpt.bat install` builds the engine's Python module, so the service no longer answers 503 on every engine route.
+- The Blender add-on's website link names the right organisation.
+- Home: undoing a New Scene brings the sculpt back still linked to its library entry, so Save updates it instead of making a second entry.
+- Home: after Undo of a delete the cards come back at once without pushing their neighbours, and Home leaves only when the workspace shows the new sculpt, never the previous one's mesh and rows.
+- Browser engine: Home's library no longer acts on the service's scene while the window runs its own engine; New sculpt there makes a blank scene with a sphere.
+- Home's sub line, section titles and hero button sit where formdeck's do.
+- The open sculpt's name shows in the title row and in the window title.
+- Preferences is a command: Edit > Preferences and Ctrl+, (Cmd+, on macOS, where it also sits in the application menu) open the dialog.
+
+### Notes
+
+- Nothing in this release was run on macOS or Windows. The desktop shell was compile-checked on Linux only, and the native macOS menu bar, Alt+Cmd+H beside the system's Hide Others, and the signed app were not run.
+- There is no autosave per sculpt; the single autosave slot and Recover are unchanged.
+
 ## 1.19.6 · 2026-11-04
 
 - The README hero shows the icon bust as white plaster, using a plaster matcap.
