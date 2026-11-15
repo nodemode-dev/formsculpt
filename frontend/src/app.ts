@@ -2399,6 +2399,7 @@ class SceneView {
       this.drawZmodelHover();
     });
     this.strokes.warm();
+    viewport.onRestore = () => this.restoreImages();
     viewport.strokes = {
       // A locked active object takes no strokes or tool clicks; a press turns the view instead.
       enabled: () => this.brush === 'tube' || this.brush === 'silhouette' || (this.brush !== 'orbit' && this.scene.active !== null && !this.locked.has(this.scene.active)),
@@ -2688,6 +2689,7 @@ class SceneView {
       open: async (name) => {
         const problem = await lightboxOpen(name);
         if (problem) return problem;
+        this.forgetScene();
         await this.refresh();
         this.frameActive();
         return null;
@@ -4591,6 +4593,7 @@ class SceneView {
       const name = `img:${file.name}`;
       this.viewport.renderer.addMatcap(name, bitmap);
       bitmap.close();
+      this.matcapFiles.set(name, file);
       const select = this.shell.shading;
       if (![...select.options].some((o) => o.value === name)) {
         const option = el('option', '', file.name.replace(/\.[^.]+$/, ''));
@@ -4603,6 +4606,34 @@ class SceneView {
     } catch {
       this.note('That image could not be read as a matcap');
     }
+  }
+
+  /** The matcap images loaded this session, by their shading value, kept to give the renderer again. */
+  private matcapFiles = new Map<string, Blob>();
+
+  /** After a lost WebGL context came back: the images only the GPU held are sent again. */
+  private restoreImages(): void {
+    const r = this.viewport.renderer;
+    for (const [name, file] of this.matcapFiles) {
+      void createImageBitmap(file).then((bitmap) => {
+        r.addMatcap(name, bitmap);
+        bitmap.close();
+        this.viewport.invalidate();
+      }, () => undefined);
+    }
+    const env = this.shell.envSelect.value;
+    if (env !== 'off') r.setEnvironment(this.environments.get(env) ?? presetEnvironment(env));
+    const ref = this.shell.reference;
+    if (ref.src.startsWith('blob:') && ref.complete && ref.naturalWidth > 0) {
+      void createImageBitmap(ref).then((bitmap) => {
+        r.setReferenceImage(bitmap);
+        bitmap.close();
+        this.viewport.invalidate();
+      }, () => undefined);
+    }
+    this.checkerFor = '';
+    this.textureShown.clear();
+    void this.syncChecker();
   }
 
   private async loadCatalogue(): Promise<void> {
@@ -5059,7 +5090,15 @@ class SceneView {
 
   /** Saves the panel folds, side and size, the rail, the toolbars, the tablet switch and the shortcuts as one file. */
   private exportLayoutFile(): void {
-    saveBlob(new Blob([exportLayout(VERSION)], { type: 'application/json' }), 'formsculpt-layout.json');
+    const blob = new Blob([exportLayout(VERSION)], { type: 'application/json' });
+    if (inDesktop) {
+      void saveNative(blob, 'formsculpt-layout.json').then(
+        (saved) => this.note(saved ? t('Layout exported') : ''),
+        (err) => this.note(`Could not save: ${String(err)}`),
+      );
+      return;
+    }
+    saveBlob(blob, 'formsculpt-layout.json');
     this.note(t('Layout exported'));
   }
 
@@ -5127,7 +5166,7 @@ class SceneView {
     set(s.paintColor, r.result.color);
     set(s.paintRough, String(Math.round(r.result.roughness * 100)));
     set(s.paintMetal, String(Math.round(r.result.metalness * 100)));
-    this.note(t('Picked {color} from the {source}').replace('{color}', r.result.color).replace('{source}', r.result.source === 'texture' ? t('texture') : t('vertex paint')));
+    this.note(t('Picked {color} from the {source}').replace('{color}', r.result.color).replace('{source}', r.result.source === 'texture' ? (language() === 'en' ? 'texture' : t('Texture')) : t('vertex paint')));
   }
 
   /** Material presets: colour, roughness and metalness written into the Paint fields together. */
@@ -5550,7 +5589,16 @@ class SceneView {
     return Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) * frac * 0.05;
   }
 
-  async refresh(): Promise<void> {
+  private refreshQueue: Promise<void> = Promise.resolve();
+
+  /** One refresh at a time, in the order asked, so an older scene summary never lands over a newer one. */
+  refresh(): Promise<void> {
+    const turn = this.refreshQueue.then(() => this.refreshNow());
+    this.refreshQueue = turn.catch(() => undefined);
+    return turn;
+  }
+
+  private async refreshNow(): Promise<void> {
     const reply = await dispatch<SceneSummary>('get_scene');
     if (!reply.ok) {
       this.note(reply.error.message);
@@ -5600,6 +5648,31 @@ class SceneView {
 
   /** The texture revision last drawn, by object; refetched (at most 1024 px) when the engine's revision moves on. */
   private textureShown = new Map<number, number>();
+
+  /** An object's UV copy and, when it has a texture, its pictures, fetched before its new mesh is shown. */
+  private async fetchSkin(o: ObjectSummary): Promise<{ uvs: Float32Array; color?: HTMLImageElement; mr?: HTMLImageElement; revision: number } | null> {
+    const reply = await dispatch<{ uvs: string }>('get_uvs', { id: o.id });
+    if (!reply.ok) return null;
+    const raw = atob(reply.result.uvs);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const uvs = new Float32Array(bytes.buffer);
+    if ((o.texture_size ?? null) === null) return { uvs, revision: 0 };
+    try {
+      const picture = async (png: string): Promise<HTMLImageElement> => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        return img;
+      };
+      const c = await dispatch<{ png_base64: string; revision: number }>('get_texture', { id: o.id, size: 1024 });
+      if (!c.ok) return { uvs, revision: 0 };
+      const m = await dispatch<{ png_base64: string }>('get_texture', { id: o.id, size: 1024, channel: 'roughness_metal' });
+      return { uvs, color: await picture(c.result.png_base64), mr: m.ok ? await picture(m.result.png_base64) : undefined, revision: c.result.revision };
+    } catch {
+      return { uvs, revision: 0 };
+    }
+  }
 
   private async syncTexture(id: number, force = false): Promise<void> {
     const r = await dispatch<{ png_base64: string; revision: number; texture_size: number }>('get_texture', { id, size: 1024 });
@@ -5824,7 +5897,13 @@ class SceneView {
     for (const o of next.objects) {
       if (o.visible && !replaced.includes(o.id) && !this.viewport.renderer.has(o.id, o.revision)) {
         const mesh = await fetchMesh(o.id, this.smoothPreview);
+        // An object drawn with its UV copy gets the copy and texture of the new revision in the same frame as the mesh.
+        const skin = mesh && o.uvs && this.checkerFor.startsWith(`${o.id}:`) ? await this.fetchSkin(o) : null;
         if (mesh) this.viewport.setMesh(mesh);
+        if (skin && this.viewport.renderer.setChecker(o.id, skin.uvs)) {
+          this.checkerFor = `${o.id}:${o.revision}`;
+          if (skin.color && this.viewport.renderer.setPaintTexture(o.id, skin.color, skin.mr)) this.textureShown.set(o.id, skin.revision);
+        }
       }
     }
     const keep = new Set(next.objects.filter((o) => o.visible && !replaced.includes(o.id)).map((o) => o.id));
@@ -6044,6 +6123,7 @@ class SceneView {
     } else if (action === 'recover') {
       const reply = await postJson<unknown>('/api/engine/autosave/recover');
       this.note(reply.ok ? 'Recovered the last autosave' : reply.error.message);
+      if (reply.ok) this.forgetScene();
       await this.refresh();
       if (reply.ok) this.frameActive();
     } else if (action === 'nodemode') {
@@ -6165,8 +6245,23 @@ class SceneView {
     if (!file) return;
     const reply = await uploadFile<unknown>(file, file.name, { scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
     this.note(reply.ok ? `Opened ${file.name}` : reply.error.message);
+    if (reply.ok && file.name.toLowerCase().endsWith('.fsc')) this.forgetScene();
     await this.refresh();
     if (reply.ok) this.frameActive();
+  }
+
+  /** A project replaced the scene and its ids start over, so what this window kept by object id is dropped. */
+  private forgetScene(): void {
+    this.locked.clear();
+    this.previous = null;
+    this.groupPick = null;
+    this.retopoInto = null;
+    this.retopoPoints = [];
+    this.lastStroke = null;
+    this.liveCurve = null;
+    this.zstitch = null;
+    this.clearCurve();
+    this.scene = { objects: [], active: null };
   }
 
   /** The File scale field as a usable factor: 1 when it is empty or out of range. */

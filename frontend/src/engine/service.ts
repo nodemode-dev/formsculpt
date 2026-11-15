@@ -306,10 +306,14 @@ export async function fetchMesh(id: number, smooth = 0): Promise<MeshBuffers | n
     const buffer = local.mesh(id, smooth);
     return buffer ? parseMesh(id, buffer) : null;
   }
-  const response = await fetch(`/api/engine/mesh/${id}${smooth > 0 ? `?smooth=${smooth}` : ''}`, { cache: 'no-store' });
-  // 204: the object is already gone (see the service's mesh route).
-  if (!response.ok || response.status === 204) return null;
-  return parseMesh(id, await response.arrayBuffer());
+  try {
+    const response = await fetch(`/api/engine/mesh/${id}${smooth > 0 ? `?smooth=${smooth}` : ''}`, { cache: 'no-store' });
+    // 204: the object is already gone (see the service's mesh route).
+    if (!response.ok || response.status === 204) return null;
+    return parseMesh(id, await response.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 /** Live Boolean: the exact result of `a op b` as mesh buffers (id 0) to draw in their place, or the refusal's message. */

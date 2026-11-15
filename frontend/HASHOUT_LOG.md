@@ -1032,3 +1032,95 @@ Family rule from `FAMILY_DEV_PLAN.md` v0.4.x Phase 2b (formai_dev sidecar): ever
 - logged: v1.19.1 · 2026-10-26
 
 Ledger FB-146. The body centred the logo, the line and the bar together, so a paint that landed after the logo but before the rest centred the logo alone and moved it when the rest arrived (layout shift 1.05e-4 when the page is sent up to the line, held 1 s and sent on; about 1 load in 10 in the window smoke at 4x CPU). The body now starts from a fixed top padding (50vh less 64 px, the place the three-part stack sat) and the line has a fixed 16 px height, so the logo's place no longer depends on later siblings. Checked with a server that sends the page up to the line, waits 1 s and sends the rest: shift 1.05e-4 before, 0 after.
+
+### Pre-release audit of the window core: refreshes in order, Export Layout in the desktop app, state kept by object id
+- refers-to: src/app.ts :: SceneView.refresh, refreshNow, refreshQueue, exportLayoutFile, forgetScene, uploadChosen, fileAction (recover), wireTablet (zb.projects.open), eyedrop; src/engine/service.ts :: fetchMesh
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Five defects found by reading app.ts, the engine clients and the locale tables end to end and by driving the window on a private service.
+
+1. Refreshes overlapped. `refresh` ran unqueued from every command, stroke end and agent tick, and `apply` awaits one mesh fetch per changed object, so an older refresh whose fetch was slow could finish after a newer one: it removed the meshes its older summary did not list, drew the older list and left `this.scene` on the older summary. Reproduced with the first mesh fetch held 6 s: Sphere, then Cube 300 ms later; the list showed both and then went back to the sphere alone and stayed there, while the engine held both. `refresh` is now a queue (`refreshQueue`): each call runs `refreshNow` (the old body) after the one before it, so the newest summary is always applied last. Nothing inside a refresh awaits another refresh (`updateLive` and `syncHistoryEngine` call it without waiting), so the queue cannot wait on itself; a refresh that throws does not stop the queue.
+2. `fetchMesh` let a network failure or an unreadable body throw. In `refetch` that skipped `fetching.delete(id)`, so that object was never fetched again by the stroke path, and in `apply` it ended the refresh halfway. It now answers null, as it already did for a refused or missing mesh, and the next refresh fetches the object again (the renderer does not hold its revision).
+3. View > Export Layout saved nothing in the desktop app: it was the one file still written with `saveBlob` alone, and the desktop window has no download handling (Save, Export and Download maps go through `saveNative` for that reason, see the NodeMode and desktop entry). It now uses `saveNative` there and says Layout exported only once a path was chosen. Not run: the desktop shell cannot be built on the audit machine.
+4. A project that replaces the scene (Open of a .fsc, Recover, a LightCube project) starts its object ids over, and the window kept several things by id: the row locks, the object chosen before, the selected group, the retopology target and its pending corners, the last stroke, the live curve, the waiting curve and the pending stitch corner. A lock set on object 1 landed on object 1 of the opened project (seen in a run: Sphere locked, cube.fsc opened, Cube shown locked), and a Retopo click could add faces to an unrelated object. `forgetScene` drops them on those three paths. Mesh buffers need no reset: the engine puts its load count in the high bits of each revision (file_cmds.rs), which was checked in a run.
+5. The eyedropper's note used `t('texture')`, a key that is in no table and that `setup/i18n.py` cannot extract (it drops single lower-case words), so every language showed the English word inside a translated sentence. It now uses the existing `Texture` key outside English.
+
+Checked: `tsc --noEmit`; the bundle rebuilt; `frontend/tests/window` 2 passed; `frontend/e2e/smoke.py` against a private service on 47311, 10 of 10; `wasm_smoke.mjs` passed; `./formsculpt i18n check` 1385 of 1385 in every table; the 6 s reproduction ends with both objects listed; the lock reproduction ends with the cube unlocked.
+
+Two more, handed over by the UI and viewport audit (its entries follow):
+
+6. `viewport.onRestore` was not wired (refers-to: src/app.ts :: SceneView constructor, restoreImages, matcapFiles, loadMatcap), so after a WebGL context came back image matcaps drew as clay, the environment was the built-in sky, the reference plane was gone and a painted texture or UV checker stayed off until the next revision. `restoreImages` gives them again: each loaded matcap from the file kept in `matcapFiles` (the bitmap is closed after upload, so the file is what is kept), the chosen environment through `setEnvironment` (not `chooseEnvironment`, which would also switch the shading to lit), the reference from the picture element already on the stage, and the UV copy and texture by clearing `checkerFor` and `textureShown` and running `syncChecker`. Checked on SwiftShader with WEBGL_lose_context: a textured cube under a loaded matcap with a reference plane looks the same before the loss and after the restore, no console error.
+7. A textured object was drawn untextured for a few frames at every new mesh revision (undo, redo, a move): `apply` uploaded the new mesh, which drops the UV copy and the texture with the old buffers, and `syncChecker` put them back only after the refresh's later round trips. For an object already drawn through its UV copy (`checkerFor` names it), `apply` now fetches the new revision's UVs and texture pictures first (`fetchSkin`) and sets mesh, UV copy and texture in one task, so no frame is drawn between them; the old mesh stays on screen while they load. `syncChecker` then finds its key current and does nothing more. Checked by the request order after a revision: get_scene, mesh, get_uvs, get_texture twice, then the rest.
+
+Checked again after 6 and 7: `tsc --noEmit`, the bundle rebuilt, `frontend/tests/window` 2 passed, `smoke.py` on 47311 all passed.
+
+### src/viewport/viewport.ts, gl-renderer.ts · a lost WebGL context comes back
+- refers-to: src/viewport/viewport.ts :: constructor (webglcontextlost, webglcontextrestored), onRestore (new); src/viewport/gl-renderer.ts :: restore (new), render
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Nothing listened for the context events, so after a GPU reset or a driver restart the canvas stayed blank until the app was restarted (with WEBGL_lose_context: "context restoration not allowed", a white box). The canvas now prevents the default on loss, which is what lets the browser restore it. On restore the renderer compiles its four base programs again, remakes the two 1 by 1 textures, forgets everything built on first use (wire, shadow, ground, reference, post, environment, matcaps) and uploads every mesh again from the copies it keeps; hidden faces come back from drawnTris, since the copy holds no hidden array. render does nothing while the context is lost, so a program built on first use is not compiled against a dead context. Images the app handed in are not kept on the CPU here: onRestore is the app's cue to send matcaps, the environment, painted textures, the UV checker and the reference again (wired in app.ts, point 6 of the entry above). Checked on SwiftShader: lose, restore, the sphere, grid and gradient draw again.
+
+### src/viewport/viewport.ts · resize draws in the same frame, the pixel ratio is watched, a cancelled touch is not a tap
+- refers-to: src/viewport/viewport.ts :: resize, constructor (watchRatio), up
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Setting canvas.width clears the buffer, and resize runs in a ResizeObserver callback, after the frame's animation callbacks, so the redraw it asked for came one frame late and the blank canvas was shown once per resize step. When the size changed the frame is now drawn in the callback. devicePixelRatio was read only when the CSS size changed; a matchMedia resolution listener (re-armed after each change) covers a move between a 2x and a 1x display. pointercancel still goes through up(), but it now only ends a stroke in progress: a waiting tap (a dab, a mask shortcut, a pick, the ZUI Ctrl click) and the two and three finger undo and redo taps are skipped.
+
+### src/viewport/gl-renderer.ts · Face groups off keeps the UV copy, textures are freed
+- refers-to: src/viewport/gl-renderer.ts :: dropExpanded, remove
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+dropExpanded also dropped the per-corner UV copy, so switching Face groups off took the painted texture and the UV checker out of view, and the app did not put them back because its checkerFor key had not changed. It now drops the face group copy only; remove drops the UV copy itself. remove also deletes paintTexture and paintMr, which were left to the garbage collector on every re-upload of a textured object.
+
+### src/viewport/environment.ts · a cut-off .hdr no longer hangs
+- refers-to: src/viewport/environment.ts :: parseHdr (run-length branch)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Past the end of the file the run-length loop read undefined, copied nothing and never advanced x, so while (x < width) never ended and Load HDRI froze the window. The loop now throws "the HDR file is cut short"; loadEnvironment already shows parse errors in the note line.
+
+### src/ui/scene-tree.ts · a drag released outside the list ends
+- refers-to: src/ui/scene-tree.ts :: wireTreeDrag (start, pointerdown)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The list never captured the pointer, so a mouse released outside it never reached the list's pointerup: dragging stayed true with the last row still marked, and the next plain click on a row sent set_parent with that stale row. The list now captures the pointer when the drag starts (the release outside does nothing, as the comment always said), and every press on the list first clears whatever an undelivered release left.
+
+### src/ui/zbrush-layout.ts, tablet-layout.ts · the layouts' keys stand down while a dialog or menu is open
+- refers-to: src/ui/zbrush-layout.ts :: key; src/ui/tablet-layout.ts :: constructor (the K listener)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Both are window capture listeners made in buildShell, before the shortcut editor's, and both stop the event, so with a dialog open and a button focused the ZUI map still ran (Q, Tab, Space, Ctrl+D and the rest, behind the modal) and the tablet layout's K opened Search over the dialog; neither key could be bound in Keyboard Shortcuts. Both now return when overlayOpen() is true, the test wireChrome's handler already uses.
+
+### src/ui/zbrush-layout.ts · a LightCube pick marks its tile in place
+- refers-to: src/ui/zbrush-layout.ts :: showShelf (stroke, alpha, material)
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The load handler re-ran showShelf, replacing every tile to move one mark, which dropped keyboard focus and the strip's scroll position. It now toggles `current` on the tiles it already has.
+
+### src/ui/layout.ts · folds are kept by the heading's English name
+- refers-to: src/ui/layout.ts :: PanelLayout.names (new), apply, fold, reload
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+apply() reads the headings before the page translator runs, fold() stored textContent after it had, so in any other language the stored name never matched and folds were lost on the next start. The English name is kept per heading and used for storing and reloading.
+
+### src/ui/spotlight.ts, tablet-layout.ts · a cancelled press ends the drag
+- refers-to: src/ui/spotlight.ts :: constructor (pointercancel); src/ui/tablet-layout.ts :: draggable
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+Spotlight cleared `painting` and `drag` on pointerup only, so after a pointercancel every pointer move over the window queued another spotlight_apply dab with nothing pressed. The Voxel panel's title bar drag removed its move listener on pointerup only. Both now end on pointercancel as every other drag here does.
+
+### src/styles/tablet.css, shell.css, zbrush.css · the sheet under its bar, the UV marks in their own layer, tokens
+- refers-to: src/styles/tablet.css :: --tb-row (new), .panel.tl-sheet, .tb-sheet-head, .tb-field .tb-fill, .tb-field .tb-num; src/styles/shell.css :: .uv-view; src/styles/zbrush.css :: --zb-on
+- kind: bugfix
+- logged: v1.20.0 · 2026-11-15
+
+The sheet kept top 56 px from before the bars' buttons carried words (bar bottom at 70 px), so it clipped the bar's labels, and under the macOS overlay title bar, where the bars sit 38 px lower inside the stage, it covered six of the eight buttons that open it. Its top and height are now built on --tb-under and --tb-row (0, or --bar-h under has-overlay-titlebar); the bottom edge is where it was. .uv-view made no stacking context, so .uv-marks (--z-raised) painted over the sheet's sticky head and the ZUI tray head when scrolled under them: .uv-view now has isolation: isolate. The three raw z-index numbers in tablet.css are tokens (--z-raised, --z-selected, --z-raised), same order. --zb-on read var(--accent), a token that does not exist, so the ZUI layout never followed the accent colour; it reads --accent-color.
