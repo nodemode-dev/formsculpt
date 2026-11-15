@@ -17,6 +17,7 @@ pyinstaller --noconfirm --clean --onefile --name formsculpt-engine \
   --add-data "$(fs_native_path "$FSC_ROOT/integrations/blender/formsculpt_link")${sep}integrations/blender/formsculpt_link" \
   --add-data "$(fs_native_path "$FSC_ROOT/integrations/unreal")${sep}integrations/unreal" \
   --add-data "$(fs_native_path "$FSC_ROOT/integrations/unity")${sep}integrations/unity" \
+  --add-data "$(fs_native_path "$FSC_ROOT/plugins")${sep}plugins" \
   --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine \
   --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat \
   $([ "$(fs_os)" = windows ] && echo --hidden-import winpty || echo --hidden-import ptyprocess) \
