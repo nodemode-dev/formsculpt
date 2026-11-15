@@ -7,12 +7,12 @@ pub fn png_rgba_decode(bytes: &[u8]) -> Result<(usize, usize, Vec<[u8; 4]>), Str
     let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
     dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let mut reader = dec.read_info().map_err(|e| format!("not a readable PNG: {e}"))?;
+    if u64::from(reader.info().width) * u64::from(reader.info().height) > 8192 * 8192 {
+        return Err("the image is larger than 8192 by 8192".into());
+    }
     let mut buf = vec![0; reader.output_buffer_size()];
     let info = reader.next_frame(&mut buf).map_err(|e| format!("not a readable PNG: {e}"))?;
     let (w, h) = (info.width as usize, info.height as usize);
-    if w * h > 8192 * 8192 {
-        return Err("the image is larger than 8192 by 8192".into());
-    }
     let channels = info.color_type.samples();
     let px = buf[..info.buffer_size()]
         .chunks_exact(channels)
@@ -31,12 +31,12 @@ pub fn png_gray(bytes: &[u8]) -> Result<(usize, usize, Vec<u8>), String> {
     let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
     dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let mut reader = dec.read_info().map_err(|e| format!("not a readable PNG: {e}"))?;
+    if u64::from(reader.info().width) * u64::from(reader.info().height) > 4096 * 4096 {
+        return Err("the alpha image is larger than 4096 by 4096".into());
+    }
     let mut buf = vec![0; reader.output_buffer_size()];
     let info = reader.next_frame(&mut buf).map_err(|e| format!("not a readable PNG: {e}"))?;
     let (w, h) = (info.width as usize, info.height as usize);
-    if w * h > 4096 * 4096 {
-        return Err("the alpha image is larger than 4096 by 4096".into());
-    }
     let channels = info.color_type.samples();
     let gray = buf[..info.buffer_size()]
         .chunks_exact(channels)
