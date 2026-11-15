@@ -15,7 +15,7 @@ body.theme-light .fs-toast.is-error { color: var(--danger-fill-hover); }
 
 .fs-home { position: fixed; inset: 0; z-index: var(--z-home); display: grid; grid-template-columns: var(--fs-home-nav-w, 248px) 6px minmax(0, 1fr); background: var(--group-head); color: var(--text-primary); font-family: var(--font-ui); font-size: var(--fs-12); line-height: 1.35; outline: 0; user-select: none; -webkit-user-select: none; }
 .fs-home[hidden], .fs-home [hidden] { display: none !important; }
-.fs-home :is(h1, h2, p) { margin: 0; }
+.fs-home :where(h1, h2, p) { margin: 0; }
 .fs-home :is(input) { user-select: text; -webkit-user-select: text; }
 :is(.fs-home, .fs-toast) :is(.fs-btn, .fs-chip, .fs-card, .fs-home-nav-item, .fs-home-nav-hide, .fs-home-nav-show):focus-visible { outline: 2px solid var(--accent-color); outline-offset: 1px; }
 .fs-home-main { grid-column: -2 / -1; }
@@ -62,8 +62,9 @@ body.theme-light .fs-toast.is-error { color: var(--danger-fill-hover); }
 .fs-home-format { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-10); letter-spacing: 0.04em; }
 .fs-home-hero-actions { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); min-width: 188px; }
 .fs-home .fs-home-hero-actions .fs-btn { justify-content: flex-start; height: 36px; padding: 0 12px; border-radius: 9px; font-size: var(--fs-13); }
+.fs-home .fs-home-hero-actions .fs-btn-primary { box-shadow: 0 0 22px color-mix(in srgb, var(--cta-bg) 9%, transparent); }
 .fs-home-section { margin-top: 36px; }
-.fs-home-section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; min-height: 30px; margin-bottom: 14px; }
+.fs-home-section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 14px; }
 .fs-home-section-title { margin-right: 6px; color: var(--text-primary); font-size: 15px; font-weight: 600; }
 .fs-home-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; min-height: var(--ctl-md); }
 .fs-home-section-head > .fs-search { width: 240px; margin-left: auto; }
