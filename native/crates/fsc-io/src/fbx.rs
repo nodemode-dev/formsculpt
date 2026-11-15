@@ -338,7 +338,7 @@ impl Reader<'_> {
         let raw = self.bytes(at + 12, len)?;
         let data = match encoding {
             0 => raw.to_vec(),
-            1 => miniz_oxide::inflate::decompress_to_vec_zlib(raw).map_err(|e| format!("an FBX array does not inflate: {e:?}"))?,
+            1 => miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(raw, count.saturating_mul(size)).map_err(|e| format!("an FBX array does not inflate: {:?}", e.status))?,
             other => return Err(format!("unknown FBX array encoding {other}")),
         };
         if data.len() < count * size {
