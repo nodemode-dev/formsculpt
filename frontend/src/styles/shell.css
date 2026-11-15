@@ -102,7 +102,7 @@ button { font: inherit; color: inherit; }
 .profile-editor .profile-axes { fill: none; stroke: var(--border-light); stroke-width: 1; }
 .profile-editor polygon { fill: var(--accent-color-dim); stroke: var(--accent-color); stroke-width: 2; stroke-linejoin: round; }
 .profile-editor path:not(.profile-axes) { fill: var(--bg-primary); stroke: var(--accent-color); stroke-width: 1.5; }
-.uv-view { position: relative; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
+.uv-view { position: relative; isolation: isolate; width: 100%; aspect-ratio: 1; margin-top: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-tertiary); overflow: hidden; touch-action: none; cursor: grab; }
 .uv-view img { display: block; width: 100%; height: 100%; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
 .uv-view [hidden] { display: none; }
 .uv-view .uv-marks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-raised); }

@@ -18,6 +18,7 @@
   --tb-tools-w: 70px;
   /* Where things start under the top bars (their buttons carry a word under the icon). */
   --tb-under: 76px;
+  --tb-row: 0px;
   position: relative;
   grid-template-rows: 0 minmax(0, 1fr) var(--dock-h, 0px) 0;
   grid-template-columns: 0 1fr 0;
@@ -31,7 +32,7 @@ body.panels-translucent #app.tablet :is(.tb-bar, .tb-tools, .tb-left, .tb-card, 
 body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1c1c1c; --tb-sunk: #000000; --tb-text: #ffffff; --tb-dim: #d0d0d0; --tb-line: rgb(255 255 255 / 0.55); }
 #app.tablet :is(.appbar, .status, .rail) { display: none; }
 #app.tablet .panel { display: none; }
-.has-overlay-titlebar #app.tablet { grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) 0; }
+.has-overlay-titlebar #app.tablet { --tb-row: var(--bar-h); grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) 0; }
 .has-overlay-titlebar #app.tablet .mac-drag { display: block; grid-area: bar; background: #000; }
 #app.tablet .stage { background: #000; }
 #app:not(.tablet) :is(.tb-bar, .tb-stats, .tb-views, .tb-cube, .tb-tools, .tb-left, .tb-pill, .tb-card, .tb-float, .tb-sheet-head) { display: none; }
@@ -213,10 +214,10 @@ body.panels-translucent #app.tablet .tb-dock { backdrop-filter: blur(14px) satur
 .tb-field .tb-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--share, 0%); background: rgb(111 156 240 / 0.28); }
 .tb-field.yellow .tb-fill { background: var(--tb-yellow); }
 .tb-field .tb-name { position: relative; padding: 0 10px; color: var(--tb-white); font: 600 12px/1 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tb-field .tb-fill { overflow: hidden; z-index: 1; pointer-events: none; }
+.tb-field .tb-fill { overflow: hidden; z-index: var(--z-raised); pointer-events: none; }
 .tb-name-on { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--tb-white); font: 600 12px/1 var(--font-sans); white-space: nowrap; }
 .tb-field.yellow .tb-name-on { color: var(--tb-yellow-ink); }
-.tb-field .tb-num { z-index: 2; }
+.tb-field .tb-num { z-index: var(--z-selected); }
 .tb-field .tb-num { position: relative; min-width: 64px; height: 100%; display: grid; place-items: center; background: var(--tb-sunk); color: var(--tb-white); font: 600 12px/1 var(--font-mono); }
 .tb-field.compact { min-width: 150px; height: 46px; align-self: center; }
 .tb-field.disabled { opacity: 0.45; }
@@ -241,10 +242,10 @@ body.panels-translucent #app.tablet .tb-dock { backdrop-filter: blur(14px) satur
 
 /* The menus: the panel itself, floating, restyled to the layout's look. */
 #app:not(.tablet) .tb-sheet-head { display: none; }
-#app.tablet .panel.tl-sheet { display: block; grid-area: auto; position: absolute; z-index: var(--z-chrome); top: 56px; left: 8px; width: 340px; max-height: calc(100% - 140px); padding: 0 0 12px; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 8px 28px rgb(0 0 0 / 0.55); color: var(--tb-text); }
+#app.tablet .panel.tl-sheet { display: block; grid-area: auto; position: absolute; z-index: var(--z-chrome); top: calc(var(--tb-row) + var(--tb-under)); left: 8px; width: 340px; max-height: calc(100% - var(--tb-row) - var(--tb-under) - 84px); padding: 0 0 12px; background: var(--tb-panel); border: 1px solid var(--tb-line); border-radius: var(--tb-radius); box-shadow: 0 8px 28px rgb(0 0 0 / 0.55); color: var(--tb-text); }
 #app.tablet .panel.tl-sheet.tb-right { left: auto; right: calc(var(--tb-tools-w) + 16px); }
 #app.tablet .panel .tl-off { display: none !important; }
-#app.tablet .panel.tl-sheet .tb-sheet-head { position: sticky; top: 0; z-index: 1; margin-bottom: 8px; cursor: default; }
+#app.tablet .panel.tl-sheet .tb-sheet-head { position: sticky; top: 0; z-index: var(--z-raised); margin-bottom: 8px; cursor: default; }
 #app.tablet .panel.tl-sheet > :not(.tb-sheet-head) { margin-left: 12px; margin-right: 12px; }
 #app.tablet .panel.tl-sheet h2 { color: var(--tb-dim); }
 #app.tablet .panel.tl-sheet .field { color: var(--tb-text); }
