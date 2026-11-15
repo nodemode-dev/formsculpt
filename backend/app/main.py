@@ -30,6 +30,7 @@ async def lifespan(_: FastAPI):
     task = asyncio.create_task(autosave.loop())
     yield
     task.cancel()
+    cmd_chat.cancel()
     terminal.close_all()
 
 

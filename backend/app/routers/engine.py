@@ -101,8 +101,8 @@ async def import_file(file: UploadFile, scale: float = Query(1.0, gt=0, le=10000
 async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|fbx|usda)$"), ids: str | None = None, scale: float = Query(1.0, gt=0, le=100000), up_axis: str = Query("y", pattern="^(y|z)$"), triangulate: bool = False) -> Response:
     """The chosen objects as a file, with the export options (scale, up axis for the formats without one, triangles)."""
     _guard()
-    chosen = [int(x) for x in ids.split(",") if x.strip()] if ids else None
     try:
+        chosen = [int(x) for x in ids.split(",") if x.strip()] if ids else None
         data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen, scale, up_axis, triangulate)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc).strip("'\""))

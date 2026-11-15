@@ -62,6 +62,11 @@ def _upload(base: str, name: str, blob: bytes, kind: str) -> str:
     return url if url.startswith("http") else base + (url if url.startswith("/") else "/" + url)
 
 
+def _announce(base: str, announce: bytes) -> None:
+    with outbound.request(base + "/api/formsculpt/receive", announce, {"Content-Type": "application/json"}, "POST"):
+        pass
+
+
 @router.post("/send")
 async def send(body: Send) -> dict:
     """Exports the scene as GLB, renders a preview and sends both to NodeMode."""
@@ -75,8 +80,8 @@ async def send(body: Send) -> dict:
         raise HTTPException(status_code=400, detail=str(exc))
     stem = "".join(c if c.isalnum() or c in "-_ " else "_" for c in body.title)[:80].strip() or "formsculpt"
     try:
-        model_url = _upload(base, f"{stem}.glb", glb, "model/gltf-binary")
-        preview_url = _upload(base, f"{stem}.png", png, "image/png")
+        model_url = await run_in_threadpool(_upload, base, f"{stem}.glb", glb, "model/gltf-binary")
+        preview_url = await run_in_threadpool(_upload, base, f"{stem}.png", png, "image/png")
     except urllib.error.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"NodeMode refused the upload ({exc.code}).")
     except (urllib.error.URLError, OSError) as exc:
@@ -87,8 +92,8 @@ async def send(body: Send) -> dict:
     ]
     announce = json.dumps({"source": "formsculpt", "title": body.title, "files": files}).encode()
     try:
-        with outbound.request(base + "/api/formsculpt/receive", announce, {"Content-Type": "application/json"}, "POST"):
-            placed = True
+        await run_in_threadpool(_announce, base, announce)
+        placed = True
     except urllib.error.HTTPError as exc:
         if exc.code not in (404, 405):
             raise HTTPException(status_code=502, detail=f"NodeMode refused what was sent ({exc.code}).")
