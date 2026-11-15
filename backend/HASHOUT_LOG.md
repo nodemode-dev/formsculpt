@@ -12,7 +12,7 @@ backend/
   requirements.txt         pinned
   requirements_macos.txt   unpinned twin
   requirements_desktop*.txt  PyInstaller
-  .env.example             FSC_HOST, FSC_PORT, FSC_CORS_ORIGINS
+  .env.example             FSC_PORT, FSC_CORS_ORIGINS
   app/__init__.py          __version__, a version site
   app/main.py              FastAPI app, middleware, routers, static mount
   app/core/config.py       names, ports, dist_dir, is_desktop, cors_origins
@@ -29,6 +29,7 @@ backend/
 - [app/core/isolation.py](#appcoreisolationpy)
 - [app/routers/system.py](#approuterssystempy)
 - [app/main.py](#appmainpy)
+- [The pre-release audit of the service, the shell and the scripts](#the-pre-release-audit-of-the-service-the-shell-and-the-scripts)
 
 ## formsculpt_engine.py
 
@@ -386,3 +387,56 @@ formcompiler's Windows leg runs `./formsculpt install`, `install-desktop` and `d
 - kind: rationale
 - logged: v1.19.3 · 2026-10-31
 Python's `mimetypes` takes file types from the Windows registry (`HKEY_CLASSES_ROOT\.js`, value `Content Type`) over its own table, and some installers and editors set `.js` to `text/plain`. On those PCs the engine served the built window's scripts as `text/plain`, WebView2 refused every module script under strict MIME checking, and the desktop window stayed blank; macOS, Linux, dev mode (Vite serves the page) and Windows PCs with the default value never showed it. The three calls pin `.js` and `.mjs` to `text/javascript` and `.css` to `text/css`, which covers `StaticFiles`, `FileResponse` and any direct `guess_type`. They sit after the last import, not above the imports: a module that re-reads the registry while importing cannot undo them, and no import follows a statement (E402). They look redundant off Windows; keep them. Repro on a Windows PC: `reg add "HKCU\Software\Classes\.js" /v "Content Type" /d "text/plain" /f`, then launch the rebuilt app; restore with `/d "text/javascript"`. Checked here: with the table poisoned to `text/plain` for js, mjs and css through `mimetypes.init(files=...)`, the three calls return `text/javascript`, `text/javascript` and `text/css`; `py_compile` passes. Not yet run on a Windows PC.
+
+## The pre-release audit of the service, the shell and the scripts
+
+### routers/nodemode.py · a send no longer stops the whole service
+- refers-to: app/routers/nodemode.py :: send, _announce (new)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`send` is an async route and called `_upload` twice and `outbound.request` once directly, so each blocking `urlopen` (20 s timeout) ran on the event loop. Seen on a booted service: with a NodeMode address that accepts the connection and never answers, `GET /api/health` got no reply for 6 s while the send was in flight (the window's polls, strokes and every other route wait the same way). The three calls now run through `run_in_threadpool`; the announce moved into `_announce` so it can. Removed code, quoted in full: `model_url = _upload(base, f"{stem}.glb", glb, "model/gltf-binary")`, `preview_url = _upload(base, f"{stem}.png", png, "image/png")` and `with outbound.request(base + "/api/formsculpt/receive", announce, {"Content-Type": "application/json"}, "POST"):` followed by `placed = True`.
+Checked against a booted service: the same hanging address, `/api/health` 200 in 2 ms during the send and the send still ends 502; against a stand-in receiver, `status` gives running and receiver true and `send` gives placed true with both files.
+
+### routers/engine.py and routers/mcp.py · three requests that answered 500
+- refers-to: app/routers/engine.py :: export_file; app/routers/mcp.py :: mcp
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`GET /api/engine/export?ids=abc` raised ValueError outside the route's own try, `POST /mcp` with `params` as a list raised AttributeError on `params.get`, and `tools/call` with a `name` that is a list raised `TypeError: unhashable type` on `name in names`; each answered 500 with a traceback in the engine log. The id list is now parsed inside the try (400 with the reason), non-object `params` answer 400 with JSON-RPC -32602, and `name` must be a string before it is looked up (-32602, "No tool named"). Checked on a booted service: 400, 400 and 200 with the error object; a valid export and `tools/call get_scene` unchanged.
+
+### app/main.py · the Chat tab's Claude Code process ends with the service
+- refers-to: app/main.py :: lifespan; app/services/cmd_chat.py :: cancel
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The lifespan closed the terminal sessions at shutdown but not the `claude -p` process a Chat answer runs in. Seen with a stand-in program set as `claudeBin`: after `chat.send` and SIGTERM to the service, the service was gone and the child was still running. `lifespan` now calls `cmd_chat.cancel()` before `terminal.close_all()`. Checked the same way: the child is gone with the service, the terminal's shell too.
+
+### formsculpt_engine.py · the desktop engine prefers 8260, and removes what it unpacked when the shell is gone
+- refers-to: formsculpt_engine.py :: free_port, watch_parent; src-tauri/src/main.rs :: kill_backend
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Port. The shell starts the engine with `FSC_PORT=0` and `free_port` asked the OS for any port, so the installed app listened somewhere new on every launch, while everything that talks to a running formsculpt assumes 8260: the Blender add-on's default address (its README says the desktop app works), `setup/mcp_stdio.py` (which then started a second engine with its own scene beside the open window), `setup/run_script.py` and the harness skill. `free_port` now tries `config.BACKEND_PORT` first and falls back to any free port when it is taken (a dev service or a second window), which is formdeck's `FORMDECK_PORT_PREFER`. The probe sets SO_REUSEADDR off Windows so a relaunch right after a quit gets the port back, as uvicorn's own socket does. Removed code, quoted in full: `with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:` / `s.bind(("127.0.0.1", 0))` / `return s.getsockname()[1]`.
+Stopping. The one-file sidecar is PyInstaller's launcher with the server as its child; the launcher removes the `_MEI` folder it unpacked when the child exits. `kill_backend` used `child.kill()`, a forced kill that reaches only the launcher (PyInstaller 6.22.3's launcher has no parent-death signal and no job object: read in its `bootloader/src`), so on every quit the server lived on until `watch_parent` saw the shell gone and called `os._exit(0)`, and nothing removed the folder: one copy of the window, Python and the engine left in the temporary folder per launch. This is formvis's fault of 1.86.2 and the same two changes: `kill_backend` sends SIGTERM first on unix (the launcher passes it to the server, uvicorn shuts down, the lifespan closes terminals and Chat, the launcher removes the folder) and waits up to 1.5 s before the forced kill; and `watch_parent` removes `sys._MEIPASS` (only when its name starts with `_MEI`) before `os._exit(0)`, for the cases where the launcher is already dead. On Windows the forced kill stays, so the server still exits through `watch_parent`, which now removes everything Windows lets a running program delete; the loaded libraries stay behind. formvis's `sweep_stale_unpacks` (1.86.3) would clear those at the next launch and is not copied here.
+Checked: `formsculpt_engine.py` run unfrozen with `FSC_PORT=0` printed `http://127.0.0.1:8260`, a second one beside it took another port, and the first exited within 3 s of the process named in `FSC_PARENT_PID` ending; `watch_parent` with a stand-in `_MEI` folder as `sys._MEIPASS` removed it before exiting; the `kill_backend` block compiled alone with rustc against a stand-in child and returned in 55 ms after SIGTERM with no forced kill. Not run: the frozen sidecar, and `src-tauri` itself (no webkit2gtk here).
+
+### app/services/scripting.py, setup/freeze_backend, build_app.bat · the desktop app carries the plugins
+- refers-to: app/services/scripting.py :: ROOT; setup/freeze_backend and build_app.bat (the pyinstaller line)
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+`ROOT` was three folders above `scripting.py`. In the frozen engine that file is `<unpack folder>/app/services/scripting.py`, so `ROOT / "plugins"` was `plugins` in the temporary folder itself (`/tmp/plugins` on Linux, which any user of the computer can create), and the freeze did not pack `plugins/` at all: the installed app listed none of rock, pedestal and rivets. `ROOT` is now `sys._MEIPASS` when frozen, and both freezes pass `--add-data` for `plugins`, as they do for the integrations. Removed code, quoted in full: `ROOT = Path(__file__).resolve().parents[3]`. Checked: with a stand-in unpack folder as `sys._MEIPASS`, `list_plugins` finds the three there; from the checkout it finds them as before, and the three ran on a booted service. Not run: PyInstaller.
+
+### setup/serve, backend/boot_backend, .env.example · loopback only
+- refers-to: setup/serve; backend/boot_backend; backend/.env.example
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+Both scripts passed `--host "${FSC_HOST:-127.0.0.1}"`. `LocalGuard` trusts the Host header, which the sender writes: with `FSC_HOST=0.0.0.0`, `curl -H 'Host: 127.0.0.1' http://<this computer's network address>:8263/api/commands/terminal.list -X POST` answered 200, so anyone on the network could reach the window-only terminal commands. The harness's engine-service rule is "Bind 127.0.0.1:8260 only", and the `.bat` twin, CI and the desktop engine already do. The two scripts now pass `--host 127.0.0.1` and the example file no longer lists the variable. Removed code, quoted in full: `--host "${FSC_HOST:-127.0.0.1}"` (twice) and the line `FSC_HOST=127.0.0.1`.
+
+### formsculpt.bat · install and engine build the engine module, serve sets FSC_DIST without a trailing space
+- refers-to: formsculpt.bat :: install, engine, serve
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The README sends Windows users to `formsculpt_oc_install.bat` and `formsculpt.bat`. `install` ran only the two `oc_install.bat` files, where `setup/install_all` also builds the engine, and `engine` ran `cargo build --workspace --release`, which never installs the Python module (`setup/engine_build` excludes fsc-py and runs `maturin develop`). So a Windows checkout installed this way booted a service that answers 503 "the engine module is not built" on every engine route, with no `.bat` command that builds it. `engine` now does what `build_app.bat` already does (the workspace without fsc-py, then `maturin develop --release` in the venv with `CARGO_TARGET_DIR` on `native\target`), and `install` runs it when cargo is there, saying so when it is not. `serve` had `set FSC_DIST=%~dp0frontend\dist && uvicorn ...`: cmd keeps the space before `&&` in the value, so the service looked for `dist \index.html`; the assignment is now quoted. Removed code, quoted in full: `cd native && cargo build --workspace --release` and `set FSC_DIST=%~dp0frontend\dist`. Not run: there is no Windows here; the file keeps CRLF line ends.
+
+### blender_manifest.toml and ci.yml · the add-on's website, build_app in the shell syntax check
+- refers-to: integrations/blender/formsculpt_link/blender_manifest.toml :: website; .github/workflows/ci.yml :: scripts, Shell syntax
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The add-on's `website` named `github.com/nodemode-ai/formsculpt`; the repository is `nodemode-dev/formsculpt` (the remote, and the README's clone line), so Blender's extension page linked to the old account. The CI loop that runs `bash -n` listed every shell script except `build_app`; it is in the list now. Checked: `bash -n build_app` passes.

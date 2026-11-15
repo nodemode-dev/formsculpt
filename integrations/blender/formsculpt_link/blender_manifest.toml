@@ -6,7 +6,7 @@ name = "formsculpt Live Link"
 tagline = "Keep meshes in step with a running formsculpt both ways"
 maintainer = "nodemode-ai"
 type = "add-on"
-website = "https://github.com/nodemode-ai/formsculpt"
+website = "https://github.com/nodemode-dev/formsculpt"
 tags = ["Import-Export", "Sculpt"]
 
 # Tested against Blender 5.2.2 (the bpy module); older releases are not claimed.
