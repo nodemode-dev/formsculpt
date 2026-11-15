@@ -41,6 +41,7 @@ frontend/
 - [src/styles/tokens.css](#srcstylestokenscss)
 - [The desktop shell: the family splash, the native menu bar, the quit gate](#the-desktop-shell-the-family-splash-the-native-menu-bar-the-quit-gate)
 - [The Home screen](#the-home-screen)
+- [Home and the title row after the 1.20.0 verification](#home-and-the-title-row-after-the-1200-verification)
 
 ## index.html
 
@@ -1290,3 +1291,57 @@ Both layouts hide the app bar and its brand mark. The tablet layout's top left b
 ```
 
 Checked: type check, production build, the two window tests (Home is up at launch there, layout shift 0 under 4x CPU and a slow network), the smoke run (frontend/e2e/smoke.py now starts with both Home preferences off, since it drives the workspace), the i18n check (every table 1470/1470), and a Playwright script kept outside the repo that drives every Home path: with and without 4x CPU plus slow network throttling, 84 checks, among them delete the last object, undo, redo with Home never appearing, and both layouts' Home buttons. Under throttling the window was revealed with Home already shown, Home was never shown and hidden again, no list node was rebuilt, and no layout shift came from data arriving. Two shifts were recorded and are not load shifts: cards moving over when two restored sculpts re-enter the list after Undo, and the tablet layout's object rows when another sculpt replaces the scene. Not run: macOS (the traffic light inset on Home, key precedence of Alt+Cmd+H), the desktop shell.
+
+## Home and the title row after the 1.20.0 verification
+
+Found by walking the built app as a first-time user and by putting formdeck's own Home (run from its source) beside this one. Each entry says what was seen and what changed.
+
+### src/ui/home.ts, src/app.ts · an undone New Scene is the same sculpt again
+- refers-to: src/ui/home.ts :: closed, setCurrent (keepClosed), homeScene, homeSceneEnded (trail, undone), homeSceneReplaced, mountHome (closeSculpt); src/app.ts :: SceneView.refreshNow
+- kind: fix
+- logged: v1.20.0 · 2026-11-15
+New Scene closes the open sculpt, and undoing it brought the objects back as an unsaved, untitled sculpt: its link to the library entry was gone, so Save then made a second entry (seen in the running app: "First Sphere" saved, New Scene, Ctrl+Z, Ctrl+S, and the library held "Sphere" beside "First Sphere"). `homeSceneEnded` now keeps what it closed in `closed`, with the labels of the history steps done before that New Scene. When a later refresh finds the scene back with no sculpt attached, the next step to redo is New Scene and the done steps are that same list, the sculpt is attached again with its id and title. The list of labels is what ties the scene on screen to the one that was closed: a New Scene made later, over another scene, has another list. `closed` is dropped whenever a sculpt is set by any other path (open, template, blank scene, a file, Save), when a project replaces the scene (`homeSceneReplaced`) and when its sculpt is moved to the Trash. A scene with neither id nor title that ends does not overwrite an earlier `closed`, so New Scene, Add Sphere, undo, undo still ends on the saved sculpt.
+
+### src/ui/home.ts · the window changes when the person acts, not when the service answers
+- refers-to: src/ui/home.ts :: Home.trashSculpts, undoToast, restore; openSculpt, blankScene
+- kind: fix + removed
+- logged: v1.20.0 · 2026-11-15
+Two things were late under a 4x slower CPU and a slow network. Undo in the "Moved to the Trash" toast waited for the restore requests and the library list before the cards came back, 589 ms after the click, so the cards beside them moved with no input near (layout shift 0.034): `restore` now puts the summaries it removed back at once, in their old order, and the service's list is patched over them when it arrives (82 ms, no late shift). And Home left before the workspace had the new scene: opening Beta while Alpha was open showed Alpha's mesh, object rows and counts until the refresh landed, and Blank scene showed the old scene the same way. Home now leaves after the refresh. Removed order, quoted:
+```ts
+    setCurrent({ id: reply.sculpt.id, title: reply.sculpt.title, blank: false });
+    home?.leave();
+    await host.refresh();
+    host.frame();
+```
+```ts
+  setCurrent({ id: null, title: '', blank: true });
+  home?.leave();
+  await host.refresh();
+```
+When no sculpt was open before, Home still closes as soon as the scene holds an object (the rule in "when Home is up"), and the empty viewport fills when the mesh arrives; nothing stale is shown there.
+
+### src/engine/library.ts, src/ui/home.ts · the library belongs to the service
+- refers-to: src/engine/library.ts :: call; src/ui/home.ts :: createSculpt
+- kind: fix
+- logged: v1.20.0 · 2026-11-15
+With the window on the browser engine and a service answering (`?engine=wasm`), Home listed the service's sculpts and templates. A card "opened" there set the title and left Home while the window's own scene stayed empty and the service's scene was replaced; New sculpt made a library entry and showed nothing. `call` now refuses on the browser engine, so Home lists nothing it cannot open, and New sculpt there makes a blank scene with a sphere in the window's own engine. Open file, Choose a file and Blank scene worked already. Templates are not offered on the browser engine: they are built by the service.
+
+### src/styles/home.css · three rules against formdeck's
+- refers-to: src/styles/home.css :: .fs-home :where(h1, h2, p), .fs-home-section-head, .fs-home .fs-home-hero-actions .fs-btn-primary
+- kind: fix + removed
+- logged: v1.20.0 · 2026-11-15
+Measured against formdeck's Home at 1440 by 900. The margin reset was `.fs-home :is(h1, h2, p)`, which outranks `.fs-home-sub` and `.fs-home-section-title`, so the line under the page title had lost its 4 px and the section title its 6 px: every page sat 4 px high. It is `:where` now. `.fs-home-section-head` had `min-height: 30px`; formdeck's Recent head is 24 px, and nothing needs the reserve (the head with the search field is 30 px by the field itself), so it is gone. The hero's primary button has formdeck's glow, from `--cta-bg`. After these the head, hero, section heads and card rows sit on formdeck's lines, apart from the side panel's default width (248 against 232 px).
+
+### src/ui/desktop-shell.ts, src/app.ts, src/styles/shell.css, src/ui/home.ts · the open sculpt's name in the title row
+- refers-to: src/ui/desktop-shell.ts :: documentTitle (new); src/app.ts :: buildShell (.bar-doc inside .spacer); src/styles/shell.css :: .bar-doc, .appbar .spacer; src/ui/home.ts :: setCurrent
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The family's title row shows the document's name; the page never called `set_window_title` and the bar had no place for it. `setCurrent` now hands the name to `documentTitle`, which writes it into `.bar-doc`, a label inside the bar's spacer (so it takes only space the spacer had, moves nothing, and leaves the spacer a drag region: the label has no pointer events), sets `document.title` to "name · FormSculpt" and, in the desktop app, calls `set_window_title` so the system frame and the task switcher carry it. An unsaved scene reads "Untitled sculpt"; with no sculpt open the title is "FormSculpt" and the label is empty. The tablet and ZUI layouts have no app bar, so there the name is in the window title only.
+
+### src/ui/home.ts, src/ui/menus.ts · Preferences is a command
+- refers-to: src/ui/home.ts :: homeCommands (app.preferences); src/ui/menus.ts :: EDIT
+- kind: rationale
+- logged: v1.20.0 · 2026-11-15
+The family's Edit menu ends with Preferences and the macOS application menu carries it under About; the dialog existed (Home's two preferences) but no command opened it, so neither menu had the row. `app.preferences` (Mod+,) opens that dialog; Edit lists it last, `NativeMenus` already adds it to the application menu when the command exists, and Home's own Preferences item runs it.
+
+Checked on the final build: type check, production build, i18n check (1470 of 1470, no new string), and Playwright scripts kept outside the repo: the first-time walk on the service (53 steps: template, strokes, symmetry, remesh, subdivide, paint, undo and redo, Save, New Scene, undo of New Scene then Save leaving one entry, Recent, duplicate, Trash, restore, delete permanently, Empty Trash, OBJ and GLB in, OBJ, STL and GLB out and in again, narrow windows), every row of the panel layout's eleven menus clicked, the palette, Preferences from Edit and by Mod+,, the five themes over a reload, the three layouts' Home buttons, and the same Home paths under 4x CPU and a slow network with no late shift and no stale scene shown. Not run: macOS and Windows, the desktop shell.
