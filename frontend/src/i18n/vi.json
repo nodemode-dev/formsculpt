@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} giờ trước",
  "{n} min ago": "{n} phút trước",
  "{n} objects": "{n} đối tượng",
- "{n} sculpts restored.": "Đã khôi phục {n} bản điêu khắc."
+ "{n} sculpts restored.": "Đã khôi phục {n} bản điêu khắc.",
+ "Close Sculpt": "Đóng bản điêu khắc",
+ "Menu": "Menu",
+ "Open Recent": "Mở gần đây",
+ "Rename Sculpt": "Đổi tên bản điêu khắc",
+ "Retry": "Thử lại",
+ "Save As": "Lưu thành",
+ "Save As...": "Lưu thành...",
+ "The engine service still does not answer.": "Dịch vụ engine vẫn chưa phản hồi.",
+ "The library needs the engine service; this window is running the browser engine.": "Thư viện cần dịch vụ engine; cửa sổ này đang chạy bằng engine của trình duyệt.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt đang chạy bằng engine của trình duyệt vì dịch vụ engine không phản hồi. Vẫn điêu khắc được ở đây; thư viện, Khôi phục, plugin, chuyển sang ứng dụng khác và tác nhân cần dịch vụ.",
+ "This sculpt has changes that are not saved. Save them first?": "Tác phẩm điêu khắc này có thay đổi chưa lưu. Lưu trước?"
 }

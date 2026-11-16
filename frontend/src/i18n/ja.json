@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} 時間前",
  "{n} min ago": "{n} 分前",
  "{n} objects": "{n} 個のオブジェクト",
- "{n} sculpts restored.": "{n} 個のスカルプトを復元しました。"
+ "{n} sculpts restored.": "{n} 個のスカルプトを復元しました。",
+ "Close Sculpt": "スカルプトを閉じる",
+ "Menu": "メニュー",
+ "Open Recent": "最近使った項目を開く",
+ "Rename Sculpt": "スカルプトの名前を変更",
+ "Retry": "再試行",
+ "Save As": "名前を付けて保存",
+ "Save As...": "名前を付けて保存...",
+ "The engine service still does not answer.": "エンジンサービスはまだ応答しません。",
+ "The library needs the engine service; this window is running the browser engine.": "ライブラリにはエンジンサービスが必要です。このウインドウはブラウザエンジンで動作しています。",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "エンジンサービスが応答しなかったため、formsculpt はブラウザエンジンで動作しています。ここでもスカルプトはできますが、ライブラリ、復元、プラグイン、他アプリへの受け渡し、エージェントにはサービスが必要です。",
+ "This sculpt has changes that are not saved. Save them first?": "このスカルプトには保存されていない変更があります。先に保存しますか？"
 }

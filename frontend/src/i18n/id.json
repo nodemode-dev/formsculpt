@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} jam lalu",
  "{n} min ago": "{n} mnt lalu",
  "{n} objects": "{n} objek",
- "{n} sculpts restored.": "{n} pahatan dipulihkan."
+ "{n} sculpts restored.": "{n} pahatan dipulihkan.",
+ "Close Sculpt": "Tutup Pahatan",
+ "Menu": "Menu",
+ "Open Recent": "Buka Terbaru",
+ "Rename Sculpt": "Ganti Nama Pahatan",
+ "Retry": "Coba lagi",
+ "Save As": "Simpan Sebagai",
+ "Save As...": "Simpan Sebagai...",
+ "The engine service still does not answer.": "Layanan mesin masih belum menjawab.",
+ "The library needs the engine service; this window is running the browser engine.": "Pustaka memerlukan layanan mesin; jendela ini berjalan dengan mesin browser.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt berjalan dengan mesin browser karena layanan mesin tidak menjawab. Memahat tetap bisa di sini; pustaka, Pulihkan, plugin, pengiriman ke aplikasi lain, dan agen memerlukan layanan itu.",
+ "This sculpt has changes that are not saved. Save them first?": "Pahatan ini memiliki perubahan yang belum disimpan. Simpan dulu?"
 }

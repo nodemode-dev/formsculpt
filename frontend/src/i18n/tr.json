@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} sa önce",
  "{n} min ago": "{n} dk önce",
  "{n} objects": "{n} nesne",
- "{n} sculpts restored.": "{n} heykel geri yüklendi."
+ "{n} sculpts restored.": "{n} heykel geri yüklendi.",
+ "Close Sculpt": "Heykeli Kapat",
+ "Menu": "Menü",
+ "Open Recent": "Son Kullanılanı Aç",
+ "Rename Sculpt": "Heykeli Yeniden Adlandır",
+ "Retry": "Yeniden dene",
+ "Save As": "Farklı Kaydet",
+ "Save As...": "Farklı Kaydet...",
+ "The engine service still does not answer.": "Motor hizmeti hâlâ yanıt vermiyor.",
+ "The library needs the engine service; this window is running the browser engine.": "Kitaplık motor hizmetine ihtiyaç duyar; bu pencere tarayıcı motoruyla çalışıyor.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "Motor hizmeti yanıt vermediği için formsculpt tarayıcı motoruyla çalışıyor. Burada yontma çalışır; kitaplık, kurtarma, eklentiler, aktarımlar ve ajanlar hizmete ihtiyaç duyar.",
+ "This sculpt has changes that are not saved. Save them first?": "Bu heykelde kaydedilmemiş değişiklikler var. Önce kaydedilsin mi?"
 }
