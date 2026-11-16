@@ -22,8 +22,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -36,10 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust toolchain (pinned in rust-toolchain.toml)
         run: rustup toolchain install && rustc --version && cargo clippy --version
-      - uses: swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: native
       - run: ./formsculpt engine check
@@ -57,18 +57,18 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust toolchain (pinned in rust-toolchain.toml)
         run: rustup toolchain install && rustc --version && cargo clippy --version
-      - uses: swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: native
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: backend/requirements.txt
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -94,13 +94,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust toolchain (pinned in rust-toolchain.toml)
         run: rustup toolchain install && rustc --version && cargo clippy --version
-      - uses: swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: native
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
@@ -116,13 +116,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust toolchain (pinned in rust-toolchain.toml)
         run: rustup toolchain install && rustc --version && cargo clippy --version
-      - uses: swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: native
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
@@ -153,18 +153,18 @@ jobs:
             grep -q '//archive.ubuntu.com' /etc/apt/apt-mirrors.txt || printf 'http://archive.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee -a /etc/apt/apt-mirrors.txt >/dev/null
           fi
           printf 'Acquire::Retries "3";\n' | sudo tee /etc/apt/apt.conf.d/80-ci-retries >/dev/null
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust toolchain (pinned in rust-toolchain.toml)
         run: rustup toolchain install && rustc --version && cargo clippy --version
-      - uses: swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: native
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: backend/requirements_test.txt
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -183,11 +183,49 @@ jobs:
       - name: Window smoke (F7)
         run: backend/venv/bin/python -m pytest frontend/tests/window -q -p no:cacheprovider
 
+  desktop-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Apt mirror fallback
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            grep -q mirrors.edge.kernel.org /etc/apt/apt-mirrors.txt || printf 'http://mirrors.edge.kernel.org/ubuntu/\tpriority:1\n' | sudo tee -a /etc/apt/apt-mirrors.txt >/dev/null
+            grep -q '//archive.ubuntu.com' /etc/apt/apt-mirrors.txt || printf 'http://archive.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee -a /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          printf 'Acquire::Retries "3";\n' | sudo tee /etc/apt/apt.conf.d/80-ci-retries >/dev/null
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tauri system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - name: Rust toolchain (pinned in rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: src-tauri
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Window bundle and sidecar placeholder the Tauri build script looks for
+        run: |
+          (cd frontend && npm ci && npm run build)
+          mkdir -p src-tauri/binaries
+          touch "src-tauri/binaries/formsculpt-engine-$(rustc -vV | awk '/^host:/ {print $2}')"
+      - name: Cargo check of the desktop shell
+        working-directory: src-tauri
+        run: cargo check --locked
+
   scripts:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Shell syntax
         run: |
           for f in formsculpt build_app formsculpt_oc_install backend/oc_install backend/boot_backend frontend/oc_install frontend/boot_frontend setup/*; do
