@@ -103,6 +103,8 @@ async def export_file(format: str = Query("glb", pattern="^(obj|stl|ply|glb|3mf|
     _guard()
     try:
         chosen = [int(x) for x in ids.split(",") if x.strip()] if ids else None
+        if chosen and not all(0 < i < 2**32 for i in chosen):
+            raise ValueError("an object id is a whole number from 1 to 4294967295")
         data = await run_in_threadpool(engine.export_bytes, f"export.{format}", chosen, scale, up_axis, triangulate)
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc).strip("'\""))

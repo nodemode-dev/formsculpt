@@ -122,7 +122,10 @@ async def mcp(request: Request) -> Response:
         inapp = secrets.compare_digest(request.headers.get(agents.INAPP_HEADER, ""), agents.INAPP_TOKEN)
         if inapp:
             events.publish("agent.activity", tool=name)
-        out = _ok(req_id, await call_tool(name, args, inapp), modern) if isinstance(name, str) and name in names and isinstance(args, dict) else _err(req_id, -32602, f"No tool named {name}")
+        if not isinstance(args, dict):
+            out = _err(req_id, -32602, "arguments must be an object")
+        else:
+            out = _ok(req_id, await call_tool(name, args, inapp), modern) if isinstance(name, str) and name in names else _err(req_id, -32602, f"No tool named {name}")
     else:
         out = _err(req_id, -32601, f"Method not found: {method}")
     return Response(content=json.dumps(out), media_type="application/json")
