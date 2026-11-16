@@ -53,7 +53,7 @@
   "plugins": {
     "updater": {
       "pubkey": "",
-      "endpoints": ["https://github.com/nodemode-ai/formcompiler/releases/download/formsculpt-updates/latest.json"]
+      "endpoints": ["https://dl.formai.studio/formsculpt/updates/latest.json"]
     }
   }
 }
