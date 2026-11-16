@@ -26,7 +26,9 @@ def start_engine() -> bool:
     path = os.path.join(tempfile.gettempdir(), "formsculpt-engine.log")
     with open(path, "ab") as out:
         log(f"starting the engine (./formsculpt {command}); its log: {path}")
-        subprocess.Popen([os.path.join(ROOT, "formsculpt"), command], cwd=ROOT, stdin=subprocess.DEVNULL, stdout=out, stderr=out, start_new_session=True)
+        launcher = os.path.join(ROOT, "formsculpt.bat" if os.name == "nt" else "formsculpt")
+        subprocess.Popen([launcher, command], cwd=ROOT, stdin=subprocess.DEVNULL, stdout=out, stderr=out,
+                         start_new_session=(os.name != "nt"), creationflags=(0x208 if os.name == "nt" else 0))
     probe = URL.rsplit("/mcp", 1)[0] + "/api/version"
     for _ in range(120):
         time.sleep(0.5)
