@@ -594,3 +594,21 @@ A `desktop-shell` job runs `cargo check --locked` in `src-tauri` on Ubuntu after
 - kind: rationale
 - logged: v1.21.0 · 2026-11-16
 Blender saves the add-on's Live and Watch GoF preferences but runs no `update` callback when it loads them, so after a restart both showed on and no timer ran until toggled. `register` now queues a one-shot persistent timer that calls the two update functions with the loaded preferences; `unregister` removes it if it has not run. Not run: no Blender here.
+
+### app/services/library.py, app/routers/library.py · rename and Save As
+- refers-to: app/services/library.py :: _free, rename, create_from_scene (exact); app/routers/library.py :: NewSculpt.exact, NewName, rename
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+The 1.20.0 entry above says there is no rename route; there is one now, because the window has Save As and Rename (owner decision list, final verification 1). `POST /api/sculpts/{id}/rename` with `{title}`: `checked` refuses a name outside the library's rule (400), `_free` refuses a name another sculpt has, compared without case (409), the sculpt itself excepted so a change of case is allowed; under the lock the four files (`.fsc`, LightBox's `.png`, `.home/<name>.thumb` and `.json`) move with `os.replace`, a stray file already at the new name is removed, and the pinned, hidden and opened lists follow the new name. `POST /api/sculpts` with `fromScene` and `exact: true` (Save As) keeps the typed name and refuses a taken or empty one instead of numbering it. Checked with curl against a temporary data folder: 409 on a clash (also by case), 400 on `../x`, `con` and an empty name, 404 on an unknown sculpt, a case-only rename, the files and `.home` entries moved; backend suite 220 passed.
+
+### app/routers/engine.py · export_file, ids out of range
+- refers-to: app/routers/engine.py :: export_file (after the ids are parsed)
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+An id that parses as an integer but is not an engine id (0, -1, past 32 or 64 bits) reached `engine.export_bytes` and the conversion into the engine raised `OverflowError`, so the route answered 500. Ids outside 1 to 4294967295 now raise the same `ValueError` the route already turns into 400, with the reason. Checked: `tests/test_local_service.py::test_an_export_with_ids_out_of_range_is_refused_and_never_a_500` (was a strict expected failure), backend suite 228 passed.
+
+### app/routers/mcp.py · tools/call, arguments that are not an object
+- refers-to: app/routers/mcp.py :: mcp, the tools/call branch
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+`tools/call` with `arguments` that is not an object (a list, a string) was answered -32602 "No tool named get_scene" for a tool that exists. It is now -32602 "arguments must be an object"; an unknown or non-string name keeps "No tool named". Checked: `tests/test_local_service.py::test_a_tools_call_whose_arguments_are_not_an_object_says_so` (was a strict expected failure).

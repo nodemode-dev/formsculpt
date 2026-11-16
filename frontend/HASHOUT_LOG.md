@@ -31,6 +31,8 @@ frontend/
   src/ui/toast.ts         toast, pushToast, dismissToast (#toast-root made on first use)
   src/ui/brand.ts         brandMark
   src/ui/demos.ts         DEMOS, empty this release
+  src/ui/preferences.ts   PreferencesDialog: theme, layout, language, Menus in Window, Home, key map
+  src/ui/engine-notice.ts the browser-engine notice with Retry
 ```
 
 ## Contents
@@ -42,6 +44,7 @@ frontend/
 - [The desktop shell: the family splash, the native menu bar, the quit gate](#the-desktop-shell-the-family-splash-the-native-menu-bar-the-quit-gate)
 - [The Home screen](#the-home-screen)
 - [Home and the title row after the 1.20.0 verification](#home-and-the-title-row-after-the-1200-verification)
+- [formsculpt 1.21.0 · the window and Home](#formsculpt-1210--the-window-and-home)
 
 ## index.html
 
@@ -1345,3 +1348,92 @@ The family's title row shows the document's name; the page never called `set_win
 The family's Edit menu ends with Preferences and the macOS application menu carries it under About; the dialog existed (Home's two preferences) but no command opened it, so neither menu had the row. `app.preferences` (Mod+,) opens that dialog; Edit lists it last, `NativeMenus` already adds it to the application menu when the command exists, and Home's own Preferences item runs it.
 
 Checked on the final build: type check, production build, i18n check (1470 of 1470, no new string), and Playwright scripts kept outside the repo: the first-time walk on the service (53 steps: template, strokes, symmetry, remesh, subdivide, paint, undo and redo, Save, New Scene, undo of New Scene then Save leaving one entry, Recent, duplicate, Trash, restore, delete permanently, Empty Trash, OBJ and GLB in, OBJ, STL and GLB out and in again, narrow windows), every row of the panel layout's eleven menus clicked, the palette, Preferences from Edit and by Mod+,, the five themes over a reload, the three layouts' Home buttons, and the same Home paths under 4x CPU and a slow network with no late shift and no stale scene shown. Not run: macOS and Windows, the desktop shell.
+
+## formsculpt 1.21.0 · the window and Home
+
+### src/ui/home.ts · HomePrefsDialog and the confirm-bar discard question
+- refers-to: src/ui/home.ts :: HomePrefsDialog (removed), homeCommands (app.preferences removed), preferences, guarded
+- kind: removed-code
+- logged: v1.21.0 · 2026-11-16
+Home's two-checkbox dialog and its `app.preferences` command are gone; `src/ui/preferences.ts` (`PreferencesDialog`, registered in `src/app.ts` `wireChrome`) gathers theme, layout, language, Menus in Window, the two Home preferences and the key map, each through the existing command or setting. `preferences()` now only runs the command. `guarded()` asked on Home's confirm bar; it now asks the quit gate's own question through `askUnsaved()`. Removed code, quoted:
+
+```ts
+class HomePrefsDialog extends Dialog {
+  private readonly launch: HTMLInputElement;
+  private readonly lastClose: HTMLInputElement;
+  constructor(changed: () => void) {
+    super('Preferences', 440);
+    const row = (label: string): HTMLLabelElement => fromHtml<HTMLLabelElement>(`<label class="fs-home-check"><input type="checkbox"><span>${label}</span></label>`);
+    const a = row('Show Home Screen at Launch');
+    const b = row('Show Home Screen When the Last Document Closes');
+    this.launch = a.querySelector('input') as HTMLInputElement;
+    this.lastClose = b.querySelector('input') as HTMLInputElement;
+    this.body.append(a, b);
+    this.launch.addEventListener('change', () => { updatePrefs({ autoShowHome: this.launch.checked }); changed(); });
+    this.lastClose.addEventListener('change', () => { updatePrefs({ homeOnLastClose: this.lastClose.checked }); changed(); });
+    this.button('Close', 'primary', () => this.close());
+  }
+  show(): void {
+    const p = loadPrefs();
+    this.launch.checked = p.autoShowHome;
+    this.lastClose.checked = p.homeOnLastClose;
+    this.open(this.launch);
+  }
+}
+```
+
+and in `guarded`: `else home?.ask(t('This sculpt has changes that are not saved. Discard them?'), t('Discard'), go);`
+
+### src/ui/home.ts · Save As, Rename, Open Recent, Close Sculpt
+- refers-to: src/ui/home.ts :: saveSculptAs, keptInLibrary, closeSculpt, Home.renameSculpt, askName, recentList, recentCommands, homeCommands (file.save_as, file.close, file.recent.N); src/ui/menus.ts :: FILE
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+Save As and Rename use the app's own `PromptDialog` (it gained an OK label); a name the service refuses comes back as an error toast and the dialog asks again with what was typed. Save As takes the viewport picture once, before the dialog. Open Recent is ten fixed command slots whose label and enabled state follow `recentList` (the same list Home's Recent row shows, pinned first, hidden left out), so the native menu changes labels in place; it rebuilds only when the number of entries changes (its signature check). `renderSculpts` keeps the list and asks the native menu to refresh. Close Sculpt asks the unsaved question, runs New Scene (undoable, as before) and shows Home.
+
+### src/ui/home.ts · LOCAL_TEMPLATES
+- refers-to: src/ui/home.ts :: LOCAL_TEMPLATES, Home.load, createSculpt
+- kind: warning-context
+- logged: v1.21.0 · 2026-11-16
+A copy of the service's `TEMPLATES` kinds and arguments (`backend/app/services/library.py`) for the browser engine, where Home builds the starting mesh in the window's own engine. Keep the two lists in step. On the browser engine Recent, the Recent page and the Trash say the library needs the service.
+
+### src/ui/home.ts · setPreview writes only on a change
+- refers-to: src/ui/home.ts :: setPreview (blank, failed url)
+- kind: fix
+- logged: v1.21.0 · 2026-11-16
+A card whose picture failed to load fell back to its glyph and cleared `data-want`; the next render of the same card (any Home load, a pin, a rename) saw `data-want` differ from the URL and set `src` again, unhid the glyph's partner and hid it again when the load failed once more: attribute writes under `#app` with nothing changed. The failed URL is kept on the preview box and not retried until the URL changes (a new `thumbAt`), and `blank` writes `data-want` and `data-failed` only when they differ.
+
+### src/ui/engine-notice.ts · Retry reloads
+- refers-to: src/ui/engine-notice.ts :: showEngineNotice; src/app.ts :: chooseEngine (returns whether it fell back)
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+Shown only when the service did not answer at load, not for `?engine=wasm`. Retry reloads the page after the unsaved question instead of switching engines live: the terminal, the agent link and the status poll are wired once at boot from the engine chosen then. A browser-engine Save (the download) counts as saved, so the question's Save path can finish.
+
+### src/ui/theme.ts · THEME_EVENT
+- refers-to: src/ui/theme.ts :: applyTheme, THEME_EVENT; src/ui/terminal-dock.ts :: token, constructor; src/app.ts :: wireBackdrop
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+`applyTheme` fires `formsculpt-theme`. Open terminals take the new colours; their tokens are read from `body`, where the theme classes set them (they were read from `html`, which never changed). The viewport backdrop takes the theme's `--viewport-top`, `--viewport-bottom` and grid colour unless the person saved their own colours.
+
+### src/ui/desktop-shell.ts · what counts as unsaved
+- refers-to: src/ui/desktop-shell.ts :: noteScene, sceneSaved, unsavedWork, keepSaved, askUnsaved; src/app.ts :: refreshNow
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+The saved mark holds the whole object summaries, the saved views and groups, the history position and the trail of done steps (strict), the same without revisions (loose), and survives a reload of the tab in sessionStorage. A change at the saved position or a history branch below the saved point marks the scene as overwritten even if its values come back; a difference in revisions alone (undo then redo) does not count. `refreshNow` passes the whole scene summary.
+
+### src/app.ts, src/ui/scene-dock.ts · Delete and Backspace
+- refers-to: src/app.ts :: wireChrome (window keydown); src/ui/scene-dock.ts :: objectList (tb-dock-objects)
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+`object.delete` by key runs only with the keyboard on the page, the viewport canvas, the panel's object list or the dock's object list (the new `tb-dock-objects` class), never on a slider, check box or the dock's layer list.
+
+### src/ui/zbrush-layout.ts · keys on a focused control
+- refers-to: src/ui/zbrush-layout.ts :: key
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+A printable key, Space or Tab with no Ctrl, Cmd or Alt is left to a focused button, link, check box or ARIA control, so Space presses the button and Tab moves focus instead of opening the QuickMenu or the tray.
+
+### src/styles/menu.css, src/styles/home.css · the family look, the confirm bar
+- refers-to: src/styles/menu.css :: .fs-menu, .fs-menu-item, .fs-scrim, .fs-dialog*, .fs-btn*, .fs-input, .fs-engine-notice, .fs-all-menus; src/styles/home.css :: .fs-home-confirm
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+The existing rules now carry formdeck's values on the family tokens (glass menus at radius 12 with 30 px rows at 14 px, formdeck's scrim, dialogs at radius 14 on surface-2, 34 px foot buttons, the white-on-dark primary from `--cta-*`, 32 px fields). The confirm bar takes formfabric's negative margins, so its height adds up to zero and the rows under it never move. The Menu button of the tablet and ZUI layouts hides where native menus exist.
