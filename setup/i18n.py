@@ -63,7 +63,7 @@ def extract() -> int:
             found.add(m.group(1))
     found.discard("")
     OUT.mkdir(parents=True, exist_ok=True)
-    strings = sorted(found, key=str.lower)
+    strings = sorted(found, key=lambda s: (s.lower(), s))
     (OUT / "strings.json").write_text(json.dumps(strings, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"[formsculpt] {len(strings)} interface strings in frontend/src/i18n/strings.json")
     return 0
