@@ -1437,3 +1437,15 @@ A printable key, Space or Tab with no Ctrl, Cmd or Alt is left to a focused butt
 - kind: rationale
 - logged: v1.21.0 · 2026-11-16
 The existing rules now carry formdeck's values on the family tokens (glass menus at radius 12 with 30 px rows at 14 px, formdeck's scrim, dialogs at radius 14 on surface-2, 34 px foot buttons, the white-on-dark primary from `--cta-*`, 32 px fields). The confirm bar takes formfabric's negative margins, so its height adds up to zero and the rows under it never move. The Menu button of the tablet and ZUI layouts hides where native menus exist.
+
+### src/ui/home.ts, src/app.ts · the library link after an undone New Scene
+- refers-to: src/ui/home.ts :: closed (depth, undone), homeSceneEnded, reopened, homeUndid, saveSculpt; src/app.ts :: run
+- kind: fix
+- logged: v1.21.0 · 2026-11-16
+The link came back only from the refresh right after the undo, and only while New Scene still sat in the redo slot. If that refresh's `get_history` failed, the sculpt stayed "Untitled sculpt": the next Save made a new library entry, and after any edit the redo was gone and the link could never return. Now the window's own undo reply (`undone` "New Scene" at the closed depth) marks the closed record, and any later successful history read relinks while the done trail still starts with the closed trail and does not hold that New Scene again; the old exact-trail rule stays for undos from elsewhere. Save refreshes first, so it decides on a current read. A memory or step limit can drop old steps, so the trail alone (without the undo reply) is never taken as proof: that would let a Save overwrite the closed sculpt.
+
+### src/styles/home.css · check boxes in the accent
+- refers-to: src/styles/home.css :: .fs-home-check input
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+formdeck's Preferences check boxes use `accent-color: var(--accent-color)`; the formsculpt ones were the browser's blue.

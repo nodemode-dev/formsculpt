@@ -873,7 +873,7 @@ let home: Home | null = null;
 let host: HomeHost | null = null;
 let homeHooks: HomeHooks | null = null;
 let current: OpenSculpt | null = null;
-let closed: { sculpt: OpenSculpt; trail: string } | null = null;
+let closed: { sculpt: OpenSculpt; trail: string; depth: number; undone: boolean } | null = null;
 let decided = false;
 let settle: () => void = () => undefined;
 let recentList: Array<{ id: string; title: string }> = [];
@@ -1065,10 +1065,20 @@ export function homeScene(objects: number): void {
 
 export function homeSceneEnded(ended: boolean, trail: readonly string[] = [], undone = false): void {
   if (ended && decided && current && !current.blank) {
-    const was = current.id || current.title || !closed ? { sculpt: current, trail: trail.slice(0, -1).join('\n') } : closed;
+    const was = current.id || current.title || !closed ? { sculpt: current, trail: trail.slice(0, -1).join('\n'), depth: trail.length - 1, undone: false } : { ...closed, undone: false };
     setCurrent(null);
     closed = was;
-  } else if (undone && closed && current && !current.id && !current.title && !current.blank && trail.join('\n') === closed.trail) setCurrent(closed.sculpt);
+  } else if (current && !current.id && !current.title && !current.blank && reopened(trail, undone) && closed) setCurrent(closed.sculpt);
+}
+
+function reopened(trail: readonly string[], undone: boolean): boolean {
+  if (!closed) return false;
+  if (undone && trail.join('\n') === closed.trail) return true;
+  return closed.undone && trail.length >= closed.depth && trail.slice(0, closed.depth).join('\n') === closed.trail && trail[closed.depth] !== 'New Scene';
+}
+
+export function homeUndid(reply: { undone?: unknown; undo_depth?: unknown }): void {
+  if (closed && reply.undone === 'New Scene' && reply.undo_depth === closed.depth) closed.undone = true;
 }
 
 export function homeSceneReplaced(): void {
@@ -1108,6 +1118,7 @@ export async function saveSculpt(): Promise<void> {
     if (await host.download()) sceneSaved();
     return;
   }
+  await host.refresh().catch(() => undefined);
   if (host.objects() === 0) {
     host.note(t('The scene is empty; there is nothing to save'));
     return;

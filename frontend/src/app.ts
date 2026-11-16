@@ -33,7 +33,7 @@ import { familyOf } from './ui/tool-family';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
-import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
+import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, homeUndid, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
 import { commands, comboOf, normalizeCombo, type Command, type CommandParam } from './ui/commands';
 import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
 import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
@@ -6759,6 +6759,7 @@ class SceneView {
 
   private async run(name: string, args: Record<string, unknown> = {}): Promise<void> {
     const reply = await dispatch<unknown>(name, args);
+    if (reply.ok && name === 'undo' && reply.result) homeUndid(reply.result as { undone?: unknown; undo_depth?: unknown });
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
   }
