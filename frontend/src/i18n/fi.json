@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} t sitten",
  "{n} min ago": "{n} min sitten",
  "{n} objects": "{n} objektia",
- "{n} sculpts restored.": "{n} veistosta palautettu."
+ "{n} sculpts restored.": "{n} veistosta palautettu.",
+ "Close Sculpt": "Sulje veistos",
+ "Menu": "Valikko",
+ "Open Recent": "Avaa viimeisimmät",
+ "Rename Sculpt": "Nimeä veistos uudelleen",
+ "Retry": "Yritä uudelleen",
+ "Save As": "Tallenna nimellä",
+ "Save As...": "Tallenna nimellä...",
+ "The engine service still does not answer.": "Moottoripalvelu ei vieläkään vastaa.",
+ "The library needs the engine service; this window is running the browser engine.": "Kirjasto tarvitsee moottoripalvelun; tämä ikkuna käyttää selaimen moottoria.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt käyttää selaimen moottoria, koska moottoripalvelu ei vastannut. Veistäminen toimii täällä; kirjasto, palautus, laajennukset, siirrot muihin sovelluksiin ja agentit tarvitsevat palvelun.",
+ "This sculpt has changes that are not saved. Save them first?": "Tässä veistoksessa on tallentamattomia muutoksia. Tallennetaanko ne ensin?"
 }

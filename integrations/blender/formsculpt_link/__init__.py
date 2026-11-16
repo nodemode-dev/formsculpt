@@ -503,13 +503,22 @@ class FORMSCULPT_PT_link(bpy.types.Panel):
 CLASSES = (FormsculptPreferences, FORMSCULPT_OT_send, FORMSCULPT_OT_fetch, FORMSCULPT_OT_sync, FORMSCULPT_OT_unlink, FORMSCULPT_OT_gof_import, FORMSCULPT_OT_gof_return, FORMSCULPT_PT_link)
 
 
+def _resume():
+    prefs = _prefs()
+    if prefs is not None:
+        _set_live(prefs, None)
+        _set_gof_watch(prefs, None)
+    return None
+
+
 def register():
     for cls in CLASSES:
         bpy.utils.register_class(cls)
+    bpy.app.timers.register(_resume, first_interval=0.1, persistent=True)
 
 
 def unregister():
-    for timer in (_tick, _gof_tick):
+    for timer in (_resume, _tick, _gof_tick):
         if bpy.app.timers.is_registered(timer):
             bpy.app.timers.unregister(timer)
     for cls in reversed(CLASSES):

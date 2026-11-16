@@ -86,6 +86,47 @@ def watch_parent() -> None:
     threading.Thread(target=loop, name="parent-watch", daemon=True).start()
 
 
+def sweep_stale_unpacks() -> None:
+    """Removes the temporary folders earlier launches left behind. The one-file launcher names its folder `_MEI` + its
+    process id as eight hex digits + a suffix (six random characters, or a counter on Windows), and deletes it when it
+    exits; a launcher that was forced closed never did, and on Windows the engine cannot delete the files it still has
+    loaded. A folder whose process is gone belongs to nobody; one whose id is in use is kept, and so is this engine's
+    own. Runs in the background so the engine starts at once."""
+    unpacked = getattr(sys, "_MEIPASS", "")
+    if not os.path.basename(unpacked).startswith("_MEI"):
+        return
+    import re
+    import shutil
+    import threading
+
+    name_form = r"_MEI(0[0-9a-f]{7})[0-9A-Za-z]{1,12}" if os.name == "nt" else r"_MEI([0-9a-f]{8})[A-Za-z0-9]{6}"
+
+    def alive(pid: int) -> bool:
+        if os.name == "nt":
+            return parent_alive(pid)
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return False  # another user's process now holds the id, so this user's launcher is gone
+        return True
+
+    def run() -> None:
+        root, own = os.path.dirname(unpacked), os.path.basename(unpacked)
+        try:
+            names = os.listdir(root)
+        except OSError:
+            return
+        for name in names:
+            m = re.fullmatch(name_form, name)
+            if not m or name == own or alive(int(m.group(1), 16)):
+                continue
+            shutil.rmtree(os.path.join(root, name), ignore_errors=True)
+
+    threading.Thread(target=run, name="unpack-sweep", daemon=True).start()
+
+
 def free_port() -> int:
     import socket
 
@@ -107,6 +148,7 @@ def main() -> int:
     if "--selfcheck" in sys.argv:
         return selfcheck()
     watch_parent()
+    sweep_stale_unpacks()
     bundled = os.path.join(resource_dir(), "frontend_dist")
     if os.path.isdir(bundled):
         os.environ.setdefault("FSC_DIST", bundled)

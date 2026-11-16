@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} u geleden",
  "{n} min ago": "{n} min geleden",
  "{n} objects": "{n} objecten",
- "{n} sculpts restored.": "{n} sculpturen teruggezet."
+ "{n} sculpts restored.": "{n} sculpturen teruggezet.",
+ "Close Sculpt": "Sculptuur sluiten",
+ "Menu": "Menu",
+ "Open Recent": "Recent openen",
+ "Rename Sculpt": "Sculptuur hernoemen",
+ "Retry": "Opnieuw proberen",
+ "Save As": "Opslaan als",
+ "Save As...": "Opslaan als...",
+ "The engine service still does not answer.": "De engineservice antwoordt nog steeds niet.",
+ "The library needs the engine service; this window is running the browser engine.": "De bibliotheek heeft de engineservice nodig; dit venster draait op de browserengine.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt draait op de browserengine omdat de engineservice niet antwoordde. Boetseren werkt hier; de bibliotheek, Herstellen, plug-ins, overdrachten en agents hebben de service nodig.",
+ "This sculpt has changes that are not saved. Save them first?": "Deze sculptuur bevat wijzigingen die niet zijn opgeslagen. Wilt u ze eerst opslaan?"
 }

@@ -28,23 +28,25 @@ import { ZBrushLayout } from './ui/zbrush-layout';
 import { Toolbars } from './ui/toolbars';
 import { exportLayout, importLayout, TOOL_SWAP_STORE } from './ui/layout-file';
 import { BindingsDialog, InputBindings } from './ui/bindings';
-import { applyTheme, loadTheme, parseTheme, saveTheme } from './ui/theme';
+import { applyTheme, loadTheme, parseTheme, saveTheme, THEME_EVENT } from './ui/theme';
 import { familyOf } from './ui/tool-family';
 import { StrokeClient, type BrushState } from './engine/stroke-client';
 import { AgentLink } from './ui/agent-link';
 import { legacyTarget, type CatalogueCommand } from './ui/hotkeys';
-import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
+import { attachHome, homeCommands, homeReady, homeScene, homeSceneEnded, homeSceneReplaced, homeUndid, isHomeOpen, mountHome, saveSculpt, showHome, type HomeHost } from './ui/home';
 import { commands, comboOf, normalizeCombo, type Command, type CommandParam } from './ui/commands';
 import { NEEDS_OBJECT, PANEL_CMDS } from './ui/command-map';
 import { applyShortcuts, persistShortcuts, takeLegacyKeys } from './ui/prefs';
 import { overlayOpen } from './ui/dialog';
 import { AboutDialog, PromptDialog, ShortcutsDialog } from './ui/app-dialogs';
 import { CommandPalette, fuzzyScore } from './ui/command-palette';
-import { MenuBar, PopupMenu } from './ui/menu';
+import { itemsOf, MenuBar, PopupMenu } from './ui/menu';
+import { PreferencesDialog } from './ui/preferences';
+import { showEngineNotice } from './ui/engine-notice';
 import { menuDefs, OBJECT_ROW_MENU, PIN_MENU, TOOLBAR_MENU, tidy, VIEWPORT_MENU } from './ui/menus';
-import { desktopShell, noteScene, sceneEpoch, sceneSettled, startDesktopShell } from './ui/desktop-shell';
+import { askUnsaved, desktopShell, noteScene, sceneEpoch, sceneSettled, startDesktopShell } from './ui/desktop-shell';
 import { scheduleChrome } from './ui/chrome';
-import { language, languages, setLanguage, t } from './ui/i18n';
+import { language, languages, onLanguage, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
 import { registerTerminal } from './ui/terminal';
 import { Gizmo, shows as gizmoShows, type GizmoDrag, type GizmoMode } from './ui/gizmo';
@@ -1468,6 +1470,7 @@ function buildShell(root: HTMLElement): Shell {
   langPick.dataset.noI18n = '';
   langPick.value = language();
   langPick.addEventListener('change', () => { if (isLang(langPick.value)) void setLanguage(langPick.value); });
+  onLanguage(() => { if (langPick.value !== language()) langPick.value = language(); });
   const smoothPick = choices('Smooth preview', [['0', 'Off'], ['1', '1 level'], ['2', '2 levels'], ['3', '3 levels']]);
   // Wireframe draws every object's edges over it; X-ray draws every object see-through.
   const wireframe = input('checkbox', { 'aria-label': 'Wireframe' });
@@ -2875,6 +2878,21 @@ class SceneView {
     for (const c of [s.backdropTop, s.backdropBottom, s.backdropMid, s.backdropVignette]) c.addEventListener('input', () => apply(true));
     for (const c of [s.backdropMode, s.floorGrid]) c.addEventListener('change', () => apply(true));
     this.applyBackdrop = () => apply(false);
+    window.addEventListener(THEME_EVENT, () => {
+      const css = getComputedStyle(document.body);
+      let kept: { top?: string; bottom?: string } = {};
+      try {
+        kept = JSON.parse(localStorage.getItem(BACKDROP_KEY) ?? '{}') as typeof kept;
+      } catch {
+        kept = {};
+      }
+      const top = hexColor(css.getPropertyValue('--viewport-top'));
+      const bottom = hexColor(css.getPropertyValue('--viewport-bottom'));
+      if (!kept.top && top) s.backdropTop.value = toHex(top);
+      if (!kept.bottom && bottom) s.backdropBottom.value = toHex(bottom);
+      b.gridColor = hexColor(css.getPropertyValue('--viewport-grid')) ?? b.gridColor;
+      apply(false);
+    });
     apply(false);
   }
 
@@ -5624,7 +5642,7 @@ class SceneView {
     if (history.ok) {
       this.patchHistory(history.result.steps, history.result.done, history.result.bytes ?? []);
       this.syncHistoryEngine(history.result);
-      noteScene(began, this.scene.objects, history.result.steps, history.result.done);
+      noteScene(began, this.scene, history.result.steps, history.result.done);
       homeSceneEnded(this.scene.objects.length === 0 && history.result.steps[history.result.done - 1] === 'New Scene', history.result.steps.slice(0, history.result.done), history.result.steps[history.result.done] === 'New Scene');
     }
     await this.patchSets();
@@ -6281,7 +6299,7 @@ class SceneView {
   private async uploadChosen(): Promise<void> {
     const file = this.shell.fileInput.files?.[0];
     this.shell.fileInput.value = '';
-    if (!file) return;
+    if (!file || (file.name.toLowerCase().endsWith('.fsc') && !(await askUnsaved()))) return;
     const reply = await uploadFile<unknown>(file, file.name, { scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
     this.note(reply.ok ? `Opened ${file.name}` : reply.error.message);
     if (reply.ok && file.name.toLowerCase().endsWith('.fsc')) this.forgetScene();
@@ -6294,6 +6312,7 @@ class SceneView {
     for (const path of paths) {
       const name = path.split(/[\\/]/).pop() ?? path;
       const project = name.toLowerCase().endsWith('.fsc');
+      if (project && !(await askUnsaved())) continue;
       const reply = project
         ? await dispatch<unknown>('open_project', { path })
         : await dispatch<unknown>('import_mesh', { path, scale: this.exchangeScale(), up_axis: this.shell.fileUp.value === 'z' ? 'z' : 'y', merge: this.shell.importMerge.checked });
@@ -6740,6 +6759,7 @@ class SceneView {
 
   private async run(name: string, args: Record<string, unknown> = {}): Promise<void> {
     const reply = await dispatch<unknown>(name, args);
+    if (reply.ok && name === 'undo' && reply.result) homeUndid(reply.result as { undone?: unknown; undo_depth?: unknown });
     this.note(reply.ok ? '' : reply.error.message);
     await this.refresh();
   }
@@ -7206,12 +7226,13 @@ async function poll(shell: Shell): Promise<void> {
  * (frontend/public/engine/fsc_engine.wasm) so the window still sculpts on its own. ?engine=wasm or ?engine=service
  * forces one.
  */
-async function chooseEngine(): Promise<void> {
+async function chooseEngine(): Promise<boolean> {
   const want = new URLSearchParams(location.search).get('engine');
-  if (want === 'service') return;
-  if (want !== 'wasm' && (await fetchVersion())) return;
+  if (want === 'service') return false;
+  if (want !== 'wasm' && (await fetchVersion())) return false;
   const engine = await WasmEngine.load();
   if (engine) useBrowserEngine(engine);
+  return !!engine && want !== 'wasm';
 }
 
 const NO_TYPING = new Set(['checkbox', 'radio', 'range', 'button', 'file', 'color', 'submit', 'reset']);
@@ -7226,7 +7247,9 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
   const shortcuts = new ShortcutsDialog(commands);
   const about = new AboutDialog();
   const palette = new CommandPalette(commands, menuDefs);
+  const prefs = new PreferencesDialog(commands);
   commands.add(
+    { id: 'app.preferences', label: 'Preferences', keys: ['Mod+,'], icon: 'settings', run: () => prefs.show() },
     { id: 'app.shortcuts', label: 'Keyboard Shortcuts', keys: ['Mod+/'], icon: 'keyboard', run: () => shortcuts.show() },
     { id: 'app.palette', label: 'Command Palette', keys: ['Mod+K'], icon: 'search', run: () => palette.show() },
     { id: 'app.about', label: 'About formsculpt', icon: 'info', run: () => about.show() },
@@ -7244,7 +7267,23 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
   const menus = menuDefs();
   const bar = new MenuBar(shell.menubar, commands, menus);
   startDesktopShell(commands, () => menus, (text) => setText(shell.message, text));
+  const allMenus = new PopupMenu(commands, null, true);
+  let allShut = 0;
+  allMenus.onClose = () => {
+    allShut = performance.now();
+  };
   root.addEventListener('click', (e) => {
+    const all = (e.target as HTMLElement).closest<HTMLElement>('[data-all-menus]');
+    if (all) {
+      if (allMenus.isOpen || performance.now() - allShut < 300) {
+        allMenus.close();
+        return;
+      }
+      allMenus.setItems(menus.map((d) => ({ label: d.label, items: itemsOf(d) })));
+      const r = all.getBoundingClientRect();
+      allMenus.openAt(r.left, r.bottom + 4);
+      return;
+    }
     const node = (e.target as HTMLElement).closest<HTMLElement>('[data-cmd]');
     if (node && !(node as HTMLButtonElement).disabled) commands.run(node.dataset.cmd ?? '');
   });
@@ -7261,6 +7300,7 @@ function wireChrome(root: HTMLElement, shell: Shell): void {
     if (isHomeOpen() && !(e.metaKey || e.ctrlKey)) return;
     const cmd = commands.forEvent(e);
     if (!cmd) return;
+    if (cmd.id === 'object.delete' && target && target !== document.body && !(target instanceof HTMLCanvasElement) && !target.closest('ul.objects, .tb-dock-objects')) return;
     const combo = comboOf(e);
     if (typingIn(target) && (!combo.includes('Mod+') || /Mod\+[ZYXCVA]$/.test(combo))) return;
     if (commands.run(cmd.id)) e.preventDefault();
@@ -7281,7 +7321,7 @@ export function start(root: HTMLElement): void {
 }
 
 async function boot(shell: Shell): Promise<void> {
-  await chooseEngine();
+  if (await chooseEngine()) showEngineNotice();
   try {
     const viewport = new Viewport(shell.canvas);
     setText(shell.statRenderer, viewport.renderer.kind);

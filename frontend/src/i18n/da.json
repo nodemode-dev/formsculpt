@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} t siden",
  "{n} min ago": "{n} min siden",
  "{n} objects": "{n} objekter",
- "{n} sculpts restored.": "{n} skulpturer gendannet."
+ "{n} sculpts restored.": "{n} skulpturer gendannet.",
+ "Close Sculpt": "Luk skulptur",
+ "Menu": "Menu",
+ "Open Recent": "Åbn seneste",
+ "Rename Sculpt": "Omdøb skulptur",
+ "Retry": "Prøv igen",
+ "Save As": "Gem som",
+ "Save As...": "Gem som...",
+ "The engine service still does not answer.": "Motortjenesten svarer stadig ikke.",
+ "The library needs the engine service; this window is running the browser engine.": "Biblioteket kræver motortjenesten; dette vindue kører på browsermotoren.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt kører på browsermotoren, fordi motortjenesten ikke svarede. Skulptering virker her; biblioteket, gendannelse, plugins, overdragelser og agenter kræver tjenesten.",
+ "This sculpt has changes that are not saved. Save them first?": "Denne skulptur har ændringer, der ikke er gemt. Vil du gemme dem først?"
 }

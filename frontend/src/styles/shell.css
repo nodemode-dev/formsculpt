@@ -24,7 +24,8 @@ button { font: inherit; color: inherit; }
 .panel h2.fold { cursor: pointer; user-select: none; display: flex; align-items: center; gap: var(--space-2); }
 .panel h2.fold::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 120ms ease; }
 .panel h2.fold.folded::before { transform: rotate(-45deg); }
-.panel h2.fold:hover, .panel h2.fold:focus-visible { color: var(--text-secondary); outline: none; }
+.panel h2.fold:hover, .panel h2.fold:focus-visible { color: var(--text-secondary); }
+.panel h2.fold:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 1px; border-radius: var(--radius-sm); }
 .panel .fold-hidden { display: none !important; }
 .panel.panel-small { zoom: 0.9; }
 .panel.panel-large { zoom: 1.12; }

@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} 小时前",
  "{n} min ago": "{n} 分钟前",
  "{n} objects": "{n} 个对象",
- "{n} sculpts restored.": "已恢复 {n} 个雕塑。"
+ "{n} sculpts restored.": "已恢复 {n} 个雕塑。",
+ "Close Sculpt": "关闭雕塑",
+ "Menu": "菜单",
+ "Open Recent": "打开最近使用",
+ "Rename Sculpt": "重命名雕塑",
+ "Retry": "重试",
+ "Save As": "存储为",
+ "Save As...": "存储为...",
+ "The engine service still does not answer.": "引擎服务仍然没有响应。",
+ "The library needs the engine service; this window is running the browser engine.": "资源库需要引擎服务；此窗口正在使用浏览器引擎。",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "引擎服务没有响应，formsculpt 正在使用浏览器引擎。这里仍可雕刻；资源库、恢复、插件、发送到其他应用和智能体需要该服务。",
+ "This sculpt has changes that are not saved. Save them first?": "此雕塑有未保存的更改。要先保存吗？"
 }

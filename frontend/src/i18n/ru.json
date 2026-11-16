@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} ч назад",
  "{n} min ago": "{n} мин назад",
  "{n} objects": "Объектов: {n}",
- "{n} sculpts restored.": "Восстановлено скульптур: {n}."
+ "{n} sculpts restored.": "Восстановлено скульптур: {n}.",
+ "Close Sculpt": "Закрыть скульптуру",
+ "Menu": "Меню",
+ "Open Recent": "Открыть недавние",
+ "Rename Sculpt": "Переименовать скульптуру",
+ "Retry": "Повторить",
+ "Save As": "Сохранить как",
+ "Save As...": "Сохранить как...",
+ "The engine service still does not answer.": "Служба движка по-прежнему не отвечает.",
+ "The library needs the engine service; this window is running the browser engine.": "Библиотеке нужна служба движка; это окно работает на браузерном движке.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt работает на браузерном движке, потому что служба движка не ответила. Лепить здесь можно; библиотеке, восстановлению, плагинам, передаче в другие приложения и агентам нужна служба.",
+ "This sculpt has changes that are not saved. Save them first?": "В этой скульптуре есть несохранённые изменения. Сначала сохранить их?"
 }

@@ -12,20 +12,84 @@ async function invoke<T>(cmd: string, args: Record<string, unknown> = {}): Promi
   return core.invoke<T>(cmd, args);
 }
 
-let seen = '';
-let saved: string | null = null;
+interface SceneSeen {
+  objects: ReadonlyArray<{ revision: number }>;
+  views?: unknown;
+  groups?: unknown;
+}
+
+interface SceneMark {
+  strict: string;
+  loose: string;
+  done: number;
+  trail: string;
+}
+
+const SAVED_KEY = 'formsculpt.saved';
+let seen: SceneMark | null = null;
+let saved: SceneMark | null = null;
+let empty = true;
+let overwritten = false;
+let lastSteps: readonly string[] = [];
+let lastDone = 0;
 let settle = true;
+let firstSight = true;
 let epoch = 0;
 
 export const sceneEpoch = (): number => epoch;
 
-export function noteScene(began: number, objects: ReadonlyArray<{ id: number; name: string; revision: number; vertices: number }>, steps: readonly string[], done: number): void {
-  if (began !== epoch) return;
-  seen = JSON.stringify([objects.map((o) => [o.id, o.name, o.revision, o.vertices]), steps.length, done, steps[done - 1] ?? '']);
-  if (settle) {
-    saved = seen;
-    settle = false;
+function keepSaved(): void {
+  try {
+    if (saved) sessionStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+    else sessionStorage.removeItem(SAVED_KEY);
+  } catch {
+    return;
   }
+}
+
+function keptSaved(): SceneMark | null {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(SAVED_KEY) ?? 'null') as Partial<SceneMark> | null;
+    return raw && typeof raw.strict === 'string' && typeof raw.loose === 'string' && typeof raw.done === 'number' && typeof raw.trail === 'string' ? (raw as SceneMark) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function noteScene(began: number, scene: SceneSeen, steps: readonly string[], done: number): void {
+  if (began !== epoch) return;
+  const trail = steps.slice(0, done).join('\n');
+  const rest = [scene.views ?? [], scene.groups ?? []];
+  const next: SceneMark = {
+    strict: JSON.stringify([scene.objects, rest, done, trail]),
+    loose: JSON.stringify([scene.objects.map((o) => ({ ...o, revision: 0 })), rest]),
+    done,
+    trail,
+  };
+  const was = seen;
+  seen = next;
+  empty = scene.objects.length === 0;
+  if (settle) {
+    const kept = firstSight ? keptSaved() : null;
+    saved = kept && kept.strict !== next.strict ? kept : next;
+    overwritten = saved !== next;
+    settle = false;
+    keepSaved();
+  } else if (saved && was) {
+    const sameList = steps.length === lastSteps.length && steps.every((s, i) => s === lastSteps[i]);
+    if (sameList && done === lastDone) {
+      if (next.strict !== was.strict) overwritten = true;
+    } else if (sameList && done > lastDone && steps.length === done) {
+      if (lastDone < saved.done) overwritten = true;
+    } else if (!sameList) {
+      let common = 0;
+      while (common < steps.length && common < lastSteps.length && steps[common] === lastSteps[common]) common++;
+      if (Math.min(common, done - 1) < saved.done) overwritten = true;
+    }
+  }
+  firstSight = false;
+  lastSteps = steps;
+  lastDone = done;
 }
 
 export function sceneSettled(): void {
@@ -35,9 +99,15 @@ export function sceneSettled(): void {
 
 export function sceneSaved(): void {
   saved = seen;
+  overwritten = false;
+  keepSaved();
 }
 
-export const unsavedWork = (): boolean => !settle && saved !== null && seen !== saved;
+export function unsavedWork(): boolean {
+  if (settle || !saved || !seen || empty) return false;
+  if (seen.strict === saved.strict) return false;
+  return overwritten || seen.done !== saved.done || seen.trail !== saved.trail || seen.loose !== saved.loose;
+}
 
 export function documentTitle(name: string): void {
   const label = document.querySelector('.bar-doc');
@@ -92,6 +162,7 @@ const EDITS: ReadonlyArray<{ id: string; label: string; keys: string[] }> = [
 ];
 
 const EXIT_TEXT = { title: 'Save Changes?', description: 'This sculpt has changes that are not saved. Save them before quitting?' };
+const REPLACE_TEXT = { description: 'This sculpt has changes that are not saved. Save them first?' };
 
 type ExitChoice = 'save' | 'discard' | 'cancel';
 
@@ -115,8 +186,8 @@ class ExitDialog extends Dialog {
     return this.done !== null;
   }
 
-  ask(): Promise<ExitChoice> {
-    setText(this.lead, t(EXIT_TEXT.description));
+  ask(description: string = EXIT_TEXT.description): Promise<ExitChoice> {
+    setText(this.lead, t(description));
     setText(this.discard, t('Don\'t Save'));
     setText(this.cancel, t('Cancel'));
     setText(this.save, t('Save'));
@@ -218,8 +289,23 @@ export class DesktopShell {
     }
   }
 
+  async settleUnsaved(): Promise<boolean> {
+    if (!unsavedWork()) return true;
+    if (this.leaving || this.exitDialog?.asking) return false;
+    this.exitDialog ??= new ExitDialog();
+    const choice = await this.exitDialog.ask(REPLACE_TEXT.description);
+    if (choice === 'discard') return true;
+    if (choice !== 'save' || !this.hooks) return false;
+    await this.hooks.save();
+    return savedWithin(2000);
+  }
+
   private async exitRequested(): Promise<void> {
-    if (this.leaving || this.exitDialog?.asking) return;
+    if (this.leaving) return;
+    if (this.exitDialog?.asking) {
+      await confirmExit(true).catch(() => undefined);
+      return;
+    }
     this.leaving = true;
     try {
       if (!unsavedWork()) {
@@ -252,3 +338,5 @@ export function startDesktopShell(commands: Commands, menus: () => MenuDef[], sa
 }
 
 export const desktopShell = (): DesktopShell | null => shell;
+
+export const askUnsaved = (): Promise<boolean> => (shell ? shell.settleUnsaved() : Promise.resolve(true));

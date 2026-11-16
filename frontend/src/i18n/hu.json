@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} órája",
  "{n} min ago": "{n} perce",
  "{n} objects": "{n} objektum",
- "{n} sculpts restored.": "{n} szobor visszaállítva."
+ "{n} sculpts restored.": "{n} szobor visszaállítva.",
+ "Close Sculpt": "Szobor bezárása",
+ "Menu": "Menü",
+ "Open Recent": "Legutóbbiak megnyitása",
+ "Rename Sculpt": "Szobor átnevezése",
+ "Retry": "Újra",
+ "Save As": "Mentés másként",
+ "Save As...": "Mentés másként...",
+ "The engine service still does not answer.": "A motorszolgáltatás továbbra sem válaszol.",
+ "The library needs the engine service; this window is running the browser engine.": "A könyvtárhoz a motorszolgáltatás kell; ez az ablak a böngészőmotorral fut.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "A formsculpt a böngészőmotorral fut, mert a motorszolgáltatás nem válaszolt. A szobrászat itt is működik; a könyvtárhoz, a helyreállításhoz, a bővítményekhez, az átadásokhoz és az ágensekhez a szolgáltatás kell.",
+ "This sculpt has changes that are not saved. Save them first?": "Ebben a szoborban nem mentett módosítások vannak. Menti őket előbb?"
 }

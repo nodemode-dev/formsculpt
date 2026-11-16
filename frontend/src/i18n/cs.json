@@ -1468,5 +1468,16 @@
  "{n} h ago": "před {n} h",
  "{n} min ago": "před {n} min",
  "{n} objects": "Objekty: {n}",
- "{n} sculpts restored.": "Obnoveno soch: {n}."
+ "{n} sculpts restored.": "Obnoveno soch: {n}.",
+ "Close Sculpt": "Zavřít sochu",
+ "Menu": "Nabídka",
+ "Open Recent": "Otevřít nedávné",
+ "Rename Sculpt": "Přejmenovat sochu",
+ "Retry": "Zkusit znovu",
+ "Save As": "Uložit jako",
+ "Save As...": "Uložit jako...",
+ "The engine service still does not answer.": "Služba enginu stále neodpovídá.",
+ "The library needs the engine service; this window is running the browser engine.": "Knihovna potřebuje službu enginu; toto okno běží na enginu prohlížeče.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt běží na enginu prohlížeče, protože služba enginu neodpověděla. Modelování tu funguje; knihovna, obnovení, zásuvné moduly, předávání a agenti potřebují službu.",
+ "This sculpt has changes that are not saved. Save them first?": "Tato socha obsahuje neuložené změny. Chcete je nejprve uložit?"
 }

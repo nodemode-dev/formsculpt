@@ -2,6 +2,49 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.21.0 · 2026-11-16
+
+The window gains Save As, Rename, Open Recent, Close Sculpt and a full Preferences dialog, asks before an open replaces unsaved work, and the desktop app now says why when its engine does not start.
+
+### Added
+
+- File > Save As saves the sculpt into the library under the name you type, and refuses a name another sculpt already has. Home's card menu gains Rename, with the same rule.
+- File > Open Recent lists the library's recent sculpts, and File > Close Sculpt returns to Home after asking about unsaved changes.
+- Preferences is one dialog for the settings the app already has: theme, layout, language, Menus in Window, the two Home preferences and the keyboard shortcuts.
+- The tablet and ZUI layouts have a Menu button on Windows and Linux that opens the full menu list.
+- When the service does not answer at load, a notice says the window runs on the browser engine and what that means, with Retry. Home on the browser engine offers the ten starting meshes.
+- `formsculpt.bat` has the shell launcher's commands: install-desktop, freeze, desktop dev and build, app, doctor, test, bench, mcp, script, i18n, agents, clean, and engine check and wasm.
+- CI compiles the desktop shell on Linux (`cargo check --locked`).
+- Regression tests for the sculpt library and its Trash, names that could leave the library, the service staying on loopback, bad export and MCP requests, a NodeMode that never answers, crafted and cut-off files in every format, bad command arguments, stroke samples that are not numbers, textures after undo and commands refused under subdivision levels.
+
+### Changed
+
+- File > Open, a dropped file, opening a sculpt from Home and a file handed over by the desktop app now ask first when the sculpt has unsaved changes, as quitting does.
+- Dialogs, menus, buttons, text fields and check boxes use the Form family's look.
+- A macOS build from source installs the same pinned Python package versions as Linux and Windows.
+- CI actions are pinned to the Form family's versions.
+
+### Fixed
+
+- Desktop: the app says why when its engine is missing, blocked or ends during start, asks Keep Waiting or Quit after a silent minute instead of keeping the splash up for ever, and offers Restart or Quit when the engine stops while the window is open.
+- Desktop: the engine removes the unpacked folders earlier launches left in the temporary folder, Windows included.
+- Desktop: the update feed is the family download store (`https://dl.formai.studio/formsculpt/updates/latest.json`) instead of a GitHub release page on the old organisation that the public cannot read.
+- Desktop on Linux: two copies with different data folders (`FSC_DATA_DIR`) run side by side; the same folder still hands its files to the running window.
+- Home: undoing New Scene or Close Sculpt always brings back the sculpt's link to its library entry, so the next Save updates it instead of making a new one, even when the window missed a reply from the engine. The quit question no longer reports unsaved work after such an undo.
+- Delete and Backspace no longer delete the selected object while a slider or check box has focus.
+- On macOS, Option with a letter types its character in text fields again.
+- A theme switch restyles open terminals and the viewport backdrop at once.
+- In the ZUI layout, Space, Tab and letter keys no longer act while a button has focus.
+- Home: a card whose picture failed to load no longer reloads it on every render, and the confirm bar for a destructive action no longer pushes the page down. Folded section headings show a focus ring.
+- Service: exporting with an object id of 0, a negative id or one too large for the engine answers 400 with the reason instead of a server error, and an MCP tool call whose arguments are not an object says so instead of claiming the tool does not exist.
+- The Blender add-on's Live and Watch GoF toggles work again after a Blender restart without switching them off and on.
+- `formsculpt.bat serve` honours `FSC_PORT` and builds only when needed, and `formsculpt mcp` starts the engine on Windows.
+- `./formsculpt i18n extract` writes the same file on every run.
+
+### Notes
+
+- Nothing in this release was run on macOS or Windows. The desktop shell was compile-checked on Linux only; the macOS Option key fix, the Windows launcher and the Blender add-on fix were checked by reading, not run. No signing ran.
+
 ## 1.20.0 · 2026-11-15
 
 FormSculpt joins the Form family standard for Home, the menu bar and the splash, with a full review of the engine, the window, the service and the desktop app behind it.

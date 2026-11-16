@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} ชม. ที่แล้ว",
  "{n} min ago": "{n} นาทีที่แล้ว",
  "{n} objects": "{n} วัตถุ",
- "{n} sculpts restored.": "กู้คืนงานปั้น {n} ชิ้นแล้ว"
+ "{n} sculpts restored.": "กู้คืนงานปั้น {n} ชิ้นแล้ว",
+ "Close Sculpt": "ปิดงานปั้น",
+ "Menu": "เมนู",
+ "Open Recent": "เปิดรายการล่าสุด",
+ "Rename Sculpt": "เปลี่ยนชื่องานปั้น",
+ "Retry": "ลองอีกครั้ง",
+ "Save As": "บันทึกเป็น",
+ "Save As...": "บันทึกเป็น...",
+ "The engine service still does not answer.": "บริการเอนจินยังไม่ตอบสนอง",
+ "The library needs the engine service; this window is running the browser engine.": "คลังต้องใช้บริการเอนจิน หน้าต่างนี้กำลังทำงานด้วยเอนจินของเบราว์เซอร์",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt กำลังทำงานด้วยเอนจินของเบราว์เซอร์เพราะบริการเอนจินไม่ตอบสนอง ยังปั้นงานได้ตามปกติ แต่คลัง การกู้คืน ปลั๊กอิน การส่งต่อไปยังแอปอื่น และเอเจนต์ต้องใช้บริการนี้",
+ "This sculpt has changes that are not saved. Save them first?": "งานปั้นนี้มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ต้องการบันทึกก่อนหรือไม่"
 }

@@ -1468,5 +1468,16 @@
  "{n} h ago": "{n} год тому",
  "{n} min ago": "{n} хв тому",
  "{n} objects": "Об'єктів: {n}",
- "{n} sculpts restored.": "Відновлено скульптур: {n}."
+ "{n} sculpts restored.": "Відновлено скульптур: {n}.",
+ "Close Sculpt": "Закрити скульптуру",
+ "Menu": "Меню",
+ "Open Recent": "Відкрити нещодавні",
+ "Rename Sculpt": "Перейменувати скульптуру",
+ "Retry": "Повторити",
+ "Save As": "Зберегти як",
+ "Save As...": "Зберегти як...",
+ "The engine service still does not answer.": "Служба рушія досі не відповідає.",
+ "The library needs the engine service; this window is running the browser engine.": "Бібліотеці потрібна служба рушія; це вікно працює на браузерному рушії.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt працює на браузерному рушії, бо служба рушія не відповіла. Ліпити тут можна; бібліотеці, відновленню, плагінам, передаванню в інші застосунки та агентам потрібна служба.",
+ "This sculpt has changes that are not saved. Save them first?": "У цій скульптурі є незбережені зміни. Спершу зберегти їх?"
 }

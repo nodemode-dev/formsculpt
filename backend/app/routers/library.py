@@ -18,6 +18,11 @@ class NewSculpt(BaseModel):
     template: str | None = None
     fromScene: bool = False
     thumb: str = "render"
+    exact: bool = False
+
+
+class NewName(BaseModel):
+    title: str
 
 
 class HomeSettings(BaseModel):
@@ -44,9 +49,9 @@ async def sculpts() -> dict:
 async def create(body: NewSculpt) -> dict:
     """A new sculpt in the library: from a starting mesh (built apart from the scene on screen), or with fromScene
     the scene as it is now (thumb=client leaves the 16:9 thumbnail for the window to send). The name is made unique;
-    the summary carries the id it got."""
+    the summary carries the id it got. With exact (Save As) the name is kept as typed and a taken one is refused."""
     if body.fromScene:
-        return await _run(library.create_from_scene, body.title, body.thumb != "client")
+        return await _run(library.create_from_scene, body.title, body.thumb != "client", body.exact)
     return await _run(library.create, body.title, body.template)
 
 
@@ -66,6 +71,13 @@ async def save(sculpt_id: str, thumb: str = "render") -> dict:
 @router.post("/sculpts/{sculpt_id}/duplicate")
 async def duplicate(sculpt_id: str) -> dict:
     return await _run(library.duplicate, sculpt_id)
+
+
+@router.post("/sculpts/{sculpt_id}/rename")
+async def rename(sculpt_id: str, body: NewName) -> dict:
+    """Gives a sculpt another name (its files, its place in the pinned and recent lists); 400 for a name that is not
+    allowed, 409 when another sculpt has it."""
+    return await _run(library.rename, sculpt_id, body.title)
 
 
 @router.delete("/sculpts/{sculpt_id}")

@@ -108,7 +108,7 @@ export class SceneDock {
   readonly element = el('section', 'tb-dock');
   private readonly tabs = new Map<Tab, HTMLButtonElement>();
   private readonly pages = new Map<Tab, HTMLElement>();
-  private readonly objectList = el('ul', 'tb-dock-list');
+  private readonly objectList = el('ul', 'tb-dock-list tb-dock-objects');
   /** Object and group rows by id (the two share id numbers, so one id is never both). */
   private readonly objectRows = new Map<number, { kind: 'object' | 'group'; row: HTMLLIElement; name: HTMLElement; count: HTMLElement; eye: HTMLButtonElement; lock: HTMLButtonElement }>();
   /** Groups whose rows are folded shut. */

@@ -1468,5 +1468,16 @@
  "{n} h ago": "för {n} tim sedan",
  "{n} min ago": "för {n} min sedan",
  "{n} objects": "{n} objekt",
- "{n} sculpts restored.": "{n} skulpturer återställdes."
+ "{n} sculpts restored.": "{n} skulpturer återställdes.",
+ "Close Sculpt": "Stäng skulptur",
+ "Menu": "Meny",
+ "Open Recent": "Öppna senaste",
+ "Rename Sculpt": "Byt namn på skulptur",
+ "Retry": "Försök igen",
+ "Save As": "Spara som",
+ "Save As...": "Spara som...",
+ "The engine service still does not answer.": "Motortjänsten svarar fortfarande inte.",
+ "The library needs the engine service; this window is running the browser engine.": "Biblioteket behöver motortjänsten; det här fönstret körs på webbläsarmotorn.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt körs på webbläsarmotorn eftersom motortjänsten inte svarade. Skulptering fungerar här; biblioteket, återställning, insticksprogram, överlämningar och agenter behöver tjänsten.",
+ "This sculpt has changes that are not saved. Save them first?": "Den här skulpturen har ändringar som inte har sparats. Vill du spara dem först?"
 }

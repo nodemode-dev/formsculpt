@@ -1,5 +1,6 @@
 import { commands } from './commands';
 import { DEMOS } from './demos';
+import { recentCommands } from './home';
 import type { MenuDef, MenuItem } from './menu';
 
 const tool = (...kinds: string[]): string[] => kinds.map((k) => `tool.brush.${k}`);
@@ -22,13 +23,13 @@ export function tidy(items: MenuItem[], has: (id: string) => boolean = (id) => !
 
 const EXPORTS = ['glb', 'obj', 'fbx', 'usda', 'stl', 'ply', '3mf'].map((f) => `file.export.${f}`);
 
-const FILE: MenuItem[] = [
+const FILE = (): MenuItem[] => [
   'app.home', '-',
-  'scene.new', 'file.open', 'file.save', 'file.save_file', '-',
+  'scene.new', 'file.open', { label: 'Open Recent', items: recentCommands() }, 'file.save', 'file.save_as', 'file.save_file', '-',
   { label: 'Export As', items: EXPORTS }, 'file.export', '-',
   'file.print_check', 'file.repair', 'file.recover', '-',
   'file.send_nodemode', 'file.bridge_send', 'file.blender_addon', 'file.gof', 'file.gof_back', 'file.gof_unreal', 'file.gof_unity', 'file.substance', 'file.substance_sync', '-',
-  'app.exit',
+  'file.close', 'app.exit',
 ];
 
 const EDIT: MenuItem[] = [
@@ -122,7 +123,7 @@ export const TOOLBAR_MENU: MenuItem[] = ['toolbar.add_command', 'toolbar.rename'
 export function menuDefs(): MenuDef[] {
   const def = (label: string, items: MenuItem[]): MenuDef => ({ label, items: () => tidy(items) });
   return [
-    def('File', FILE), def('Edit', EDIT), def('Add', ADD), def('Sculpt', SCULPT), def('Mask', MASK), def('Topology', TOPOLOGY),
+    { label: 'File', items: () => tidy(FILE()) }, def('Edit', EDIT), def('Add', ADD), def('Sculpt', SCULPT), def('Mask', MASK), def('Topology', TOPOLOGY),
     def('Object', OBJECT), def('Paint', PAINT), def('View', VIEW), def('Window', WINDOW), { label: 'Help', items: () => tidy(HELP()) },
   ];
 }

@@ -323,12 +323,20 @@ def create(title: str | None, tid: str | None) -> dict:
         return _summary(sid)
 
 
-def create_from_scene(title: str | None, wide: bool = True) -> dict:
+def _free(name: str, but: str | None = None) -> str:
+    name = checked(name)
+    low = name.lower()
+    if any(f.stem.lower() == low and f.stem != but for f in folder().glob("*.fsc")):
+        raise LibraryError(409, "a sculpt with that name is already in the library")
+    return name
+
+
+def create_from_scene(title: str | None, wide: bool = True, exact: bool = False) -> dict:
     _need_engine()
     if engine.object_count() == 0:
         raise LibraryError(400, "the scene is empty; there is nothing to save")
     with _lock:
-        sid = _unique(title.strip() if isinstance(title, str) and title.strip() else UNTITLED)
+        sid = _free(title or "") if exact else _unique(title.strip() if isinstance(title, str) and title.strip() else UNTITLED)
         _store(sid, engine.save_bytes(), engine.dispatch, None, wide)
         _mark_opened(sid)
         return _summary(sid)
@@ -376,6 +384,28 @@ def duplicate(sid: str) -> dict:
             if source.is_file():
                 _write(target[key], source.read_bytes())
         return _summary(copy)
+
+
+def rename(sid: str, title: str) -> dict:
+    with _lock:
+        files = _have(sid)
+        sid = sid.strip()
+        name = _free(title if isinstance(title, str) else "", sid)
+        if name == sid:
+            return _summary(sid)
+        target = _files(name)
+        for key in ("picture.png", "thumb", "info.json", "sculpt.fsc"):
+            if files[key].is_file():
+                os.replace(files[key], target[key])
+            elif target[key].is_file():
+                target[key].unlink()
+        state = _state()
+        for key in ("pinned", "recentHidden"):
+            state[key] = [name if x == sid else x for x in state[key]]
+        if sid in state["opened"]:
+            state["opened"][name] = state["opened"].pop(sid)
+        _save_state(state)
+        return _summary(name)
 
 
 def remove(sid: str) -> dict:

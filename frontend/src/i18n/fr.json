@@ -1468,5 +1468,16 @@
  "{n} h ago": "il y a {n} h",
  "{n} min ago": "il y a {n} min",
  "{n} objects": "{n} objets",
- "{n} sculpts restored.": "{n} sculptures restaurées."
+ "{n} sculpts restored.": "{n} sculptures restaurées.",
+ "Close Sculpt": "Fermer la sculpture",
+ "Menu": "Menu",
+ "Open Recent": "Ouvrir un fichier récent",
+ "Rename Sculpt": "Renommer la sculpture",
+ "Retry": "Réessayer",
+ "Save As": "Enregistrer sous",
+ "Save As...": "Enregistrer sous...",
+ "The engine service still does not answer.": "Le service du moteur ne répond toujours pas.",
+ "The library needs the engine service; this window is running the browser engine.": "La bibliothèque a besoin du service du moteur ; cette fenêtre utilise le moteur du navigateur.",
+ "formsculpt is running on the browser engine because the engine service did not answer. Sculpting works here; the library, Recover, plugins, hand-offs and agents need the service.": "formsculpt utilise le moteur du navigateur, car le service du moteur n'a pas répondu. La sculpture fonctionne ici ; la bibliothèque, la récupération, les extensions, les transferts et les agents ont besoin du service.",
+ "This sculpt has changes that are not saved. Save them first?": "Cette sculpture contient des modifications non enregistrées. Les enregistrer d'abord ?"
 }

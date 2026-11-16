@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
 use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
-use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_updater::UpdaterExt;
@@ -32,6 +32,14 @@ struct ExitGate(AtomicBool);
 const FALLBACK_LOGICAL: (f64, f64) = (1323.0, 860.0);
 const MIN_LOGICAL: (f64, f64) = (980.0, 640.0);
 const SCREEN_FRACTION: f64 = 0.9;
+const PORT_WAIT: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// How the wait for the engine's address ended.
+enum EngineStart {
+    Port(u16),
+    Exited(Option<i32>),
+    Silent,
+}
 
 fn kill_backend(handle: &tauri::AppHandle) {
     if let Some(child) = handle.state::<Backend>().0.lock().unwrap().take() {
@@ -67,6 +75,80 @@ fn close_splash(handle: &tauri::AppHandle) {
 
 fn open_exit_gate(handle: &tauri::AppHandle) {
     handle.state::<ExitGate>().0.store(true, Ordering::SeqCst);
+}
+
+/// Reads the engine's output until it names its address, it ends, or PORT_WAIT passes without an address.
+async fn read_port(rx: &mut tauri::async_runtime::Receiver<CommandEvent>) -> EngineStart {
+    let pattern = regex::Regex::new(r"http://127\.0\.0\.1:(\d+)").unwrap();
+    let (tick, mut timer) = tauri::async_runtime::channel::<()>(1);
+    std::thread::spawn(move || {
+        std::thread::sleep(PORT_WAIT);
+        let _ = tick.blocking_send(());
+    });
+    loop {
+        let event = std::future::poll_fn(|cx| match timer.poll_recv(cx) {
+            std::task::Poll::Ready(_) => std::task::Poll::Ready(Err(())),
+            std::task::Poll::Pending => rx.poll_recv(cx).map(Ok),
+        })
+        .await;
+        let line = match event {
+            Err(()) => return EngineStart::Silent,
+            Ok(None) => return EngineStart::Exited(None),
+            Ok(Some(CommandEvent::Terminated(end))) => return EngineStart::Exited(end.code),
+            Ok(Some(CommandEvent::Stdout(bytes) | CommandEvent::Stderr(bytes))) => String::from_utf8_lossy(&bytes).into_owned(),
+            Ok(Some(_)) => continue,
+        };
+        if let Some(port) = pattern.captures(&line).and_then(|found| found[1].parse::<u16>().ok()) {
+            return EngineStart::Port(port);
+        }
+    }
+}
+
+/// Ends a launch whose engine never came up. Runs off the main thread: the dialog blocks.
+fn quit_launch(handle: &tauri::AppHandle, reason: Option<&str>) {
+    close_splash(handle);
+    if let Some(reason) = reason {
+        handle
+            .dialog()
+            .message(format!("The formsculpt engine failed to start: {reason}\n\nPlease relaunch the app. If it keeps happening, install formsculpt again."))
+            .title("formsculpt")
+            .kind(MessageDialogKind::Error)
+            .blocking_show();
+    }
+    kill_backend(handle);
+    handle.exit(1);
+}
+
+/// The engine has been silent for PORT_WAIT: true when the person chooses to go on waiting.
+fn keep_waiting(handle: &tauri::AppHandle) -> bool {
+    handle
+        .dialog()
+        .message("The formsculpt engine has not answered for a minute. A first start on a slow or busy computer can take longer.")
+        .title("formsculpt")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom("Keep Waiting".into(), "Quit".into()))
+        .blocking_show()
+}
+
+/// The engine ended while the window was open. kill_backend empties the slot before it ends the engine, so an empty
+/// slot means the app itself stopped it and there is nothing to report.
+fn engine_stopped(handle: &tauri::AppHandle) {
+    let ours = handle.state::<Backend>().0.lock().map(|mut slot| slot.take().is_none()).unwrap_or(true);
+    if ours {
+        return;
+    }
+    open_exit_gate(handle);
+    let restart = handle
+        .dialog()
+        .message("The formsculpt engine has stopped, so this window can no longer work. Changes made since the last save are not kept; File > Recover Autosave brings back the last autosave after a restart.")
+        .title("formsculpt")
+        .kind(MessageDialogKind::Error)
+        .buttons(MessageDialogButtons::OkCancelCustom("Restart".into(), "Quit".into()))
+        .blocking_show();
+    if restart {
+        handle.restart();
+    }
+    handle.exit(1);
 }
 
 /// Hands the page a quit request so it can ask about unsaved work; false when the page cannot answer (it has not
@@ -260,13 +342,38 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
     }
 }
 
+/// Linux: the data folder this launch will use, found the way the engine finds it (FSC_DATA_DIR, else ~/Formsculpt), so
+/// a second launch can tell whether a running window already owns it.
+#[cfg(target_os = "linux")]
+fn data_folder() -> std::path::PathBuf {
+    use std::path::PathBuf;
+    let var = |name: &str| std::env::var(name).ok().map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
+    let home = || var("HOME").map(PathBuf::from).unwrap_or_default();
+    let folder = match var("FSC_DATA_DIR") {
+        Some(dir) if dir == "~" => home(),
+        Some(dir) => match dir.strip_prefix("~/") {
+            Some(rest) => home().join(rest),
+            None => PathBuf::from(dir),
+        },
+        None => home().join("Formsculpt"),
+    };
+    let absolute = if folder.is_absolute() { folder } else { std::env::current_dir().unwrap_or_default().join(folder) };
+    std::fs::canonicalize(&absolute).unwrap_or(absolute)
+}
+
+/// One running window per data folder. The plugin keys its hand-off on the application identifier, so on Linux a second
+/// data folder on the same login could not open a window; the key carries a hash of the data folder instead.
 fn single_instance() -> tauri::plugin::TauriPlugin<tauri::Wry> {
-    tauri_plugin_single_instance::Builder::<tauri::Wry>::new()
-        .callback(|app, args, cwd| {
-            open_paths(app, paths_from_args(&args, Some(&cwd)));
-            show_main_window(app);
-        })
-        .build()
+    let plugin = tauri_plugin_single_instance::Builder::<tauri::Wry>::new().callback(|app, args, cwd| {
+        open_paths(app, paths_from_args(&args, Some(&cwd)));
+        show_main_window(app);
+    });
+    #[cfg(target_os = "linux")]
+    let plugin = {
+        let hash = data_folder().to_string_lossy().bytes().fold(0xcbf29ce484222325u64, |h, b| (h ^ u64::from(b)).wrapping_mul(0x100000001b3));
+        plugin.dbus_id(format!("ai.nodemode.formsculpt.d{hash:016x}"))
+    };
+    plugin.build()
 }
 
 fn main() {
@@ -304,49 +411,48 @@ fn main() {
             reveal::round_splash(&handle);
             let launch_args: Vec<String> = std::env::args().collect();
             open_paths(&handle, paths_from_args(&launch_args, None));
-            let (mut rx, child) = app
+            let spawned = app
                 .shell()
                 .sidecar("formsculpt-engine")
-                .expect("sidecar binary is bundled")
-                .env("FSC_PORT", "0")
-                .env("FSC_PARENT_PID", std::process::id().to_string())
-                .spawn()
-                .expect("the formsculpt engine failed to spawn");
-            app.state::<Backend>().0.lock().unwrap().replace(child);
+                .and_then(|engine| engine.env("FSC_PORT", "0").env("FSC_PARENT_PID", std::process::id().to_string()).spawn());
+            let spawned = match spawned {
+                Ok((rx, child)) => {
+                    app.state::<Backend>().0.lock().unwrap().replace(child);
+                    Ok(rx)
+                }
+                Err(err) => Err(err.to_string()),
+            };
 
             tauri::async_runtime::spawn(async move {
-                let pattern = regex::Regex::new(r"http://127\.0\.0\.1:(\d+)").unwrap();
-                let mut port: Option<u16> = None;
+                let mut rx = match spawned {
+                    Ok(rx) => rx,
+                    Err(err) => {
+                        let reason = format!("it could not be run ({err}). It may be missing from the installation or blocked by security software.");
+                        return quit_launch(&handle, Some(&reason));
+                    }
+                };
+                let port = loop {
+                    match read_port(&mut rx).await {
+                        EngineStart::Port(found) => break found,
+                        EngineStart::Silent if keep_waiting(&handle) => continue,
+                        EngineStart::Silent => return quit_launch(&handle, None),
+                        EngineStart::Exited(code) => {
+                            let reason = match code {
+                                Some(code) => format!("it ended before it was ready (exit code {code})."),
+                                None => "it ended before it was ready.".to_string(),
+                            };
+                            return quit_launch(&handle, Some(&reason));
+                        }
+                    }
+                };
+                open_main(&handle, port);
+                check_for_updates(handle.clone());
                 while let Some(event) = rx.recv().await {
-                    let line = match event {
-                        CommandEvent::Stdout(bytes) | CommandEvent::Stderr(bytes) => {
-                            String::from_utf8_lossy(&bytes).into_owned()
-                        }
-                        CommandEvent::Terminated(_) => break,
-                        _ => continue,
-                    };
-                    if let Some(captures) = pattern.captures(&line) {
-                        port = captures[1].parse().ok();
-                        if port.is_some() {
-                            break;
-                        }
+                    if matches!(event, CommandEvent::Terminated(_)) {
+                        break;
                     }
                 }
-                match port {
-                    Some(found) => {
-                        open_main(&handle, found);
-                        check_for_updates(handle.clone());
-                    }
-                    None => {
-                        close_splash(&handle);
-                        handle
-                            .dialog()
-                            .message("The formsculpt engine failed to start. Please relaunch the app.")
-                            .blocking_show();
-                        kill_backend(&handle);
-                        handle.exit(1);
-                    }
-                }
+                engine_stopped(&handle);
             });
             Ok(())
         })

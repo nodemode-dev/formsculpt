@@ -3,8 +3,9 @@ import { library, type SculptSummary, type TemplateSummary, type TrashedSculpt }
 import { browserEngine, dispatch } from '../engine/service';
 import { brandMark } from './brand';
 import { commands, type Command } from './commands';
+import { PromptDialog } from './app-dialogs';
 import { DEMOS, type DemoId } from './demos';
-import { documentTitle, sceneSaved, unsavedWork } from './desktop-shell';
+import { askUnsaved, desktopShell, documentTitle, inShell, sceneSaved, unsavedWork } from './desktop-shell';
 import { anyDialogOpen, Dialog, overlayRoot } from './dialog';
 import { fromHtml, patchList, setClass, setHidden } from './dom';
 import { onLanguage, t } from './i18n';
@@ -51,6 +52,13 @@ const UNTITLED = 'Untitled sculpt';
 const NAV_KEY = 'formsculpt.homeNav';
 const NAV_HIDDEN_KEY = 'formsculpt.homeNavHidden';
 const SESSION_KEY = 'formsculpt.home.current';
+const RECENT_SLOTS = 10;
+const NO_LIBRARY = { description: 'The library needs the engine service; this window is running the browser engine.' }.description;
+const LOCAL_TEMPLATES: Array<[string, string, string, Record<string, unknown>]> = [
+  ['sphere', 'Sphere', 'Sculpting bases', {}], ['quad_sphere', 'Quad Sphere', 'Sculpting bases', { detail: 32 }], ['head', 'Head', 'Sculpting bases', {}],
+  ['cube', 'Cube', 'Primitives', {}], ['cylinder', 'Cylinder', 'Primitives', {}], ['cone', 'Cone', 'Primitives', {}], ['torus', 'Torus', 'Primitives', {}],
+  ['plane', 'Plane', 'Primitives', { detail: 64 }], ['uv_sphere', 'UV Sphere', 'Primitives', {}], ['icosahedron', 'Icosahedron', 'Primitives', {}],
+];
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
 const write = (node: Element | null, value: string): void => {
@@ -98,8 +106,9 @@ function setPreview(card: HTMLElement, url: string): void {
   const box = card.querySelector('.fs-card-preview') as HTMLElement;
   const img = box.querySelector('img') as HTMLImageElement;
   const glyph = box.querySelector('.fs-card-glyph') as HTMLElement;
-  const blank = (): void => {
-    img.dataset.want = '';
+  const blank = (failed = ''): void => {
+    if (img.dataset.want !== '') img.dataset.want = '';
+    if (box.dataset.failed !== failed) box.dataset.failed = failed;
     setHidden(img, true);
     setHidden(glyph, false);
     setClass(box, 'is-blank', true);
@@ -108,10 +117,10 @@ function setPreview(card: HTMLElement, url: string): void {
     blank();
     return;
   }
-  if (img.dataset.want === url) return;
+  if (img.dataset.want === url || box.dataset.failed === url) return;
   setClass(box, 'is-blank', false);
   setHidden(glyph, true);
-  showPicture(img, url, blank);
+  showPicture(img, url, () => blank(url));
 }
 
 export class Home {
@@ -434,6 +443,15 @@ ${demos}
 
   async load(): Promise<void> {
     const turn = ++this.loads;
+    if (browserEngine()) {
+      this.templates = LOCAL_TEMPLATES.map(([id, name, category]) => ({ id, name, category, tags: [], description: '', source: 'builtin', thumb: false }));
+      this.categories = CATEGORIES.map((c) => c[1]);
+      write(this.root.querySelector('.fs-tpl-count'), String(this.templates.length));
+      this.renderTemplates();
+      this.renderSculpts();
+      this.renderTrash();
+      return;
+    }
     const [tp, l, tr, st] = await Promise.all([
       library.templates().catch(() => null),
       library.list().catch(() => null),
@@ -484,6 +502,7 @@ ${demos}
     const rows: Array<[string, string, () => void]> = [];
     if (!many) {
       rows.push([t('Open'), 'open', () => this.hooks.openSculpt(id)]);
+      rows.push([t('Rename'), 'rename', () => void this.renameSculpt(id)]);
       rows.push([t('Duplicate'), 'dup', () => {
         void library.duplicate(id).then(() => this.load()).then(() => toast(t('Duplicated.'))).catch((e) => toast(why(e), 'error'));
       }]);
@@ -510,6 +529,22 @@ ${demos}
     this.menu.style.top = `${Math.round(Math.max(4, Math.min(y, window.innerHeight - h - 4)))}px`;
     this.menu.style.visibility = '';
     (this.menu.firstElementChild as HTMLElement | null)?.focus();
+  }
+
+  private async renameSculpt(id: string): Promise<void> {
+    const was = this.sculpts.find((d) => d.id === id)?.title ?? id;
+    let typed: string | null = was;
+    while ((typed = await askName(t('Rename Sculpt'), typed, t('Rename'))) !== null && typed !== was) {
+      try {
+        const done = await library.rename(id, typed);
+        if (current?.id === id) setCurrent({ ...current, id: done.id, title: done.title }, true);
+        if (closed?.sculpt.id === id) closed.sculpt = { ...closed.sculpt, id: done.id, title: done.title };
+        await this.load();
+        return;
+      } catch (e) {
+        toast(why(e), 'error');
+      }
+    }
   }
 
   private saveRecent(): void {
@@ -650,6 +685,7 @@ ${demos}
     const empty = this.root.querySelector<HTMLButtonElement>('.fs-btn-empty-trash');
     if (empty && empty.disabled !== !this.trashed.length) empty.disabled = !this.trashed.length;
     const none = this.root.querySelector<HTMLElement>('.fs-trash-none');
+    if (none && browserEngine()) write(none, t(NO_LIBRARY));
     if (none) setHidden(none, this.trashed.length > 0);
     const update = (n: HTMLElement, d: TrashedSculpt): void => {
       write(n.querySelector('.fs-card-name'), d.title);
@@ -782,10 +818,17 @@ ${demos}
     patchList(this.recentGrid, recent.slice(0, 5), { key: (d) => d.id, create: make, update });
     patchList(this.recentGridFull, pinnedFirst(this.sculpts), { key: (d) => d.id, create: make, update });
     const none = this.recentGrid.querySelector<HTMLElement>('.fs-card.is-empty');
-    if (none) setHidden(none, recent.length > 0);
     const noneFull = this.root.querySelector<HTMLElement>('.fs-recent-none');
+    if (browserEngine() && none && noneFull) {
+      setClass(none, 'is-local', true);
+      write(none.querySelector('.fs-card-meta'), t(NO_LIBRARY));
+      write(noneFull, t(NO_LIBRARY));
+    }
+    if (none) setHidden(none, recent.length > 0);
     if (noneFull) setHidden(noneFull, this.sculpts.length > 0);
     write(this.root.querySelector('.fs-sculpt-count'), String(this.sculpts.length));
+    recentList = recent.slice(0, RECENT_SLOTS).map((d) => ({ id: d.id, title: d.title }));
+    desktopShell()?.refresh();
   }
 }
 
@@ -826,44 +869,20 @@ class TemplateDialog extends Dialog {
   }
 }
 
-class HomePrefsDialog extends Dialog {
-  private readonly launch: HTMLInputElement;
-  private readonly lastClose: HTMLInputElement;
-
-  constructor(changed: () => void) {
-    super('Preferences', 440);
-    const row = (label: string): HTMLLabelElement => fromHtml<HTMLLabelElement>(`<label class="fs-home-check"><input type="checkbox"><span>${label}</span></label>`);
-    const a = row('Show Home Screen at Launch');
-    const b = row('Show Home Screen When the Last Document Closes');
-    this.launch = a.querySelector('input') as HTMLInputElement;
-    this.lastClose = b.querySelector('input') as HTMLInputElement;
-    this.body.append(a, b);
-    this.launch.addEventListener('change', () => {
-      updatePrefs({ autoShowHome: this.launch.checked });
-      changed();
-    });
-    this.lastClose.addEventListener('change', () => {
-      updatePrefs({ homeOnLastClose: this.lastClose.checked });
-      changed();
-    });
-    this.button('Close', 'primary', () => this.close());
-  }
-
-  show(): void {
-    const p = loadPrefs();
-    this.launch.checked = p.autoShowHome;
-    this.lastClose.checked = p.homeOnLastClose;
-    this.open(this.launch);
-  }
-}
-
 let home: Home | null = null;
 let host: HomeHost | null = null;
+let homeHooks: HomeHooks | null = null;
 let current: OpenSculpt | null = null;
-let closed: { sculpt: OpenSculpt; trail: string } | null = null;
+let closed: { sculpt: OpenSculpt; trail: string; depth: number; undone: boolean } | null = null;
 let decided = false;
 let settle: () => void = () => undefined;
-let prefsDialog: HomePrefsDialog | null = null;
+let recentList: Array<{ id: string; title: string }> = [];
+let namer: PromptDialog | null = null;
+
+function askName(title: string, value: string, ok: string): Promise<string | null> {
+  namer ??= new PromptDialog();
+  return namer.ask(title, value, ok);
+}
 
 export const homeReady: Promise<void> = new Promise((resolve) => {
   settle = resolve;
@@ -914,6 +933,7 @@ async function openSculpt(id: string): Promise<void> {
     await host.refresh().catch(() => undefined);
     host.frame();
     home?.leave();
+    void home?.load();
   } catch (e) {
     toast(why(e), 'error');
   }
@@ -922,9 +942,11 @@ async function openSculpt(id: string): Promise<void> {
 async function createSculpt(template: string, title?: string): Promise<void> {
   if (!host) return;
   if (browserEngine()) {
+    const tpl = LOCAL_TEMPLATES.find((x) => x[0] === template) ?? LOCAL_TEMPLATES[0];
     await blankScene();
-    const made = await dispatch('add_primitive', { kind: 'sphere' });
+    const made = await dispatch('add_primitive', { kind: tpl[0], ...tpl[3] });
     if (!made.ok) toast(why(made.error.message), 'error');
+    if (current) setCurrent({ ...current, title: title ? tidyName(title) : '', blank: false });
     await host.refresh().catch(() => undefined);
     host.frame();
     return;
@@ -974,22 +996,19 @@ function agents(): void {
 }
 
 function preferences(): void {
-  if (commands.get('app.preferences')) {
-    commands.run('app.preferences');
-    return;
-  }
-  prefsDialog ??= new HomePrefsDialog(() => home?.sync());
-  prefsDialog.show();
+  commands.run('app.preferences');
 }
 
 function guarded(go: () => void): void {
   if (!current || !unsavedWork()) go();
-  else home?.ask(t('This sculpt has changes that are not saved. Discard them?'), t('Discard'), go);
+  else void askUnsaved().then((ok) => {
+    if (ok) go();
+  });
 }
 
 export function mountHome(hooks: Partial<HomeHooks> = {}): Home {
   if (home) return home;
-  home = new Home({
+  homeHooks = {
     openSculpt: (id) => {
       if (current?.id === id) home?.leave();
       else guarded(() => void openSculpt(id));
@@ -1011,12 +1030,14 @@ export function mountHome(hooks: Partial<HomeHooks> = {}): Home {
     autoShow: () => loadPrefs().autoShowHome && !browserEngine(),
     afterClose: () => loadPrefs().homeOnLastClose && !browserEngine(),
     ...hooks,
-  });
+  };
+  home = new Home(homeHooks);
   return home;
 }
 
 export function attachHome(next: HomeHost): void {
   host = next;
+  void home?.load();
 }
 
 export function showHome(page?: HomePage): void {
@@ -1044,10 +1065,20 @@ export function homeScene(objects: number): void {
 
 export function homeSceneEnded(ended: boolean, trail: readonly string[] = [], undone = false): void {
   if (ended && decided && current && !current.blank) {
-    const was = current.id || current.title || !closed ? { sculpt: current, trail: trail.slice(0, -1).join('\n') } : closed;
+    const was = current.id || current.title || !closed ? { sculpt: current, trail: trail.slice(0, -1).join('\n'), depth: trail.length - 1, undone: false } : { ...closed, undone: false };
     setCurrent(null);
     closed = was;
-  } else if (undone && closed && current && !current.id && !current.title && !current.blank && trail.join('\n') === closed.trail) setCurrent(closed.sculpt);
+  } else if (current && !current.id && !current.title && !current.blank && reopened(trail, undone) && closed) setCurrent(closed.sculpt);
+}
+
+function reopened(trail: readonly string[], undone: boolean): boolean {
+  if (!closed) return false;
+  if (undone && trail.join('\n') === closed.trail) return true;
+  return closed.undone && trail.length >= closed.depth && trail.slice(0, closed.depth).join('\n') === closed.trail && trail[closed.depth] !== 'New Scene';
+}
+
+export function homeUndid(reply: { undone?: unknown; undo_depth?: unknown }): void {
+  if (closed && reply.undone === 'New Scene' && reply.undo_depth === closed.depth) closed.undone = true;
 }
 
 export function homeSceneReplaced(): void {
@@ -1084,9 +1115,10 @@ function thumbnail(canvas: HTMLCanvasElement): Promise<Blob | null> {
 export async function saveSculpt(): Promise<void> {
   if (!host) return;
   if (browserEngine()) {
-    await host.download();
+    if (await host.download()) sceneSaved();
     return;
   }
+  await host.refresh().catch(() => undefined);
   if (host.objects() === 0) {
     host.note(t('The scene is empty; there is nothing to save'));
     return;
@@ -1094,15 +1126,51 @@ export async function saveSculpt(): Promise<void> {
   try {
     const picture = await thumbnail(host.picture());
     const saved = current?.id ? await library.save(current.id, !!picture) : await library.keepScene(tidyName(current?.title || host.sceneName()), !!picture);
-    if (picture) await library.putThumb(saved.id, picture).catch(() => undefined);
-    setCurrent({ id: saved.id, title: saved.title, blank: false });
-    sceneSaved();
-    host.note(t('Saved {name} to the library').replace('{name}', saved.title));
-    if (home?.isOpen) void home.load();
+    await keptInLibrary(saved, picture);
   } catch (e) {
     host.note(why(e));
   }
 }
+
+async function keptInLibrary(saved: SculptSummary, picture: Blob | null): Promise<void> {
+  if (picture) await library.putThumb(saved.id, picture).catch(() => undefined);
+  setCurrent({ id: saved.id, title: saved.title, blank: false });
+  sceneSaved();
+  host?.note(t('Saved {name} to the library').replace('{name}', saved.title));
+  void home?.load();
+}
+
+export async function saveSculptAs(): Promise<void> {
+  if (!host || browserEngine()) return;
+  if (host.objects() === 0) {
+    host.note(t('The scene is empty; there is nothing to save'));
+    return;
+  }
+  let typed: string | null = tidyName(current?.title || host.sceneName());
+  const picture = await thumbnail(host.picture());
+  while ((typed = await askName(t('Save As'), typed, t('Save'))) !== null) {
+    try {
+      await keptInLibrary(await library.saveAs(typed, !!picture), picture);
+      return;
+    } catch (e) {
+      toast(why(e), 'error');
+    }
+  }
+}
+
+async function closeSculpt(): Promise<void> {
+  if (!host || !current || !(await askUnsaved())) return;
+  const reply = await dispatch('new_scene');
+  if (!reply.ok) {
+    toast(why(reply.error.message), 'error');
+    return;
+  }
+  await host.refresh().catch(() => undefined);
+  if (current?.blank) setCurrent(null);
+  home?.request();
+}
+
+export const recentCommands = (): string[] => recentList.map((_, i) => `file.recent.${i}`);
 
 export function homeCommands(): Command[] {
   const flip = (key: 'autoShowHome' | 'homeOnLastClose'): void => {
@@ -1111,16 +1179,17 @@ export function homeCommands(): Command[] {
   };
   return [
     { id: 'file.save_file', label: 'Save Project File...', icon: 'save', run: () => void host?.download() },
-    {
-      id: 'app.preferences',
-      label: 'Preferences',
-      keys: ['Mod+,'],
-      icon: 'settings',
+    { id: 'file.save_as', label: 'Save As...', keys: ['Shift+Mod+S'], icon: 'save', enabled: () => !browserEngine() && (host?.objects() ?? 0) > 0, run: () => void saveSculptAs() },
+    { id: 'file.close', label: 'Close Sculpt', keys: inShell() ? ['Mod+W'] : [], enabled: () => current !== null, run: () => void closeSculpt() },
+    ...Array.from({ length: RECENT_SLOTS }, (_, i): Command => ({
+      id: `file.recent.${i}`,
+      label: () => recentList[i]?.title ?? '',
+      enabled: () => i < recentList.length,
       run: () => {
-        prefsDialog ??= new HomePrefsDialog(() => home?.sync());
-        prefsDialog.show();
+        const d = recentList[i];
+        if (d) homeHooks?.openSculpt(d.id);
       },
-    },
+    })),
     { id: 'pref.home_launch', label: 'Show Home Screen at Launch', run: () => flip('autoShowHome'), checked: () => loadPrefs().autoShowHome },
     { id: 'pref.home_last_close', label: 'Show Home Screen When the Last Document Closes', run: () => flip('homeOnLastClose'), checked: () => loadPrefs().homeOnLastClose },
   ];
