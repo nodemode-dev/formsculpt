@@ -26,7 +26,7 @@ export function accelerator(combo: string | undefined): string | null {
   const parts = combo.endsWith('++') ? [...combo.slice(0, -2).split('+'), 'Plus'] : combo.split('+');
   const key = parts[parts.length - 1];
   const fkey = /^F([1-9]|1[0-2])$/.test(key);
-  if (!fkey && !parts.some((p) => p === 'Mod' || p === 'Ctrl' || p === 'Alt')) return null;
+  if (!fkey && !parts.some((p) => p === 'Mod' || p === 'Ctrl')) return null;
   const out: string[] = [];
   for (const p of parts) {
     if (NAMES[p]) out.push(NAMES[p]);
@@ -66,10 +66,10 @@ const PREFERENCES = 'app.preferences';
 const PRODUCT = 'FormSculpt';
 
 type Api = typeof import('@tauri-apps/api/menu');
-type Live = { setEnabled(on: boolean): Promise<void>; setChecked?(on: boolean): Promise<void> };
+type Live = { setEnabled(on: boolean): Promise<void>; setChecked?(on: boolean): Promise<void>; setText(text: string): Promise<void> };
 
 export class NativeMenus {
-  private items: Array<{ id: string; item: Live }> = [];
+  private items: Array<{ id: string; item: Live; text: string }> = [];
   private building = false;
   private again = false;
   private stateTimer = 0;
@@ -136,7 +136,7 @@ export class NativeMenus {
         } else {
           try { item = await api.MenuItem.new(acc ? { ...opts, accelerator: acc } : opts); } catch { item = await api.MenuItem.new(opts); }
         }
-        items.push({ id: spec, item });
+        items.push({ id: spec, item, text });
         return item;
       };
       const top: unknown[] = [];
@@ -200,9 +200,15 @@ export class NativeMenus {
         void this.build().catch(() => undefined);
         return;
       }
-      for (const { id, item } of this.items) {
+      for (const row of this.items) {
+        const { id, item } = row;
         const cmd = this.commands.get(id);
         if (!cmd) continue;
+        const text = t(this.commands.label(cmd));
+        if (text !== row.text) {
+          row.text = text;
+          void item.setText(text).catch(() => undefined);
+        }
         void item.setEnabled(this.enabled(id)).catch(() => undefined);
         if (cmd.checked && item.setChecked) void item.setChecked(!!cmd.checked()).catch(() => undefined);
       }

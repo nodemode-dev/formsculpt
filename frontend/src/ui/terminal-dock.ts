@@ -7,6 +7,7 @@ import { ChatPane } from './chat-pane';
 import { fromHtml as el, isMac, q, setDisabled, setHidden, setText } from './dom';
 import { icon as glyph } from './icons';
 import { t } from './i18n';
+import { THEME_EVENT } from './theme';
 
 export interface TermInfo { id: string; title: string; kind?: string; alive?: boolean }
 
@@ -24,7 +25,7 @@ const mod = isMac ? 'Cmd' : 'Ctrl';
 const icon = (name: string, size: number): string => `<span class="icon">${glyph(name, size)}</span>`;
 
 function token(name: string, fallback: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  return getComputedStyle(document.body).getPropertyValue(name).trim() || fallback;
 }
 
 function escapeHtml(s: string): string {
@@ -52,6 +53,9 @@ export class TerminalDock {
 
   constructor(host: HTMLElement, private readonly api: Api, onHide: () => void) {
     this.root = host;
+    window.addEventListener(THEME_EVENT, () => {
+      for (const tab of this.tabs.values()) tab.term.options.theme = this.theme();
+    });
     host.append(el(`<div class="fl-dock-rsz" role="separator" aria-orientation="horizontal" aria-label="Resize the terminal"></div>`),
       el(`<div class="fl-dock-head">
 <div class="fl-dock-tabs" role="tablist" aria-label="Terminals"></div>

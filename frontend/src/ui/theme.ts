@@ -57,4 +57,7 @@ export function applyTheme(p: ThemePrefs): void {
   body.classList.toggle('theme-contrast', p.theme === 'contrast');
   body.classList.toggle('panels-translucent', p.translucent);
   document.documentElement.style.background = p.theme === 'family' ? familyBackground() : light ? '#ecebe6' : p.theme === 'contrast' ? '#000000' : '';
+  window.dispatchEvent(new Event(THEME_EVENT));
 }
+
+export const THEME_EVENT = 'formsculpt-theme';

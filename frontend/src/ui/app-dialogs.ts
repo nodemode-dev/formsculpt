@@ -158,13 +158,14 @@ export class AboutDialog extends Dialog {
 
 export class PromptDialog extends Dialog {
   private readonly field = fromHtml<HTMLInputElement>('<input class="fs-input" type="text" spellcheck="false" autocomplete="off">');
+  private readonly ok: HTMLButtonElement;
   private done: ((value: string | null) => void) | null = null;
 
   constructor() {
     super('Name', 380);
     this.body.append(this.field);
     this.button('Cancel', 'ghost', () => this.finish(null));
-    this.button('OK', 'primary', () => this.finish(this.field.value.trim() || null));
+    this.ok = this.button('OK', 'primary', () => this.finish(this.field.value.trim() || null));
     this.field.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -174,8 +175,9 @@ export class PromptDialog extends Dialog {
     this.onClose = () => this.finish(null);
   }
 
-  ask(title: string, value: string): Promise<string | null> {
+  ask(title: string, value: string, okLabel = 'OK'): Promise<string | null> {
     this.setTitle(title);
+    setText(this.ok, t(okLabel));
     this.field.value = value;
     return new Promise((resolve) => {
       this.done = resolve;

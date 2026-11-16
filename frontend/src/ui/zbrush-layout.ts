@@ -214,6 +214,14 @@ export class ZBrushLayout {
     this.titleNote.setAttribute('role', 'status');
     this.titleNote.setAttribute('aria-live', 'polite');
     const agents = el('span', 'zb-title-tools');
+    const allMenus = el('button', 'zb-title-tool fs-all-menus');
+    allMenus.type = 'button';
+    allMenus.dataset.allMenus = '';
+    allMenus.setAttribute('aria-haspopup', 'menu');
+    allMenus.setAttribute('aria-label', t('Menu'));
+    allMenus.title = t('Menu');
+    allMenus.append(glyph('menu'));
+    agents.append(allMenus);
     for (const [g, id, label] of [['home', 'app.home', 'Home'], ['agent', 'agent.claude', 'Claude Code'], ['agentChat', 'agent.chat', 'Chat with Claude'], ['terminal', 'view.terminal', 'Terminal']]) {
       const b = el('button', 'zb-title-tool');
       b.type = 'button';
@@ -929,6 +937,7 @@ export class ZBrushLayout {
     if (target?.closest('input:not([type=checkbox]):not([type=range]), textarea, select, [contenteditable="true"], .xterm')) return;
     const k = e.key.toLowerCase();
     const mod = e.ctrlKey || e.metaKey;
+    if (!mod && !e.altKey && (e.key.length === 1 || e.key === 'Tab') && target?.closest('button, a[href], input, [role="button"], [role="menuitem"], [role="tab"], [role="slider"], [role="option"]')) return;
     let done = true;
     const plain = !mod && !e.altKey && !e.shiftKey;
     if (e.key === 'Escape' && (!this.popup.hidden || !this.quick.hidden || !this.qmenu.hidden || !this.lightbox.hidden)) {

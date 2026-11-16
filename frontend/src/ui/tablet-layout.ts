@@ -386,7 +386,10 @@ export class TabletLayout {
     homeButton.title = t('Home');
     homeButton.setAttribute('aria-label', t('Home'));
     homeButton.dataset.cmd = 'app.home';
-    this.tl.append(homeButton);
+    const menuButton = labelled('menu', t('Menu'), 'tb-icon tb-worded fs-all-menus');
+    menuButton.dataset.allMenus = '';
+    menuButton.setAttribute('aria-haspopup', 'menu');
+    this.tl.append(menuButton, homeButton);
     // Top left: the scene menus, and the counts under them.
     for (const [g, title, sections, word] of LEFT_MENUS) {
       this.menus.set(g, [title, sections, 'left']);
