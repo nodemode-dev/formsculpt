@@ -8,9 +8,9 @@ Living log for the engine service side, _v0.1.0. Read the map and the TOC first;
 backend/
   formsculpt_engine.py   PyInstaller entry for the desktop sidecar, --selfcheck
   boot_backend             dev server with reload on 127.0.0.1:8260
-  oc_install               venv and requirements (macOS reads the unpinned file)
+  oc_install               venv and requirements (macOS reads its own file)
   requirements.txt         pinned
-  requirements_macos.txt   unpinned twin
+  requirements_macos.txt   pinned twin without the Windows terminal package
   requirements_desktop*.txt  PyInstaller
   .env.example             FSC_PORT, FSC_CORS_ORIGINS
   app/__init__.py          __version__, a version site
@@ -34,6 +34,7 @@ backend/
 - [The pre-release audit of the service, the shell and the scripts](#the-pre-release-audit-of-the-service-the-shell-and-the-scripts)
 - [The desktop shell: opened files, one instance, the quit gate, text-field edits](#the-desktop-shell-opened-files-one-instance-the-quit-gate-text-field-edits)
 - [The Home screen's library](#the-home-screens-library)
+- [formsculpt 1.21.0 · the desktop shell and the scripts](#formsculpt-1210--the-desktop-shell-and-the-scripts)
 
 ## formsculpt_engine.py
 
@@ -522,3 +523,74 @@ A save writes LightBox's 160 px square picture as before and a 480 by 270 `get_v
 - logged: v1.20.0 · 2026-11-15
 `GET /api/sculpts`, `POST /api/sculpts` (`{title?, template?}` or `{title?, fromScene: true}`), `POST /api/sculpts/{id}/open`, `POST /api/sculpts/{id}/save`, `POST /api/sculpts/{id}/duplicate`, `DELETE /api/sculpts/{id}`, `PUT` and `GET /api/sculpts/{id}/thumb`, `GET /api/sculpt-trash`, `POST /api/sculpt-trash/{entry}/restore`, `DELETE /api/sculpt-trash/{entry}`, `DELETE /api/sculpt-trash`, `GET /api/sculpt-templates`, `GET /api/sculpt-templates/{id}/thumb`, `GET` and `POST /api/sculpt-settings`. There is no rename route: renaming stays with saving under a new name. All of them sit behind `LocalGuard` like every other route.
 Checked: the existing suite (148 passed), and the routes in process against a temporary data folder, including `../x`, `con`, an encoded slash and a `.home-1` trash entry, each refused. No test file was added (not assigned).
+
+## formsculpt 1.21.0 · the desktop shell and the scripts
+
+### src-tauri/src/main.rs · the engine's start and its end
+- refers-to: src-tauri/src/main.rs :: PORT_WAIT, EngineStart, read_port, quit_launch, keep_waiting, engine_stopped, setup (sidecar spawn)
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+Three `expect` calls ended the app with no word when the sidecar was missing or could not be run (security software, a broken install); a launch whose engine printed nothing kept the splash up for ever; an engine that died after the window opened left a window whose every call failed. The wait for the address is formtools' `read_port` (a 60 s timer thread raced against the engine's output) and now ends one of three ways: an address opens the window; an exit (or a spawn error) closes the splash and says why in an error dialog, with the exit code; a silent minute asks Keep Waiting or Quit, since a first start on a slow computer can be long. After the window opens the shell keeps reading the engine's events: a `Terminated` while the `Backend` slot still holds the child means the engine died on its own (the app's own stops go through `kill_backend`, which empties the slot first), so the shell opens the exit gate and offers Restart or Quit, naming Recover Autosave. The dialogs are English only, as the shell's other dialogs.
+Removed code, quoted in full:
+
+```rust
+            let (mut rx, child) = app
+                .shell()
+                .sidecar("formsculpt-engine")
+                .expect("sidecar binary is bundled")
+                .env("FSC_PORT", "0")
+                .env("FSC_PARENT_PID", std::process::id().to_string())
+                .spawn()
+                .expect("the formsculpt engine failed to spawn");
+```
+
+and the old wait, a `while let Some(event) = rx.recv().await` loop that broke on `Terminated` and showed "The formsculpt engine failed to start. Please relaunch the app." when no port came.
+Checked: tauri-check and `cargo check --locked` of src-tauri on Linux, exit 0; `read_port`, the slot test and the data folder key copied into a stand-alone tokio program against stand-in engines (silent `sleep`, `exit 3`, one that prints a uvicorn address and then exits, a missing program), every case as expected. Not run: the dialogs in a built app, Windows, macOS.
+
+### src-tauri/src/main.rs · one window per data folder on Linux
+- refers-to: src-tauri/src/main.rs :: data_folder, single_instance
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+The single-instance plugin keys its D-Bus name on the application identifier, so a second formsculpt with another `FSC_DATA_DIR` handed its files to the first and exited. formvis's form: the name is `ai.nodemode.formsculpt.d` plus an FNV-1a hash of the canonical data folder, found as `app/core/config.py::data_dir` finds it (`FSC_DATA_DIR`, `~` expanded, else `~/Formsculpt`). The shell has no data folder argument, so only the variable is read. macOS and Windows keep the plugin's own key.
+
+### formsculpt_engine.py · sweep_stale_unpacks
+- refers-to: formsculpt_engine.py :: sweep_stale_unpacks, main
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+formvis's sweep, extended to Windows. The one-file launcher unpacks to `_MEI` plus its process id in eight hex digits plus a suffix (six random characters on macOS and Linux, `_wtempnam`'s counter on Windows, per PyInstaller 6.22.3's bootloader); on Windows the engine cannot delete the files it still has loaded, so `watch_parent`'s own clean-up leaves part of the folder behind on every quit. At start, in a background thread, a folder of that form whose process is gone is removed; this engine's own and any whose id is alive are kept. On Windows liveness is `parent_alive` (OpenProcess), since `os.kill` there ends the process. Checked on Linux with fake folders (a dead id removed, a live id, a non-matching name and the own folder kept). Not run on Windows.
+
+### setup/i18n.py · extract
+- refers-to: setup/i18n.py :: extract
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+`sorted(found, key=str.lower)` is stable, but `found` is a set whose order changes with each run's hash seed, so strings equal but for case swapped places on every extract. The key is `(s.lower(), s)` now, a total order. Checked on a copy of the tree with three hash seeds: identical output.
+
+### setup/mcp_stdio.py · start_engine
+- refers-to: setup/mcp_stdio.py :: start_engine
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+It started the bash launcher on every system, which Windows cannot run from cmd. formtxt's form: `formsculpt.bat` on Windows, started detached in its own process group (`0x208`), `start_new_session` elsewhere. Not run on Windows.
+
+### formsculpt.bat · parity with the shell launcher
+- refers-to: formsculpt.bat :: the dispatch list, install-desktop, freeze, desktop, app, doctor, test, bench, mcp, script, i18n, agents, clean, serve, engine
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+The verbs the shell launcher has and the `.bat` lacked, each following its `setup/` script: `install-desktop`, `freeze` (the same PyInstaller line with `;` separators and `winpty`), `desktop dev|build`, `app`, `doctor`, `test [all|engine|service|e2e]`, `bench`, `mcp`, `script`, `i18n`, `agents`, `clean [--all]`, and `engine check|wasm`. Python is `python`, as `build_app.bat` and `backend\oc_install.bat` find it. `serve` builds only when `frontend\dist\index.html` is missing and honours `FSC_PORT`, as `setup/serve` does; `engine` installs maturin when the venv lacks it and fails with exit 1 when a build fails. `engine wasm` has no `-Zbuild-std` fallback: it names the `rustup target add` line instead. Removed code, quoted in full: `cd frontend && call npm run build && cd ..\backend && call venv\Scripts\activate.bat && set "FSC_DIST=%~dp0frontend\dist" && uvicorn app.main:app --host 127.0.0.1 --port 8260`. Not run: no Windows here; read against `formsculpt` and `setup/*` line by line.
+
+### requirements_macos.txt, requirements_desktop_macos.txt · pinned
+- refers-to: requirements_macos.txt, requirements_desktop_macos.txt
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+Both were unpinned, so a macOS release build took whatever was newest that day. They carry the versions `requirements.txt` and `requirements_desktop.txt` pin (fastapi 0.141.1, uvicorn 0.53.0, python-multipart 0.0.32, maturin 1.11.5, ptyprocess 0.7.0, pyinstaller 6.22.3).
+
+### .github/workflows · the desktop shell is compiled, actions pinned
+- refers-to: .github/workflows/ci.yml :: desktop-shell, every uses; .github/workflows/wiki.yml :: publish
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+A `desktop-shell` job runs `cargo check --locked` in `src-tauri` on Ubuntu after the window job's apt mirror fallback and the Tauri package list from `setup/install_desktop`, with a built window and an empty sidecar placeholder for the build script (formfabric's job). Every action is pinned to formcompiler's commit and version: checkout v7.0.1, setup-node v7.1.0, setup-python v7.1.0, rust-cache v2.9.3.
+
+### integrations/blender/formsculpt_link · the toggles after a restart
+- refers-to: integrations/blender/formsculpt_link/__init__.py :: _resume, register, unregister
+- kind: rationale
+- logged: v1.21.0 · 2026-11-16
+Blender saves the add-on's Live and Watch GoF preferences but runs no `update` callback when it loads them, so after a restart both showed on and no timer ran until toggled. `register` now queues a one-shot persistent timer that calls the two update functions with the loaded preferences; `unregister` removes it if it has not run. Not run: no Blender here.
