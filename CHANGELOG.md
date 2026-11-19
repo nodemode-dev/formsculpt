@@ -2,6 +2,10 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.21.1 · 2026-11-18
+
+- Mac builds are signed with the new Developer ID and notarized by Apple, so macOS opens the downloaded app without asking first. Nothing in the app changed.
+
 ## 1.21.0 · 2026-11-16
 
 The window gains Save As, Rename, Open Recent, Close Sculpt and a full Preferences dialog, asks before an open replaces unsaved work, and the desktop app now says why when its engine does not start.
