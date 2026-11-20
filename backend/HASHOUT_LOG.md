@@ -695,3 +695,11 @@ The six-line stream guard runs before anything else, so a Windows engine with no
 - kind: rationale
 - logged: v1.24.0 · 2026-11-20
 1.24.0 added `setup/HASHOUT_LOG.md`, and the CI loop runs `bash -n` on every file in `setup/*` that is not `.bat` or `.py`, so it parsed the log as a script and stopped the `scripts` job at its line 11 (`syntax error near unexpected token`). `*.md` joins the skip list, as `*.py` did when the Python files were added. Removed code, quoted in full: `case "$f" in *.bat|*.py) continue ;; esac`. Checked: the step's loop, run here as written in the workflow, exits 0 over every listed script and every file in `setup/`, and failed on `setup/HASHOUT_LOG.md` before the change.
+
+## formsculpt 1.25.0 · the shared panel 2.2.1, the test guard
+
+### app/services/agent_programs.py · the engine reports panel 2.2.1
+- refers-to: app/services/agent_programs.py :: CONTRACT; tests/test_dock_manifest.py
+- kind: rationale
+- logged: v1.25.0 · 2026-11-20
+`CONTRACT` is the panel version the engine tells the window it was built for (`terminal.agents` returns it as `contract`); it follows the shared panel folder, now 2.2.1 (frontend log, same version). `tests/test_dock_manifest.py` holds the folder to its manifest (version 2.2.1, every listed file's hash) and the engine's `CONTRACT` to the same version, so a copy that is half done or an engine left behind fails the suite as well as `./formsculpt agents check`.

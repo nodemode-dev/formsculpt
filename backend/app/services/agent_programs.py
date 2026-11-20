@@ -17,7 +17,7 @@ PROGRAMS = {
 TABS = tuple(PROGRAMS)
 MCP_URL_VAR = "FSC_MCP_URL"
 SERVER = claude_code.TAB_SERVER
-CONTRACT = "2.2.0"
+CONTRACT = "2.2.1"
 _cache: dict = {"at": 0.0, "value": None}
 
 

@@ -1492,3 +1492,11 @@ The engine now refuses writes, sockets and the window's poll without the window 
 - kind: rationale
 - logged: v1.24.0 · 2026-11-20
 The engine now keys `/api/events` and `/api/chat/image/{name}` (backend log, same version). An `EventSource` and an `img` element cannot send a header, so `ticketed(path)` asks `POST /api/window/ticket` through the keyed fetch and returns the path with `?ticket=`. `Events.open` makes a new `EventSource` with a fresh ticket each time: the browser's own retry reuses the spent address, gets 403 and closes the source, and the `CLOSED` branch of `onerror` opens again with a new ticket after 1.5 seconds (FormPDF's shape); `onopen` and `onerror` still report the connection state. `start` guards with `started`, since `source` is only set once the ticket has come back. Each Chat picture asks for its own ticket and sets `src` when it arrives; the element keeps its width and height, so nothing moves when the picture lands.
+
+## formsculpt 1.25.0 · the shared panel 2.2.1 and four programs named
+
+### src/dock · the shared panel module is 2.2.1
+- refers-to: src/dock/CONTRACT.md, src/dock/MANIFEST.json, src/dock/strings.ts :: tourInstalledBody, tourReadyBody
+- kind: rationale
+- logged: v1.25.0 · 2026-11-20
+Every file of the folder copied whole from FormVis commit 23b01889 (the family's 2.2.1), so all 16 files now hash the same as FormVis's and `MANIFEST.json` lists 15 of 15 matching. Only three changed: the first-run guide's two sentences for a computer with Claude Code (`tourInstalledBody`, `tourReadyBody`) now end with "Codex, Cursor and Antigravity each get a button of their own here when they are on this computer.", `CONTRACT.md` says 2.2.1 and has its Module 2.2.1 section, and the manifest carries the version and the two new hashes. The adapter needs no change: 2.2.1 changes no type. The guide's sentences are not in this app's language tables (the adapter passes the English through `t`, which falls back to it), so no table changed for them. `canDockRight` stays false: each of the three layouts gives the panel a row under the viewport (the 1.22.0 entry above), so the panel opens at the bottom only.
