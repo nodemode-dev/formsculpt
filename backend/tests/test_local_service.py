@@ -193,6 +193,7 @@ def test_stroke_socket_samples_that_are_not_numbers_leave_the_mesh_finite(lenien
         '{"type":"sample","seq":8,"origin":[0.7,0,5],"dir":[0,0,-1],"pressure":1}',
     ]
     with lenient.websocket_connect(WS_PATH, headers={**MCP_HEADERS, "origin": WINDOW_ORIGINS[1]}) as ws:
+        ws.send_text(json.dumps({"type": "key", "key": next(iter(window_headers().values()))}))
         ws.send_text(json.dumps({"type": "begin", "id": oid, "brush": {"brush": brush, "radius": 0.4, "strength": 1}}))
         for sample in samples:
             ws.send_text(sample)
