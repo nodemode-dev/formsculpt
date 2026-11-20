@@ -163,7 +163,7 @@ ${n('start', 'Start', 'home')}${n('recent', 'Recent sculpts', 'cube', 'fs-sculpt
 <div class="fs-home-open" hidden><div class="fs-home-nav-sep"></div><div class="fs-home-nav-title">Open sculpt</div><div class="fs-home-open-list"></div></div>
 <div class="fs-home-nav-sep"></div>
 <div class="fs-home-nav-title">Agents</div>
-<button class="fs-home-nav-item" type="button" data-a="agents">${icon('agent', 16)}<span translate="no">Claude Code, Codex, Cursor</span></button>
+<button class="fs-home-nav-item" type="button" data-a="agents">${icon('agent', 16)}<span translate="no">Claude Code, Codex, Cursor, Antigravity</span></button>
 <div class="fs-home-nav-foot">
 <button class="fs-home-nav-item fs-home-back" type="button" data-a="back" hidden>${icon('chevronLeft', 16)}<span>Back to sculpt</span></button>
 <button class="fs-home-nav-item" type="button" data-a="local" title="Your sculpts stay in your Formsculpt folder on this computer.">${icon('cloudOff', 16)}<span>Local only</span></button>
