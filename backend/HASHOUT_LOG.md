@@ -695,3 +695,17 @@ The six-line stream guard runs before anything else, so a Windows engine with no
 - kind: rationale
 - logged: v1.24.0 · 2026-11-20
 1.24.0 added `setup/HASHOUT_LOG.md`, and the CI loop runs `bash -n` on every file in `setup/*` that is not `.bat` or `.py`, so it parsed the log as a script and stopped the `scripts` job at its line 11 (`syntax error near unexpected token`). `*.md` joins the skip list, as `*.py` did when the Python files were added. Removed code, quoted in full: `case "$f" in *.bat|*.py) continue ;; esac`. Checked: the step's loop, run here as written in the workflow, exits 0 over every listed script and every file in `setup/`, and failed on `setup/HASHOUT_LOG.md` before the change.
+
+## formsculpt 1.25.0 · the shared panel 2.2.1, the test guard
+
+### app/services/agent_programs.py · the engine reports panel 2.2.1
+- refers-to: app/services/agent_programs.py :: CONTRACT; tests/test_dock_manifest.py
+- kind: rationale
+- logged: v1.25.0 · 2026-11-20
+`CONTRACT` is the panel version the engine tells the window it was built for (`terminal.agents` returns it as `contract`); it follows the shared panel folder, now 2.2.1 (frontend log, same version). `tests/test_dock_manifest.py` holds the folder to its manifest (version 2.2.1, every listed file's hash) and the engine's `CONTRACT` to the same version, so a copy that is half done or an engine left behind fails the suite as well as `./formsculpt agents check`.
+
+### tests/conftest.py · the suite runs only against stand-in agent programs
+- refers-to: tests/conftest.py :: AGENT_NAMES, AGENT_KINDS, STAND_INS, AGENT_SHELL, PATH_WITHOUT_AGENTS, real_agent_programs, pytest_sessionstart, only_stand_in_agent_programs, stand_in_calls, pytest_terminal_summary, pytest_sessionfinish; tests/test_agent_guard.py
+- kind: rationale
+- logged: v1.25.0 · 2026-11-20
+FormTools's and FormFabric's shape, in the sandbox `family.py` already makes. Before the app is imported, stand-ins for `claude`, `codex`, `cursor-agent`, `agent` and `agy` are written to the sandbox's `bin` (each logs its call, answers `--version` with `0.0.0 (stand-in)` and otherwise exits 1), `SHELL` becomes a stand-in that runs only the script it is given (so the finder's login-shell PATH is the tests' PATH), every PATH folder holding one of those names is left out and the stand-ins go first, and the package managers' prefix variables are dropped. Each test sees no system folders (`agent_lookup.system_folders` patched). At the start of the session the family finder is asked for all four programs, with the system folders left out as the tests see them, and `shutil.which` for each name: if any answer is not a stand-in, the session ends with exit code 4 and a line naming the program and the path, before any test runs. The summary line counts the stand-ins' starts (read before the sandbox is removed). Checked here: `test_agent_guard.py`, `test_dock_manifest.py` and `test_f2_consent.py` ran (21 passed) with 0 stand-in starts, also with the real `claude` on the caller's PATH; a scratch copy whose conftest put `/opt/node22/bin` (which holds a real `claude`) ahead of the stand-ins stopped with "refusing to run: ... Claude Code at /opt/node22/bin/claude; claude at /opt/node22/bin/claude" and exit code 4, no test run. The stand-ins are POSIX scripts, so on Windows the guard only checks.

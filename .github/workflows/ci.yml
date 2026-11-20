@@ -49,6 +49,8 @@ jobs:
         run: ./formsculpt test engine
       - name: Catalogue
         run: cargo run -q --manifest-path native/Cargo.toml -p fsc-commands --bin fsc-catalogue
+      - name: Agent setup, MCP configs and the shared panel's manifest
+        run: ./formsculpt agents check
 
   backend:
     runs-on: ubuntu-latest

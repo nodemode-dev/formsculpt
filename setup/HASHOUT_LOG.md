@@ -9,3 +9,11 @@ Living log for the launcher's packaging scripts. Entries are anchored by file an
 - kind: rationale
 - logged: v1.24.0 · 2026-11-20
 The owner's decision for every app: a Windows engine is packaged with no console window. `freeze_backend` gives PyInstaller `--noconsole` when `fs_os` says windows and `FSC_ENGINE_WINDOWED` is not `0`; the release build runs this bash script in Git Bash, so this is the path that makes the shipped engine. Its twin, the `:freeze` section of `formsculpt.bat`, does the same through `FSC_CONSOLE` (empty when `FSC_ENGINE_WINDOWED=0`; `setlocal` keeps it inside the script). The engine's entry file replaces missing standard streams before anything else (backend log, 1.23.0), so a windowed engine and its `--selfcheck` still run. Checked here with `bash -n` and by reading the `.bat`; no Windows build has shown it.
+
+## formsculpt 1.25.0 · the shared panel 2.2.1
+
+### agents.py · the check names the panel version it expects
+- refers-to: setup/agents.py :: DOCK_VERSION, check
+- kind: rationale
+- logged: v1.25.0 · 2026-11-20
+`./formsculpt agents check` already compared every file of `frontend/src/dock` with the hashes in its `MANIFEST.json`; a folder copied whole from an older or newer release passed that, since its manifest matches its own files. It now also says when the manifest's version is not `DOCK_VERSION` (2.2.1, FormFabric's shape), so the app and the module it was built for cannot drift apart unseen. The CI's engine job runs this check (workflow, same version).

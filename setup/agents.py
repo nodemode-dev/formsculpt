@@ -20,6 +20,7 @@ ARGS = ["mcp"]
 MANIFEST = ROOT / "agents" / "manifest.json"
 DOCK = {"present": True, "positions": ["bottom"], "tabs": ["chat", "terminal", "claude-code", "codex", "cursor", "antigravity"]}
 DOCK_DIR = ROOT / "frontend" / "src" / "dock"
+DOCK_VERSION = "2.2.1"
 LOOKUP = ROOT / "backend" / "app" / "services" / "agent_lookup.py"
 LOOKUP_HASHES = {"1.0.1": "62667f9b68b7d101e1896ce617240424e33b7e498c560bc79d45f0ab26c77d51"}
 GROUP_TITLES = {
@@ -203,7 +204,10 @@ def check() -> int:
     except (OSError, ValueError) as exc:
         problems.append(f"a project MCP config cannot be read: {exc}")
     try:
-        kept = json.loads((DOCK_DIR / "MANIFEST.json").read_text(encoding="utf-8")).get("files", {})
+        held = json.loads((DOCK_DIR / "MANIFEST.json").read_text(encoding="utf-8"))
+        kept = held.get("files", {})
+        if held.get("version") != DOCK_VERSION:
+            problems.append(f"frontend/src/dock/MANIFEST.json says version {held.get('version')}, this app expects {DOCK_VERSION}")
     except (OSError, ValueError):
         kept = {}
         problems.append("frontend/src/dock/MANIFEST.json is missing or not JSON")
