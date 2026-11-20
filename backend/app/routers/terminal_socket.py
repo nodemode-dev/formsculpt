@@ -4,6 +4,7 @@ import urllib.parse
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.core import window_key
 from app.services import terminal
 
 router = APIRouter(tags=["terminal"])
@@ -23,6 +24,9 @@ async def attach(ws: WebSocket, sid: str) -> None:
         await ws.close(code=4403)
         return
     await ws.accept()
+    if not await window_key.socket_admitted(ws):
+        await ws.close(code=4403, reason=window_key.REFUSED)
+        return
     try:
         session = terminal.get(sid)
     except KeyError:

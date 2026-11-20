@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Response, UploadFile, WebSo
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
+from app.core import window_key
 from app.services import autosave, engine
 
 router = APIRouter()
@@ -276,6 +277,9 @@ def _vec(value: Any) -> list[float]:
 @router.websocket("/stroke")
 async def stroke(socket: WebSocket) -> None:
     await socket.accept()
+    if not await window_key.socket_admitted(socket):
+        await socket.close(code=4403, reason=window_key.REFUSED)
+        return
     if not engine.available():
         await socket.send_json({"type": "error", "message": "the engine module is not built; run ./formsculpt engine build"})
         await socket.close()

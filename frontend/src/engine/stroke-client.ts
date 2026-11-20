@@ -1,5 +1,6 @@
 import { browserEngine, parseUpdate, type VertexUpdate } from './service';
 import type { WasmEngine } from './wasm';
+import { keyMessage } from '../io/window-key';
 
 export interface BrushState {
   brush: string;
@@ -61,6 +62,7 @@ export class StrokeClient {
       const ws = new WebSocket(url);
       ws.binaryType = 'arraybuffer';
       ws.onopen = () => {
+        ws.send(keyMessage());
         this.socket = ws;
         this.opening = null;
         resolve(ws);

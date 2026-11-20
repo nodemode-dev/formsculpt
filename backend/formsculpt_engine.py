@@ -2,6 +2,16 @@ import json
 import os
 import sys
 
+if sys.stdin is None:
+    sys.stdin = open(os.devnull, encoding="utf-8")
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
+LOG_NAME = "formsculpt-engine.log"
+LOG_BYTES = 1_048_576
+
 
 def resource_dir() -> str:
     return getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -62,20 +72,54 @@ def parent_alive(pid: int) -> bool:
     return True
 
 
-def watch_parent() -> None:
+def start_log(data):
+    import logging
+    from logging.handlers import RotatingFileHandler
+
+    folder = data / "Logs"
+    folder.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(folder / LOG_NAME, maxBytes=LOG_BYTES, backupCount=2, encoding="utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+    root = logging.getLogger()
+    root.addHandler(handler)
+    root.setLevel(logging.INFO)
+    logging.getLogger("formsculpt").info("engine started, pid %s, data folder %s", os.getpid(), data)
+    return folder
+
+
+def log_config() -> dict:
+    import copy
+
+    from uvicorn.config import LOGGING_CONFIG
+
+    config = copy.deepcopy(LOGGING_CONFIG)
+    config["loggers"]["uvicorn"]["propagate"] = True
+    for formatter in config["formatters"].values():
+        formatter["use_colors"] = False
+    return config
+
+
+def release(lock) -> None:
+    from app.core import startup
+
+    if startup.number(startup.read_lock(lock).get("pid")) == os.getpid():
+        try:
+            lock.unlink()
+        except OSError:
+            return
+
+
+def watch_shell(shell: int, lock) -> None:
     """Exit when the desktop shell that started this engine is gone. The shell's own cleanup runs only on a clean exit,
     and a SIGKILL to PyInstaller's bootloader does not reach this child, so a crashed, killed or force-quit shell
     would otherwise leave the engine running."""
-    raw = os.environ.get("FSC_PARENT_PID", "")
-    if not raw.isdigit():
-        return
-    pid = int(raw)
-    import threading
-    import time
+    import logging
 
-    def loop() -> None:
-        while parent_alive(pid):
-            time.sleep(1.5)
+    from app.core import startup
+
+    def leave() -> None:
+        logging.getLogger("formsculpt").info("the app that started this engine is gone (process %s), stopping", shell)
+        release(lock)
         unpacked = getattr(sys, "_MEIPASS", "")
         if os.path.basename(unpacked).startswith("_MEI"):
             import shutil
@@ -83,7 +127,7 @@ def watch_parent() -> None:
             shutil.rmtree(unpacked, ignore_errors=True)
         os._exit(0)
 
-    threading.Thread(target=loop, name="parent-watch", daemon=True).start()
+    startup.watch(shell, leave)
 
 
 def sweep_stale_unpacks() -> None:
@@ -144,10 +188,65 @@ def free_port() -> int:
     raise OSError("no free port on 127.0.0.1")
 
 
+def serve() -> int:
+    import logging
+    from pathlib import Path
+
+    from app.core import config, startup
+
+    try:
+        data = config.data_dir()
+        logs = start_log(data)
+    except OSError as err:
+        print(f"formsculpt cannot use its data folder: {err}", file=sys.stderr)
+        return 5
+    startup.keep_errors(logs)
+    log = logging.getLogger("formsculpt")
+    if startup.alone():
+        beside = startup.app_beside(Path(sys.executable))
+        if beside is not None and startup.open_app(beside):
+            log.info("started without its app, so it opened %s and stopped", beside)
+            return 0
+        log.error("started without its app, and no app program was found near %s", sys.executable)
+        print("formsculpt-engine is a part of FormSculpt and serves nothing on its own. Open FormSculpt instead.", file=sys.stderr)
+        return 4
+    shell = startup.shell_pid()
+    try:
+        lock, replaced = startup.claim(data, shell)
+    except startup.Busy as err:
+        log.error("%s", err)
+        print(err, file=sys.stderr)
+        return 2
+    if replaced:
+        log.info("ended an engine that was left running (process %s)", replaced)
+    import signal
+
+    def leave(_signum, _frame) -> None:
+        release(lock)
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, leave)
+    try:
+        if shell > 1:
+            watch_shell(shell, lock)
+        return run_server()
+    finally:
+        release(lock)
+
+
 def main() -> int:
     if "--selfcheck" in sys.argv:
         return selfcheck()
-    watch_parent()
+    try:
+        return serve()
+    except Exception:
+        import logging
+
+        logging.getLogger("formsculpt").exception("the engine stopped on an error")
+        raise
+
+
+def run_server() -> int:
     sweep_stale_unpacks()
     bundled = os.path.join(resource_dir(), "frontend_dist")
     if os.path.isdir(bundled):
@@ -158,11 +257,13 @@ def main() -> int:
     os.environ.setdefault("FSC_DESKTOP", "1")
     import uvicorn
 
+    from app.core import window_key
     from app.main import app as fastapi_app
 
     port = int(os.environ.get("FSC_PORT", "0") or 0) or free_port()
     os.environ["FSC_PORT"] = str(port)
-    uvicorn.run(fastapi_app, host="127.0.0.1", port=port, log_level="info")
+    window_key.announce()
+    uvicorn.run(fastapi_app, host="127.0.0.1", port=port, log_level="info", log_config=log_config())
     return 0
 
 

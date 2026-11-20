@@ -2,6 +2,7 @@ import type { DockAdapter, DockAgentStatus, DockChannel, DockKind, DockLegacy, D
 import { Dock } from './dock/dock';
 import { api, ApiError } from './io/api';
 import { events } from './io/events';
+import { keyMessage } from './io/window-key';
 import { ChatPane } from './ui/chat-pane';
 import { commands } from './ui/commands';
 import { fromHtml, isMac } from './ui/dom';
@@ -40,7 +41,8 @@ function socketChannel(id: string): DockChannel {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const socket = new WebSocket(`${proto}//${location.host}/api/terminal/${encodeURIComponent(id)}`);
   socket.binaryType = 'arraybuffer';
-  let data = (_chunk: string | Uint8Array): void => undefined;
+  socket.addEventListener('open', () => socket.send(keyMessage()), { once: true });
+  let data =(_chunk: string | Uint8Array): void => undefined;
   let exit = (): void => undefined;
   let closed = (): void => undefined;
   socket.addEventListener('message', (msg) => {

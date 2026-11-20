@@ -22,7 +22,7 @@ def client() -> TestClient:
     # The service keeps one engine session; every test starts from an empty scene.
     if engine.available():
         engine.dispatch("new_scene", {})
-    return TestClient(app, base_url=family.own_origin())
+    return TestClient(app, base_url=family.own_origin(), headers=family.window_headers())
 
 
 def call(client: TestClient, command: str, /, **args) -> dict:
