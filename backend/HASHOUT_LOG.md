@@ -687,3 +687,11 @@ The six-line stream guard runs before anything else, so a Windows engine with no
 - kind: rationale
 - logged: v1.24.0 · 2026-11-20
 `GET /api/events` (the engine's event stream, which carries Chat replies as they stream) and `GET /api/chat/image/{name}` (the pictures Claude looked at) now need the window key like every other window route. The page reads the stream with an `EventSource` and shows the pictures with `img` elements, and neither can send a header, so the family's one-time ticket is used (WINDOW_KEY_SPEC section 3, the shape of FormAT and FormPDF): the window asks `POST /api/window/ticket` with the key (a write, so the guard already demands the key) and puts the answer in the address as `?ticket=`. A ticket is spent on its first use and dies after 30 seconds unused; old ones are swept when a new one is made. The check sits in `WindowKeyGuard`, in the one place every other window route is checked: a stream path is admitted with the header or with a ticket that `spend` accepts, otherwise 403 with the same sentence. Checked live with the engine started here from `formsculpt_engine.py` with `FSC_WINDOW_KEY_STDOUT=1`, curl against both routes: a local program, an agent MCP session's headers, an in-app header, a wrong key, a made-up ticket, a ticket asked for without the key, and a ticket used a second time each got 403 with the sentence; the window key and a fresh ticket each got 200 (the stream's first `hello` event, the picture's bytes). `tests/test_window_key.py` walks every read the guard keys and runs each caller kind against both routes.
+
+## formsculpt 1.24.0 · the shell syntax check
+
+### ci.yml · the shell syntax check skips markdown in setup/
+- refers-to: .github/workflows/ci.yml :: scripts, Shell syntax
+- kind: rationale
+- logged: v1.24.0 · 2026-11-20
+1.24.0 added `setup/HASHOUT_LOG.md`, and the CI loop runs `bash -n` on every file in `setup/*` that is not `.bat` or `.py`, so it parsed the log as a script and stopped the `scripts` job at its line 11 (`syntax error near unexpected token`). `*.md` joins the skip list, as `*.py` did when the Python files were added. Removed code, quoted in full: `case "$f" in *.bat|*.py) continue ;; esac`. Checked: the step's loop, run here as written in the workflow, exits 0 over every listed script and every file in `setup/`, and failed on `setup/HASHOUT_LOG.md` before the change.
