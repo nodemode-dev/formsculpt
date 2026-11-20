@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.24.0 · 2026-11-20
+
+Chat replies and pictures reach FormSculpt's own window only, and on Windows the app holds its engine and says why a start failed.
+
+### Changed
+
+- Chat replies as they stream, and the pictures Claude looked at in Chat, are now given only to FormSculpt's own window; anything else is told "Only the formsculpt window can do this".
+- On Windows the engine runs together with the app and ends with it, however the app ends, along with anything the engine started.
+- The app waits up to 90 seconds for its engine. If the engine cannot start, a message says why, shows the engine's last lines, its exit code and where its log is, and it appears before the loading window closes.
+- On Windows the engine runs without a console window. Building with `FSC_ENGINE_WINDOWED=0` keeps the console.
+- The README's status now says that FormSculpt is released, and built and tested on macOS, Windows and Linux.
+
 ## 1.23.0 · 2026-11-20
 
 Only FormSculpt's own window can change things, and the engine starts and stops cleanly.

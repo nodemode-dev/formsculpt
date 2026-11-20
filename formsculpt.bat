@@ -122,7 +122,9 @@ if errorlevel 1 ( popd & call "%~f0" engine || exit /b 1 ) else ( popd )
 pushd backend
 if exist build\pyinstaller rmdir /s /q build\pyinstaller
 if exist dist-engine rmdir /s /q dist-engine
-pyinstaller --noconfirm --clean --onefile --name formsculpt-engine --distpath dist-engine --workpath build\pyinstaller --specpath build\pyinstaller --add-data "%~dp0frontend\dist;frontend_dist" --add-data "%~dp0integrations\blender\formsculpt_link;integrations/blender/formsculpt_link" --add-data "%~dp0integrations\unreal;integrations/unreal" --add-data "%~dp0integrations\unity;integrations/unity" --add-data "%~dp0plugins;plugins" --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat --hidden-import winpty "%~dp0backend\formsculpt_engine.py" || ( popd & exit /b 1 )
+set "FSC_CONSOLE=--noconsole"
+if "%FSC_ENGINE_WINDOWED%"=="0" set "FSC_CONSOLE="
+pyinstaller --noconfirm --clean --onefile --name formsculpt-engine --distpath dist-engine --workpath build\pyinstaller --specpath build\pyinstaller --add-data "%~dp0frontend\dist;frontend_dist" --add-data "%~dp0integrations\blender\formsculpt_link;integrations/blender/formsculpt_link" --add-data "%~dp0integrations\unreal;integrations/unreal" --add-data "%~dp0integrations\unity;integrations/unity" --add-data "%~dp0plugins;plugins" --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat --hidden-import winpty %FSC_CONSOLE% "%~dp0backend\formsculpt_engine.py" || ( popd & exit /b 1 )
 popd
 if not exist src-tauri\binaries mkdir src-tauri\binaries
 copy /y backend\dist-engine\formsculpt-engine.exe "src-tauri\binaries\formsculpt-engine-%TRIPLE%.exe" >nul || exit /b 1

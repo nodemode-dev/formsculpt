@@ -1,5 +1,6 @@
 import type { Api } from '../io/api';
 import { events, type EngineEvent } from '../io/events';
+import { ticketed } from '../io/window-key';
 import { ChoiceDialog } from './app-dialogs';
 import { fromHtml as el, q, setClass, setHidden, setText } from './dom';
 import { language, t } from './i18n';
@@ -142,7 +143,7 @@ export class ChatPane {
     const row = el('<div class="fl-chat-images"></div>');
     for (const name of names.slice(0, 6)) {
       const img = el<HTMLImageElement>('<img alt="What Claude looked at" decoding="async" draggable="false" width="240" height="180">');
-      img.src = this.api.url(`/api/chat/image/${encodeURIComponent(name)}`);
+      void ticketed(this.api.url(`/api/chat/image/${encodeURIComponent(name)}`)).then((src) => { img.src = src; });
       row.appendChild(img);
     }
     after.after(row);

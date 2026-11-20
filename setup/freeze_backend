@@ -21,6 +21,7 @@ pyinstaller --noconfirm --clean --onefile --name formsculpt-engine \
   --collect-submodules app --collect-submodules uvicorn --collect-all fsc_engine \
   --hidden-import app.services.cmd_terminal --hidden-import app.services.claude_code --hidden-import app.services.cmd_chat \
   $([ "$(fs_os)" = windows ] && echo --hidden-import winpty || echo --hidden-import ptyprocess) \
+  $([ "$(fs_os)" = windows ] && [ "${FSC_ENGINE_WINDOWED:-1}" != 0 ] && echo --noconsole) \
   "$(fs_native_path "$FSC_ROOT/backend/formsculpt_engine.py")"
 mkdir -p "$FSC_ROOT/src-tauri/binaries"
 out="$FSC_ROOT/src-tauri/binaries/formsculpt-engine-${triple}${ext}"

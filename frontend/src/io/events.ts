@@ -1,4 +1,5 @@
 import { api } from './api';
+import { ticketed } from './window-key';
 
 export interface EngineEvent {
   seq?: number;
@@ -11,17 +12,27 @@ type Handler = (e: EngineEvent) => void;
 
 export class Events {
   private source: EventSource | null = null;
+  private started = false;
   private readonly handlers = new Map<string, Set<Handler>>();
   private lastSeq = 0;
   connected = false;
   onStatus: ((connected: boolean) => void) | null = null;
 
   start(): void {
-    if (this.source) return;
-    const src = new EventSource(api.url('/api/events'));
+    if (this.started) return;
+    this.started = true;
+    void this.open();
+  }
+
+  private async open(): Promise<void> {
+    const src = new EventSource(await ticketed(api.url('/api/events')));
     this.source = src;
     src.onopen = () => this.status(true);
-    src.onerror = () => this.status(false);
+    src.onerror = () => {
+      this.status(false);
+      if (src.readyState !== EventSource.CLOSED || this.source !== src) return;
+      window.setTimeout(() => void this.open(), 1500);
+    };
     src.onmessage = (m) => {
       let e: EngineEvent;
       try { e = JSON.parse(m.data) as EngineEvent; } catch { return; }
