@@ -253,6 +253,6 @@ exit /b 0
 echo usage: formsculpt [command]
 echo   boot ^| install ^| install-desktop ^| backend ^| frontend ^| build ^| serve ^| freeze
 echo   engine [build^|check^|wasm] ^| desktop dev^|build ^| app [flags] ^| doctor ^| test [all^|engine^|service^|e2e] ^| bench [level]
-echo   mcp ^| script FILE [JSON] ^| i18n extract^|check ^| agents sync^|install ^| clean [--all] ^| help
+echo   mcp ^| script FILE [JSON] ^| i18n extract^|check ^| agents sync^|check^|install ^| clean [--all] ^| help
 :end
 endlocal
