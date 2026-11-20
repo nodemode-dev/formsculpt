@@ -2,7 +2,7 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
-## Unreleased
+## 1.22.0 · 2026-11-20
 
 The terminal dock is now the Form family's shared agent dock 2.2.0, with Codex, Cursor and Antigravity beside the shell, Chat and Claude Code.
 
