@@ -27,6 +27,10 @@ def revoke(token: str | None) -> None:
     TOKENS.discard(token or "")
 
 
+def is_tab_token(token: str | None) -> bool:
+    return isinstance(token, str) and bool(token) and any(secrets.compare_digest(token, t) for t in list(TOKENS))
+
+
 def is_inapp(token: str | None) -> bool:
     if not isinstance(token, str) or not token:
         return False
