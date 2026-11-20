@@ -1,5 +1,4 @@
 import json
-import secrets
 import urllib.parse
 
 from fastapi import APIRouter, Request, Response
@@ -119,7 +118,7 @@ async def mcp(request: Request) -> Response:
     elif method == "tools/call":
         name, args = params.get("name"), params.get("arguments") or {}
         names = {t["name"] for t in tools()}
-        inapp = secrets.compare_digest(request.headers.get(agents.INAPP_HEADER, ""), agents.INAPP_TOKEN)
+        inapp = agents.is_inapp(request.headers.get(agents.INAPP_HEADER, ""))
         if inapp:
             events.publish("agent.activity", tool=name)
         if not isinstance(args, dict):

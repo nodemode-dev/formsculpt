@@ -35,9 +35,10 @@ class Session:
         self.gen = 0
         self.cols = 100
         self.rows = 30
+        self.on_close: list = []
 
     def describe(self) -> dict:
-        return {"id": self.id, "title": self.title, "cwd": self.cwd, "alive": self.alive, "kind": self.kind}
+        return {"id": self.id, "title": self.title, "cwd": self.cwd, "alive": self.alive, "kind": self.kind, "tip": self.cwd}
 
     def keep(self, text: str) -> None:
         with self.lock:
@@ -69,6 +70,7 @@ def login_shell() -> list[str]:
 
 def base_env() -> dict:
     env = dict(os.environ)
+    env.pop("FSC_INAPP_TOKEN", None)
     env["TERM"] = "xterm-256color"
     env["COLORTERM"] = "truecolor"
     env["FSC_TERMINAL"] = "1"
@@ -170,6 +172,12 @@ def close(sid: str) -> None:
         session.proc.terminate(force=True)
     except Exception:
         pass
+    for done in session.on_close:
+        try:
+            done()
+        except Exception:
+            pass
+    _send(session, None)
     events.publish("terminal.closed", id=sid)
 
 

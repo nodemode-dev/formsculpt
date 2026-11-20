@@ -1,23 +1,5 @@
-.fl-dock { --surface-0: var(--bg-primary); --surface-1: var(--bg-secondary); --surface-2: var(--bg-tertiary); --surface-raised: var(--bg-tertiary); --line-0: var(--border-color); --line-1: var(--border-color); --line-2: var(--border-light); --accent-line: var(--accent-color); --danger: var(--danger-color); --fs-11: 11px; --fs-12: 12px; --fs-14: 14px; grid-area: dock; }
-.fl-dock { position: relative; display: grid; grid-template-rows: 34px minmax(0, 1fr) 40px; min-width: 0; min-height: 0; background: var(--surface-0); border-top: 1px solid var(--line-1); }
-.fl-dock[hidden] { display: none; }
-.fl-dock-rsz { position: absolute; top: -3px; left: 0; right: 0; height: 6px; cursor: row-resize; z-index: var(--z-raised); }
-.fl-dock-rsz:hover, .fl-dock-rsz.is-dragging { background: var(--accent-line); }
-.fl-dock-head { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); background: var(--surface-1); border-bottom: 1px solid var(--line-0); min-width: 0; }
-.fl-dock-tabs { display: flex; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.fl-dock-tab { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text-muted); font: inherit; font-size: var(--fs-12); white-space: nowrap; cursor: pointer; }
-.fl-dock-tab:hover { color: var(--text-primary); }
-.fl-dock-tab.is-on { border-color: var(--line-2); background: var(--surface-raised); color: var(--text-primary); }
-.fl-dock-tab.is-claude > .icon { color: var(--accent-color); }
-.fl-dock-tab-x { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; color: var(--text-muted); }
-.fl-dock-tab-x:hover { background: var(--surface-2); color: var(--text-primary); }
+.fl-chat { --surface-0: var(--bg-primary); --surface-1: var(--bg-secondary); --surface-2: var(--bg-tertiary); --surface-raised: var(--bg-tertiary); --line-0: var(--border-color); --line-1: var(--border-color); --line-2: var(--border-light); --accent-line: var(--accent-color); --danger: var(--danger-color); --fs-11: 11px; --fs-12: 12px; --fs-14: 14px; }
 .fl-dock-spacer { flex: 1; }
-.fl-dock-head .cv-tt-btn { width: 26px; height: 26px; }
-.fl-dock-stage { position: relative; min-height: 0; min-width: 0; overflow: hidden; }
-.fl-term { position: absolute; inset: 6px 4px 0 10px; }
-.fl-term[hidden] { display: none; }
-.fl-term .xterm-viewport { background: transparent; }
-.fl-dock-tab.is-chat > .icon { color: var(--accent-color); }
 .fl-chat-tool.has-objects { cursor: pointer; }
 .fl-chat-images img { width: auto; height: auto; }
 .fl-chat { position: absolute; inset: 0; display: grid; grid-template-rows: 30px minmax(0, 1fr); }
@@ -66,12 +48,6 @@
 .fl-md table { border-collapse: collapse; font-size: var(--fs-11); }
 .fl-md th, .fl-md td { padding: 3px 8px; border: 1px solid var(--line-1); text-align: left; }
 .fl-md th { background: var(--surface-2); font-weight: 600; }
-.fl-dock-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; }
-.fl-dock-empty[hidden] { display: none; }
-.fl-dock-ask { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); background: var(--surface-1); border-top: 1px solid var(--line-0); }
-.fl-dock-ask-mark { display: inline-grid; place-items: center; color: var(--accent-color); }
-.fl-dock-ask-input { flex: 1; height: 28px; }
-.fl-dock-ask .cv-tt-btn { width: 28px; height: 28px; }
 .cv-tt-btn { display: inline-grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--text-secondary); cursor: pointer; }
 .cv-tt-btn:hover { color: var(--text-primary); border-color: var(--border-light); }
 .cv-tt-btn:disabled { opacity: 0.4; cursor: default; }
@@ -80,7 +56,7 @@
 .cv-input { min-width: 0; padding: 0 var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); font: inherit; font-size: 12px; }
 .cv-input:focus { outline: none; border-color: var(--accent-color); }
 .cv-note { color: var(--text-muted); font-size: 12px; }
-.fl-dock svg { flex: none; }
+.fl-chat svg { flex: none; }
 .appbar-tools { display: inline-flex; align-items: center; gap: var(--space-1); }
 .appbar-tools .cv-tt-btn { width: 30px; height: 30px; }
 .appbar-tools .cv-tt-btn[aria-pressed="true"] { color: var(--accent-color); border-color: var(--accent-color-dim); }
