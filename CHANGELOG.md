@@ -2,6 +2,20 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.23.0 · 2026-11-20
+
+Only FormSculpt's own window can change things, and the engine starts and stops cleanly.
+
+### Changed
+
+- Only FormSculpt's own window can change your scene, settings and files, open or type into a terminal, start Chat or answer the prompt that lets outside agents work. The engine gives a key to its own window when it starts and asks for it on every such request; anything else is told "Only the formsculpt window can do this". Outside agents still come in through FormSculpt's MCP server and still need your yes in the window.
+- A second FormSculpt engine on the same data folder is refused with a sentence that names the one already running, and an engine left running after its app was gone is ended and replaced when the app starts again.
+- The engine stops when the app that started it is gone, however the app ended.
+
+### Added
+
+- The engine keeps a log in its data folder, `Logs/formsculpt-engine.log`, and keeps its error output there too when it runs without a console.
+
 ## 1.22.0 · 2026-11-20
 
 The terminal dock is now the Form family's shared agent dock 2.2.0, with Codex, Cursor and Antigravity beside the shell, Chat and Claude Code.
