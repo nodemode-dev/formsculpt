@@ -92,6 +92,88 @@ def test_the_window_can_answer_the_agent_prompt(bare, fresh_consent):
     assert fresh_consent.status()["allowed"] is False
 
 
+def keyed_reads():
+    from app.core import window_key
+    from app.main import app
+
+    return [path for path, item in app.openapi()["paths"].items() if "get" in item and window_key.needs_key("GET", re.sub(r"\{[^}]+\}", "x", path))]
+
+
+def test_every_keyed_read_needs_the_window_key(bare):
+    paths = keyed_reads()
+    assert {"/api/events", "/api/chat/image/{name}", "/api/mcp/window", "/api/events/recent"} <= set(paths)
+    answered = []
+    for path in paths:
+        url = re.sub(r"\{[^}]+\}", "x.png", path)
+        for headers in ({}, WRONG):
+            r = bare.get(url, headers=headers)
+            if r.status_code != 403 or r.json() != REFUSED:
+                answered.append(f"GET {path} {r.status_code}")
+    assert not answered, "keyed reads that answer without the window key: " + ", ".join(answered)
+
+
+STREAM_CALLERS = ["local program", "agent MCP session", "in-app agent tab", "wrong key", "made-up ticket", "spent ticket"]
+
+
+def stream_caller(caller, tab_token):
+    from app.core import window_key
+
+    if caller == "spent ticket":
+        used = window_key.ticket()
+        assert window_key.spend(used)
+        return {}, used
+    return {"local program": {}, "agent MCP session": MCP_SESSION, "in-app agent tab": {INAPP_HEADER: tab_token}, "wrong key": WRONG, "made-up ticket": {}}[caller], ("z" * 32 if caller == "made-up ticket" else "")
+
+
+@pytest.mark.parametrize("caller", STREAM_CALLERS)
+@pytest.mark.parametrize("path", ["/api/events", "/api/chat/image/x.png"])
+def test_no_caller_but_the_window_can_read_chat_replies_or_images(bare, tab_token, caller, path):
+    headers, given = stream_caller(caller, tab_token)
+    r = bare.get(path, headers=headers, params={"ticket": given} if given else None)
+    assert r.status_code == 403 and r.json() == REFUSED
+
+
+def test_a_ticket_needs_the_window_key(bare):
+    assert bare.post("/api/window/ticket", headers=WRONG).status_code == 403
+    r = bare.post("/api/window/ticket", headers=window_headers())
+    assert r.status_code == 200 and len(r.json()["ticket"]) >= 24
+
+
+def test_a_chat_image_answers_the_window_and_a_ticket_once(bare):
+    assert bare.get("/api/chat/image/x.png", headers=window_headers()).status_code == 404
+    given = bare.post("/api/window/ticket", headers=window_headers()).json()["ticket"]
+    first = bare.get("/api/chat/image/x.png", params={"ticket": given})
+    assert first.status_code == 404 and first.json()["error"] == "No such chat image"
+    again = bare.get("/api/chat/image/x.png", params={"ticket": given})
+    assert again.status_code == 403 and again.json() == REFUSED
+
+
+def test_a_ticket_older_than_its_life_is_refused(bare, monkeypatch):
+    from app.core import window_key
+
+    given = window_key.ticket()
+    monkeypatch.setitem(window_key.TICKETS, given, window_key.TICKETS[given] - window_key.TICKET_LIFE - 1)
+    assert bare.get("/api/chat/image/x.png", params={"ticket": given}).status_code == 403
+
+
+@pytest.mark.parametrize("how", ["window key", "ticket"])
+def test_the_event_stream_admits_the_window(how):
+    import asyncio
+
+    from app.core import window_key
+
+    reached = []
+
+    async def inner(scope, receive, send):
+        reached.append(scope["path"])
+
+    headers = [(window_key.HEADER.encode(), window_key.KEY.encode())] if how == "window key" else []
+    query = f"ticket={window_key.ticket()}".encode() if how == "ticket" else b""
+    scope = {"type": "http", "method": "GET", "path": "/api/events", "headers": headers, "query_string": query}
+    asyncio.run(window_key.WindowKeyGuard(inner)(scope, None, None))
+    assert reached == ["/api/events"]
+
+
 def test_the_window_poll_needs_the_key(bare):
     assert bare.get("/api/mcp/window").status_code == 403
     assert bare.get("/api/mcp/window", headers=window_headers()).status_code == 200

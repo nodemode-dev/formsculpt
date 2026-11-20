@@ -57,4 +57,16 @@ export function startWindowKey(): Promise<void> {
 
 export const windowKey = (): string => key;
 
+export async function streamTicket(): Promise<string> {
+  const res = await keyedFetch('/api/window/ticket', { method: 'POST' });
+  if (!res.ok) return '';
+  const body = await res.json() as { ticket?: unknown };
+  return typeof body.ticket === 'string' ? body.ticket : '';
+}
+
+export async function ticketed(path: string): Promise<string> {
+  const value = await streamTicket().catch(() => '');
+  return `${path}${path.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(value)}`;
+}
+
 export const keyMessage = (): string => JSON.stringify({ type: 'key', key });
