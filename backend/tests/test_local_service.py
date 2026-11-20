@@ -270,7 +270,7 @@ def test_a_nodemode_send_to_a_target_that_never_answers_does_not_hold_up_other_r
     sender.start()
     try:
         assert wait_for(lambda: silent.accepted, 60), "the send never reached the silent target"
-        with httpx.Client(base_url=base, timeout=10) as c:
+        with httpx.Client(base_url=base, timeout=10, headers=engine_proc["window"]) as c:
             for _ in range(5):
                 t = time.monotonic()
                 assert c.get(HEALTH_PATH).status_code == 200
@@ -283,7 +283,7 @@ def test_a_nodemode_send_to_a_target_that_never_answers_does_not_hold_up_other_r
         assert r.status_code == 502 and "NodeMode" in r.json()["detail"]
     finally:
         sender.join(timeout=90)
-        with httpx.Client(base_url=base, timeout=10) as c:
+        with httpx.Client(base_url=base, timeout=10, headers=engine_proc["window"]) as c:
             c.post("/api/engine/dispatch", json={"name": "new_scene", "args": {}})
     assert engine_proc["proc"].poll() is None
 
