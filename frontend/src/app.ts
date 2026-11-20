@@ -48,7 +48,7 @@ import { askUnsaved, desktopShell, noteScene, sceneEpoch, sceneSettled, startDes
 import { scheduleChrome } from './ui/chrome';
 import { language, languages, onLanguage, setLanguage, t } from './ui/i18n';
 import { isLang } from './ui/i18n/langs';
-import { registerTerminal } from './ui/terminal';
+import { registerDock } from './dock-adapter';
 import { Gizmo, shows as gizmoShows, type GizmoDrag, type GizmoMode } from './ui/gizmo';
 import { SpotlightDial, type SpotlightMode } from './ui/spotlight';
 import { PanelLayout } from './ui/layout';
@@ -7333,7 +7333,7 @@ async function boot(shell: Shell): Promise<void> {
     const tools = document.querySelector<HTMLElement>('.appbar-tools');
     const root = document.getElementById('app');
     if (tools && root) {
-      registerTerminal({
+      registerDock({
         root, tools,
         available: () => !browserEngine(),
         context: () => view.agentContext(),

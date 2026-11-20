@@ -4,7 +4,6 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 
 #app { display: grid; height: 100%; grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) var(--status-h); grid-template-columns: var(--rail-w) 1fr var(--panel-w); grid-template-areas: "bar bar bar" "rail stage panel" "dock dock dock" "status status status"; }
-#app.is-dock-open { --dock-h: min(var(--dock-open-h, 280px), 70vh); }
 
 .appbar { grid-area: bar; position: relative; z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--space-3); padding-inline: var(--space-3); background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
 .mac-drag { display: none; }

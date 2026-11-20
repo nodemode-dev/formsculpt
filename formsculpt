@@ -26,7 +26,7 @@ usage: ./formsculpt [command] [options]
   mcp                 formsculpt over MCP's stdio transport (starts the engine if it is not running)
   script FILE [JSON]  run a Python script with fsc.call(command, **args), on the running engine or its own
   i18n extract|check  collect the English interface strings, or report each language table's coverage
-  agents sync|install refresh the modeling skill's tool reference (sync), or register formsculpt with Claude Code, Codex and Cursor (install)
+  agents sync|check|install [--dry-run]  refresh the skill's tool reference, mirror and agents/manifest.json (sync), validate the kit (check), or register formsculpt with Claude Code, Codex, Cursor and Antigravity (install)
   clean [--all]       remove build output (--all also venv and node_modules)
   help                this text
 EOF

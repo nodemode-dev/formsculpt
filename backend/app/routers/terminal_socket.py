@@ -8,6 +8,7 @@ from app.services import terminal
 
 router = APIRouter(tags=["terminal"])
 LOCAL = ("localhost", "127.0.0.1", "::1", "tauri.localhost")
+EXIT = json.dumps({"type": "exit"}).encode()
 
 
 def _local(origin: str | None) -> bool:
@@ -31,14 +32,15 @@ async def attach(ws: WebSocket, sid: str) -> None:
     session.subscribers.add(q)
 
     async def outbound() -> None:
-        backlog = session.scrollback()
-        if backlog:
-            await ws.send_text(backlog)
+        await ws.send_text(session.scrollback())
         if not session.alive:
-            await ws.send_text(json.dumps({"type": "exit"}))
+            await ws.send_bytes(EXIT)
         while True:
             text = await q.get()
-            await ws.send_text(json.dumps({"type": "exit"}) if text is None else text)
+            if text is None:
+                await ws.send_bytes(EXIT)
+            else:
+                await ws.send_text(text)
 
     sender = asyncio.create_task(outbound())
     try:

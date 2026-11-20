@@ -1,5 +1,7 @@
 from urllib.parse import urlsplit
 
+from app.services import agents
+
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 
 
@@ -48,7 +50,8 @@ class LocalGuard:
             await self.app(scope, receive, send)
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
-        if self._permitted(headers):
+        tab = scope.get("path") != "/mcp" and agents.is_tab_token(headers.get(agents.INAPP_HEADER))
+        if self._permitted(headers) and not tab:
             await self.app(scope, receive, send)
             return
         if scope["type"] == "websocket":

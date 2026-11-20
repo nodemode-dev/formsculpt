@@ -130,7 +130,7 @@ export function onLanguage(fn: () => void): () => void {
 }
 
 const ATTRS = ['title', 'aria-label', 'placeholder'] as const;
-const SKIP = 'textarea, input, script, style, canvas, svg, [contenteditable], [data-no-i18n], .xterm, .fl-chat-msg, .fl-md, .fl-chat-tool, .fl-dock-tab-title, .objects .name, .history';
+const SKIP = 'textarea, input, script, style, canvas, svg, [contenteditable], [data-no-i18n], .xterm, .fl-chat-msg, .fl-md, .fl-chat-tool, .ft-notranslate, .objects .name, .history';
 const SKIP_ATTR = SKIP.replace('textarea, input, ', '');
 const textEn = new WeakMap<Text, { en: string; shown: string }>();
 const attrEn = new WeakMap<Element, Map<string, { en: string; shown: string }>>();

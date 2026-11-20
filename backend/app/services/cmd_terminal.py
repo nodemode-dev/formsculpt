@@ -1,6 +1,6 @@
 import re
 
-from app.services import terminal
+from app.services import agent_programs, terminal
 from app.services.commands import CommandError, command
 
 ID = {"type": "string", "description": "terminal id from terminal.open or terminal.list"}
@@ -62,8 +62,20 @@ def restart(id: str) -> dict:
     return terminal.restart(id).describe()
 
 
-@command("terminal.close", "Close a Terminal", {"id": ID}, description="Ends the program and closes the terminal.")
+@command("terminal.close", "Close a Terminal", {"id": ID}, description="Ends the program and closes the terminal; an id that is already gone is fine.")
 def close(id: str) -> dict:
-    _session(id)
     terminal.close(id)
     return {"closed": id}
+
+
+@command("terminal.agents", "Agent Programs", {"fresh": {"type": "boolean"}},
+         description="Whether Claude Code, Codex, Cursor and Antigravity are installed here (version, install line, sign-in when it can tell), and the dock contract version this engine implements. The window only.")
+def agents_status(fresh: bool | None = None) -> dict:
+    return agent_programs.report(bool(fresh))
+
+
+@command("terminal.agent", "Open an Agent Program", {"kind": {"type": "string", "description": "codex, cursor or antigravity"},
+                                                      "cols": {"type": "integer"}, "rows": {"type": "integer"}},
+         description="Starts Codex, Cursor or Antigravity in a terminal tab of formsculpt's dock, connected to formsculpt's MCP tools with a token that ends when the tab closes. The window only.")
+def open_agent(kind: str, cols: int | None = None, rows: int | None = None) -> dict:
+    return agent_programs.open_terminal(kind, max(10, min(int(cols or 100), 500)), max(4, min(int(rows or 30), 200)))

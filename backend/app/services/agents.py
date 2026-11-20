@@ -4,6 +4,8 @@ import time
 
 INAPP_HEADER = "x-formsculpt-inapp"
 INAPP_TOKEN = secrets.token_urlsafe(24)
+INAPP_VAR = "FSC_INAPP_TOKEN"
+TOKENS: set[str] = set()
 LIVE_SECONDS = 4.0
 DECLINE_SECONDS = 600.0
 ASK_SECONDS = 90.0
@@ -13,6 +15,26 @@ _allowed: bool | None = None
 _declined_until = 0.0
 _pending: dict | None = None
 _answer: asyncio.Event | None = None
+
+
+def issue() -> str:
+    token = secrets.token_urlsafe(32)
+    TOKENS.add(token)
+    return token
+
+
+def revoke(token: str | None) -> None:
+    TOKENS.discard(token or "")
+
+
+def is_tab_token(token: str | None) -> bool:
+    return isinstance(token, str) and bool(token) and any(secrets.compare_digest(token, t) for t in list(TOKENS))
+
+
+def is_inapp(token: str | None) -> bool:
+    if not isinstance(token, str) or not token:
+        return False
+    return secrets.compare_digest(token, INAPP_TOKEN) or any(secrets.compare_digest(token, t) for t in list(TOKENS))
 
 
 def seen() -> None:

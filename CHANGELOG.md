@@ -2,6 +2,27 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.22.0 · 2026-11-20
+
+The terminal dock is now the Form family's shared agent dock 2.2.0, with Codex, Cursor and Antigravity beside the shell, Chat and Claude Code.
+
+### Added
+
+- Codex, Cursor and Antigravity open in dock tabs, each with FormSculpt's MCP server already connected. The dock's More agents menu says which of the four programs are installed and gives the install line of each that is not.
+- Each agent tab gets its own token for FormSculpt's MCP server, from its environment (Claude Code, Codex, Cursor) or from `.agents/mcp_config.json` in its working folder, mode 0600 (Antigravity); the token ends, and Antigravity's entry is removed, when the tab closes.
+- The agent programs are found however the app was started: the Claude Code path setting, the `FSC_CLAUDE_BIN`, `FSC_CODEX_BIN`, `FSC_CURSOR_BIN` and `FSC_ANTIGRAVITY_BIN` overrides, the engine's PATH, the known install folders, then your shell's PATH.
+- `./formsculpt agents check` validates the agents kit, `agents sync` also writes `agents/manifest.json`, and `agents install` registers FormSculpt with Antigravity too.
+
+### Changed
+
+- The dock can dock right in other Form apps; here it stays under the viewport in all three layouts. Its height and open state carry over from the old dock.
+- A Claude Code tab now gets a token of its own instead of the window's, and no token travels on a program's command line.
+- `agents install` leaves alone a `formsculpt` server in Cursor's or Antigravity's settings that it did not write, and does not copy the modeling skill again when it is already there.
+
+### Removed
+
+- The old terminal dock (`frontend/src/ui/terminal.ts`, `frontend/src/ui/terminal-dock.ts`); its stylesheet keeps only the Chat pane's styles, as `frontend/src/styles/chat.css`.
+
 ## 1.21.1 · 2026-11-18
 
 - Mac builds are signed with the new Developer ID and notarized by Apple, so macOS opens the downloaded app without asking first. Nothing in the app changed.
