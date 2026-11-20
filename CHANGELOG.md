@@ -2,6 +2,21 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.25.0 · 2026-11-20
+
+The agent panel's guide and the start page name all four agent programs: Claude Code, Codex, Cursor and Antigravity.
+
+### Changed
+
+- The agent panel's first-run guide now says that Codex, Cursor and Antigravity each get a button of their own in the panel when they are on this computer. The panel is the same as in the other Form apps (version 2.2.1).
+- The start page's Agents entry now reads "Claude Code, Codex, Cursor, Antigravity".
+
+### For developers
+
+- The backend tests use stand-ins for Claude Code, Codex, Cursor and Antigravity, and refuse to run if a real one would be found instead.
+- `./formsculpt agents check` also says when the agent panel's files are not the version this app expects, and the pull request checks now run it.
+- The pull request checks' shell syntax step no longer reads the setup folder's markdown log as a script.
+
 ## 1.24.0 · 2026-11-20
 
 Chat replies and pictures reach FormSculpt's own window only, and on Windows the app holds its engine and says why a start failed.
