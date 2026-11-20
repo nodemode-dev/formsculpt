@@ -31,8 +31,10 @@ something outside it could get in:
 - **Agents over MCP** (`./formsculpt mcp` and the service's `/mcp` endpoint): an
   agent changing the scene without the person's yes in the window, or with no window
   open and no earlier permission.
-- **The terminal dock and Claude Code**: starting a shell or a command there from
-  anywhere but the app's own window.
+- **The terminal dock and its agent programs** (Claude Code, Codex, Cursor,
+  Antigravity): starting a shell or a program there from anywhere but the app's own
+  window, a plain shell tab getting an agent token, or a tab's token still working
+  after its tab has closed.
 - **Plugins and scripts** (`plugins/`, `./formsculpt script`): a plugin or script
   running without the person choosing to run it.
 - **Files**: opening or importing a project (`.fsc`), a mesh (OBJ, STL, PLY, glTF,

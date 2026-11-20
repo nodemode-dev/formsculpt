@@ -35,6 +35,7 @@ backend/
 - [The desktop shell: opened files, one instance, the quit gate, text-field edits](#the-desktop-shell-opened-files-one-instance-the-quit-gate-text-field-edits)
 - [The Home screen's library](#the-home-screens-library)
 - [formsculpt 1.21.0 · the desktop shell and the scripts](#formsculpt-1210--the-desktop-shell-and-the-scripts)
+- [formsculpt 1.22.0 · the agent dock 2.2.0](#formsculpt-1220--the-agent-dock-220)
 
 ## formsculpt_engine.py
 
@@ -612,3 +613,41 @@ An id that parses as an integer but is not an engine id (0, -1, past 32 or 64 bi
 - kind: rationale
 - logged: v1.21.0 · 2026-11-16
 `tools/call` with `arguments` that is not an object (a list, a string) was answered -32602 "No tool named get_scene" for a tool that exists. It is now -32602 "arguments must be an object"; an unknown or non-string name keeps "No tool named". Checked: `tests/test_local_service.py::test_a_tools_call_whose_arguments_are_not_an_object_says_so` (was a strict expected failure).
+
+## formsculpt 1.22.0 · the agent dock 2.2.0
+
+### app/services · the dock's engine contract, extended in place
+- refers-to: app/services/terminal.py, cmd_terminal.py, claude_code.py, agents.py, agent_programs.py (new), agent_lookup.py (new); app/routers/terminal_socket.py, mcp.py
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+The owner chose to replace the old dock with the family's shared agent dock 2.2.0 (`frontend/src/dock/`, copied from FormVis 9480a07). The engine side was extended, not replaced by ports of FormTxt's `routers/terminal.py` and `services/terminal.py`: formsculpt's terminals already live on the service's window-only command bus (`terminal.*`, `claudecode.*`, behind `LocalGuard`) and a loopback-origin socket, which is the caller rule of clauses 1 and 2, so a second set of REST routes would only duplicate it. New window-only commands: `terminal.agents` (clause 10 status for claude, codex, cursor and antigravity in one answer, plus `contract: "2.2.0"` for clause 16) and `terminal.agent` (opens a codex, cursor or antigravity tab). No route or command name changed.
+
+### app/services/agent_lookup.py · the family's finder, unchanged
+- refers-to: app/services/agent_lookup.py
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+Copied whole from FormVis (identical in FormTxt and FormDeck), VERSION 1.0.1, SHA-256 `62667f9b68b7d101e1896ce617240424e33b7e498c560bc79d45f0ab26c77d51`; `./formsculpt agents check` holds it to that hash. It finds a program however the app was started (the setting, the override variable, the engine's PATH, the known install folders, then the person's shell PATH, read once), checks it with `--version` started as a tab starts it, and builds the child environment.
+
+### app/services/claude_code.py · located, usable, said, terminal_env, a token per tab
+- refers-to: app/services/claude_code.py :: OVERRIDES, SETTINGS, located, usable, said, child_env, terminal_env, tab_mcp_config, cli, _signed_in, info, argv, open_
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+`located(kind)` is the one lookup for all four programs: the `claudeBin` setting for Claude Code (the only path setting formsculpt has), `FSC_CLAUDE_BIN`, `FSC_CODEX_BIN`, `FSC_CURSOR_BIN`, `FSC_ANTIGRAVITY_BIN`, then the finder. `info` keeps its 60 s cache and answers the old fields plus the finder's (`finding`, `how`, `looked`, `said`), `install` (a command line, empty when it runs) and `signedIn` from `claude auth status`. Clause 11: a Claude Code tab got `--mcp-config` with the window's own `INAPP_TOKEN` written into the JSON on the command line, the same token for every tab and for Chat, alive for the whole service. Now each tab gets `agents.issue()`, passed only in `FSC_INAPP_TOKEN`; the config on the command line names the server `formsculpt_tab` with the header `${FSC_INAPP_TOKEN}`, and the token is revoked from `Session.on_close`. A missing or broken program is refused with 424 and the finder's sentence (clause 13 `notInstalled`), was 400 with the fixed `INSTALL` sentence; Chat keeps that sentence and 400. Removed code, quoted in full: `KEEP_ENV = {"CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CONFIG_DIR"}`, `CANDIDATES = (".claude/local/claude", ".local/bin/claude", ".npm-global/bin/claude", ".bun/bin/claude", ".volta/bin/claude")`, `SYSTEM_PATHS = ("/opt/homebrew/bin/claude", "/usr/local/bin/claude", "/usr/bin/claude")`; `child_env()` was `return {k: v for k, v in terminal.base_env().items() if not k.startswith("CLAUDE") or k in KEEP_ENV}`; `_from_login_shell()` ran `terminal.login_shell() + ["-c", "command -v claude"]` and took the last absolute line; `cli()` tried the setting, `FSC_CLAUDE_BIN` or `shutil.which("claude")`, the candidates, then the login shell; `info()` ran `[path, "--version"]` and answered `{"installed": bool(path), "path": path, "version": version}`; `argv()` was `[path, "--mcp-config", mcp_config(), "--allowedTools", "mcp__formsculpt", "--append-system-prompt", NOTE]` plus `--resume` and the prompt, wrapped as `terminal.login_shell() + ["-c", "exec " + shlex.join(cmd)]` off Windows; `open_` raised `CommandError(INSTALL, 400)` and passed `child_env()`.
+
+### app/services/agent_programs.py · Codex, Cursor and Antigravity tabs
+- refers-to: app/services/agent_programs.py :: PROGRAMS, TABS, report, codex_args, cursor_config, write_tab_entry, remove_tab_entry, open_terminal
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+A port of FormTxt's `agent_programs.py` onto the command bus. Every tab gets its own token in `FSC_INAPP_TOKEN` and the MCP address in `FSC_MCP_URL`, never on the command line. Codex reads the server from `-c mcp_servers.formsculpt_tab.url=...` and `env_http_headers` naming the variable; Cursor from `.cursor/mcp.json` in the tab's folder (`${env:...}` references, written once at 0600, every other entry kept); Antigravity has no variable form, so the entry `formsculpt_tab` with `serverUrl` and the header carrying the token goes into `.agents/mcp_config.json` of its own folder (`<data>/agent-tabs/antigravity`), replaced whole at 0600 with every other entry kept, and is taken out on close when it still carries that tab's token. Codex and Cursor start in the Claude Code folder (`workdir`). `report` caches the three for 60 s and asks Claude Code's own cache; the dock asks only while open.
+
+### app/services/terminal.py, agents.py, routers · close hooks, kinds, tokens, the exit frame
+- refers-to: app/services/terminal.py :: Session.on_close, describe, close, base_env; app/services/agents.py :: INAPP_VAR, TOKENS, issue, revoke, is_inapp; app/routers/mcp.py :: mcp; app/routers/terminal_socket.py :: attach; app/services/cmd_terminal.py :: close
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+`Session.on_close` runs when a tab closes (token revoke, Antigravity entry removal), and close now tells attached channels the program ended. `describe` adds `tip` (the folder). `base_env` drops `FSC_INAPP_TOKEN`, so a shell tab never inherits one (clause 11). The MCP route accepts the window's `INAPP_TOKEN` (Chat) or any live tab token through `agents.is_inapp`. `terminal.close` succeeds for an id that is already gone (clause 6); it answered 404. The socket now always sends the scrollback first, an empty string included (clause 7), and sends the exit event as a binary frame `{"type": "exit"}` so a program that prints that text is not taken for an exit. Removed code, quoted in full: `inapp = secrets.compare_digest(request.headers.get(agents.INAPP_HEADER, ""), agents.INAPP_TOKEN)`; in `attach`, `if backlog: await ws.send_text(backlog)`, `await ws.send_text(json.dumps({"type": "exit"}))` and `await ws.send_text(json.dumps({"type": "exit"}) if text is None else text)`; in `terminal.close`, `_session(id)` before `terminal.close(id)`.
+
+### The contract, clause by clause
+- refers-to: frontend/src/dock/CONTRACT.md
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+Met: 1 and 2 (the window-only command bus and the loopback-origin socket; no ticket needed), 3 to 9 (restart keeps the id and clears the screen; a slow reader's output is dropped past 4000 queued chunks), 10 (four programs, `signedIn` null for the three that have no status command), 11, 13 (403 refused from `LocalGuard`, 424 not installed, 404 "Unknown command" read as an older engine, 409 busy), 14 (no tabs on the browser engine), 16. Clause 12 does not apply: formsculpt keeps its own Chat (`chat.*` commands, `cmd_chat.py`) through `chat.pane`. Left out: 15, consent in the dock; formsculpt asks for outside agents in its own `AgentLink` prompt and the module's dialog is not used. The dock does not dock right here (`canDockRight` false): the three layouts (panel, tablet, ZUI) each place a `dock` grid row, not a column. No engine route became unused, so none was removed. Checked live on Linux with a booted service: a shell tab answered `dock-ok`; status listed the four programs; a stand-in `agy` on PATH was found, its tab wrote `.agents/mcp_config.json` at 0600 with the tab's token, a changing MCP tool ran with that token while the tab was open and was refused after it closed, and the entry was gone. Service suite: 228 passed, no test changed.

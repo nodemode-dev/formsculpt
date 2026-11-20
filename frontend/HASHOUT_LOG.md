@@ -45,6 +45,7 @@ frontend/
 - [The Home screen](#the-home-screen)
 - [Home and the title row after the 1.20.0 verification](#home-and-the-title-row-after-the-1200-verification)
 - [formsculpt 1.21.0 · the window and Home](#formsculpt-1210--the-window-and-home)
+- [formsculpt 1.22.0 · the agent dock 2.2.0](#formsculpt-1220--the-agent-dock-220)
 
 ## index.html
 
@@ -1449,3 +1450,29 @@ The link came back only from the refresh right after the undo, and only while Ne
 - kind: rationale
 - logged: v1.21.0 · 2026-11-16
 formdeck's Preferences check boxes use `accent-color: var(--accent-color)`; the formsculpt ones were the browser's blue.
+
+## formsculpt 1.22.0 · the agent dock 2.2.0
+
+### src/dock · the shared module, byte for byte
+- refers-to: src/dock/ (16 files), src/dock/MANIFEST.json
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+Copied with `cp` from FormVis 9480a07, module version 2.2.0: every file matches its SHA-256 in `MANIFEST.json`, none missing or extra, and `./formsculpt agents check` holds it there. Nothing in the folder is edited here; a change comes only as a whole new module version. The folder compiles with the contract's strict options (`noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `noImplicitOverride`, `noImplicitReturns`).
+
+### src/dock-adapter.ts · the adapter and the commands
+- refers-to: src/dock-adapter.ts :: DockHost, registerDock, adapter, socketChannel, legacy; src/app.ts :: boot; src/main.ts; src/ui/i18n.ts :: SKIP
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+`registerDock` takes the old `registerTerminal`'s place and host, mounts the module once at boot into `#app` (the `dock` grid area of all three layouts) and keeps the four commands and their ids, keys and toolbar buttons (`view.terminal` Mod+J, `view.newTerminal`, `agent.claude` Shift+Mod+J, `agent.chat` Alt+Mod+J), so menus, the palette, saved shortcuts and the layouts' agent buttons keep working. Tabs: Chat, shell, Claude Code, Codex, Cursor, Antigravity, none on the browser engine. The terminals go through the command bus (`terminal.list`, `terminal.open`, `claudecode.open`, `terminal.agent`, `terminal.restart`, `terminal.close`) and the socket `/api/terminal/{id}`; status through `terminal.agents`, falling back to `claudecode.status` on an engine that does not know it. Chat is formsculpt's own `ChatPane`, given through `chat.pane`: it is shown in the module's host, loads its conversation when shown, and the ask line sends to it on the Chat tab with the scene context and note, and elsewhere opens Claude Code with the text and the context, as the old line did. The pane's "Open in Claude Code" calls the module's `claude(undefined, session)`. `consent` and `storedChoice` are left out: outside agents are asked in the window by `AgentLink`, as before. `canDockRight` is false because each layout gives the dock a row. The old height (`formsculpt.dock_h`, a number) is read once by a legacy reader into `formsculpt.dock`; the page translator now skips `.ft-notranslate` instead of the removed `.fl-dock-tab-title`.
+
+### index.html, src/styles · tokens and the reserved row
+- refers-to: index.html (the pre-paint dock script); src/styles/dock-tokens.css (new); src/styles/shell.css :: #app; src/styles/chat.css (was dock.css)
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+The module's `--dock-*` tokens map onto formsculpt's in `dock-tokens.css`; `z-index` comes from `--z-raised` and `--z-overlay`. The row the dock takes is `--dock-h` in each layout's grid, set from `:root[data-ft-dock="open"]` and `--ft-dock-size`, and a script in `index.html` sets those before the first paint from `formsculpt.dock` (or the old height), so a dock restored open does not push the viewport after load. The module's stylesheet and the token file load from `main.ts` with the others, before the reveal. `dock.css` moved to `chat.css` and keeps only the Chat pane's rules and the shared `cv-*` controls; the token block now sits on `.fl-chat`. Removed code, quoted in full: `#app.is-dock-open { --dock-h: min(var(--dock-open-h, 280px), 70vh); }` from shell.css; from the old dock.css, the `.fl-dock`, `.fl-dock-rsz`, `.fl-dock-head`, `.fl-dock-tabs`, `.fl-dock-tab`, `.fl-dock-tab-x`, `.fl-dock-head .cv-tt-btn`, `.fl-dock-stage`, `.fl-term`, `.fl-dock-empty`, `.fl-dock-ask`, `.fl-dock-ask-mark`, `.fl-dock-ask-input` and `.fl-dock svg` rules, in full in blob 63af39e (`git show 63af39e`).
+
+### src/ui/terminal.ts, src/ui/terminal-dock.ts · removed
+- refers-to: src/ui/terminal.ts (blob 1cc95a4), src/ui/terminal-dock.ts (blob c53d05b)
+- kind: rationale
+- logged: v1.22.0 · 2026-11-20
+The old dock, superseded by the module: `registerTerminal` (the section, its resizer and the four commands) and `TerminalDock` (tabs, xterm, the socket, the Chat tab and the ask line). The two files run to 410 lines, so they are quoted by their blob ids at e86e994 rather than inline (`git show 1cc95a4`, `git show c53d05b`). Checked in headless Chrome at CPU throttling 4 against the booted service serving the built window: the dock opens with Chat, a new shell tab printed `dock-ui-42` for `echo dock-ui-$((6*7))`, the More agents menu listed Codex, Cursor and Antigravity with their install lines, a MutationObserver on `#app`'s children saw no node added or removed across two opens and closes (17 children before and after), and the console had no errors.
