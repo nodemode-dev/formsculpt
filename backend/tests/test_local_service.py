@@ -18,7 +18,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from family import BACKEND, HEALTH_PATH, MCP_PATH, REPO, WINDOW_ORIGINS, WS_PATH, free_port, own_origin
+from family import BACKEND, HEALTH_PATH, MCP_PATH, REPO, WINDOW_ORIGINS, WS_PATH, free_port, own_origin, window_headers
 from app.services import engine
 
 needs_engine = pytest.mark.skipif(not engine.available(), reason="the engine module is not built; run ./formsculpt engine build")
@@ -98,7 +98,7 @@ def test_serve_and_boot_listen_on_loopback_only_whatever_the_environment_says(tm
 def lenient():
     from app.main import app
 
-    with TestClient(app, base_url=own_origin(), raise_server_exceptions=False) as c:
+    with TestClient(app, base_url=own_origin(), raise_server_exceptions=False, headers=window_headers()) as c:
         c.post("/api/engine/dispatch", json={"name": "new_scene", "args": {}})
         yield c
         c.post("/api/engine/dispatch", json={"name": "new_scene", "args": {}})
@@ -256,13 +256,13 @@ def wait_for(condition, seconds):
 @needs_engine
 def test_a_nodemode_send_to_a_target_that_never_answers_does_not_hold_up_other_requests(engine_proc, silent):
     base = engine_proc["base"]
-    with httpx.Client(base_url=base, timeout=10) as c:
+    with httpx.Client(base_url=base, timeout=10, headers=engine_proc["window"]) as c:
         c.post("/api/engine/dispatch", json={"name": "new_scene", "args": {}})
         assert c.post("/api/engine/dispatch", json={"name": "add_primitive", "args": {"kind": "cube", "detail": 1}}).json()["ok"]
     outcome = {}
 
     def send():
-        with httpx.Client(base_url=base, timeout=120) as c:
+        with httpx.Client(base_url=base, timeout=120, headers=engine_proc["window"]) as c:
             outcome["response"] = c.post("/api/nodemode/send", json={"target": f"http://127.0.0.1:{silent.port}", "title": "silent"})
 
     sender = threading.Thread(target=send, daemon=True)

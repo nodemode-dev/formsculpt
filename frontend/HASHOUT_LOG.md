@@ -1476,3 +1476,11 @@ The module's `--dock-*` tokens map onto formsculpt's in `dock-tokens.css`; `z-in
 - kind: rationale
 - logged: v1.22.0 · 2026-11-20
 The old dock, superseded by the module: `registerTerminal` (the section, its resizer and the four commands) and `TerminalDock` (tabs, xterm, the socket, the Chat tab and the ask line). The two files run to 410 lines, so they are quoted by their blob ids at e86e994 rather than inline (`git show 1cc95a4`, `git show c53d05b`). Checked in headless Chrome at CPU throttling 4 against the booted service serving the built window: the dock opens with Chat, a new shell tab printed `dock-ui-42` for `echo dock-ui-$((6*7))`, the More agents menu listed Codex, Cursor and Antigravity with their install lines, a MutationObserver on `#app`'s children saw no node added or removed across two opens and closes (17 children before and after), and the console had no errors.
+
+## formsculpt 1.23.0 · the window key
+
+### src/io/window-key.ts · the window claims its key before its first request
+- refers-to: src/io/window-key.ts :: startWindowKey, keyedFetch, keyMessage; src/main.ts; src/dock-adapter.ts :: socketChannel; src/engine/stroke-client.ts :: open
+- kind: rationale
+- logged: v1.23.0 · 2026-11-20
+The engine now refuses writes, sockets and the window's poll without the window key (backend log, `app/core/window_key.py`). `main.ts` calls `startWindowKey` before the language tables and before `start`, so nothing leaves before the key is held. The key comes from `window.__FORMSCULPT_WINDOW_KEY`, set by the desktop shell's initialization script only on the engine's own origin and deleted at once; from source, the page reuses a key kept in `sessionStorage` when the engine still accepts it (a reload), else claims it once with `POST /api/window/key`. `window.fetch` is wrapped once: a request to the page's own origin waits for the claim and carries `X-Formsculpt-Window-Key`; other origins pass untouched. One wrapper instead of a header at each of the twenty call sites, so a new call site cannot forget it. The two sockets send `{"type": "key", "key": ...}` as their first message: the terminal socket from a `once` open listener registered before any other, the stroke socket in `onopen` before the socket is handed out. With the browser engine and no service the claim fails quietly and requests go out as before.

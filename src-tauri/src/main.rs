@@ -78,8 +78,9 @@ fn open_exit_gate(handle: &tauri::AppHandle) {
 }
 
 /// Reads the engine's output until it names its address, it ends, or PORT_WAIT passes without an address.
-async fn read_port(rx: &mut tauri::async_runtime::Receiver<CommandEvent>) -> EngineStart {
+async fn read_port(rx: &mut tauri::async_runtime::Receiver<CommandEvent>, key: &mut Option<String>) -> EngineStart {
     let pattern = regex::Regex::new(r"http://127\.0\.0\.1:(\d+)").unwrap();
+    let key_pattern = regex::Regex::new(r"formsculpt-window-key: ([A-Za-z0-9_-]{32,})").unwrap();
     let (tick, mut timer) = tauri::async_runtime::channel::<()>(1);
     std::thread::spawn(move || {
         std::thread::sleep(PORT_WAIT);
@@ -98,6 +99,9 @@ async fn read_port(rx: &mut tauri::async_runtime::Receiver<CommandEvent>) -> Eng
             Ok(Some(CommandEvent::Stdout(bytes) | CommandEvent::Stderr(bytes))) => String::from_utf8_lossy(&bytes).into_owned(),
             Ok(Some(_)) => continue,
         };
+        if key.is_none() {
+            *key = key_pattern.captures(&line).map(|found| found[1].to_string());
+        }
         if let Some(port) = pattern.captures(&line).and_then(|found| found[1].parse::<u16>().ok()) {
             return EngineStart::Port(port);
         }
@@ -305,8 +309,9 @@ fn percent_decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-fn open_main(handle: &tauri::AppHandle, port: u16) {
-    let url: tauri::Url = format!("http://127.0.0.1:{port}").parse().expect("loopback url");
+fn open_main(handle: &tauri::AppHandle, port: u16, key: Option<&str>) {
+    let origin = format!("http://127.0.0.1:{port}");
+    let url: tauri::Url = origin.parse().expect("loopback url");
     let (width, height) = handle
         .primary_monitor()
         .ok()
@@ -327,6 +332,12 @@ fn open_main(handle: &tauri::AppHandle, port: u16) {
         .inner_size(width, height)
         .min_inner_size(MIN_LOGICAL.0, MIN_LOGICAL.1)
         .center();
+    let builder = match key {
+        Some(value) => builder.initialization_script(format!(
+            "if (window.location.origin === {origin:?}) {{ window.__FORMSCULPT_WINDOW_KEY = {value:?}; }}"
+        )),
+        None => builder,
+    };
     #[cfg(target_os = "macos")]
     let builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay).hidden_title(true);
     let builder = builder.on_page_load(|window, payload| {
@@ -414,7 +425,7 @@ fn main() {
             let spawned = app
                 .shell()
                 .sidecar("formsculpt-engine")
-                .and_then(|engine| engine.env("FSC_PORT", "0").env("FSC_PARENT_PID", std::process::id().to_string()).spawn());
+                .and_then(|engine| engine.env("FSC_PORT", "0").env("FSC_PARENT_PID", std::process::id().to_string()).env("FSC_WINDOW_KEY_STDOUT", "1").spawn());
             let spawned = match spawned {
                 Ok((rx, child)) => {
                     app.state::<Backend>().0.lock().unwrap().replace(child);
@@ -431,8 +442,9 @@ fn main() {
                         return quit_launch(&handle, Some(&reason));
                     }
                 };
+                let mut key: Option<String> = None;
                 let port = loop {
-                    match read_port(&mut rx).await {
+                    match read_port(&mut rx, &mut key).await {
                         EngineStart::Port(found) => break found,
                         EngineStart::Silent if keep_waiting(&handle) => continue,
                         EngineStart::Silent => return quit_launch(&handle, None),
@@ -445,7 +457,7 @@ fn main() {
                         }
                     }
                 };
-                open_main(&handle, port);
+                open_main(&handle, port, key.as_deref());
                 check_for_updates(handle.clone());
                 while let Some(event) = rx.recv().await {
                     if matches!(event, CommandEvent::Terminated(_)) {

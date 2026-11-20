@@ -9,10 +9,11 @@ import './dock/dock.css';
 import './styles/chat.css';
 import { start } from './app';
 import { startLanguage, startPageTranslator } from './ui/i18n';
+import { startWindowKey } from './io/window-key';
 
 const root = document.getElementById('app');
 if (root) {
-  void startLanguage().finally(() => {
+  void startWindowKey().then(startLanguage).finally(() => {
     start(root);
     startPageTranslator();
   });

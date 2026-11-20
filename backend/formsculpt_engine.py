@@ -158,10 +158,12 @@ def main() -> int:
     os.environ.setdefault("FSC_DESKTOP", "1")
     import uvicorn
 
+    from app.core import window_key
     from app.main import app as fastapi_app
 
     port = int(os.environ.get("FSC_PORT", "0") or 0) or free_port()
     os.environ["FSC_PORT"] = str(port)
+    window_key.announce()
     uvicorn.run(fastapi_app, host="127.0.0.1", port=port, log_level="info")
     return 0
 

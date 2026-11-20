@@ -50,7 +50,7 @@ def test_binary_stl_is_the_size_its_triangle_count_says(scene, kind):
 
 def test_stl_export_does_not_take_the_engine_down(engine_proc):
     base = engine_proc["base"]
-    with httpx.Client(base_url=base, timeout=60) as c:
+    with httpx.Client(base_url=base, timeout=60, headers=engine_proc["window"]) as c:
         assert c.post("/api/engine/dispatch", json={"name": "add_primitive", "args": {"kind": "torus", "detail": 2}}).json()["ok"]
         r = c.get("/api/engine/export", params={"format": "stl"})
         assert r.status_code == 200 and len(r.content) > 84

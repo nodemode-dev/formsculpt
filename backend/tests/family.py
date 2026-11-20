@@ -32,6 +32,7 @@ STDIO_CMD = [sys.executable, str(REPO / "setup" / "mcp_stdio.py")]
 READ_TOOL = ("get_scene", {})
 CHANGING_TOOL = ("undo", {})
 INAPP_HEADER = "x-formsculpt-inapp"
+WINDOW_KEY_HEADER = "x-formsculpt-window-key"
 VERSION_SITES = [
     ("README.md", r"badge/version-([0-9.]+)-"),
     ("CHANGELOG.md", r"^## (\S+) ·"),
@@ -92,6 +93,17 @@ def inapp_token():
     return importlib.import_module("app.services.agents").INAPP_TOKEN
 
 
+def window_headers():
+    window_key = importlib.import_module("app.core.window_key")
+    return {window_key.HEADER: window_key.KEY}
+
+
+def claim_window_key(base):
+    request = urllib.request.Request(base + "/api/window/key", data=b"", method="POST")
+    with urllib.request.urlopen(request, timeout=5) as r:
+        return {WINDOW_KEY_HEADER: json.loads(r.read().decode("utf-8"))["key"]}
+
+
 def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -127,7 +139,7 @@ def guard_client():
     from fastapi.testclient import TestClient
 
     app = importlib.import_module("app.main").app
-    with TestClient(app, base_url=own_origin()) as c:
+    with TestClient(app, base_url=own_origin(), headers=window_headers()) as c:
         yield c
 
 
@@ -157,7 +169,7 @@ def engine_proc():
         proc.kill()
         out = proc.communicate(timeout=5)[0].decode("utf-8", "replace")
         raise RuntimeError(f"engine did not answer {HEALTH_PATH} within 90 s:\n{out[-4000:]}")
-    yield {"base": base, "port": port, "data": data, "env": env, "proc": proc}
+    yield {"base": base, "port": port, "data": data, "env": env, "proc": proc, "window": claim_window_key(base)}
     proc.terminate()
     try:
         proc.wait(timeout=10)
