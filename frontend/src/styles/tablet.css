@@ -30,6 +30,8 @@ body.panels-translucent #app.tablet { --tb-panel: rgb(44 52 68 / 0.66); }
 body.panels-translucent #app.tablet :is(.tb-bar, .tb-tools, .tb-left, .tb-card, .tb-pill, .tb-float, .panel.tl-sheet) { backdrop-filter: blur(14px) saturate(1.2); }
 /* High contrast: the layout's slate turns black with white labels and outlined panels. */
 body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1c1c1c; --tb-sunk: #000000; --tb-text: #ffffff; --tb-dim: #d0d0d0; --tb-line: rgb(255 255 255 / 0.55); }
+:root[data-oled] #app.tablet { --tb-panel: var(--bg-primary); --tb-raised: var(--bg-tertiary); --tb-sunk: var(--bg-primary); --tb-head: var(--bg-tertiary); --tb-line: var(--border-light); }
+:root[data-oled] body.panels-translucent #app.tablet { --tb-panel: rgb(0 0 0 / 0.66); }
 #app.tablet :is(.appbar, .status, .rail) { display: none; }
 #app.tablet .panel { display: none; }
 .has-overlay-titlebar #app.tablet { --tb-row: var(--bar-h); grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h, 0px) 0; }

@@ -4,7 +4,7 @@ import { fromHtml, q, setHidden } from './dom';
 import { language, languages, onLanguage, setLanguage } from './i18n';
 import { isLang } from './i18n/langs';
 
-const THEMES = ['nodemode', 'family', 'dark', 'light', 'contrast'];
+const THEMES = ['nodemode', 'family', 'dark', 'light', 'contrast', 'amoled'];
 
 export class PreferencesDialog extends Dialog {
   private readonly theme: HTMLSelectElement;
@@ -17,7 +17,7 @@ export class PreferencesDialog extends Dialog {
   constructor(private readonly commands: Commands) {
     super('Preferences', 460);
     const body = fromHtml(`<div class="fs-prefs">
-<label class="fs-pref-row"><span>Theme</span><select class="fs-input" data-k="theme"><option value="nodemode">Follow NodeMode</option><option value="family">Form family theme</option><option value="dark">Dark theme</option><option value="light">Light theme</option><option value="contrast">High contrast</option></select></label>
+<label class="fs-pref-row"><span>Theme</span><select class="fs-input" data-k="theme"><option value="nodemode">Follow NodeMode</option><option value="family">Form family theme</option><option value="dark">Dark theme</option><option value="light">Light theme</option><option value="contrast">High contrast</option><option value="amoled">AMOLED Black</option></select></label>
 <label class="fs-pref-row"><span>Layout</span><select class="fs-input" data-k="layout"><option value="panel">Panel layout</option><option value="tablet">Tablet Layout</option><option value="zbrush">ZUI Layout</option></select></label>
 <label class="fs-pref-row"><span>Language</span><select class="fs-input" data-k="lang" data-no-i18n></select></label>
 <label class="fs-home-check" data-k="menus-row"><input type="checkbox" data-k="menus"><span>Menus in Window</span></label>

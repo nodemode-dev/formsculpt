@@ -18,7 +18,10 @@ export function saveBlob(blob: Blob, name: string): void {
 }
 
 export function setText(node: Node, value: string): void {
-  if (node.textContent !== value) node.textContent = value;
+  if (node.textContent === value) return;
+  const only = node.firstChild;
+  if (only && only === node.lastChild && only.nodeType === Node.TEXT_NODE) (only as Text).data = value;
+  else node.textContent = value;
 }
 
 export function setAttr(node: Element, name: string, value: string): void {

@@ -9,6 +9,7 @@
   <link rel="preload" href="/formsculpt-logo.png" as="image">
   <style>
     html, body { background: #0a0a0a; margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    html[data-oled], html[data-oled] body { background: #000000; }
     #app { visibility: hidden; }
     body.app-ready #app { visibility: visible; }
   </style>
@@ -40,6 +41,7 @@
   var light = false;
   var familyTheme = 'studio';
   var FAMILY_LIGHT = { 'light': 1, 'sand': 1, 'nineties': 1, 'duck': 1, 'pro-light-grey': 1, 'pro-light': 1, 'classic': 1, 'adwaita-light': 1, 'soft-light': 1 };
+  var OLED = { 'amoled': 1 };
   var FAMILY_VARS = ['--bg-primary', '--bg-secondary', '--bg-tertiary', '--border-color', '--border-light', '--text-primary', '--text-secondary', '--text-muted', '--canvas-bg', '--grid-color'];
   var FAMILY = {
     'studio': ['#111111', '#17151b', '#222127', '#2a2a2a', '#34333a', '#f7f7f7', '#a4a4a4', '#717072', '#1c1b1d', '#5e5e60'],
@@ -57,6 +59,7 @@
     'rose': ['#170b10', '#211117', '#301a22', '#4d2b38', '#653a49', '#f5e7ec', '#cfa5b3', '#966b7b', '#170b10', 'rgba(255,190,215,0.05)'],
     'terminal': ['#050d05', '#0a140a', '#102010', '#1f3d1f', '#2b522b', '#d8f5d8', '#8fce8f', '#568a56', '#050d05', 'rgba(120,255,120,0.06)'],
     'contrast': ['#000000', '#0a0a0a', '#161616', '#555555', '#777777', '#ffffff', '#d8d8d8', '#9a9a9a', '#000000', 'rgba(255,255,255,0.10)'],
+    'amoled': ['#000000', '#000000', '#141414', '#262626', '#3a3a3a', '#ededed', '#a6a6a6', '#858585', '#000000', 'rgba(255,255,255,0.10)'],
     'nineties': ['#c0c0c0', '#d4d0c8', '#b4b0a8', '#808080', '#ffffff', '#000000', '#202020', '#585858', '#008080', 'rgba(0,0,0,0.12)'],
     'duck': ['#e9e4f7', '#f4f1fc', '#d9d2ef', '#c7bde6', '#b3a6dc', '#2b2540', '#4f4770', '#7a7299', '#e2dcf2', 'rgba(90,70,150,0.10)'],
     'pro-dark': ['#1f1f1f', '#2b2b2b', '#363636', '#4a4a4a', '#818181', '#ececec', '#bdbdbd', '#a0a0a0', '#181818', 'rgba(255,255,255,0.05)'],
@@ -91,6 +94,7 @@
       else if (own.theme === 'light') light = true;
       else if (own.theme === 'dark') light = false;
       else if (own.theme === 'contrast') { light = false; contrast = true; }
+      else if (own.theme === 'amoled') { family = true; familyTheme = 'amoled'; light = false; }
       translucent = own.translucent === true;
     }
   } catch (e) {}
@@ -100,6 +104,7 @@
   if (light) root.style.background = '#ecebe6';
   if (contrast) root.style.background = '#000000';
   if (family) root.style.background = FAMILY[familyTheme][0];
+  if (family && OLED[familyTheme]) root.setAttribute('data-oled', '');
   if (light || contrast || translucent || family) {
     var apply = function () {
       if (!document.body) return false;
