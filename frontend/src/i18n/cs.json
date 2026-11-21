@@ -580,7 +580,7 @@
  "Show environment": "Zobrazit prostředí",
  "Show Face Groups": "Zobrazit skupiny ploch",
  "Show faces": "Zobrazit plochy",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Zobrazí nebo skryje dok terminálu pod viewportem; programy běží dál, i když je skrytý.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Zobrazí nebo skryje dok terminálu, pod viewportem nebo vpravo od něj; programy běží dál, i když je skrytý.",
  "Shrink Mask": "Zúžit masku",
  "Shrink mask": "Zúžit masku",
  "Side plane": "Boční rovina",

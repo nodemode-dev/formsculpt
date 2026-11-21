@@ -15,7 +15,7 @@
  "No UVs yet; Unwrap to make them": "Pas encore d'UV; utilisez Déplier pour en créer",
  "Opens the Chat tab, where Claude answers in plain language and works through formsculpt's tools.": "Ouvre l'onglet Clavardage, où Claude répond en langage simple et travaille avec les outils de formsculpt.",
  "Path rendering {samples} samples per pixel at {size}; the picture downloads when it is done": "Rendu de chemin à {samples} échantillons par pixel en {size}; l'image se télécharge à la fin",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Affiche ou masque le dock du terminal sous la vue; les programmes continuent de tourner tant qu'il est masqué.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Affiche ou masque le dock du terminal, sous la vue ou à sa droite; les programmes continuent de tourner tant qu'il est masqué.",
  "The active object is not in a folder; Put in folder first": "L'objet actif n'est pas dans un dossier; utilisez d'abord Mettre dans un dossier",
  "The scene is empty; there is nothing to send": "La scène est vide; il n'y a rien à envoyer",
  "This browser has no WebHID for a 3D mouse; use Chrome or Edge": "Ce navigateur n'a pas WebHID pour une souris 3D; utilisez Chrome ou Edge",

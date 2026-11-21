@@ -580,7 +580,7 @@
  "Show environment": "Ortamı göster",
  "Show Face Groups": "Yüz Gruplarını Göster",
  "Show faces": "Yüzleri göster",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Görünüm alanının altındaki terminal panelini gösterir veya gizler; gizliyken programlar çalışmaya devam eder.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Görünüm alanının altındaki veya sağındaki terminal panelini gösterir veya gizler; gizliyken programlar çalışmaya devam eder.",
  "Shrink Mask": "Maskeyi Daralt",
  "Shrink mask": "Maskeyi daralt",
  "Side plane": "Yan düzlem",

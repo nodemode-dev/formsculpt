@@ -163,7 +163,7 @@ export function registerDock(host: DockHost): Dock<Program> {
   commands.add(
     {
       id: 'view.terminal', label: () => (dock.isOpen() ? 'Hide Terminal' : 'Show Terminal'), keys: ['Mod+J'], group: 'Window', enabled: why, checked: () => dock.isOpen(),
-      description: 'Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.',
+      description: 'Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.',
       run: () => dock.toggle(),
     },
     {

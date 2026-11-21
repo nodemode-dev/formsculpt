@@ -580,7 +580,7 @@
  "Show environment": "環境を表示",
  "Show Face Groups": "フェイスグループを表示",
  "Show faces": "フェイスを表示",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "ビューポート下のターミナルドックを表示または非表示にします。非表示中もプログラムは実行され続けます。",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "ビューポートの下または右にあるターミナルドックを表示または非表示にします。非表示中もプログラムは実行され続けます。",
  "Shrink Mask": "マスクを縮小",
  "Shrink mask": "マスクを縮小",
  "Side plane": "側面プレーン",

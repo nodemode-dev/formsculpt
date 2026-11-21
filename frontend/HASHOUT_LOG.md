@@ -1538,3 +1538,11 @@ The build minifies `#000000` in a stylesheet to `#000`, and `hexColor` took six 
 - kind: rationale
 - logged: v1.27.0 · 2026-11-20
 `setText` set `textContent`, which swaps the element's text node for a new one. A theme switch redraws the viewport once, which writes the frame time, so every switch replaced one node. When the element holds exactly one text node, its `data` is now changed instead; otherwise `textContent` as before. A live switch between Studio Dark and AMOLED Black, and back, in each of the three layouts under CPU 4x: no element added or removed (3,277 elements under `#app` and the overlay root before, between and after, the same boxes), and the only node changes left are the terminal's own: xterm rewrites the text of its four style blocks and re-renders its cursor span when its colours change (five swaps each way), which is the shared panel module's terminal applying the new colours. With no switch, the same 2.4 seconds saw no node change at all.
+
+## formsculpt 1.27.0 · the Show Terminal text
+
+### src/dock-adapter.ts, src/i18n · Show Terminal says where the panel can be
+- refers-to: src/dock-adapter.ts :: view.terminal description; src/i18n/strings.json, the 23 full tables and fr-CA :: the same key
+- kind: rationale
+- logged: v1.27.0 · 2026-11-20
+The command's description read "Shows or hides the terminal dock under the viewport; ...", true only while the panel sits at the bottom; since 1.26.0 its side button moves it to a column at the viewport's right. It now reads "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.", which is true on both sides. The English is the tables' key, so the key and every table changed together, each translation by hand from its own earlier wording with only the place widened (under the viewport or to its right); `fr-CA` carries its own copy (it drops the space before the semicolon), `es-MX` has none and follows `es`. `./formsculpt i18n check` reports no placeholder mismatch and every full table at 1480 of 1480; `./formsculpt i18n extract` on a scratch copy finds the new key and not the old one. No native speaker has read the new sentences.

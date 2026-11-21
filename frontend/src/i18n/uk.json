@@ -580,7 +580,7 @@
  "Show environment": "Показати оточення",
  "Show Face Groups": "Показати групи граней",
  "Show faces": "Показати грані",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Показує або ховає панель термінала під в'юпортом; програми працюють далі, поки вона схована.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Показує або ховає панель термінала під в'юпортом або праворуч від нього; програми працюють далі, поки вона схована.",
  "Shrink Mask": "Стиснути маску",
  "Shrink mask": "Стиснути маску",
  "Side plane": "Бічна площина",

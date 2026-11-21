@@ -580,7 +580,7 @@
  "Show environment": "Näytä ympäristö",
  "Show Face Groups": "Näytä pintaryhmät",
  "Show faces": "Näytä pinnat",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Näyttää tai piilottaa päätetelakan näkymän alla; ohjelmat jatkavat toimintaansa piilotettuinakin.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Näyttää tai piilottaa päätetelakan näkymän alla tai sen oikealla puolella; ohjelmat jatkavat toimintaansa piilotettuinakin.",
  "Shrink Mask": "Supista maskia",
  "Shrink mask": "Supista maskia",
  "Side plane": "Sivutaso",

@@ -580,7 +580,7 @@
  "Show environment": "Hiện môi trường",
  "Show Face Groups": "Hiện face group",
  "Show faces": "Hiện face",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Hiện hoặc ẩn terminal dock bên dưới viewport; chương trình vẫn chạy khi bị ẩn.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Hiện hoặc ẩn terminal dock bên dưới hoặc bên phải viewport; chương trình vẫn chạy khi bị ẩn.",
  "Shrink Mask": "Thu nhỏ mask",
  "Shrink mask": "Thu nhỏ mask",
  "Side plane": "Mặt phẳng bên",

@@ -580,7 +580,7 @@
  "Show environment": "顯示環境",
  "Show Face Groups": "顯示面群組",
  "Show faces": "顯示面",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "顯示或隱藏視埠下方的終端機面板;隱藏期間程式仍會繼續執行。",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "顯示或隱藏視埠下方或右側的終端機面板;隱藏期間程式仍會繼續執行。",
  "Shrink Mask": "收縮遮罩",
  "Shrink mask": "收縮遮罩",
  "Side plane": "側平面",

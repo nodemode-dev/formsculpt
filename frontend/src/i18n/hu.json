@@ -580,7 +580,7 @@
  "Show environment": "Környezet megjelenítése",
  "Show Face Groups": "Lapcsoportok megjelenítése",
  "Show faces": "Lapok megjelenítése",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Megjeleníti vagy elrejti a nézet alatti terminálpanelt; a programok elrejtve is futnak tovább.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Megjeleníti vagy elrejti a nézet alatti vagy tőle jobbra lévő terminálpanelt; a programok elrejtve is futnak tovább.",
  "Shrink Mask": "Maszk zsugorítása",
  "Shrink mask": "Maszk zsugorítása",
  "Side plane": "Oldalsík",

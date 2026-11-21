@@ -580,7 +580,7 @@
  "Show environment": "Mostrar entorno",
  "Show Face Groups": "Mostrar grupos de caras",
  "Show faces": "Mostrar caras",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Muestra u oculta el dock de terminal bajo el visor; los programas siguen ejecutándose mientras está oculto.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Muestra u oculta el dock de terminal, bajo el visor o a su derecha; los programas siguen ejecutándose mientras está oculto.",
  "Shrink Mask": "Contraer máscara",
  "Shrink mask": "Contraer máscara",
  "Side plane": "Plano lateral",

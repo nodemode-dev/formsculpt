@@ -580,7 +580,7 @@
  "Show environment": "Omgeving tonen",
  "Show Face Groups": "Vlakgroepen tonen",
  "Show faces": "Vlakken tonen",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Toont of verbergt het terminaldock onder de viewport; programma's blijven draaien terwijl het verborgen is.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Toont of verbergt het terminaldock, onder de viewport of rechts ervan; programma's blijven draaien terwijl het verborgen is.",
  "Shrink Mask": "Masker verkleinen",
  "Shrink mask": "Masker verkleinen",
  "Side plane": "Zijvlak",

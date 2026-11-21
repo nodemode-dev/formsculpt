@@ -580,7 +580,7 @@
  "Show environment": "Vis miljø",
  "Show Face Groups": "Vis flategrupper",
  "Show faces": "Vis flater",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.": "Viser eller skjuler terminaldokken under visningsfeltet; programmer fortsetter å kjøre mens den er skjult.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.": "Viser eller skjuler terminaldokken, under visningsfeltet eller til høyre for det; programmer fortsetter å kjøre mens den er skjult.",
  "Shrink Mask": "Krymp maske",
  "Shrink mask": "Krymp maske",
  "Side plane": "Sideplan",

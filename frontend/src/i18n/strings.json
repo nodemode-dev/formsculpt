@@ -1198,7 +1198,7 @@
  "Show Home Screen When the Last Document Closes",
  "Show the side panel",
  "Show UV Density",
- "Shows or hides the terminal dock under the viewport; programs keep running while it is hidden.",
+ "Shows or hides the terminal dock, under the viewport or at its right; programs keep running while it is hidden.",
  "Shrink Mask",
  "Shrink mask",
  "Side plane",
