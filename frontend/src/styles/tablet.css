@@ -21,8 +21,8 @@
   --tb-row: 0px;
   position: relative;
   grid-template-rows: 0 minmax(0, 1fr) var(--dock-h, 0px) 0;
-  grid-template-columns: 0 1fr 0;
-  grid-template-areas: "bar bar bar" "rail stage panel" "dock dock dock" "status status status";
+  grid-template-columns: 0 minmax(0, 1fr) var(--dock-w, 0px) 0;
+  grid-template-areas: "bar bar bar bar" "rail stage dockr panel" "dock dock dock dock" "status status status status";
 }
 #app.tablet:has(.tb-tools.wide) { --tb-tools-w: 284px; }
 /* Translucent panels (ui/theme.ts): the floating bars and panels let the model show through, blurred. */
@@ -64,6 +64,13 @@ body.theme-contrast #app.tablet { --tb-panel: rgb(0 0 0 / 0.92); --tb-raised: #1
 
 /* Top right: tool menus and toggles; view buttons and the view cube under them, left of the palette. */
 .tb-tr { right: 8px; top: 8px; }
+/* A viewport too narrow for both corner bars side by side (the widest language needs about 1240 px): the right bar
+   takes a second row under the first, at its own edge, and what sits under it on that side starts one row lower. */
+#app.tablet .stage { container-type: inline-size; }
+@container (max-width: 1239px) {
+  #app.tablet .tb-tr { top: 76px; }
+  #app.tablet :is(.tb-views, .tb-cube, .tb-tools) { --tb-under: 144px; }
+}
 .tb-views { position: absolute; z-index: var(--z-rail); top: calc(var(--tb-under) + 4px); right: calc(var(--tb-tools-w) + 100px); display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
 .tb-small { width: 36px; height: 32px; color: var(--tb-white); filter: drop-shadow(0 1px 2px #000); }
 .tb-small svg { width: 20px; height: 20px; }
