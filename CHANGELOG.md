@@ -2,6 +2,18 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.26.0 · 2026-11-21
+
+The agent panel can move to the right, as in the other Form apps.
+
+### Added
+
+- The side button in the agent panel's header now moves it from the bottom to a column directly to the right of the viewport, and back, in the panel, ZUI and tablet layouts. The viewport narrows once; the rail, the inspector and the ZUI shelves only get taller when the bottom row empties. The side is remembered and is in place from the window's first paint.
+
+### Fixed
+
+- In the tablet layout the two top corner bars no longer overlap when the viewport is narrow (a window about 1000 px wide, or the agent panel on the right): the right bar moves to a second row under the left one, and the views, view cube and tool palette under it start one row lower.
+
 ## 1.25.0 · 2026-11-20
 
 The agent panel's guide and the start page name all four agent programs: Claude Code, Codex, Cursor and Antigravity.

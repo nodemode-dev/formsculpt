@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="version 1.25.0" src="https://img.shields.io/badge/version-1.25.0-eef0f4?style=flat-square">
+  <img alt="version 1.26.0" src="https://img.shields.io/badge/version-1.26.0-eef0f4?style=flat-square">
   <img alt="Rust" src="https://img.shields.io/badge/rust-1.99.1-f97316?style=flat-square&logo=rust&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-vite-3178c6?style=flat-square">
   <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-native-2f7bf5?style=flat-square">
@@ -114,7 +114,7 @@ FormSculpt opens on **Home**: your recent sculpts with previews, ten starting me
 
 `install` keeps every other entry in each program's settings, changes nothing on a second run and leaves alone a server named `formsculpt` it did not write. `.mcp.json`, `.codex/config.toml` and `.cursor/mcp.json` are already wired in this repo. See [`AGENTS.md`](AGENTS.md).
 
-The terminal dock under the viewport (Cmd or Ctrl+J) runs a shell, Chat, and the real Claude Code, Codex, Cursor and Antigravity programs in tabs, each already connected to FormSculpt's MCP server with a token made for that tab that ends when the tab closes. A program that is not installed shows its install line in the dock's More agents menu.
+The terminal dock under the viewport (Cmd or Ctrl+J; its side button moves it to a column at the viewport's right in every layout, and back) runs a shell, Chat, and the real Claude Code, Codex, Cursor and Antigravity programs in tabs, each already connected to FormSculpt's MCP server with a token made for that tab that ends when the tab closes. A program that is not installed shows its install line in the dock's More agents menu.
 
 ## Under the hood
 

@@ -74,7 +74,6 @@ function adapter(host: DockHost, dock: () => Dock<Program>): DockAdapter<Program
       mode: 'own',
       storage: { key: 'formsculpt.dock', legacy },
       sizes: { minHeight: 140, maxHeightShare: 0.7, defaultHeight: 280, minWidth: 320, maxWidthShare: 0.5, defaultWidth: 440 },
-      canDockRight: () => false,
     },
     isDockChord,
     chordLabel: () => `${isMac ? 'Cmd' : 'Ctrl'}+J`,

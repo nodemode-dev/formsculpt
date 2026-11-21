@@ -28,14 +28,14 @@
   --tb-radius: 4px;
   --tb-under: 0px;
   grid-template-rows: 26px 28px 64px minmax(0, 1fr) var(--dock-h, 0px) 0;
-  grid-template-columns: 78px minmax(0, 1fr) 70px 12px var(--zb-tray-w);
+  grid-template-columns: 78px minmax(0, 1fr) var(--dock-w, 0px) 70px 12px var(--zb-tray-w);
   grid-template-areas:
-    "zbtitle zbtitle zbtitle zbtitle zbtitle"
-    "zbmenu zbmenu zbmenu zbmenu zbmenu"
-    "zbtop zbtop zbtop zbdiv panel"
-    "zbleft stage zbright zbdiv panel"
-    "dock dock dock dock dock"
-    "status status status status status";
+    "zbtitle zbtitle zbtitle zbtitle zbtitle zbtitle"
+    "zbmenu zbmenu zbmenu zbmenu zbmenu zbmenu"
+    "zbtop zbtop zbtop zbtop zbdiv panel"
+    "zbleft stage dockr zbright zbdiv panel"
+    "dock dock dock dock dock dock"
+    "status status status status status status";
   background: var(--zb-bg);
 }
 #app.zb.zb-tray-closed { --zb-tray-w: 0px; }
