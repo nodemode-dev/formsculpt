@@ -2,6 +2,19 @@
 
 Versions follow `v*.*.*` with dots. Dates are UTC.
 
+## 1.27.0 · 2026-11-21
+
+A true-black theme for OLED screens, AMOLED Black, as in the other Form apps.
+
+### Added
+
+- New theme, AMOLED Black (Theme menu, Preferences and the View section): a true-black window for OLED screens, with panels told apart by their borders and the window's own accent. Every layout follows it: the panel layout's bar, rail and inspector, the ZUI layout's shelves and title bar, the tablet layout's floating bars, menus, dialogs, the agent panel and its terminal, and the viewport's background. It is black from the window's first frame. Form family theme also follows it when the family's shared theme is AMOLED Black.
+
+### Fixed
+
+- The viewport's background now follows a theme's black: the bottom of High Contrast's gradient did not turn black.
+- The Show Terminal command's description now says the panel is under the viewport or at its right, in every language.
+
 ## 1.26.0 · 2026-11-21
 
 The agent panel can move to the right, as in the other Form apps.

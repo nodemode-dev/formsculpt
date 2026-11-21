@@ -1707,8 +1707,8 @@ export interface Backdrop {
 }
 
 export function hexColor(css: string): [number, number, number] | null {
-  const m = /^#?([0-9a-f]{6})$/i.exec(css.trim());
+  const m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(css.trim());
   if (!m) return null;
-  const v = parseInt(m[1], 16);
+  const v = parseInt(m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1], 16);
   return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
 }

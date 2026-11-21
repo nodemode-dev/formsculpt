@@ -68,6 +68,10 @@
 #app:not(.zb) .panel .zb-tray-head { display: none; }
 #app.zb .panel .zb-off { display: none !important; }
 #app.zb .stage { background: linear-gradient(to bottom, #4a4a4a, #1f1f1f); }
+:root[data-oled] #app.zb { --zb-bg: var(--bg-primary); --zb-bar: var(--bg-primary); --zb-raised: var(--bg-tertiary); --zb-hover: var(--border-color); --zb-line: var(--border-color); --zb-text: var(--text-primary); --zb-dim: var(--text-secondary); --tb-select: var(--border-light); --tb-line: var(--border-color); }
+:root[data-oled] #app.zb :is(.stage, .zb-title, .zb-divider) { background: var(--bg-primary); }
+:root[data-oled] #app.zb .zb-divider { box-shadow: inset 1px 0 var(--border-color), inset -1px 0 var(--border-color); }
+:root[data-oled] #app.zb .zb-lightbox { background: rgb(0 0 0 / 0.96); }
 
 /* Title bar. */
 .zb-title { grid-area: zbtitle; display: flex; align-items: center; gap: 14px; padding: 0 10px; background: var(--zb-line); color: var(--zb-dim); font: 500 11px/1 var(--font-sans); white-space: nowrap; overflow: hidden; }

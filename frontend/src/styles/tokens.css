@@ -197,3 +197,13 @@ body.theme-light {
   --shadow-md: 0 3px 10px rgba(96, 90, 70, 0.14);
   --shadow-window: 0 18px 44px rgba(96, 90, 70, 0.22);
 }
+
+:root[data-oled], :root[data-oled] body {
+  --bg-node: var(--bg-secondary);
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  --border-soft: rgba(255, 255, 255, 0.12);
+  --surface-1: var(--bg-primary);
+  --line-0: var(--border-color);
+  --viewport-top: #000000;
+  --viewport-bottom: #000000;
+}

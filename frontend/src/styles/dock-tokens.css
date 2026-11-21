@@ -34,6 +34,7 @@
   --dock-term-selection: var(--accent-color-dim);
   --dock-term-font-size: var(--fs-13);
 }
+:root[data-oled] { --dock-term-bg: #000000; --dock-term-fg: #ededed; }
 :root { --ft-dock-size: 280px; --ft-dock-wsize: 440px; }
 :root[data-ft-dock="open"]:not([data-ft-dock-side="right"]) #app { --dock-h: min(var(--ft-dock-size), 70vh); }
 :root[data-ft-dock="open"][data-ft-dock-side="right"] #app { --dock-w: min(var(--ft-dock-wsize), 50vw); }
